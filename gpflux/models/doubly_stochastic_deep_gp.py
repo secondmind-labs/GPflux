@@ -8,7 +8,7 @@ from functools import reduce
 from gpflow.decors import params_as_tensors, autoflow
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
-from gpflow.params.dataholders import Minibatch
+from gpflow.params.dataholders import Minibatch, DataHolder
 
 float_type = gpflow.settings.float_type
 int_type = gpflow.settings.int_type
@@ -49,8 +49,8 @@ class DeepGP(Model):
             self.Y = Minibatch(Y, batch_size=batch_size, seed=0)
             self.scale = self.num_data / batch_size
         else:
-            self.X = X
-            self.Y = Y
+            self.X = DataHolder(X)
+            self.Y = DataHolder(Y)
             self.scale = 1.0
 
     def _build_decoder(self, Z):

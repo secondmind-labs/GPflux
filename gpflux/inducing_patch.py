@@ -29,3 +29,7 @@ class InducingPatch(Mof):
         return 1
 
 
+class IndexedInducingPatch:
+    def __init__(self, inducing_patch, inducing_indices):
+        self.inducing_patch = inducing_patch
+        self.inducing_indices = inducing_indices

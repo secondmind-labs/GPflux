@@ -114,3 +114,10 @@ class ConvKernel(mk.Mok):
     @gpflow.autoflow((gpflow.settings.tf_float,))
     def compute_patches(self, X):
         return self._get_patches(X)
+
+
+class IndexedConvKernel:
+
+    def __init__(self, conv_kernel, index_kernel):
+        self.conv_kernel = conv_kernel
+        self.index_kernel = index_kernel

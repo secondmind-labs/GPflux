@@ -11,7 +11,7 @@ from gpflow.decors import params_as_tensors, autoflow
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
-from gpflow.params.dataholders import Minibatch
+from gpflow.params.dataholders import Minibatch, DataHolder
 from gpflow.conditionals import _sample_mvn as sample_mvn
 from gpflow.quadrature import ndiag_mc, ndiagquad
 
@@ -57,7 +57,7 @@ class LatentDeepGP(Model):
             self.X = Minibatch(X, batch_size=batch_size, seed=0)
             self.scale = X.shape[0] / batch_size
         else:
-            self.X = X
+            self.X = DataHolder(X)
             self.scale = 1.0
 
         self.encoder = encoder
@@ -167,15 +167,14 @@ class ConditionalLatentDeepGP(LatentDeepGP):
 
         assert X.ndim == 2
 
-        if (batch_size > 0) and (batch_size is not None):
+        if (batch_size is not None) and (batch_size > 0):
             self.X = Minibatch(X, batch_size=batch_size, seed=0)
             self.Y = Minibatch(Y, batch_size=batch_size, seed=0)
             self.scale = X.shape[0] / batch_size
         else:
-            self.X = X
-            self.Y = Y
+            self.X = DataHolder(X)
+            self.Y = DataHolder(Y)
             self.scale = 1.0
-            batch_size = self.X[0]
 
         self.encoder = encoder
         self.latent_dim = self.encoder.latent_dim
