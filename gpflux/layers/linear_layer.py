@@ -23,6 +23,9 @@ class LinearLayer(BaseLayer):
     @params_as_tensors
     def propagate(self, X, sampling=True, **kwargs):
         if not sampling:
+            mean = tf.matmul(X, self.weight) + self.bias
+            # var =
+
             raise ValueError("We can only sample from a single "
                              "layer multi-perceptron.")
 

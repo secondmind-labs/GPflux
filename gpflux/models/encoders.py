@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from typing import Callable, Optional, Union
-from gpflow import settings, params_as_tensors
+from gpflow import settings, params_as_tensors, transforms
 
 # from .layers import BaseLayer
 
@@ -53,7 +53,7 @@ class GPflowEncoder(Encoder):
         self.Ws, self.bs = ParamList(Ws), ParamList(bs)
     
     @params_as_tensors
-    def __call__(self, Z: tf.Tensor) -> None:
+    def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
         for i, (W, b) in enumerate(zip(self.Ws, self.bs)):
             Z = tf.matmul(Z, W) + b
             if i < len(self.bs) - 1:
@@ -61,6 +61,24 @@ class GPflowEncoder(Encoder):
 
         means, log_chol_diag = tf.split(Z, 2, axis=1)
         return means, log_chol_diag
+
+
+class DirectlyParameterized(Parameterized):
+    """
+    Not compatible with minibatches
+    """
+
+    def __init__(self, num_data:int, latent_dim: int, mean: Optional[np.array]=None, name: Optional[str] = None):
+        Parameterized.__init__(self,name=name)
+        self.num_data = num_data
+        self.latent_dim = latent_dim
+        if mean is None:
+            mean = np.random.randn(num_data, latent_dim)
+        self.mean = Param(mean)
+        self.std = Param(1e-5 * np.ones((num_data, latent_dim)), transform=transforms.positive)
+
+    def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
+        return self.mean, self.std
 
 
 # class LatentLayer(BaseLayer):

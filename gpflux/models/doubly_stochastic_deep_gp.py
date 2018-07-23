@@ -8,7 +8,9 @@ from functools import reduce
 from gpflow.decors import params_as_tensors, autoflow
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
-from gpflow.params.dataholders import Minibatch
+from gpflow.params.dataholders import Minibatch, DataHolder
+
+from ..layers import LatentVariableConcatLayer, LinearLayer
 
 float_type = gpflow.settings.float_type
 int_type = gpflow.settings.int_type
@@ -25,7 +27,8 @@ class DeepGP(Model):
     }
     """
 
-    def __init__(self, X, Y, layers, likelihood=None, batch_size=None, name=None):
+    def __init__(self, X, Y, layers, likelihood=None, batch_size=None, name=None,
+                 P=None):
         """
         :param X: np.ndarray, N x Dx
         :param Y: np.ndarray, N x Dy
@@ -44,29 +47,49 @@ class DeepGP(Model):
         self.layers = gpflow.ParamList(layers)
         self.likelihood = likelihood or Gaussian()
 
+        if P is None:
+            self.P = None
+        else:
+            self.P = gpflow.Param(P)
+
         if (batch_size is not None) and (batch_size > 0):
             self.X = Minibatch(X, batch_size=batch_size, seed=0)
             self.Y = Minibatch(Y, batch_size=batch_size, seed=0)
             self.scale = self.num_data / batch_size
         else:
-            self.X = X
-            self.Y = Y
+            self.X = DataHolder(X)
+            self.Y = DataHolder(Y)
             self.scale = 1.0
 
-    def _build_decoder(self, Z):
+    @params_as_tensors
+    def _build_decoder(self, Z, Ws=None):
         """
         :param Z: N x W
         """
         Z = tf.cast(Z, dtype=tf.float64)
-        for layer in self.layers[:-1]:
-            Z = layer.propagate(Z, sampling=True, full_output_cov=False, full_cov=False)
 
-        f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, full_output_cov=False, full_cov=False)
+        if Ws is None:
+            Ws = [None] * len(self.layers)
+
+        for layer, W in zip(self.layers[:-1], Ws[:-1]):
+            if W is not None:
+                Z = layer.propagate(Z, sampling=True, W=W, full_output_cov=False, full_cov=False)
+            else:
+                Z = layer.propagate(Z, sampling=True, full_output_cov=False, full_cov=False)
+
+        if Ws[-1] is not None:
+            f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, W=Ws[-1], full_output_cov=False, full_cov=False)
+        else:
+            f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, full_output_cov=False, full_cov=False)
+
+        if self.P is not None:
+            f_mean = tf.matmul(f_mean, self.P)
+            f_var = tf.matmul(f_var, self.P**2)
+
         return f_mean, f_var
 
     @params_as_tensors
     def _build_likelihood(self):
-
         f_mean, f_var = self._build_decoder(self.X)  # N x P, N x P
         self.E_log_prob = tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y))
 
@@ -75,8 +98,8 @@ class DeepGP(Model):
         ELBO = self.E_log_prob * self.scale - self.KL_U_layers
         return tf.cast(ELBO, float_type)
 
-    def _predict_f(self, X):
-        mean, variance = self._build_decoder(X)  # N x P, N x P
+    def _predict_f(self, X, Ws=None):
+        mean, variance = self._build_decoder(X, Ws=Ws)  # N x P, N x P
         return mean, variance
 
     @params_as_tensors
@@ -88,6 +111,20 @@ class DeepGP(Model):
     @autoflow([float_type, [None, None]])
     def predict_f(self, X):
         return self._predict_f(X)
+
+    @autoflow([float_type, [None, None]], [float_type, [None, None]])
+    def predict_f_with_Ws(self, X, Ws):
+        # TODO make this less dreadful
+        Ws_split = []
+        i = 0
+        for layer in self.layers:
+            if isinstance(layer, LatentVariableConcatLayer):
+                d = layer.latent_variables_dim
+                Ws_split.append(Ws[:, i:i+d])
+                i += d
+            else:
+                Ws_split.append(None)
+        return self._predict_f(X, Ws=Ws_split)
 
     @autoflow()
     def compute_KL_U(self):
