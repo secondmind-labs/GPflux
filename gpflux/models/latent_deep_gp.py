@@ -13,7 +13,7 @@ from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
 from gpflow.params.dataholders import Minibatch, DataHolder
 from gpflow.conditionals import _sample_mvn as sample_mvn
-from gpflow.quadrature import ndiag_mc, ndiagquad
+# from gpflow.quadrature import ndiag_mc, ndiagquad
 
 from ..utils import lrelu, xavier_weights
 from .encoders import Encoder
@@ -25,12 +25,12 @@ jitter_level = gpflow.settings.numerics.jitter_level
 
 class LatentDeepGP(Model):
 
-    def __init__(self, 
+    def __init__(self,
                  X: np.ndarray,
-                 encoder: Encoder, 
-                 layers: List, 
-                 likelihood: Optional[gpflow.likelihoods.Likelihood] = None, 
-                 batch_size: int = 32, 
+                 encoder: Encoder,
+                 layers: List,
+                 likelihood: Optional[gpflow.likelihoods.Likelihood] = None,
+                 batch_size: int = 32,
                  beta: float = 1.0,
                  name: Optional[str] = None) -> None:
         """
@@ -39,7 +39,7 @@ class LatentDeepGP(Model):
         :param encoder: Encoder
             Used as inference network
         :param layers: List
-            List of `layers.BaseLayer` instances, e.g. PerceptronLayer, 
+            List of `layers.BaseLayer` instances, e.g. PerceptronLayer,
             ConvLayer, GPLayer,...
         :param likelihood: gpflow.likelihoods.Likelihood object
             Analytic expressions exists for the Gaussian case.
@@ -67,10 +67,10 @@ class LatentDeepGP(Model):
         self.likelihood = likelihood or Gaussian()
         self.beta = Param(beta)
         self.beta.set_trainable(False)
-        
 
-    def _build_decoder(self, 
-                       Z: tf.Tensor, 
+
+    def _build_decoder(self,
+                       Z: tf.Tensor,
                        full_cov_output: Optional[bool] = False) -> tf.Tensor:
         """
         Propagates a single sample Z through the layers of the model.
@@ -84,7 +84,7 @@ class LatentDeepGP(Model):
         f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, full_cov=False,
                                                   full_output_cov=full_cov_output)
         return f_mean, f_var
-    
+
     @params_as_tensors
     def _build_likelihood(self) -> tf.Tensor:
         """ let 1) N: batch size, 2) W: latent dimension """
@@ -136,13 +136,13 @@ class LatentDeepGP(Model):
 
 class ConditionalLatentDeepGP(LatentDeepGP):
 
-    def __init__(self, 
+    def __init__(self,
                  X: np.ndarray,
                  Y: np.ndarray,
-                 encoder: Encoder, 
-                 layers: List, 
-                 likelihood: Optional[gpflow.likelihoods.Likelihood] = None, 
-                 batch_size: int = 32, 
+                 encoder: Encoder,
+                 layers: List,
+                 likelihood: Optional[gpflow.likelihoods.Likelihood] = None,
+                 batch_size: int = 32,
                  beta: float = 1.0,
                  name: Optional[str] = None) -> None:
         """
@@ -153,7 +153,7 @@ class ConditionalLatentDeepGP(LatentDeepGP):
         :param encoder: Encoder
             Used as inference network
         :param layers: List
-            List of `layers.BaseLayer` instances, e.g. PerceptronLayer, 
+            List of `layers.BaseLayer` instances, e.g. PerceptronLayer,
             ConvLayer, GPLayer,...
         :param likelihood: gpflow.likelihoods.Likelihood object
             Analytic expressions exists for the Gaussian case.
@@ -244,19 +244,20 @@ class ConditionalLatentDeepGP(LatentDeepGP):
             mean, var = self._build_decoder(XZ, full_cov_output=False)  # N x P, N x P
             logp = self.likelihood.predict_density(mean, var, Y)  # N x 1
             return logp
-        
+
         N = tf.shape(X)[0]
         Z_mu = tf.zeros((N, self.latent_dim), dtype=float_type)
         Z_var = tf.ones((N, self.latent_dim), dtype=float_type)
         # if self.latent_dim > 2:
             # evaluate using Monte-Carlo
         S = 1000
-        return ndiag_mc(log_pdf_func, S, Z_mu, Z_var, logspace=True, X=X, Y=Y)
+        return 0
+        # return ndiag_mc(log_pdf_func, S, Z_mu, Z_var, logspace=True, X=X, Y=Y)
         # else:
         #     # evaluate using Quadrature, this is possible as the latent is 1 or 2 dimenional
         #     H = 100
         #     return ndiagquad(log_pdf_func, H, Z_mu, Z_var, logspace=True, X=X, Y=Y)
-    
+
     @autoflow()
     def compute_KL_Z(self):
         return self.KL_Z * self.scale

@@ -84,22 +84,25 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     conv_kernel = kern.conv_kernel
     index_kernel = kern.index_kernel
 
-    Pmm = index_kernel.K(inducing_indices)  # M x M
+    Pmm = index_kernel.K(inducing_indices.Z)  # M x M
     Kmm = Kuu(inducing_patches, conv_kernel, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmm = Kmm * Pmm[None, ...]  # L x M x M
 
     # IJ: N x 2, cartesian product of output indices
-    W = 28
-    IJ = np.vstack([x.flatten() for x in np.meshgrid(np.arange(W), np.arange(W))]).T  # P x 2
+    H_out = conv_kernel.Hout
+    W_out = conv_kernel.Wout
+    IJ = np.vstack([x.flatten() \
+                    for x \
+                    in np.meshgrid(np.arange(H_out), np.arange(W_out))]).T  # P x 2
 
-    Pmn = index_kernel.K(inducing_indices, IJ)  # M x P
-    Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
+    Pmn = index_kernel.K(inducing_indices.Z, IJ)  # M x P
+    Kmn = Kuf(inducing_patches, conv_kernel, Xnew)  # M x L x N x P
     Kmn = Kmn * Pmn[:, None, None, :]  # M x L x N x P
 
     if full_cov:
-        Knn = kern.K(Xnew, full_output_cov=full_output_cov)  # N x P x N x P  or  P x N x N
+        Knn = conv_kernel.K(Xnew, full_output_cov=full_output_cov)  # N x P x N x P  or  P x N x N
     else:
-        Knn = kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # N x P (x P)
+        Knn = conv_kernel.Kdiag(Xnew, full_output_cov=full_output_cov)  # N x P (x P)
 
     if full_output_cov:
         Pnn = index_kernel.K(IJ)  # P x P
@@ -113,10 +116,16 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
             Pnn = Pnn[:, None, None]
         else:
             Pnn = Pnn[None, :]
-    
+
     Knn = Knn * Pnn
 
-    return independent_interdomain_conditional(Kmn, Kmm, Knn, f,
+    assert full_cov == False and full_output_cov == False
+
+    m, v =  independent_interdomain_conditional(Kmn, Kmm, Knn, f,
                                                full_cov=full_cov,
                                                full_output_cov=full_output_cov,
                                                q_sqrt=q_sqrt, white=white)
+    m, v = tf.reduce_sum(m, axis=1), tf.reduce_sum(v, axis=1)
+    m = tf.Print(m, ["shape posterior mean", tf.shape(m),\
+                     "shape posterior variance", tf.shape(v)])
+    return m, v
