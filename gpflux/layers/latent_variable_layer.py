@@ -14,6 +14,22 @@ float_type = settings.float_type
 from .layers import BaseLayer
 from ..models.encoders import GPflowEncoder
 
+from enum import Enum
+
+class LatentVariablePropagateMode(Enum):
+    """
+    We need to distinguish between training and test points when propagating with latent variables. We have
+    a parameterized variational posterior for the N data, but at test points we might want to do one of three things:
+    """
+    # sample from N(0, 1)
+    PRIOR = 1
+
+    # we are dealing with the N observed data points, so we use the vatiational posterior
+    POSTERIOR = 2
+
+    # for plotting purposes, it is useful to have a mechanism for setting W to fixed values, e.g. on a grid
+    GIVEN = 3
+
 
 class LatentVariableLayer(BaseLayer):
     """
@@ -55,24 +71,49 @@ class LatentVariableLayer(BaseLayer):
         """ describes the key properties of a layer """
         return "LatentVarLayer: with dim={}".format(self.latent_variables_dim)
 
+    def propagate(self, X, sampling=True, W=None, **kwargs):
+        raise NotImplementedError
+
+
 
 class LatentVariableConcatLayer(LatentVariableLayer):
     """
     A latent variable layer where the latents are concatenated with the input
     """
     @params_as_tensors
-    def propagate(self, X, sampling=True, W=None, **kwargs):
+    def propagate(self, X, sampling=True, W_mode=LatentVariablePropagateMode.POSTERIOR, W=None,
+                  full_cov=False, full_output_cov=False):
         self.encode_once()
         if sampling:
-            if W is None:
+            if W_mode == LatentVariablePropagateMode.POSTERIOR:
                 z= tf.random_normal(tf.shape(self.q_mu), dtype=float_type)
                 W = self.q_mu + z * self.q_sqrt
-            XW = tf.concat([X, W], 1)
-            return XW
+
+            elif W_mode == LatentVariablePropagateMode.PRIOR:
+                W = tf.random_normal([tf.shape(X)[0], self.latent_variables_dim], dtype=float_type)
+
+            elif W_mode == LatentVariablePropagateMode.GIVEN:
+                assert isinstance(W, tf.Tensor)
+
+
+            return tf.concat([X, W], 1)
+
         else:
-            XW_mean = tf.concat([X, self.q_mu], 1)
-            XW_var = tf.concat([tf.zeros_like(X), self.q_sqrt**2])
-            return XW_mean, XW_var
+
+            if W_mode == LatentVariablePropagateMode.POSTERIOR:
+                XW_mean = tf.concat([X, self.q_mu], 1)
+                XW_var = tf.concat([tf.zeros_like(X), self.q_sqrt ** 2])
+                return XW_mean, XW_var
+
+            elif W_mode == LatentVariablePropagateMode.PRIOR:
+                z = tf.zeros([tf.shape(X)[0], self.latent_variables_dim], dtype=float_type)
+                o = tf.ones([tf.shape(X)[0], self.latent_variables_dim], dtype=float_type)
+                XW_mean = tf.concat([X, z], 1)
+                XW_var = tf.concat([tf.zeros_like(X), o])
+                return XW_mean, XW_var
+
+            else:
+                raise NotImplementedError
 
 
 # class LatentVariableAdditiveLayer(LatentVariableLayer):

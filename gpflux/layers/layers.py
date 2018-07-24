@@ -17,7 +17,7 @@ class BaseLayer(Parameterized):
     def __init__(self):
         Parameterized.__init__(self)
 
-    def propagate(self, X, sampling=True):
+    def propagate(self, X, sampling=True, **kwargs):
         """
         :param X: tf.Tensor
             N x P
@@ -79,7 +79,7 @@ class GPLayer(BaseLayer):
         self.q_sqrt = Parameter(q_sqrt, dtype=float_type)
 
     @params_as_tensors
-    def propagate(self, X, *, sampling=True, full_output_cov=False, full_cov=False):
+    def propagate(self, X, *, sampling=True, full_output_cov=False, full_cov=False, **kwargs):
         """
         :param X: N x P
         """
