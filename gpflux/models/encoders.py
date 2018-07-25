@@ -67,7 +67,6 @@ class DirectlyParameterized(Parameterized):
     """
     Not compatible with minibatches
     """
-
     def __init__(self, num_data:int, latent_dim: int, mean: Optional[np.array]=None, name: Optional[str] = None):
         Parameterized.__init__(self,name=name)
         self.num_data = num_data

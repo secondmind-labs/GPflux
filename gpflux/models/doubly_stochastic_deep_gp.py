@@ -10,12 +10,11 @@ from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
 from gpflow.params.dataholders import Minibatch, DataHolder
 
-from ..layers.latent_variable_layer import LatentVariableLayer, LatentVariablePropagateMode
+from ..layers.latent_variable_layer import LatentVariableLayer, LatentVarMode
 
 float_type = gpflow.settings.float_type
 int_type = gpflow.settings.int_type
 jitter_level = gpflow.settings.numerics.jitter_level
-
 
 
 class DeepGP(Model):
@@ -47,7 +46,7 @@ class DeepGP(Model):
         self.layers = gpflow.ParamList(layers)
         self.likelihood = likelihood or Gaussian()
 
-        if (batch_size is not None) and (batch_size > 0):
+        if (batch_size is not None) and (batch_size > 0) and (batch_size < X.shape[0]):
             self.X = Minibatch(X, batch_size=batch_size, seed=0)
             self.Y = Minibatch(Y, batch_size=batch_size, seed=0)
             self.scale = self.num_data / batch_size
@@ -56,15 +55,10 @@ class DeepGP(Model):
             self.Y = DataHolder(Y)
             self.scale = 1.0
 
-        if P is not None:
-            self.P = gpflow.Param(P)
-        else:
-            self.P = None
-
-    def get_Ws_iter(self, W_mode : LatentVariablePropagateMode, Ws=None) -> iter:
+    def get_Ws_iter(self, latent_var_mode : LatentVarMode, Ws=None) -> iter:
         i = 0
         for layer in self.layers:
-            if W_mode == LatentVariablePropagateMode.GIVEN and isinstance(layer, LatentVariableLayer):
+            if latent_var_mode == LatentVarMode.GIVEN and isinstance(layer, LatentVariableLayer):
 
                 # passing some fixed Ws, which are packed to a single tensor for ease of use with autoflow
                 assert isinstance(Ws, tf.Tensor)
@@ -76,23 +70,21 @@ class DeepGP(Model):
                 yield None
 
     @params_as_tensors
-    def _build_decoder(self, Z, Ws=None, W_mode=LatentVariablePropagateMode.POSTERIOR):
+    def _build_decoder(self, Z, full_cov=False, full_cov_output=False,
+                       Ws=None, latent_var_mode=LatentVarMode.POSTERIOR):
         """
         :param Z: N x W
         """
         Z = tf.cast(Z, dtype=tf.float64)
 
-        Ws_iter = self.get_Ws_iter(W_mode, Ws)  # iter, returning either None or slices from Ws
+        Ws_iter = self.get_Ws_iter(latent_var_mode, Ws)  # iter, returning either None or slices from Ws
 
         for layer, W in zip(self.layers[:-1], Ws_iter):
-            Z = layer.propagate(Z, sampling=True, W=W, W_mode=W_mode,
-                                full_output_cov=False, full_cov=False)
+            Z = layer.propagate(Z, sampling=True, W=W, latent_var_mode=latent_var_mode,
+                                full_output_cov=full_cov_output, full_cov=full_cov)
 
-        f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, W=next(Ws_iter), W_mode=W_mode,
-                                                  full_output_cov=False, full_cov=False)
-        if self.P is not None:
-            f_mean = tf.matmul(f_mean, self.P)
-            f_var = tf.matmul(f_var, self.P**2)
+        f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, W=next(Ws_iter), latent_var_mode=latent_var_mode,
+                                                  full_output_cov=full_cov_output, full_cov=full_cov)
         return f_mean, f_var
 
     @params_as_tensors
@@ -106,7 +98,7 @@ class DeepGP(Model):
         return tf.cast(ELBO, float_type)
 
     def _predict_f(self, X):
-        mean, variance = self._build_decoder(X, W_mode=LatentVariablePropagateMode.PRIOR)  # N x P, N x P
+        mean, variance = self._build_decoder(X, latent_var_mode=LatentVarMode.PRIOR)  # N x P, N x P
         return mean, variance
 
     @params_as_tensors
@@ -121,7 +113,15 @@ class DeepGP(Model):
 
     @autoflow([float_type, [None, None]], [float_type, [None, None]])
     def predict_f_with_Ws(self, X, Ws):
-        return self._build_decoder(X, Ws=Ws, W_mode=LatentVariablePropagateMode.GIVEN)
+        return self._build_decoder(X, Ws=Ws, latent_var_mode=LatentVarMode.GIVEN)
+
+    @autoflow([float_type, [None, None]], [float_type, [None, None]])
+    def predict_f_with_Ws_full_cov_output(self, X, Ws):
+        return self._build_decoder(X, Ws=Ws, full_cov_output=True, latent_var_mode=LatentVarMode.GIVEN)
+
+    @autoflow([float_type, [None, None]], [float_type, [None, None]])
+    def predict_f_with_Ws_full_cov(self, X, Ws):
+        return self._build_decoder(X, Ws=Ws, full_cov=True, latent_var_mode=LatentVarMode.GIVEN)
 
     @autoflow()
     def compute_KL_U(self):

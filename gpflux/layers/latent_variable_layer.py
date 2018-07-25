@@ -16,7 +16,7 @@ from ..models.encoders import GPflowEncoder
 
 from enum import Enum
 
-class LatentVariablePropagateMode(Enum):
+class LatentVarMode(Enum):
     """
     We need to distinguish between training and test points when propagating with latent variables. We have
     a parameterized variational posterior for the N data, but at test points we might want to do one of three things:
@@ -53,15 +53,15 @@ class LatentVariableLayer(BaseLayer):
                                     latent_variables_dim,
                                     [10, 10])
         self.encoder = encoder
-        self.q_mu = None
-        self.q_sqrt = None
+        self.is_encoded = False
 
     def encode_once(self):
-        if self.q_mu is None:
+        if not self.is_encoded:
             XY = tf.concat([self.root.X, self.root.Y], 1)
             q_mu, log_q_sqrt = self.encoder(XY)
             self.q_mu = q_mu
             self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
+            self.is_encoded = True
 
     def KL(self):
         self.encode_once()
@@ -81,18 +81,18 @@ class LatentVariableConcatLayer(LatentVariableLayer):
     A latent variable layer where the latents are concatenated with the input
     """
     @params_as_tensors
-    def propagate(self, X, sampling=True, W_mode=LatentVariablePropagateMode.POSTERIOR, W=None,
+    def propagate(self, X, sampling=True, latent_var_mode=LatentVarMode.POSTERIOR, W=None,
                   full_cov=False, full_output_cov=False):
         self.encode_once()
         if sampling:
-            if W_mode == LatentVariablePropagateMode.POSTERIOR:
+            if latent_var_mode == LatentVarMode.POSTERIOR:
                 z= tf.random_normal(tf.shape(self.q_mu), dtype=float_type)
                 W = self.q_mu + z * self.q_sqrt
 
-            elif W_mode == LatentVariablePropagateMode.PRIOR:
+            elif latent_var_mode == LatentVarMode.PRIOR:
                 W = tf.random_normal([tf.shape(X)[0], self.latent_variables_dim], dtype=float_type)
 
-            elif W_mode == LatentVariablePropagateMode.GIVEN:
+            elif latent_var_mode == LatentVarMode.GIVEN:
                 assert isinstance(W, tf.Tensor)
 
 
@@ -100,12 +100,12 @@ class LatentVariableConcatLayer(LatentVariableLayer):
 
         else:
 
-            if W_mode == LatentVariablePropagateMode.POSTERIOR:
+            if latent_var_mode == LatentVarMode.POSTERIOR:
                 XW_mean = tf.concat([X, self.q_mu], 1)
                 XW_var = tf.concat([tf.zeros_like(X), self.q_sqrt ** 2])
                 return XW_mean, XW_var
 
-            elif W_mode == LatentVariablePropagateMode.PRIOR:
+            elif latent_var_mode == LatentVarMode.PRIOR:
                 z = tf.zeros([tf.shape(X)[0], self.latent_variables_dim], dtype=float_type)
                 o = tf.ones([tf.shape(X)[0], self.latent_variables_dim], dtype=float_type)
                 XW_mean = tf.concat([X, z], 1)
