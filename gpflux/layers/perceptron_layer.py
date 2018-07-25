@@ -16,10 +16,7 @@ class PerceptronLayer(LinearLayer):
     def propagate(self, X, sampling=True, **kwargs):
         linear_transformation = super().propagate(X, sampling)
 
-        if self.activation:
+        if self.activation is not None:
             return self.activation(linear_transformation)
-
-        return linear_transformation
-
-    def KL(self):
-        return super().KL()
+        else:
+            return linear_transformation

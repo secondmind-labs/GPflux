@@ -75,7 +75,7 @@ class KernelStructureMixingMatrixInitializer(Initializer):
     """
 
     def __init__(self, kern=None):
-        self.kern = kern or RBF(2, variance=2.0)
+        self.kern = RBF(2, variance=2.0) if kern is None else kern
 
     def sample(self, shape):
         """

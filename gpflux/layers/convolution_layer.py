@@ -9,6 +9,9 @@ from .layers import GPLayer
 
 
 def _check_input_output_shape(input_shape, output_shape, patch_size):
+    print('input_shape' , input_shape)
+    print('patch_size ', patch_size)
+
     width_check = (input_shape[0] - patch_size[0] + 1 == output_shape[0])
     height_check = (input_shape[1] - patch_size[1] + 1 == output_shape[1])
     return width_check and height_check
@@ -50,6 +53,9 @@ class ConvLayer(GPLayer):
         assert num_filters == 1 and stride == 1  # TODO
 
         if not _check_input_output_shape(input_shape, output_shape, patch_size):
+            print("input_shape: ", input_shape)
+            print("output_shape: ", output_shape)
+            print("patch_size: ", patch_size)
             raise ValueError("The input, output and patch size are inconsistent in the ConvLayer. "
                              "The correct dimension should be: output = input - patch_size + 1.")
 

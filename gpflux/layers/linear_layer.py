@@ -2,8 +2,7 @@ import tensorflow as tf
 import numpy as np
 import gpflow
 
-from gpflow import params_as_tensors
-from gpflow.params import Parameter
+from gpflow import params_as_tensors, Param
 
 from ..utils import xavier_weights
 from .layers import BaseLayer
@@ -14,17 +13,17 @@ class LinearLayer(BaseLayer):
     """
     # TODO: probabilistic linear transformation
 
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim, output_dim, weight=None, bias=None):
         super().__init__()
         self.input_dim, self.output_dim = input_dim, output_dim
-        self.weight = Parameter(xavier_weights(input_dim, output_dim))
-        self.bias = Parameter(np.zeros((output_dim)))
+
+        self.weight = Param(xavier_weights(input_dim, output_dim)) if weight is None else weight
+        self.bias = Param(np.zeros((output_dim))) if bias is None else bias
 
     @params_as_tensors
     def propagate(self, X, sampling=True, **kwargs):
         if not sampling:
-            raise ValueError("We can only sample from a single "
-                             "layer multi-perceptron.")
+            raise ValueError("We can only sample from a single-layer multi-perceptron.")
 
         return tf.matmul(X, self.weight) + self.bias
 
