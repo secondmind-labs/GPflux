@@ -1,3 +1,8 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidentialimport numpy as np
+
+
 from gpflow import params_as_tensors
 
 from .linear_layer import LinearLayer
@@ -8,7 +13,10 @@ class PerceptronLayer(LinearLayer):
     pass the output through a non-linear activation function.
     """
 
-    def __init__(self, input_dim, output_dim, activation=None):
+    def __init__(self,
+                 input_dim: int,
+                 output_dim: int,
+                 activation=None):
         super().__init__(input_dim, output_dim)
         self.activation = activation
 

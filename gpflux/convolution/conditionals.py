@@ -1,3 +1,8 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidentialimport numpy as np
+
+
 import gpflow
 import tensorflow as tf
 
@@ -9,11 +14,6 @@ from gpflow.multioutput.features import debug_kuf, debug_kuu
 from .convolution_kernel import ConvKernel
 from .inducing_patch import InducingPatch
 
-logger = settings.logger()
-
-# ----------------
-# Kernel matrices
-# ----------------
 
 @dispatch(InducingPatch, ConvKernel, object)
 def Kuf(feat, kern, Xnew):
@@ -32,7 +32,7 @@ def Kuf(feat, kern, Xnew):
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = kern.basekern.K(feat.Z)  # M x M
-    jittermat = jitter * tf.eye(len(feat), dtype=gpflow.settings.dtypes.float_type)  # M x M
+    jittermat = jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)  # M x M
     return (Kmm + jittermat)[None, :, :]  # L/1 x M x M  TODO: add L
 
 
@@ -51,7 +51,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param white:
     :return:
     """
-    logger.debug("conditional: InducingPatch -- ConvKernel")
+    settings.logger().debug("conditional: InducingPatch -- ConvKernel")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     if full_cov:

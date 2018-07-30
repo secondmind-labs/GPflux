@@ -1,17 +1,18 @@
-#  Adaptation from Mark van der Wilk
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidentialimport numpy as np
+
 
 import numpy as np
-import tensorflow as tf
+import gpflow
 
-from gpflow import features, settings, params_as_tensors
+from typing import Optional
+
+from gpflow import features, settings, params_as_tensors, \
+                    Param, Parameterized, settings
 from gpflow.conditionals import conditional, sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
-# from gpflow.params import Parameter, Parameterized
-from gpflow import Param, Parameterized
-
-jitter_level = settings.numerics.jitter_level
-float_type = settings.float_type
 
 
 class BaseLayer(Parameterized):
@@ -39,8 +40,13 @@ class BaseLayer(Parameterized):
 
 
 class GPLayer(BaseLayer):
-    def __init__(self, kern, feature, num_latents,
-                 q_mu=None, q_sqrt=None, mean_function=None):
+    def __init__(self,
+                 kern: gpflow.kernels.Kernel,
+                 feature: gpflow.features.InducingFeature,
+                 num_latents: int,
+                 q_mu: Optional[np.ndarray] = None,
+                 q_sqrt: Optional[np.ndarray] = None,
+                 mean_function: Optional[gpflow.mean_functions.MeanFunction] = None):
         r"""
         A sparse variational GP layer in whitened representation. This layer holds the kernel,
         variational parameters, inducing points and mean function.
@@ -55,11 +61,12 @@ class GPLayer(BaseLayer):
         different inducing inputs.
 
         :param kern: The kernel for the layer (input_dim = D_in)
+        :param feature: inducing features
+        :param num_latents: number of latent GPs in the layer
         :param q_mu: Variational mean initialization (M x num_latents)
-        :param q_sqrt: Variational Cholesky factor of variance initialization (M x M x num_latents)
-        :param Z: Inducing points (M, D_in)
-        :param mean_function: The mean function that links inputs to outputs (e.g.,
-                              linear mean function)
+        :param q_sqrt: Variational Cholesky factor of variance initialization (num_latents x M x M)
+        :param mean_function: The mean function that links inputs to outputs
+                (e.g., linear mean function)
         """
         super().__init__()
         self.feature = feature
@@ -70,8 +77,8 @@ class GPLayer(BaseLayer):
         self.num_latents = num_latents
         q_mu = np.zeros((M, num_latents)) if q_mu is None else q_mu
         q_sqrt = np.tile(np.eye(M), (num_latents, 1, 1)) if q_sqrt is None else q_sqrt
-        self.q_mu = Param(q_mu, dtype=float_type)
-        self.q_sqrt = Param(q_sqrt, dtype=float_type)
+        self.q_mu = Param(q_mu, dtype=settings.float_type)
+        self.q_sqrt = Param(q_sqrt, dtype=settings.float_type)
 
     @params_as_tensors
     def propagate(self, X, *, sampling=True, full_output_cov=False, full_cov=False):

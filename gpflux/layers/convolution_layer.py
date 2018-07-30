@@ -1,9 +1,15 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidentialimport numpy as np
+
+
 import numpy as np
 import gpflow
 
+from typing import List, Optional
+
 from .. import init
-from ..convolution_kernel import ConvKernel
-from ..inducing_patch import InducingPatch
+from ..convolution import ConvKernel, InducingPatch
 
 from .layers import GPLayer
 
@@ -16,19 +22,20 @@ def _check_input_output_shape(input_shape, output_shape, patch_size):
     height_check = (input_shape[1] - patch_size[1] + 1 == output_shape[1])
     return width_check and height_check
 
+
 class ConvLayer(GPLayer):
 
     def __init__(self,
-                 input_shape,
-                 output_shape,
-                 number_inducing,
-                 patch_size, *,
-                 stride=1,
-                 num_filters=1,
-                 q_mu=None,
-                 q_sqrt=None,
-                 mean_function=None,
-                 base_kernel_class=gpflow.kernels.RBF,
+                 input_shape: List,
+                 output_shape: List,
+                 number_inducing: int,
+                 patch_size: List, *,
+                 stride: int = 1,
+                 num_filters: int = 1,
+                 q_mu: Optional[np.ndarray] = None,
+                 q_sqrt: Optional[np.ndarray] = None,
+                 mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
+                 base_kernel_class: type = gpflow.kernels.RBF,
                  inducing_patches_initializer=init.NormalInitializer()):
         """
         This layer constructs a convolutional GP layer.
@@ -42,7 +49,6 @@ class ConvLayer(GPLayer):
         Optional:
         :param stride: int
             An integer specifying the strides of the convolution along the height and width.
-            TODO: not implemeted yet
         :param num_filters: int
             Number of filters in the convolution
         :param q_mu and q_sqrt: np.ndarrays

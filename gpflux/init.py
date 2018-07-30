@@ -1,9 +1,15 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidentialimport numpy as np
+
+
 import gpflow
 import numpy as np
 
 from gpflow.kernels import RBF
 
 from sklearn.feature_extraction.image import extract_patches_2d
+
 
 class Initializer(object):
     """

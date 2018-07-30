@@ -1,13 +1,18 @@
-import numpy as np
-import tensorflow as tf
-import gpflow
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidentialimport numpy as np
 
-from gpflow import settings
+import numpy as np
+
+from gpflow import Param, settings
 from gpflow.multioutput.features import Mof
 
-logger = settings.logger()
 
 class InducingPatch(Mof):
+    """
+    Inducing features which are typically used in combination with
+    convolutional kernels.
+    """
     def __init__(self, Z):
         """
         :param Z: np.array
@@ -18,8 +23,7 @@ class InducingPatch(Mof):
             M, w, h = Z.shape
             Z = np.reshape(Z, [M, w * h])  # M x wh
 
-        print("inducing patches shape", Z.shape)
-        self.Z = gpflow.Param(Z, dtype=gpflow.settings.float_type)  # M x wh
+        self.Z = Param(Z, dtype=settings.float_type)  # M x wh
 
     def __len__(self):
         return self.Z.shape[0]
@@ -27,5 +31,3 @@ class InducingPatch(Mof):
     @property
     def outputs(self):  # a.k.a. L
         return 1
-
-

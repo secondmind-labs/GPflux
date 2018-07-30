@@ -12,6 +12,7 @@ class Data:
     M = 100
     N, D = 1000, 28**2
     X = np.random.randn(N , D)
+    Y = np.random.randn(N , 1)
     LATENT_DIM = 2
     OUTPUT_DIMS = [50, 30**2, D]
     PATCH_SIZE = [3, 3]
@@ -37,12 +38,12 @@ def test_describe():
     layer3 = gpflux.layers.ConvLayer([30, 30], [28, 28], Data.M, [3, 3],
                                      inducing_patches_initializer=patch_init)
 
-    model = gpflux.LatentDeepGP(Data.X, Data.LATENT_DIM, [layer1, layer2, layer3])
+    model = gpflux.DeepGP(Data.X, Data.Y, Data.LATENT_DIM, [layer1, layer2, layer3])
 
     description = model.describe()
     description = description.split('\n')
     assert len(description) == 8
-    assert description[0] == "LatentDeepGP"
+    assert description[0] == "DeepGP"
     assert "GPLayer" in description[3]
     assert "LinearLayer" in description[4]
     assert "GPLayer" in description[5]
