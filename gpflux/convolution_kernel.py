@@ -116,8 +116,9 @@ class ConvKernel(mk.Mok):
         return self._get_patches(X)
 
 
-class IndexedConvKernel:
+class IndexedConvKernel(mk.Mok):
 
     def __init__(self, conv_kernel, index_kernel):
+        gpflow.kernels.Kern.__init__(self, conv_kernel.input_dim + index_kernel.input_dim)
         self.conv_kernel = conv_kernel
         self.index_kernel = index_kernel
