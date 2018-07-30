@@ -17,7 +17,7 @@ class Encoder(Parameterized):
 
     def __call__(self, Z: tf.Tensor) -> None:
         """ 
-        Given Z, returns the mean and the log of the cholesky
+        Given Z, returns the mean and the log of the Cholesky
         of the latent variables (only the diagonal elements)
         In other words, w_n ~ N(m_n, exp(s_n)), where m_n, s_n = f(x_n).
         For this Encoder the function f is a NN.

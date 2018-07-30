@@ -46,7 +46,7 @@ class LatentDeepGP(Model):
         :param batch_size: int
             Size of the batch for stochastic optimization of the ELBO
         :param beta: float
-            Scaler of the latent's KL.
+            Scalar of the latent's KL.
         :param name: str (Optional)
         """
         Model.__init__(self, name=name)
@@ -160,7 +160,7 @@ class ConditionalLatentDeepGP(LatentDeepGP):
         :param batch_size: int
             Size of the batch for stochastic optimization of the ELBO
         :param beta: float
-            Scaler of the latent's KL.
+            Scalar of the latent's KL.
         :param name: str (Optional)
         """
         Model.__init__(self, name=name)
