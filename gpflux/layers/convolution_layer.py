@@ -1,6 +1,6 @@
 # Copyright (C) PROWLER.io 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidentialimport numpy as np
+# Proprietary and confidential
 
 
 import numpy as np
@@ -15,9 +15,6 @@ from .layers import GPLayer
 
 
 def _check_input_output_shape(input_shape, output_shape, patch_size):
-    print('input_shape' , input_shape)
-    print('patch_size ', patch_size)
-
     width_check = (input_shape[0] - patch_size[0] + 1 == output_shape[0])
     height_check = (input_shape[1] - patch_size[1] + 1 == output_shape[1])
     return width_check and height_check
@@ -79,9 +76,8 @@ class ConvLayer(GPLayer):
         self.base_kernel_class = base_kernel_class
         self.patch_size= patch_size
 
-    def describe(self):
-        s = super().describe()
-        s += "\n\t+ Conv: patch {}, base_kern {}".\
-                format(self.patch_size, self.base_kernel_class.__name__)
-        return s
+    def __str__(self):
+        desc = "\n\t+ Conv: patch {}".format(self.patch_size)
+        desc += " base_kern {}".format(self.base_kernel_class.__name__)
+        return super().__str__() + desc
 

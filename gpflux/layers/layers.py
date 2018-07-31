@@ -1,6 +1,6 @@
 # Copyright (C) PROWLER.io 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidentialimport numpy as np
+# Proprietary and confidential
 
 
 import numpy as np
@@ -34,7 +34,7 @@ class BaseLayer(Parameterized):
         """ returns KL[q(U) || p(U)] """
         raise NotImplementedError()  # pragma: no cover
 
-    def describe(self):
+    def __str__(self):
         """ describes the key properties of a layer """
         raise NotImplementedError()  # pragma: no cover
 
@@ -105,9 +105,8 @@ class GPLayer(BaseLayer):
         return gauss_kl(self.q_mu, self.q_sqrt)
 
 
-    def describe(self):
+    def __str__(self):
         """ returns a string with the key properties of a GPlayer """
-
         return "GPLayer: kern {}, features {}, mean {}, L {}".\
                 format(self.kern.__class__.__name__,
                        self.feature.__class__.__name__,

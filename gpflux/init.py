@@ -1,6 +1,6 @@
 # Copyright (C) PROWLER.io 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
-# Proprietary and confidentialimport numpy as np
+# Proprietary and confidential
 
 
 import gpflow
@@ -23,9 +23,6 @@ class Initializer(object):
     def sample(self, shape):
         raise NotImplementedError()  # pragma: no cover
 
-# ----------------------
-# Actual implementations
-# ----------------------
 
 class PatchSamplerInitializer(Initializer):
 
