@@ -24,6 +24,10 @@ def test_deep_deconv_gp_setup_and_minimization():
     SVGP, Linear and Deconv Layer and checks if the model
     can be optimized.
     """
+
+    enc = gpflux.encoders.RecognitionNetwork(Data.LATENT_DIM, Data.D, [256, 256])
+    latent_layer = gpflux.layers.LatentVariableConcatLayer(Data.LATENT_DIM, encoder=enc)
+
     ### Decoder
     Z1 = np.random.randn(Data.M, Data.LATENT_DIM)
     feat1 = gpflow.features.InducingPoints(Z1)
@@ -38,9 +42,10 @@ def test_deep_deconv_gp_setup_and_minimization():
     layer3 = gpflux.layers.ConvLayer([30, 30], [28, 28], Data.M, [3, 3],
                                      inducing_patches_initializer=patch_init)
 
-    encoder = gpflux.GPflowEncoder(Data.D, Data.LATENT_DIM, [256, 256])
 
-    model = gpflux.LatentDeepGP(Data.X, encoder, [layer1, layer2, layer3])
+    model = gpflux.DeepGP(np.empty((Data.N, 0)),
+                          Data.X,
+                          layers=[latent_layer, layer1, layer2, layer3])
 
     # minimize
     likelihood_before_opt = model.compute_log_likelihood()
