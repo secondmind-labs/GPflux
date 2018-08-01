@@ -48,11 +48,11 @@ class RecognitionNetwork(Encoder):
                  name: Optional[str] = None):
         """
         Encoder that uses GPflow params to encode the features.
-        Creates a MLP from with input dimensions `input_dim` and produces
+        Creates an MLP with input dimensions `input_dim` and produces
         2 * `latent_dim` outputs.
         :param latent_dim: dimension of the latent variable
         :param input_dim: the MLP acts on data of `input_dim` dimensional
-        :param network_dims: dimenions of inner MLPs, e.g. [10, 20, 10]
+        :param network_dims: dimensions of inner MLPs, e.g. [10, 20, 10]
         :param activation_func: TensorFlow operation that can be used
             as non-linearity between the layers.
         """
