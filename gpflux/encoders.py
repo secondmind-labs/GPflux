@@ -3,13 +3,12 @@
 # Proprietary and confidential
 
 
+from typing import Callable, List, Optional
+
 import numpy as np
 import tensorflow as tf
-
-from typing import Callable, Optional, List
-
-from gpflow import settings, params_as_tensors, transforms, \
-                    Param, ParamList, Parameterized
+from gpflow import (Param, Parameterized, ParamList, params_as_tensors,
+                    settings, transforms)
 
 from .utils import xavier_weights
 
@@ -107,4 +106,3 @@ class DirectlyParameterized(Encoder):
     @params_as_tensors
     def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
         return self.mean, self.std
-

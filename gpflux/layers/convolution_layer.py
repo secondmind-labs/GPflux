@@ -3,14 +3,13 @@
 # Proprietary and confidential
 
 
-import numpy as np
-import gpflow
-
 from typing import List, Optional
+
+import gpflow
+import numpy as np
 
 from .. import init
 from ..convolution import ConvKernel, InducingPatch
-
 from .layers import GPLayer
 
 
@@ -80,4 +79,3 @@ class ConvLayer(GPLayer):
         desc = "\n\t+ Conv: patch {}".format(self.patch_size)
         desc += " base_kern {}".format(self.base_kernel_class.__name__)
         return super().__str__() + desc
-
