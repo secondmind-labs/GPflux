@@ -1,9 +1,15 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
+
 import gpflow
 import numpy as np
 
 from gpflow.kernels import RBF
 
 from sklearn.feature_extraction.image import extract_patches_2d
+
 
 class Initializer(object):
     """
@@ -17,9 +23,6 @@ class Initializer(object):
     def sample(self, shape):
         raise NotImplementedError()  # pragma: no cover
 
-# ----------------------
-# Actual implementations
-# ----------------------
 
 class PatchSamplerInitializer(Initializer):
 
@@ -75,7 +78,7 @@ class KernelStructureMixingMatrixInitializer(Initializer):
     """
 
     def __init__(self, kern=None):
-        self.kern = kern or RBF(2, variance=2.0)
+        self.kern = RBF(2, variance=2.0) if kern is None else kern
 
     def sample(self, shape):
         """

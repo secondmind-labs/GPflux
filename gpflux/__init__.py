@@ -1,15 +1,15 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 from __future__ import absolute_import
 
-from . import conditionals
-from . import convolution_kernel
-from . import inducing_patch
 from . import utils
 from . import init
+from . import encoders
 
+from . import convolution
 from . import layers
 
-from .models.encoders import Encoder, GPflowEncoder
 
-# Models
-from .models.latent_deep_gp import LatentDeepGP, ConditionalLatentDeepGP
-from .models.doubly_stochastic_deep_gp import DeepGP
+from .models.deep_gp import DeepGP

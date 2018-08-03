@@ -1,3 +1,8 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
+
 import numpy as np
 import gpflow
 import gpflux
@@ -17,12 +22,15 @@ class Data:
     PATCH_SIZE = [3, 3]
     BATCH_SIZE = 50
 
-def test_describe():
+def test_to_str():
     """
-    This test build a deep GP model consisting of 3 layers:
-    SVGP, Linear and Deconv Layer and checks if the model
-    can be optimized.
+    This test build a deep latent GP model consisting of 3 layers:
+    SVGP, Linear and Deconv Layer and check if __str__
+    functionality works as desired
     """
+
+    latent_layer = gpflux.layers.LatentVariableConcatLayer(Data.LATENT_DIM, Data.D)
+
     ### Decoder
     Z1 = np.random.randn(Data.M, Data.LATENT_DIM)
     feat1 = gpflow.features.InducingPoints(Z1)
@@ -37,13 +45,17 @@ def test_describe():
     layer3 = gpflux.layers.ConvLayer([30, 30], [28, 28], Data.M, [3, 3],
                                      inducing_patches_initializer=patch_init)
 
-    model = gpflux.LatentDeepGP(Data.X, Data.LATENT_DIM, [layer1, layer2, layer3])
+    model = gpflux.DeepGP(np.empty((Data.N, 0)),
+                          Data.X,
+                          layers=[latent_layer, layer1, layer2, layer3])
 
     description = model.describe()
     description = description.split('\n')
-    assert len(description) == 8
-    assert description[0] == "LatentDeepGP"
-    assert "GPLayer" in description[3]
-    assert "LinearLayer" in description[4]
-    assert "GPLayer" in description[5]
-    assert "Gaussian" in description[7]
+    assert len(description) == 9
+    assert description[0] == "DeepGP"
+    assert "LatentVariable" in description[3] \
+            and str(Data.LATENT_DIM) in description[3]
+    assert "GPLayer" in description[4]
+    assert "LinearLayer" in description[5]
+    assert "GPLayer" in description[6]
+    assert "Gaussian" in description[8]
