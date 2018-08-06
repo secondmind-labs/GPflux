@@ -4,7 +4,8 @@
 
 
 from .layers import GPLayer
-from .convolution_layer import ConvLayer, IndexedConvLayer
+from .convolution_layer import ConvLayer, IndexedConvLayer,\
+                                PoolingIndexedConvLayer
 from .perceptron_layer import PerceptronLayer
 from .linear_layer import LinearLayer
 from .latent_variable_layer import LatentVariableConcatLayer

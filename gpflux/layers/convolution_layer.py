@@ -9,10 +9,11 @@ import gpflow
 from typing import List, Optional, Union
 from gpflow import settings
 
+from .layers import GPLayer
 from .. import init
 from ..convolution import ConvKernel, InducingPatch, \
-                    IndexedConvKernel, IndexedInducingPatch
-from .layers import GPLayer
+                    IndexedConvKernel, IndexedInducingPatch, \
+                    PoolingIndexedConvKernel
 
 
 def _check_input_output_shape(input_shape, output_shape, patch_size):
@@ -142,7 +143,8 @@ class IndexedConvLayer(GPLayer):
             can also be a np.ndarray, if this is the case the patches_initializer param
             holds the inducing patches M x w x h
         """
-        assert num_filters == 1 and stride == 1  # TODO
+        # assert num_filters == 1 and stride == 1  # TODO
+        assert stride == 1  # TODO
         assert len(output_shape) == 2, "Index kernel defined over 2-dim indices"
         assert output_shape[0] == output_shape[1], "Square images are supported only"
 
@@ -169,7 +171,7 @@ class IndexedConvLayer(GPLayer):
         conv_kernel = ConvKernel(base_kernel, input_shape, patch_size, colour_channels=1)  # TODO add colour
         kernel = IndexedConvKernel(conv_kernel, index_kernel)
 
-        super().__init__(kernel, feature, num_latents=1,
+        super().__init__(kernel, feature, num_latents=num_filters,
                          q_mu=q_mu, q_sqrt=q_sqrt, mean_function=mean_function)
 
         # Save info for future self.describe() calls
@@ -178,7 +180,71 @@ class IndexedConvLayer(GPLayer):
         self.index_kernel_class = index_kernel_class
 
     def describe(self):
-        desc = "\n\t+ Conv: patch {}".format(self.patch_size)
+        desc = "\n\t+ Indexed Conv: patch {}".format(self.patch_size)
+        desc += " base_kern {}".format(self.base_kernel_class.__name__)
+        desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
+        return super().describe() + desc
+
+
+class PoolingIndexedConvLayer(IndexedConvLayer):
+
+    def __init__(self,
+                 input_shape: List,
+                 number_inducing: int,
+                 patch_size: List, *,
+                 stride: int = 1,
+                 num_filters: int = 1,
+                 q_mu: Optional[np.ndarray] = None,
+                 q_sqrt: Optional[np.ndarray] = None,
+                 mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
+                 base_kernel_class: type = gpflow.kernels.RBF,
+                 index_kernel_class: type = gpflow.kernels.RBF,
+                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] \
+                         = init.NormalInitializer()):
+        """
+        This layer constructs a Pooling Indexed Convolutional GP layer.
+        :input_shape: tuple
+            shape of the input images, W x H
+        :param patch_size: tuple
+            Shape of the patches (a.k.a kernel_size of filter_size)
+        :param number_inducing: int
+            Number of inducing patches, M
+
+        Optional:
+        :param stride: int
+            An integer specifying the strides of the convolution along the height and width.
+        :param num_filters: int
+            Number of filters in the convolution
+        :param q_mu and q_sqrt: np.ndarrays
+            Variatial posterior parameterisation.
+        :param patches_initializer: init.Initializer or np.ndarray
+            Instance of the class `init.Initializer` that initializes the inducing patches,
+            can also be a np.ndarray, if this is the case the patches_initializer param
+            holds the inducing patches M x w x h
+        """
+        output_shape = [input_shape[0] - patch_size[0] + 1,
+                        input_shape[1] - patch_size[1] + 1]
+
+        super().__init__(input_shape,
+                         output_shape,
+                         number_inducing,
+                         patch_size,
+                         stride=stride,
+                         num_filters=num_filters,
+                         q_mu=q_mu,
+                         q_sqrt=q_sqrt,
+                         mean_function=mean_function,
+                         base_kernel_class=base_kernel_class,
+                         index_kernel_class=index_kernel_class,
+                         patches_initializer=patches_initializer)
+
+        # Use the Pooling Index kernel instead of the normal Indexed one
+        self.kern = PoolingIndexedConvKernel(self.kern.conv_kernel,
+                                             self.kern.index_kernel)
+
+
+    def describe(self):
+        desc = "\n\t+ Pooling Indexed Conv: patch {}".format(self.patch_size)
         desc += " base_kern {}".format(self.base_kernel_class.__name__)
         desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
         return super().describe() + desc

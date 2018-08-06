@@ -3,5 +3,6 @@
 # Proprietary and confidential
 
 from . import conditionals
-from .convolution_kernel import ConvKernel, IndexedConvKernel
+from .convolution_kernel import ConvKernel, IndexedConvKernel, \
+                                PoolingIndexedConvKernel
 from .inducing_patch import InducingPatch, IndexedInducingPatch

@@ -136,3 +136,9 @@ class IndexedConvKernel(Mok):
         Kern.__init__(self, conv_kernel.input_dim + index_kernel.input_dim)
         self.conv_kernel = conv_kernel
         self.index_kernel = index_kernel
+
+
+class PoolingIndexedConvKernel(IndexedConvKernel):
+
+    def __init__(self, conv_kernel, index_kernel):
+        super().__init__(conv_kernel, index_kernel)
