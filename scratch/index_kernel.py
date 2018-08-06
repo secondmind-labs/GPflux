@@ -81,11 +81,9 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern):
 
     if dataset == "01":
         like = gpflow.likelihoods.Bernoulli()
-        like.variance = 0.05
         num_filters = 1
     else:
         like = gpflow.likelihoods.SoftMax(10)
-        like.variance = 0.05
         num_filters = 10
 
 
@@ -169,8 +167,9 @@ def setup_optimisation_and_run(model, tasks, adam_lr, iterations):
 def finish(X, Y, Xs, Ys, model, dataset):
     print(model)
     error_func = calc_binary_error if dataset == "01" else calc_multiclass_error
-    print("error test", error_func(model, Xs, Ys, full=True))
-    print("error train", error_func(model, X, Y, full=True))
+    error_func = get_error_cb(model, Xs, Ys, error_func, full=True)
+    print("error test", error_func())
+    print("error train", error_func())
 
 @ex.automain
 def main():
