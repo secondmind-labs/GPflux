@@ -41,3 +41,34 @@ def get_error_cb(model, Xs, Ys, error_func, full=False, Ns=500):
             xs, ys = Xs[:Ns], Ys[:Ns]
         return error_func(model, xs, ys, batchsize=50)
     return error_cb
+
+
+# import inspect
+
+# def generate_experiment_name(f):
+#     """
+#     Generates a string based on the name of the arguments
+#     and the value they have.
+#     Eg.
+
+#     ```
+#     @generate_experiment_name
+#     def experiment_name(a, b, c):
+#         pass
+
+#     experiment_name(4, 6, 7)
+#     # returns: a_4_b_6_c_7
+#     ```
+#     """
+
+#     def wrapper(*args, **kwargs):
+
+#         args_name = inspect.getargspec(f)[0]
+#         name_and_args = []
+#         for k, v in zip(args_name, args):
+#             name_and_args.append(str(k))
+#             name_and_args.append(str(v))
+
+#         return "_".join(name_and_args)
+
+#     return wrapper
