@@ -116,8 +116,8 @@ class IndexedConvLayer(GPLayer):
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
-                 base_kernel_class: type = gpflow.kernels.RBF,
-                 index_kernel_class: type = gpflow.kernels.RBF,
+                 # base_kernel_class: type = gpflow.kernels.RBF,
+                 # index_kernel_class: type = gpflow.kernels.RBF,
                  patches_initializer: Optional[Union[np.ndarray, init.Initializer]] \
                          = init.NormalInitializer()):
         """
@@ -165,6 +165,8 @@ class IndexedConvLayer(GPLayer):
         inducing_patches = InducingPatch(init_patches)
         feature = IndexedInducingPatch(inducing_patches, inducing_indices)
 
+        base_kernel_class = gpflow.kernels.RBF
+        index_kernel_class = gpflow.kernels.RBF
         # Construct kernel
         index_kernel = index_kernel_class(len(output_shape), lengthscales=10.)
         base_kernel = base_kernel_class(np.prod(patch_size))  # TODO: we are using the default kernel hyps
@@ -175,14 +177,14 @@ class IndexedConvLayer(GPLayer):
                          q_mu=q_mu, q_sqrt=q_sqrt, mean_function=mean_function)
 
         # Save info for future self.describe() calls
-        self.base_kernel_class = base_kernel_class
+        # self.base_kernel_class = base_kernel_class
         self.patch_size= patch_size
-        self.index_kernel_class = index_kernel_class
+        # self.index_kernel_class = index_kernel_class
 
     def describe(self):
         desc = "\n\t+ Indexed Conv: patch {}".format(self.patch_size)
-        desc += " base_kern {}".format(self.base_kernel_class.__name__)
-        desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
+        # desc += " base_kern {}".format(self.base_kernel_class.__name__)
+        # desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
         return super().describe() + desc
 
 
@@ -197,8 +199,8 @@ class PoolingIndexedConvLayer(IndexedConvLayer):
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
-                 base_kernel_class: type = gpflow.kernels.RBF,
-                 index_kernel_class: type = gpflow.kernels.RBF,
+                 # base_kernel_class: type = gpflow.kernels.RBF,
+                 # index_kernel_class: type = gpflow.kernels.RBF,
                  patches_initializer: Optional[Union[np.ndarray, init.Initializer]] \
                          = init.NormalInitializer()):
         """
@@ -234,8 +236,8 @@ class PoolingIndexedConvLayer(IndexedConvLayer):
                          q_mu=q_mu,
                          q_sqrt=q_sqrt,
                          mean_function=mean_function,
-                         base_kernel_class=base_kernel_class,
-                         index_kernel_class=index_kernel_class,
+                         # base_kernel_class=base_kernel_class,
+                         # index_kernel_class=index_kernel_class,
                          patches_initializer=patches_initializer)
 
         # Use the Pooling Index kernel instead of the normal Indexed one
@@ -245,6 +247,6 @@ class PoolingIndexedConvLayer(IndexedConvLayer):
 
     def describe(self):
         desc = "\n\t+ Pooling Indexed Conv: patch {}".format(self.patch_size)
-        desc += " base_kern {}".format(self.base_kernel_class.__name__)
-        desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
+        # desc += " base_kern {}".format(self.base_kernel_class.__name__)
+        # desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
         return super().describe() + desc

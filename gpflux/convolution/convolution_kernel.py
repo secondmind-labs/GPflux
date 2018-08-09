@@ -66,6 +66,7 @@ class ConvKernel(Mok):
         patches_r = tf.reshape(patches, [tf.shape(X)[0], self.colour_channels * shp[1] * shp[2], shp[3]])
         return tf.cast(patches_r, gpflow.settings.tf_float)
 
+    @gpflow.name_scope("conv_kernel_K")
     @gpflow.params_as_tensors
     def K(self, X, X2=None, full_output_cov=False):
         """
@@ -94,6 +95,7 @@ class ConvKernel(Mok):
                                  dtype=settings.float_type)  # P x N x N
 
 
+    @gpflow.name_scope("conv_kernel_K_diag")
     @gpflow.params_as_tensors
     def Kdiag(self, X, full_output_cov=False):
         Xp = self._get_patches(X)  # N x P x wh
@@ -118,12 +120,20 @@ class ConvKernel(Mok):
         return self.num_patches
 
     @property
+    def Hin(self):
+        return self.img_size[0]
+
+    @property
+    def Win(self):
+        return self.img_size[1]
+
+    @property
     def Hout(self):
-        return self.img_size[0] - self.patch_size[0] + 1
+        return self.Hin - self.patch_size[0] + 1
 
     @property
     def Wout(self):
-        return self.img_size[1] - self.patch_size[1] + 1
+        return self.Win - self.patch_size[1] + 1
 
     @gpflow.autoflow((gpflow.settings.tf_float,))
     def compute_patches(self, X):

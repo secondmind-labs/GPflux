@@ -43,6 +43,25 @@ def get_error_cb(model, Xs, Ys, error_func, full=False, Ns=500):
     return error_cb
 
 
+def trace(model, name):
+    from tensorflow.python.client import timeline
+
+    sess = model.enquire_session()
+    # adam_opt = gpflow.train.AdamOptimizer(learning_rate=0.01)
+    # adam_step = adam_opt.make_optimize_tensor(model, session=sess)
+    like = model.likelihood_tensor
+
+    with sess:
+        # add additional options to trace the session execution
+        options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+        sess.run(like, options=options, run_metadata=run_metadata)
+
+        # Create the Timeline object, and write it to a json file
+        fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+        chrome_trace = fetched_timeline.generate_chrome_trace_format()
+        with open(name, 'w') as f:
+            f.write(chrome_trace)
 # import inspect
 
 # def generate_experiment_name(f):
