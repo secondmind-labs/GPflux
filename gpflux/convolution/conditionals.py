@@ -17,6 +17,7 @@ from .convolution_kernel import ConvKernel, IndexedConvKernel, PoolingIndexedCon
 from .inducing_patch import InducingPatch, IndexedInducingPatch
 
 
+@gpflow.name_scope("Kuf")
 @dispatch(InducingPatch, ConvKernel, object)
 def Kuf(feat, kern, Xnew):
     """
@@ -33,36 +34,34 @@ def Kuf(feat, kern, Xnew):
     H, W = kern.Hin, kern.Win
     h, w = kern.patch_size[0], kern.patch_size[1]
     pad = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
-    print(P)
 
-    Xr = tf.cast(tf.reshape(Xnew, [N, H, W, C]), tf.float32)
-    XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1)), pad, padding="VALID")
+    # Xr = tf.cast(tf.reshape(Xnew, [N, H, W, C]), tf.float32)
+    Xr = tf.reshape(Xnew, [N, H, W, C])
+    XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1), dtype=Xr.dtype), pad, padding="VALID")
     XtX = tf.reshape(XtX, [N, P])  # N x P
 
     Z_filter = tf.transpose(tf.reshape(feat.Z, [M, h, w, 1]), [1, 2, 3, 0])  # h x w x 1 x M
-    Z_filter = tf.cast(Z_filter, tf.float32)
+    # Z_filter = tf.cast(Z_filter, tf.float32)
     XtZ = tf.nn.conv2d(Xr, Z_filter, pad, padding="VALID")  # N x H x W x M
     XtZ = tf.reshape(tf.transpose(XtZ, [0, 3, 1, 2]), [N, M, P])  # N x M x P
 
     ZtZ = tf.reduce_sum(feat.Z**2, axis=1)  # M
-    ZtZ = tf.cast(ZtZ, tf.float32)
+    # ZtZ = tf.cast(ZtZ, tf.float32)
 
     r = XtX[:, None, :] + ZtZ[None, :, None] - 2 * XtZ
-    r = tf.cast(r, tf.float64)
-    # r = tf.reshape(r, [-1, 1])
-    # K = kern.basekern.Kdiag(r, tf.zeros
-    K = kern.basekern.variance * tf.exp(-r / 2)
-    return tf.transpose(K, [1, 0, 2])[:, None, ...]
+    # r = tf.cast(r, tf.float64)
+    K = kern.basekern.Kr(r)
+    return tf.transpose(K, [1, 0, 2])[:, None, ...]  # M x L/1 x N x P
 
 
 
     # ZtZ = tf.nn.conv2d(Xr**2, tf.ones((5, 5, 1, 1)), [1, 1, 1, 1], padding="VALID") # N x H x W x O
 
-    # debug_kuf(feat, kern)
-    # Xp = kern._get_patches(Xnew)  # N x P x wh
-    # N, P = tf.shape(Xp)[0], tf.shape(Xp)[1]
-    # Kmn = kern.basekern.K(feat.Z, tf.reshape(Xp, (N * P, -1)))  # M x NP
-    # return tf.reshape(Kmn, (len(feat), 1, N, P))  # M x L/1 x N x P  TODO: add L
+    debug_kuf(feat, kern)
+    Xp = kern._get_patches(Xnew)  # N x P x wh
+    N, P = tf.shape(Xp)[0], tf.shape(Xp)[1]
+    Kmn = kern.basekern.K(feat.Z, tf.reshape(Xp, (N * P, -1)))  # M x NP
+    return tf.reshape(Kmn, (len(feat), 1, N, P))  # M x L/1 x N x P  TODO: add L
 
 
 @dispatch(InducingPatch, ConvKernel)

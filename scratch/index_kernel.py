@@ -11,7 +11,7 @@ from observations import mnist
 from utils import get_error_cb, calc_multiclass_error, calc_binary_error
 
 SUCCESS = 0
-NAME = "test"
+NAME = "mnist_new"
 ex = Experiment(NAME)
 
 
@@ -251,20 +251,33 @@ def finish(X, Y, Xs, Ys, model, dataset, basepath):
     _save(model, fn)
 
 
+@ex.capture
+def trace_run(model, sess, M, minibatch_size, adam_lr):
+
+    name =  f"M_{M}_N_{minibatch_size}_pyfunc"
+    from utils import trace
+
+    with sess:
+        like = model.likelihood_tensor
+        trace(like, sess, "trace_likelihood_{}.json".format(name))
+
+        adam_opt = gpflow.train.AdamOptimizer(learning_rate=0.01)
+        adam_step = adam_opt.make_optimize_tensor(model, session=sess)
+        trace(adam_step, sess, "trace_adam_{}.json".format(name))
+
 @ex.automain
 def main():
     X, Y, Xs, Ys = data()
 
     model = setup_model(X, Y)
     model.compile()
-
     sess = model.enquire_session()
     step = mon.create_global_step(sess)
 
-    restore_session(sess)
+    trace_run(model, sess)
+    return 0
 
-    # trace(model, 'timeline_likelihood_scoped.json')
-    # return 0
+    restore_session(sess)
 
     print(model)
     print("X", np.min(X), np.max(X))
