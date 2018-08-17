@@ -26,12 +26,12 @@ def test_num_outputs(conv_kernel):
     desired = 1 * (Data.W - Data.w + 1) * (Data.H - Data.h + 1)
     actual_1 = conv_kernel.num_patches
     actual_2 = conv_kernel.Hout * conv_kernel.Wout
-    assert desired == actual_1
-    assert desired == actual_2
+    np.testing.assert_equal(desired, actual_1)
+    np.testing.assert_equal(desired, actual_2)
 
 
 def test_patch_les(conv_kernel):
-    assert conv_kernel.patch_len == Data.w * Data.h
+    np.testing.assert_equal(conv_kernel.patch_len, Data.w * Data.h)
 
 
 def test_patch_extraction(conv_kernel):
@@ -49,8 +49,8 @@ def test_K(conv_kernel):
     images = np.ones((Data.N, Data.H * Data.W))
     output = conv_kernel.compute_K_symm(images)
 
-    assert output[0, 0, 0] == desired_value
-    assert output.shape == (conv_kernel.num_patches, Data.N, Data.N)
+    np.testing.assert_equal(output[0, 0, 0], desired_value)
+    np.testing.assert_array_equal(output.shape, [conv_kernel.num_patches, Data.N, Data.N])
 
 
 def test_K_diag(conv_kernel):
@@ -61,5 +61,5 @@ def test_K_diag(conv_kernel):
     images = np.ones((Data.N, Data.H * Data.W))
     output = conv_kernel.compute_Kdiag(images)
 
-    assert output[0, 0] == desired_value
-    assert output.shape == (Data.N, conv_kernel.num_patches)
+    np.testing.assert_equal(output[0, 0], desired_value)
+    np.testing.assert_array_equal(output.shape, [Data.N, conv_kernel.num_patches])

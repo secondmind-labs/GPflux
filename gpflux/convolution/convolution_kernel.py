@@ -11,7 +11,7 @@ from typing import List
 import gpflow
 
 from gpflow.multioutput.kernels import Mok
-from gpflow import params_as_tensors, settings
+from gpflow import params_as_tensors, settings, Param
 from gpflow.kernels import Kern
 
 
@@ -100,42 +100,42 @@ class ConvKernel(Mok):
     def Kdiag(self, X, full_output_cov=False):
         # assert full_output_cov == True
 
-        C = 1
-        assert C == 1
+        # C = 1
+        # assert C == 1
 
-        N = tf.shape(X)[0]
-        P = self.num_patches
-        H, W = self.Hin, self.Win
-        h, w = self.patch_size[0], self.patch_size[1]
-        pad = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
+        # N = tf.shape(X)[0]
+        # P = self.num_patches
+        # H, W = self.Hin, self.Win
+        # h, w = self.patch_size[0], self.patch_size[1]
+        # pad = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
 
-        # Xr = tf.cast(tf.reshape(X, [N, H, W, C]), tf.float32)
-        Xr = tf.reshape(X, [N, H, W, C])
-        XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1), dtype=Xr.dtype), pad, padding="VALID")
-        XptXp = tf.reshape(XtX, [N, P])  # N x P
-        # XptXp = tf.cast(XptXp, tf.float64)
+        # # Xr = tf.cast(tf.reshape(X, [N, H, W, C]), tf.float32)
+        # Xr = tf.reshape(X, [N, H, W, C])
+        # XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1), dtype=Xr.dtype), pad, padding="VALID")
+        # XptXp = tf.reshape(XtX, [N, P])  # N x P
+        # # XptXp = tf.cast(XptXp, tf.float64)
 
-        from .utils import tf_patch_inner_product
+        # # from .utils import tf_patch_inner_product
         # Xp = self._get_patches(X)  # N x P x wh
-        # Xp1Xp2 = tf.reduce_sum(tf.multiply(Xp[:, :, None, :], Xp[:, None, :, :], name="mulV"), axis=3)  # N x P x P
-        # Xp1Xp2 = tf.matmul(Xp, Xp, transpose_b=True, name="Xp1Xp2")
-        Xp1Xp2 = tf_patch_inner_product(Xr[..., 0], self.patch_size, name="my_patch_inner_prod")
-        # Xp1Xp2 = tf.map_fn(lambda x: tf.matmul(x, x, transpose_b=True, name="Xp1Xp2"), Xp)  # N x P x P
+        # # Xp1Xp2 = tf.reduce_sum(tf.multiply(Xp[:, :, None, :], Xp[:, None, :, :], name="mulV"), axis=3)  # N x P x P
+        # # Xp1Xp2 = tf.matmul(Xp, Xp, transpose_b=True, name="Xp1Xp2")
+        # # Xp1Xp2 = tf_patch_inner_product(Xr[..., 0], self.patch_size, name="my_patch_inner_prod")
+        # # Xp1Xp2 = tf.map_fn(lambda x: tf.matmul(x, x, transpose_b=True, name="Xp1Xp2"), Xp)  # N x P x P
 
-        r = tf.map_fn(lambda x: x[None, :] + x[:, None], XptXp, name="my_add1")
-        # r = tf.map_fn(lambda x: x[]tf.add(XptXp[:, :, None], XptXp[:, None, :], name="my_add1")
-        r = tf.add(r, -2 * Xp1Xp2, name="my_add2")
-        # r = tf.cast(r, tf.float64)
-        K = self.basekern.Kr(r)
-        return K  # N x P x P
+        # # r = tf.map_fn(lambda x: x[None, :] + x[:, None], XptXp, name="my_add1")
+        # r = tf.add(XptXp[:, :, None], XptXp[:, None, :], name="my_add1")
+        # r = tf.add(r, -2 * Xp1Xp2, name="my_add2")
+        # # r = tf.cast(r, tf.float64)
+        # K = self.basekern.Kr(r)
+        # return K  # N x P x P
         # return tf.transpose(K, [1, 0, 2])[:, None, ...]  # M x L/1 x N x P
 
 
-        # Xp = self._get_patches(X)  # N x P x wh
-        # if full_output_cov:
-        #     return tf.map_fn(lambda x: self.basekern.K(x), Xp)  # N x P x P
-        # else:
-        #     return tf.map_fn(lambda x: self.basekern.Kdiag(x), Xp)  # N x P
+        Xp = self._get_patches(X)  # N x P x wh
+        if full_output_cov:
+            return tf.map_fn(lambda x: self.basekern.K(x), Xp)  # N x P x P
+        else:
+            return tf.map_fn(lambda x: self.basekern.Kdiag(x), Xp)  # N x P
 
     @property
     def patch_len(self):
@@ -184,3 +184,5 @@ class PoolingIndexedConvKernel(IndexedConvKernel):
 
     def __init__(self, conv_kernel, index_kernel):
         super().__init__(conv_kernel, index_kernel)
+        self.weights = Param(np.ones([conv_kernel.num_outputs, 1]),
+                             dtype=settings.float_type)

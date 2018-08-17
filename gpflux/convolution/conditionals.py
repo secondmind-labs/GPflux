@@ -25,33 +25,33 @@ def Kuf(feat, kern, Xnew):
     :return:  M x L x N x P
     """
     # NHWC
-    C = 1
-    assert C == 1
+    # C = 1
+    # assert C == 1
 
-    N = tf.shape(Xnew)[0]
-    M = len(feat)
-    P = kern.num_patches
-    H, W = kern.Hin, kern.Win
-    h, w = kern.patch_size[0], kern.patch_size[1]
-    pad = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
+    # N = tf.shape(Xnew)[0]
+    # M = len(feat)
+    # P = kern.num_patches
+    # H, W = kern.Hin, kern.Win
+    # h, w = kern.patch_size[0], kern.patch_size[1]
+    # pad = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
 
-    # Xr = tf.cast(tf.reshape(Xnew, [N, H, W, C]), tf.float32)
-    Xr = tf.reshape(Xnew, [N, H, W, C])
-    XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1), dtype=Xr.dtype), pad, padding="VALID")
-    XtX = tf.reshape(XtX, [N, P])  # N x P
+    # # Xr = tf.cast(tf.reshape(Xnew, [N, H, W, C]), tf.float32)
+    # Xr = tf.reshape(Xnew, [N, H, W, C])
+    # XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1), dtype=Xr.dtype), pad, padding="VALID")
+    # XtX = tf.reshape(XtX, [N, P])  # N x P
 
-    Z_filter = tf.transpose(tf.reshape(feat.Z, [M, h, w, 1]), [1, 2, 3, 0])  # h x w x 1 x M
-    # Z_filter = tf.cast(Z_filter, tf.float32)
-    XtZ = tf.nn.conv2d(Xr, Z_filter, pad, padding="VALID")  # N x H x W x M
-    XtZ = tf.reshape(tf.transpose(XtZ, [0, 3, 1, 2]), [N, M, P])  # N x M x P
+    # Z_filter = tf.transpose(tf.reshape(feat.Z, [M, h, w, 1]), [1, 2, 3, 0])  # h x w x 1 x M
+    # # Z_filter = tf.cast(Z_filter, tf.float32)
+    # XtZ = tf.nn.conv2d(Xr, Z_filter, pad, padding="VALID")  # N x H x W x M
+    # XtZ = tf.reshape(tf.transpose(XtZ, [0, 3, 1, 2]), [N, M, P])  # N x M x P
 
-    ZtZ = tf.reduce_sum(feat.Z**2, axis=1)  # M
-    # ZtZ = tf.cast(ZtZ, tf.float32)
+    # ZtZ = tf.reduce_sum(feat.Z**2, axis=1)  # M
+    # # ZtZ = tf.cast(ZtZ, tf.float32)
 
-    r = XtX[:, None, :] + ZtZ[None, :, None] - 2 * XtZ
-    # r = tf.cast(r, tf.float64)
-    K = kern.basekern.Kr(r)
-    return tf.transpose(K, [1, 0, 2])[:, None, ...]  # M x L/1 x N x P
+    # r = XtX[:, None, :] + ZtZ[None, :, None] - 2 * XtZ
+    # # r = tf.cast(r, tf.float64)
+    # K = kern.basekern.Kr(r)
+    # return tf.transpose(K, [1, 0, 2])[:, None, ...]  # M x L/1 x N x P
 
 
 
@@ -176,7 +176,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                     in np.meshgrid(np.arange(H_out), np.arange(W_out))]).T  # P x 2
     IJ = IJ.astype(settings.float_type)  # (H_out * W_out) x 2 = P x 2
 
+    W = kern.weights  # P x 1
     Pmn = kern.index_kernel.K(feat.indices.Z, IJ)  # M x P
+    Pmn = Pmn * tf.transpose(W)  # M x P
     Kmn = Kuf(feat.patches, kern.conv_kernel, Xnew)  # M x L x N x P
     Kmn = Kmn * Pmn[:, None, None, :]  # M x L x N x P
 
@@ -186,7 +188,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     #     # Knn = Knn * Pnn[None, :, None, :]  # N x P x N x P
     #     Knn = kern.conv_kernel.K(Xnew, full_output_cov=full_output_cov)  # P x N x N
     # else:
-    Pnn = kern.index_kernel.K(IJ)  # P x P
+    WW = tf.matmul(W, W, transpose_b=True)  # P x P
+    Pnn = kern.index_kernel.K(IJ) * WW  # P x P
     Knn = kern.conv_kernel.Kdiag(Xnew, full_output_cov=True)  # N x P x P
     Knn = Knn * Pnn[None, :, :]  # N x P x P
 

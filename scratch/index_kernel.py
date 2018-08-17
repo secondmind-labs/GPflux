@@ -6,12 +6,12 @@ import numpy as np
 import tensorflow as tf
 
 from sacred import Experiment
-from observations import mnist
+from observations import mnist, cifar10
 
 from utils import get_error_cb, calc_multiclass_error, calc_binary_error
 
 SUCCESS = 0
-NAME = "mnist_new"
+NAME = "mnist_new3"
 ex = Experiment(NAME)
 
 
@@ -19,15 +19,15 @@ ex = Experiment(NAME)
 def config():
     dataset = "full"
     # number of inducing points
-    M = 500
+    M = 1000
     # adam learning rate
-    adam_lr = 0.01
+    adam_lr = "decay"
     # training iterations
-    iterations = int(2e3)
+    iterations = int(50000)
     # patch size
     patch_size = [5, 5]
     # path to save results
-    basepath = "/mnt/vincent/"
+    basepath = "./"
     # minibatch size
     minibatch_size = 100
 
@@ -39,34 +39,60 @@ def config():
     restore = False
 
     # print hz
-    hz = 10
+    hz = 50
     hz_slow = 500
 
 
 @ex.capture
-def data(basepath, dataset, normalize=True):
+def data(basepath, dataset):
 
-    path = os.path.join(basepath, "data")
-    data_dict = {"01": mnist, "full": mnist}
-    data_func = data_dict[dataset]
+    def general_preprocess(X, Y, Xs, Ys):
+        Y = Y.astype(int)
+        Ys = Ys.astype(int)
+        Y = Y.reshape(-1, 1)
+        Ys = Ys.reshape(-1, 1)
+        return X, Y, Xs, Ys
 
-    (X, Y), (Xs, Ys) = data_func(path)
-    Y = Y.astype(int)
-    Ys = Ys.astype(int)
-    Y = Y.reshape(-1, 1)
-    Ys = Ys.reshape(-1, 1)
-    alpha = 255. if normalize else 1.
-
-    if dataset == "01":
+    def preprocess_mnist01(X, Y, Xs, Ys):
         def filter_01(X, Y):
             lbls01 = np.logical_or(Y == 0, Y == 1).flatten()
             return X[lbls01, :], Y[lbls01, :]
 
         X, Y = filter_01(X, Y)
         Xs, Ys = filter_01(Xs, Ys)
-        return X/alpha, Y, Xs/alpha, Ys
-    else:
-        return X/alpha, Y, Xs/alpha, Ys
+        return X, Y, Xs, Ys
+
+    def preprocess_cifar(X, Y, Xs, Ys):
+        def rgb2gray(rgb):
+            rgb = np.transpose(rgb, [0, 2, 3, 1])
+            proj_matrix = [0.299, 0.587, 0.114]
+            return np.dot(rgb[...,:3], proj_matrix)
+
+        X = rgb2gray(X)
+        Xs = rgb2gray(Xs)
+        X = X.reshape(-1, 32**2)
+        Xs = Xs.reshape(-1, 32**2)
+        return X, Y, Xs, Ys
+
+    def preprocess_full(X, Y, Xs, Ys):
+        return X, Y, Xs, Ys
+
+    data_dict = {"01": mnist,
+                 "full": mnist,
+                 "cifar": cifar10}
+    preprocess_dict = {"01": preprocess_mnist01,
+                       "full": preprocess_full,
+                       "cifar": preprocess_cifar}
+
+    data_func = data_dict[dataset]
+    path = os.path.join(basepath, "data")
+    (X, Y), (Xs, Ys) = data_func(path)
+    X, Y, Xs, Ys = general_preprocess(X, Y, Xs, Ys)
+    preprocess_func = preprocess_dict[dataset]
+    X, Y, Xs, Ys = preprocess_func(X, Y, Xs, Ys)
+
+    alpha = 255.0
+    return X/alpha, Y, Xs/alpha, Ys
 
 
 
@@ -76,6 +102,7 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
     args = np.array(
         [
             dataset,
+            "W",
             "init_patches", init_patches,
             "kern", base_kern,
             "adam", adam_lr,
@@ -168,7 +195,7 @@ def setup_monitor_tasks(Xs, Ys, model, optimizer,
     tasks += [\
         mon.CheckpointTask(model_path)\
         .with_name('saver')\
-        .with_condition(mon.PeriodicIterationCondition(hz))]
+        .with_condition(mon.PeriodicIterationCondition(hz_slow))]
 
     tasks += [\
         mon.ModelToTensorBoardTask(fw, model)\
@@ -213,8 +240,8 @@ def setup_optimizer(model, global_step, adam_lr):
         lr = tf.train.exponential_decay(learning_rate=0.01,
                                         global_step=global_step,
                                         decay_steps=500,
-                                        decay_rate=.785,
-                                        staircase=True)
+                                        decay_rate=.95,
+                                        staircase=False)
     else:
         lr = adam_lr
 
@@ -254,7 +281,8 @@ def finish(X, Y, Xs, Ys, model, dataset, basepath):
 @ex.capture
 def trace_run(model, sess, M, minibatch_size, adam_lr):
 
-    name =  f"M_{M}_N_{minibatch_size}_pyfunc"
+    name =  "M_{}_N_{}_pyfunc_gpu".format(M, minibatch_size)
+    # name =  "test"
     from utils import trace
 
     with sess:
@@ -273,9 +301,6 @@ def main():
     model.compile()
     sess = model.enquire_session()
     step = mon.create_global_step(sess)
-
-    trace_run(model, sess)
-    return 0
 
     restore_session(sess)
 
