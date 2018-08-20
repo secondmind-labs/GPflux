@@ -73,8 +73,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     X, Y, Xs, Ys = data()
-    print(len(Xs))
-    exit(0)
 
     fn = args.filename
     model = gpflow.Saver().load(fn)
@@ -83,7 +81,9 @@ if __name__ == "__main__":
     print("Identifying missclassified images")
     Xm, Ym_true, Pm = get_misclassified_images(model, Xs, Ys)
 
+    print(len(Xm))
+
     # Ym = model.predict_y(Xm)[0]
     plot2(Xm[:100], Pm[:100], Ym_true[:100])
 
-    np.savez("tmpfile", Xm=Xm, Ym_true=Ym_true, Pm=Pm)
+    np.savez("weighted_conv_gp_results", Xm=Xm, Ym_true=Ym_true, Pm=Pm)
