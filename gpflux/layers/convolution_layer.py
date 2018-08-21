@@ -75,6 +75,8 @@ class ConvLayer(GPLayer):
             can also be a np.ndarray, if this is the case the patches_initializer param
             holds the inducing patches M x w x h
         """
+        raise NotImplementedError("Convolutional Layers are deprecated for the time being")
+
         assert num_filters == 1 and stride == 1  # TODO
 
         if not _check_input_output_shape(input_shape, output_shape, patch_size):
@@ -187,6 +189,21 @@ class IndexedConvLayer(GPLayer):
         # desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
         return super().describe() + desc
 
+    @params_as_tensors
+    def propagate(self, X, *, sampling=True, full_output_cov=False, full_cov=False, **kwargs):
+        """
+        :param X: N x P
+        """
+        if sampling:
+            sample = sample_conditional(X, self.feature, self.kern,
+                                        self.q_mu, q_sqrt=self.q_sqrt,
+                                        full_output_cov=True, white=True)
+            return sample + self.mean_function(X)  # N x P
+        else:
+            mean, var = conditional(X, self.feature, self.kern, self.q_mu,
+                                    q_sqrt=self.q_sqrt, full_cov=full_cov,
+                                    full_output_cov=full_output_cov, white=True)
+            return mean + self.mean_function(X), var  # N x P, variance depends on args
 
 class PoolingIndexedConvLayer(IndexedConvLayer):
 

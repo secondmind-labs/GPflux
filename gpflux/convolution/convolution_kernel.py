@@ -25,6 +25,8 @@ class ConvKernel(Mok):
                  basekern: gpflow.kernels.Kern,
                  img_size: List,
                  patch_size: List,
+                 pooling: int = 1,
+                 with_indexing: bool = False,
                  colour_channels: int = 1):
         """
         :param basekern: gpflow.Kernel that operates on the vectors of length w*h
@@ -38,6 +40,22 @@ class ConvKernel(Mok):
         self.colour_channels = colour_channels
         assert self.colour_channels == 1
 
+        self.pooling = pooling
+        self.with_indexing = with_indexing
+        if self.with_indexing:
+            self._setup_indices()
+            self.index_kernel = gpflow.kernels.RBF(len(img_size), lengthscales=3.0)
+
+    def _setup_indices(self):
+
+        # IJ: N x 2, cartesian product of output indices
+        H_out = self.img_size[0] - self.patch_size[0] + 1
+        W_out = self.img_size[1] - self.patch_size[1] + 1
+        IJ = np.vstack([x.flatten() \
+                        for x \
+                        in np.meshgrid(np.arange(H_out), np.arange(W_out))]).T  # P x 2
+        self.IJ = IJ.astype(settings.float_type)  # (H_out * W_out) x 2 = P x 2
+
     @gpflow.decors.params_as_tensors
     def _get_patches(self, X):
         """
@@ -46,17 +64,12 @@ class ConvKernel(Mok):
         :param X: N x (W*H*C)
         :return: Patches (N, num_patches, patch_size)
         """
-        # castX = tf.transpose(
-        #     tf.reshape(tf.cast(X, tf.float32, name="castX"), tf.stack([tf.shape(X)[0], -1, self.colour_channels])),
-        #     [0, 2, 1])
-        # castX = tf.cast(X, tf.float32, name="castX")
-
         # Roll the colour channel to the front, so it appears to `tf.extract_image_patches()` as separate images. Then
         # extract patches and reshape to have the first axis the same as the number of images. The separate patches will
         # then be in the second axis.
         castX = tf.transpose(tf.reshape(X, tf.stack([tf.shape(X)[0], -1, self.colour_channels])),
                              [0, 2, 1])
-        castX = tf.cast(castX, tf.float32, name="castX")
+        castX = tf.cast(castX, tf.float32)
         castX_r = tf.reshape(castX, [-1, self.img_size[0], self.img_size[1], 1], name="rX")
         patches = tf.extract_image_patches(castX_r,
                                            [1, self.patch_size[0], self.patch_size[1], 1],
@@ -64,7 +77,8 @@ class ConvKernel(Mok):
                                            [1, 1, 1, 1], "VALID")
         shp = tf.shape(patches)  # img x out_rows x out_cols
         patches_r = tf.reshape(patches, [tf.shape(X)[0], self.colour_channels * shp[1] * shp[2], shp[3]])
-        return tf.cast(patches_r, gpflow.settings.tf_float)
+        patches_r = tf.cast(patches_r, settings.float_type)
+        return patches_r
 
     @gpflow.name_scope("conv_kernel_K")
     @gpflow.params_as_tensors
@@ -73,6 +87,9 @@ class ConvKernel(Mok):
         :param X: 2 dimensional, N x (W*H)
         :param X2: 2 dimensional, N x (W*H)
         """
+        if pooling > 1 or with_indexing:
+            raise NotImplementedError
+
         Xp = self._get_patches(X)  # N x P x wh
         N = tf.shape(Xp)[0]
         P = tf.shape(Xp)[1]
@@ -82,6 +99,7 @@ class ConvKernel(Mok):
             N2 = tf.shape(Xp2)[0] if Xp2 is not None else N
             Xp = tf.reshape(Xp, (N * P, self.patch_len))  # NP x wh
             return tf.reshape(self.basekern.K(Xp, Xp2), (N, P, N2, P))  # N x P x N2 x P
+
         else:
             Xp_t = tf.transpose(Xp, [1, 0, 2])  # P x N x wh
             if X2 is not None:
@@ -98,44 +116,33 @@ class ConvKernel(Mok):
     @gpflow.name_scope("conv_kernel_K_diag")
     @gpflow.params_as_tensors
     def Kdiag(self, X, full_output_cov=False):
-        # assert full_output_cov == True
-
-        # C = 1
-        # assert C == 1
-
-        # N = tf.shape(X)[0]
-        # P = self.num_patches
-        # H, W = self.Hin, self.Win
-        # h, w = self.patch_size[0], self.patch_size[1]
-        # pad = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
-
-        # # Xr = tf.cast(tf.reshape(X, [N, H, W, C]), tf.float32)
-        # Xr = tf.reshape(X, [N, H, W, C])
-        # XtX = tf.nn.conv2d(Xr**2, tf.ones((h, w, C, 1), dtype=Xr.dtype), pad, padding="VALID")
-        # XptXp = tf.reshape(XtX, [N, P])  # N x P
-        # # XptXp = tf.cast(XptXp, tf.float64)
-
-        # # from .utils import tf_patch_inner_product
-        # Xp = self._get_patches(X)  # N x P x wh
-        # # Xp1Xp2 = tf.reduce_sum(tf.multiply(Xp[:, :, None, :], Xp[:, None, :, :], name="mulV"), axis=3)  # N x P x P
-        # # Xp1Xp2 = tf.matmul(Xp, Xp, transpose_b=True, name="Xp1Xp2")
-        # # Xp1Xp2 = tf_patch_inner_product(Xr[..., 0], self.patch_size, name="my_patch_inner_prod")
-        # # Xp1Xp2 = tf.map_fn(lambda x: tf.matmul(x, x, transpose_b=True, name="Xp1Xp2"), Xp)  # N x P x P
-
-        # # r = tf.map_fn(lambda x: x[None, :] + x[:, None], XptXp, name="my_add1")
-        # r = tf.add(XptXp[:, :, None], XptXp[:, None, :], name="my_add1")
-        # r = tf.add(r, -2 * Xp1Xp2, name="my_add2")
-        # # r = tf.cast(r, tf.float64)
-        # K = self.basekern.Kr(r)
-        # return K  # N x P x P
-        # return tf.transpose(K, [1, 0, 2])[:, None, ...]  # M x L/1 x N x P
-
-
         Xp = self._get_patches(X)  # N x P x wh
+
         if full_output_cov:
-            return tf.map_fn(lambda x: self.basekern.K(x), Xp)  # N x P x P
+            K = tf.map_fn(lambda x: self.basekern.K(x), Xp)  # N x P x P
+
+            if self.with_indexing:
+                print("with indexing")
+                Pij = self.index_kernel.K(self.IJ)  # P x P
+                K = K * Pij[None, :, :]  # N x P x P
+                print(K.shape)
+
+            if self.pooling > 1:
+                print("pooling", self.pooling)
+                K = tf.reshape(K, [-1, self.Hout, self.pooling, self.Wout, self.pooling,
+                                       self.Hout, self.pooling, self.Wout, self.pooling])
+                K = tf.reduce_sum(K, axis=[2, 4, 6, 8])
+                K = tf.reshape(K, [-1, self.Hout * self.Wout, self.Hout * self.Wout])
+                print(K.shape)
+
+            return K  # N x P' x P'
+
         else:
+            if pooling > 1 or with_indexing:
+                raise NotImplementedError
+
             return tf.map_fn(lambda x: self.basekern.Kdiag(x), Xp)  # N x P
+
 
     @property
     def patch_len(self):
@@ -143,9 +150,8 @@ class ConvKernel(Mok):
 
     @property
     def num_patches(self):
-        return ((self.img_size[0] - self.patch_size[0] + 1) *
-                (self.img_size[1] - self.patch_size[1] + 1) *
-                self.colour_channels)
+        # TODO(vincent): allow for C>1
+        return self.Hout * self.Wout * self.colour_channels
 
     @property
     def num_outputs(self):
@@ -161,28 +167,62 @@ class ConvKernel(Mok):
 
     @property
     def Hout(self):
-        return self.Hin - self.patch_size[0] + 1
+        Hout = self.Hin - self.patch_size[0] + 1
+        assert Hout % self.pooling == 0
+        return Hout // self.pooling
 
     @property
     def Wout(self):
-        return self.Win - self.patch_size[1] + 1
+        Wout = self.Win - self.patch_size[1] + 1
+        assert Wout % self.pooling == 0
+        return Wout // self.pooling
 
     @gpflow.autoflow((gpflow.settings.tf_float,))
     def compute_patches(self, X):
         return self._get_patches(X)
 
 
-class IndexedConvKernel(Mok):
+class WeightedSum_ConvKernel(ConvKernel):
 
-    def __init__(self, conv_kernel, index_kernel):
-        Kern.__init__(self, conv_kernel.input_dim + index_kernel.input_dim)
-        self.conv_kernel = conv_kernel
-        self.index_kernel = index_kernel
+    def __init__(self,
+                 basekern: gpflow.kernels.Kern,
+                 img_size: List,
+                 patch_size: List,
+                 pooling: int = 1,
+                 with_indexing: bool = False,
+                 colour_channels: int = 1):
 
+        super().__init__(basekern,
+                         img_size,
+                         patch_size,
+                         pooling,
+                         with_indexing,
+                         colour_channels)
 
-class PoolingIndexedConvKernel(IndexedConvKernel):
-
-    def __init__(self, conv_kernel, index_kernel):
-        super().__init__(conv_kernel, index_kernel)
         self.weights = Param(np.ones([conv_kernel.num_outputs, 1]),
-                             dtype=settings.float_type)
+                             dtype=settings.float_type)  # P x 1
+
+    @gpflow.params_as_tensors
+    def K(self, X, X2=None, full_output_cov=False):
+        """
+        :param X: 2 dimensional, N x (W*H)
+        :param X2: 2 dimensional, N x (W*H)
+        """
+        raise NotImplementedError
+
+    @gpflow.params_as_tensors
+    def Kdiag(self, X, full_output_cov=False):
+
+        K = super().Kdiag(X, full_output_cov)
+
+        W = tf.transpose(self.weights)  # 1 x P
+
+        if full_output_cov:
+            #  K is N x P x P
+            WtW = tf.matmul(W, W, transpose_a=True)  # P x P
+            K = K * WtW[None, :, :]  # N x P x P
+            K = tf.reduce_sum(K, axis=[1, 2], keepdims=False)  # N
+            K = K / self.num_outputs  ** 2 # N
+            return K
+        else:
+            raise NotImplementedError
