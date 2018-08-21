@@ -55,7 +55,7 @@ class DeepGP(Model):
 
         self.num_data = X.shape[0]
         self.layers = gpflow.ParamList(layers)
-        self.likelihood = likelihood or Gaussian()
+        self.likelihood = Gaussian() if likelihood is None else likelihood
 
         if (batch_size is not None) and (batch_size > 0) and (batch_size < X.shape[0]):
             self.X = Minibatch(X, batch_size=batch_size, seed=0)
@@ -66,21 +66,21 @@ class DeepGP(Model):
             self.Y = DataHolder(Y)
             self.scale = 1.0
 
-    def _get_Ws_iter(self, latent_var_mode : LatentVarMode, Ws=None) -> iter:
+    def _get_Ws_iter(self, latent_var_mode: LatentVarMode, Ws=None) -> iter:
         i = 0
         for layer in self.layers:
             if latent_var_mode == LatentVarMode.GIVEN and isinstance(layer, LatentVariableLayer):
 
                 # passing some fixed Ws, which are packed to a single tensor for ease of use with autoflow
                 assert isinstance(Ws, tf.Tensor)
-                d = layer.latent_variables_dim
+                d = layer.latent_dim
                 yield Ws[:, i:(i+d)]
                 i += d
             else:
                 yield None
 
     @params_as_tensors
-    def _build_decoder(self, Z, full_cov=False, full_cov_output=False,
+    def _build_decoder(self, Z, full_cov=False, full_output_cov=False,
                        Ws=None, latent_var_mode=LatentVarMode.POSTERIOR):
         """
         :param Z: N x W
@@ -94,14 +94,14 @@ class DeepGP(Model):
                                 sampling=True,
                                 W=W,
                                 latent_var_mode=latent_var_mode,
-                                full_output_cov=full_cov_output,
+                                full_output_cov=full_output_cov,
                                 full_cov=full_cov)
 
         return self.layers[-1].propagate(Z,
                                          sampling=False,
                                          W=next(Ws_iter),
                                          latent_var_mode=latent_var_mode,
-                                         full_output_cov=full_cov_output,
+                                         full_output_cov=full_output_cov,
                                          full_cov=full_cov)  #f_mean, f_var
 
     @params_as_tensors
@@ -133,8 +133,8 @@ class DeepGP(Model):
         return self._build_decoder(X, Ws=Ws, latent_var_mode=LatentVarMode.GIVEN)
 
     @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
-    def predict_f_with_Ws_full_cov_output(self, X, Ws):
-        return self._build_decoder(X, Ws=Ws, full_cov_output=True, latent_var_mode=LatentVarMode.GIVEN)
+    def predict_f_with_Ws_full_output_cov(self, X, Ws):
+        return self._build_decoder(X, Ws=Ws, full_output_cov=True, latent_var_mode=LatentVarMode.GIVEN)
 
     @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_cov(self, X, Ws):

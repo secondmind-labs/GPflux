@@ -15,14 +15,16 @@ from .utils import xavier_weights
 
 class Encoder(Parameterized):
     """
-    Produces the mean and covariance (log cholesky) of the
-    latent variable associated to a datapoint.
+    Abstract base class for an Encoder, which produces the mean and
+    variance (or [log-]standard deviation) of the latent variable
+    associated to a data point.
     """
+
     def __init__(self,
                  latent_dim: int,
                  name: Optional[str] = None):
         """
-        :param latent_dim: dimension of the latent variable
+        :param latent_dim: dimensionality of the latent variable
         """
         Parameterized.__init__(self, name=name)
         self.latent_dim = latent_dim
@@ -35,6 +37,7 @@ class Encoder(Parameterized):
         For this Encoder the function f is a NN.
         :return: N x latent_dim, N x latent_dim
         """
+        #TODO(vincent) doc string not appropriate for abstract base class - move to RecognitionNetwork?
         raise NotImplementedError()
 
 
@@ -42,7 +45,7 @@ class RecognitionNetwork(Encoder):
     def __init__(self,
                  latent_dim: int,
                  input_dim: int,
-                 network_dims: List,
+                 network_dims: List[int],
                  activation_func = None,
                  name: Optional[str] = None):
         """
@@ -50,16 +53,16 @@ class RecognitionNetwork(Encoder):
         Creates an MLP with input dimensions `input_dim` and produces
         2 * `latent_dim` outputs.
         :param latent_dim: dimension of the latent variable
-        :param input_dim: the MLP acts on data of `input_dim` dimensional
+        :param input_dim: the MLP acts on data of `input_dim` dimensions
         :param network_dims: dimensions of inner MLPs, e.g. [10, 20, 10]
         :param activation_func: TensorFlow operation that can be used
-            as non-linearity between the layers.
+            as non-linearity between the layers (default: tanh).
         """
         Encoder.__init__(self, latent_dim, name=name)
 
         self.input_dim = input_dim
         self.network_dims = network_dims
-        self.activation_func = activation_func or tf.nn.tanh
+        self.activation_func = tf.nn.tanh if activation_func is None else activation_func
         self._build_network()
 
     def _build_network(self):
@@ -84,11 +87,12 @@ class RecognitionNetwork(Encoder):
 
 class DirectlyParameterized(Encoder):
     """
-    No amortation is used, each datapoint element has an
-    associaten mean and variance of its latent variable.
+    No amortization is used; each datapoint element has an
+    associated mean and variance of its latent variable.
 
     IMPORTANT: Not compatible with minibatches
     """
+
     def __init__(self,
                  latent_dim: int,
                  num_data: int,
@@ -99,6 +103,9 @@ class DirectlyParameterized(Encoder):
         self.num_data = num_data
         if mean is None:
             mean = np.random.randn(num_data, latent_dim)
+        if mean.shape != (num_data, latent_dim):
+            raise ValueError("mean must have shape (num_data={}, latent_dim={})"
+                             .format(num_data, latent_dim))
         self.mean = Param(mean)
         self.std = Param(1e-5 * np.ones((num_data, latent_dim)),
                          transform=transforms.positive)

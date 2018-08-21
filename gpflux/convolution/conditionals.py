@@ -46,7 +46,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param Xnew: N x D
     :param f: M x L
     :param full_cov:
-    :param full_cov_output:
+    :param full_output_cov:
     :param q_sqrt: L x M  or L x M x M
     :param white:
     :return:

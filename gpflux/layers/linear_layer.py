@@ -31,9 +31,15 @@ class LinearLayer(BaseLayer):
 
         if weight is None:
             weight = xavier_weights(input_dim, output_dim)
+        if weight.shape != (input_dim, output_dim):
+            raise ValueError("weight must have shape (input_dim={}, output_dim={})"
+                             .format(input_dim, output_dim))
 
         if bias is None:
             bias = np.zeros((output_dim, ))
+        if bias.shape != (output_dim,):
+            raise ValueError("bias must have length equal to output_dim={}"
+                             .format(output_dim))
 
         self.weight = Param(weight)
         self.bias = Param(bias)

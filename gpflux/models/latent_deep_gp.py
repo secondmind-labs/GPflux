@@ -71,7 +71,7 @@ class LatentDeepGP(Model):
 
     def _build_decoder(self, 
                        Z: tf.Tensor, 
-                       full_cov_output: Optional[bool] = False) -> tf.Tensor:
+                       full_output_cov: Optional[bool] = False) -> tf.Tensor:
         """
         Propagates a single sample Z through the layers of the model.
         :param Z: N x W
@@ -82,7 +82,7 @@ class LatentDeepGP(Model):
             Z = layer.propagate(Z, sampling=True, full_output_cov=False, full_cov=False)
 
         f_mean, f_var = self.layers[-1].propagate(Z, sampling=False, full_cov=False,
-                                                  full_output_cov=full_cov_output)
+                                                  full_output_cov=full_output_cov)
         return f_mean, f_var
     
     @params_as_tensors
@@ -111,17 +111,17 @@ class LatentDeepGP(Model):
 
     @autoflow([float_type, [None, None]])
     def decode(self, Z):
-        mean, var = self._build_decoder(Z, full_cov_output=True)
+        mean, var = self._build_decoder(Z, full_output_cov=True)
         return mean, var  # N x P, N x P x P
 
     @autoflow([float_type, [None, None]])
     def sample(self, Z):
-        mean, var = self._build_decoder(Z, full_cov_output=True)  # N x P, N x P x P
+        mean, var = self._build_decoder(Z, full_output_cov=True)  # N x P, N x P x P
         return sample_mvn(mean, var, "full")  # N x P
 
     @autoflow([float_type, [None, None]])
     def decode_and_sample(self, Z):
-        mean, var = self._build_decoder(Z, full_cov_output=True)  # N x P, N x P x P
+        mean, var = self._build_decoder(Z, full_output_cov=True)  # N x P, N x P x P
         return mean, var, sample_mvn(mean, var, "full")  # N x P, N x P x P, N x P
 
     def describe(self):
@@ -223,7 +223,7 @@ class ConditionalLatentDeepGP(LatentDeepGP):
     def decode(self, Z):
         latent_sample = tf.random_normal([tf.shape(Z)[0], self.latent_dim], dtype=float_type)
         Z = tf.concat([Z, latent_sample], axis=1)
-        mean, var = self._build_decoder(Z, full_cov_output=False)
+        mean, var = self._build_decoder(Z, full_output_cov=False)
         # assert isinstance(self.model.likelihood, Gaussian)
         # var = var + self.likelihood.variance
         return mean, var  # N x P, N x P
@@ -242,7 +242,7 @@ class ConditionalLatentDeepGP(LatentDeepGP):
 
         def log_pdf_func(Z, X=None, Y=None):
             XZ = tf.concat([X, Z], axis=1)  # N x (D + L)
-            mean, var = self._build_decoder(XZ, full_cov_output=False)  # N x P, N x P
+            mean, var = self._build_decoder(XZ, full_output_cov=False)  # N x P, N x P
             logp = self.likelihood.predict_density(mean, var, Y)  # N x 1
             return logp
         

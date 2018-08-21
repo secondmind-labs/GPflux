@@ -26,7 +26,7 @@ class LatentVarMode(Enum):
     PRIOR = 1
 
     # we are dealing with the N observed data points,
-    # so we use the vatiational posterior
+    # so we use the variational posterior
     POSTERIOR = 2
 
     # for plotting purposes, it is useful to have a mechanism
@@ -38,20 +38,22 @@ class LatentVariableLayer(BaseLayer):
     """
     A latent variable layer, with amortized mean-field VI
 
-    The prior is N(0, 1), and inference is factorised N(a, b), where a, b come from
-    an encoder network.
+    The prior is N(0, 1), and the approximate posterior is factorized
+    into N(a, b), where a, b come from an encoder network.
 
     When propagating there are two possibilities:
     1) We're doing inference, so we use the variational distribution
     2) We're looking at test points, so we use the prior
     """
-    def __init__(self, latent_variables_dim, XY_dim=None, encoder=None):
+    #TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
+
+    def __init__(self, latent_dim, XY_dim=None, encoder=None):
         BaseLayer.__init__(self)
-        self.latent_variables_dim = latent_variables_dim
+        self.latent_dim = latent_dim
 
         if encoder is None:
             assert XY_dim, 'must pass XY_dim or else an encoder'
-            encoder = RecognitionNetwork(latent_variables_dim, XY_dim, [10, 10])
+            encoder = RecognitionNetwork(latent_dim, XY_dim, [10, 10])
 
         self.encoder = encoder
         self.is_encoded = False
@@ -62,6 +64,7 @@ class LatentVariableLayer(BaseLayer):
             q_mu, log_q_sqrt = self.encoder(XY)
             self.q_mu = q_mu
             self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
+            #TODO(vincent) document this hard-coded feature ^^^
             self.is_encoded = True
 
     def KL(self):
@@ -74,7 +77,7 @@ class LatentVariableLayer(BaseLayer):
     def __str__(self):
         return "{} with latent dim {}"\
                     .format(self.__class__.__name__,
-                            self.latent_variables_dim)
+                            self.latent_dim)
 
 
 class LatentVariableConcatLayer(LatentVariableLayer):
@@ -84,6 +87,7 @@ class LatentVariableConcatLayer(LatentVariableLayer):
     @params_as_tensors
     def propagate(self,
                   X,
+                  *,
                   sampling=True,
                   latent_var_mode=LatentVarMode.POSTERIOR,
                   W=None,
@@ -97,7 +101,7 @@ class LatentVariableConcatLayer(LatentVariableLayer):
                 W = self.q_mu + z * self.q_sqrt
 
             elif latent_var_mode == LatentVarMode.PRIOR:
-                W = tf.random_normal([tf.shape(X)[0], self.latent_variables_dim],
+                W = tf.random_normal([tf.shape(X)[0], self.latent_dim],
                                      dtype=settings.float_type)
 
             elif latent_var_mode == LatentVarMode.GIVEN:
@@ -114,8 +118,8 @@ class LatentVariableConcatLayer(LatentVariableLayer):
                 return XW_mean, XW_var
 
             elif latent_var_mode == LatentVarMode.PRIOR:
-                z = tf.zeros([tf.shape(X)[0], self.latent_variables_dim], dtype=settings.float_type)
-                o = tf.ones([tf.shape(X)[0], self.latent_variables_dim], dtype=settings.float_type)
+                z = tf.zeros([tf.shape(X)[0], self.latent_dim], dtype=settings.float_type)
+                o = tf.ones([tf.shape(X)[0], self.latent_dim], dtype=settings.float_type)
                 XW_mean = tf.concat([X, z], 1)
                 XW_var = tf.concat([tf.zeros_like(X), o])
                 return XW_mean, XW_var
