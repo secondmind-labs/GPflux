@@ -3,15 +3,14 @@
 # Proprietary and confidential
 
 
-import numpy as np
-import tensorflow as tf
-
 from typing import List
 
 import gpflow
+import numpy as np
+import tensorflow as tf
 
+from gpflow import params_as_tensors, params_as_tensors_for, settings, Param
 from gpflow.multioutput.kernels import Mok
-from gpflow import params_as_tensors, settings, Param
 from gpflow.kernels import Kern
 
 
@@ -30,8 +29,8 @@ class ConvKernel(Mok):
                  colour_channels: int = 1):
         """
         :param basekern: gpflow.Kernel that operates on the vectors of length w*h
-        :param img_size: tuple, W x H
-        :param patch_size: tuple, w x h
+        :param img_size: tuple, (WxH)
+        :param patch_size: tuple, (WxH)
         """
         gpflow.kernels.Kern.__init__(self, np.prod(img_size))
         self.img_size = img_size
