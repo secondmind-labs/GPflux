@@ -85,13 +85,11 @@ class ConvLayer(GPLayer):
         """
 
         if not _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
-            print("input_shape: ", input_shape)
-            print("output_shape: ", output_shape)
-            print("patch_size: ", patch_size)
             raise ValueError("The input, output and patch size are inconsistent in the ConvLayer. "
                              "The correct dimension should be: "
-                             "output = (input - patch_size + 1.) / pooling")
-
+                             "output = (input - patch_size + 1.) / pooling\n"
+                             "input_shape: {}\noutput_shape: {}\npatch_size: {}"
+                             .format(input_shape, output_shape, patch_size))
         # inducing patches
         if patches_initializer is None:
             patches_initializer = init.NormalInitializer()

@@ -84,15 +84,11 @@ class GPLayer(BaseLayer):
         :param X: N x P
         """
         if sampling:
-            print("sampling")
-            print("full_output_cov", full_output_cov)
             sample = sample_conditional(X, self.feature, self.kern,
                                         self.q_mu, q_sqrt=self.q_sqrt,
                                         full_output_cov=full_output_cov, white=True)
             return sample + self.mean_function(X)  # N x P
         else:
-            print("not sampling")
-            print("full_output_cov", full_output_cov)
             mean, var = conditional(X, self.feature, self.kern, self.q_mu,
                                     q_sqrt=self.q_sqrt, full_cov=full_cov,
                                     full_output_cov=full_output_cov, white=True)

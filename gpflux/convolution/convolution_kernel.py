@@ -121,18 +121,14 @@ class ConvKernel(Mok):
             K = tf.map_fn(lambda x: self.basekern.K(x), Xp)  # N x P x P
 
             if self.with_indexing:
-                print("with indexing")
                 Pij = self.index_kernel.K(self.IJ)  # P x P
                 K = K * Pij[None, :, :]  # N x P x P
-                print(K.shape)
 
             if self.pooling > 1:
-                print("pooling", self.pooling)
                 K = tf.reshape(K, [-1, self.Hout, self.pooling, self.Wout, self.pooling,
                                        self.Hout, self.pooling, self.Wout, self.pooling])
                 K = tf.reduce_sum(K, axis=[2, 4, 6, 8])
                 K = tf.reshape(K, [-1, self.Hout * self.Wout, self.Hout * self.Wout])
-                print(K.shape)
 
             return K  # N x P' x P'
 
