@@ -11,13 +11,13 @@ from observations import mnist, cifar10
 from utils import get_error_cb, calc_multiclass_error, calc_binary_error
 
 SUCCESS = 0
-NAME = "mnist_new3"
+NAME = "mnist"
 ex = Experiment(NAME)
 
 
 @ex.config
 def config():
-    dataset = "full"
+    dataset = "mnist"
     # number of inducing points
     M = 1000
     # adam learning rate
@@ -32,6 +32,12 @@ def config():
     minibatch_size = 100
 
     base_kern = "RBF"
+
+    # weighted sum
+    with_weights = False
+
+    # indexing
+    with_indexing = False
 
     # init patches
     init_patches = "patches-unique" # 'patches', 'random'
@@ -77,11 +83,11 @@ def data(basepath, dataset):
     def preprocess_full(X, Y, Xs, Ys):
         return X, Y, Xs, Ys
 
-    data_dict = {"01": mnist,
-                 "full": mnist,
+    data_dict = {"mnist01": mnist,
+                 "mnist": mnist,
                  "cifar": cifar10}
-    preprocess_dict = {"01": preprocess_mnist01,
-                       "full": preprocess_full,
+    preprocess_dict = {"mnist01": preprocess_mnist01,
+                       "mnist": preprocess_full,
                        "cifar": preprocess_cifar}
 
     data_func = data_dict[dataset]
@@ -98,11 +104,13 @@ def data(basepath, dataset):
 
 @ex.capture
 def experiment_name(adam_lr, M, minibatch_size, dataset,
-                    base_kern, init_patches, patch_size):
+                    base_kern, init_patches, patch_size,
+                    with_weights, with_indexing):
     args = np.array(
         [
             dataset,
-            "W",
+            "W", with_weights,
+            "I", with_indexing,
             "init_patches", init_patches,
             "kern", base_kern,
             "adam", adam_lr,
@@ -124,10 +132,10 @@ def restore_session(session, restore, basepath):
 @gpflow.defer_build()
 @ex.capture
 def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
-                init_patches, basepath, restore):
+                init_patches, basepath, restore, with_weights, with_indexing):
 
 
-    if dataset == "01":
+    if dataset == "mnist01":
         like = gpflow.likelihoods.Bernoulli()
         num_filters = 1
     else:
@@ -140,20 +148,22 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
         patches = gpflux.init.NormalInitializer()
     else:
         unique = init_patches == "patches-unique"
-        patches = gpflux.init.PatchSamplerInitializer(X[:100],
-                                                      width=H, height=H,
-                                                      unique=unique)
+        patches = gpflux.init.PatchSamplerInitializer(
+                        X[:100], width=H, height=H, unique=unique)
 
-    layer0 = gpflux.layers.PoolingIndexedConvLayer(
+    layer0 = gpflux.layers.WeightedSum_ConvLayer(
                             [H, H], M, patch_size,
-                            num_filters=num_filters,
+                            num_latents=num_filters,
+                            with_indexing=with_indexing,
+                            with_weights=with_weights,
                             patches_initializer=patches)
 
     # init kernel
-    layer0.kern.index_kernel.variance = 25.0
-    layer0.kern.conv_kernel.basekern.variance = 25.0
-    layer0.kern.conv_kernel.basekern.lengthscales = 1.2
-    layer0.kern.index_kernel.lengthscales = 3.0
+    if with_indexing:
+        layer0.kern.index_kernel.variance = 25.0
+        layer0.kern.index_kernel.lengthscales = 3.0
+    layer0.kern.basekern.variance = 25.0
+    layer0.kern.basekern.lengthscales = 1.2
 
     # break symmetry in variational parameters
     layer0.q_sqrt = layer0.q_sqrt.read_value()
@@ -209,7 +219,7 @@ def setup_monitor_tasks(Xs, Ys, model, optimizer,
         .with_condition(mon.PeriodicIterationCondition(hz))\
         .with_exit_condition(True)]
 
-    error_func = calc_binary_error if dataset == "01" \
+    error_func = calc_binary_error if dataset == "mnist01" \
                     else calc_multiclass_error
 
     f1 = get_error_cb(model, Xs, Ys, error_func)
@@ -237,11 +247,12 @@ def setup_optimizer(model, global_step, adam_lr):
 
     if adam_lr == "decay":
         print("decaying lr")
-        lr = tf.train.exponential_decay(learning_rate=0.01,
-                                        global_step=global_step,
-                                        decay_steps=500,
-                                        decay_rate=.95,
-                                        staircase=False)
+        lr = 0.01 * 1.0 / (1 + global_step // 5000 / 3)
+        # lr = tf.train.exponential_decay(learning_rate=0.01,
+        #                                 global_step=global_step,
+        #                                 decay_steps=500,
+        #                                 decay_rate=.95,
+        #                                 staircase=False)
     else:
         lr = adam_lr
 
@@ -268,7 +279,7 @@ def _save(model, filename):
 @ex.capture
 def finish(X, Y, Xs, Ys, model, dataset, basepath):
     print(model)
-    error_func = calc_binary_error if dataset == "01" \
+    error_func = calc_binary_error if dataset == "mnist01" \
                     else calc_multiclass_error
     error_func = get_error_cb(model, Xs, Ys, error_func, full=True)
     print("error test", error_func())

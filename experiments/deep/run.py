@@ -126,13 +126,6 @@ def restore_session(session, restore, basepath):
 def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
                 init_patches, basepath, restore):
 
-
-    # layer0.kern.index_kernel.variance = 25.0
-    # layer0.kern.conv_kernel.basekern.variance = 25.0
-    # layer0.kern.conv_kernel.basekern.lengthscales = 1.2
-    # layer0.kern.index_kernel.lengthscales = 3.0
-
-
     H = int(X.shape[1]**.5)
 
     ## layer 0: indexed conv patch 5x5
@@ -150,8 +143,6 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
     kernel0.index_kernel.variance=30.0
     layer0 = gpflux.layers.GPLayer(kernel0, feature0, num_latents=1)
 
-    layer0.q_sqrt = layer0.q_sqrt.read_value() * 0.1
-    layer0.q_mu = np.random.randn(*(layer0.q_mu.read_value().shape))
 
     ## layer 1: indexed conv patch 3x3
     patches1 = np.random.randn(M, np.prod([3, 3]))
@@ -169,6 +160,28 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
 
     layer1.q_sqrt = layer1.q_sqrt.read_value() * 0.1
     layer1.q_mu = np.random.randn(*(layer1.q_mu.read_value().shape))
+
+    ### Equivalent layers in written with ConvLayers
+    # layer0 = gpflux.layers.ConvLayer([28, 28], [12, 12], M, [5, 5],
+    #                                  num_latents=1,
+    #                                  pooling=2,
+    #                                  with_indexing=True)
+    # layer0.q_sqrt = layer0.q_sqrt.read_value() * 0.1
+    # layer0.q_mu = np.random.randn(*(layer0.q_mu.read_value().shape))
+    # layer0.kern.index_kernel.variance = 30.0
+    # layer0.kern.basekern.variance = 30.0
+    # layer0.kern.basekern.lengthscales = 1.5
+
+
+    # layer1 = gpflux.layers.ConvLayer([12, 12], [5, 5], M, [3, 3],
+    #                                  num_latents=1,
+    #                                  pooling=2,
+    #                                  with_indexing=True)
+    # layer1.q_sqrt = layer1.q_sqrt.read_value() * 0.1
+    # layer1.q_mu = np.random.randn(*(layer1.q_mu.read_value().shape))
+    # layer1.kern.index_kernel.variance = 30.0
+    # layer1.kern.basekern.variance = 30.0
+    # layer1.kern.basekern.lengthscales = 1.5
 
 
     ## layer 2: fully connected

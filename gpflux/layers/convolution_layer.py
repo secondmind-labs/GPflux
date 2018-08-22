@@ -3,7 +3,7 @@
 # Proprietary and confidential
 
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import gpflow
 import numpy as np
@@ -83,7 +83,6 @@ class ConvLayer(GPLayer):
             can also be a np.ndarray, if this is the case the patches_initializer param
             holds the inducing patches M x w x h
         """
-        raise NotImplementedError("Convolutional Layers are deprecated for the time being")
 
         if not _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
             print("input_shape: ", input_shape)
@@ -146,6 +145,7 @@ class WeightedSum_ConvLayer(ConvLayer):
                  num_latents: int = 1,
                  *,
                  with_indexing: bool = False,
+                 with_weights: bool = False,
                  pooling: int = 1,
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
@@ -165,7 +165,7 @@ class WeightedSum_ConvLayer(ConvLayer):
                          patch_size,
                          num_latents,
                          with_indexing=with_indexing,
-                         padding=padding,
+                         pooling=pooling,
                          q_mu=q_mu,
                          q_sqrt=q_sqrt,
                          mean_function=mean_function,
@@ -177,11 +177,12 @@ class WeightedSum_ConvLayer(ConvLayer):
         else:
             assert base_kernel.input_dim == np.prod(patch_size)
 
-        kern = WeightedSum_ConvKernel(base_kernel,
+        self.kern = WeightedSum_ConvKernel(base_kernel,
                                       img_size=input_shape,
                                       patch_size=patch_size,
                                       pooling=pooling,
-                                      with_indexing=with_indexing)
+                                      with_indexing=with_indexing,
+                                      with_weights=with_weights)
 
     def describe(self):
         desc = "\nWeighted"

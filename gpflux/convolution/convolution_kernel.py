@@ -86,7 +86,7 @@ class ConvKernel(Mok):
         :param X: 2 dimensional, N x (W*H)
         :param X2: 2 dimensional, N x (W*H)
         """
-        if pooling > 1 or with_indexing:
+        if self.pooling > 1 or self.with_indexing:
             raise NotImplementedError
 
         Xp = self._get_patches(X)  # N x P x wh
@@ -137,7 +137,7 @@ class ConvKernel(Mok):
             return K  # N x P' x P'
 
         else:
-            if pooling > 1 or with_indexing:
+            if self.pooling > 1 or self.with_indexing:
                 raise NotImplementedError
 
             return tf.map_fn(lambda x: self.basekern.Kdiag(x), Xp)  # N x P
@@ -189,6 +189,7 @@ class WeightedSum_ConvKernel(ConvKernel):
                  patch_size: List,
                  pooling: int = 1,
                  with_indexing: bool = False,
+                 with_weights: bool = False,
                  colour_channels: int = 1):
 
         super().__init__(basekern,
@@ -198,8 +199,13 @@ class WeightedSum_ConvKernel(ConvKernel):
                          with_indexing,
                          colour_channels)
 
-        self.weights = Param(np.ones([conv_kernel.num_outputs, 1]),
-                             dtype=settings.float_type)  # P x 1
+        self.with_weights = with_weights
+
+        weights = np.ones([self.num_outputs], dtype=settings.float_type)  # P
+        if with_weights:
+            self.weights = Param(weights)  # P
+        else:
+            self.weights = weights  # P
 
     @gpflow.params_as_tensors
     def K(self, X, X2=None, full_output_cov=False):
@@ -214,11 +220,9 @@ class WeightedSum_ConvKernel(ConvKernel):
 
         K = super().Kdiag(X, full_output_cov)
 
-        W = tf.transpose(self.weights)  # 1 x P
-
         if full_output_cov:
             #  K is N x P x P
-            WtW = tf.matmul(W, W, transpose_a=True)  # P x P
+            WtW = self.weights[:, None] * self.weights[None, :]  # P x P
             K = K * WtW[None, :, :]  # N x P x P
             K = tf.reduce_sum(K, axis=[1, 2], keepdims=False)  # N
             K = K / self.num_outputs  ** 2 # N
