@@ -15,6 +15,7 @@ from gpflow.multioutput.features import debug_kuf, debug_kuu
 
 from .convolution_kernel import ConvKernel, IndexedConvKernel, PoolingIndexedConvKernel
 from .inducing_patch import InducingPatch, IndexedInducingPatch
+from ..conv_square_dists import make_proper_name_for_me
 
 
 @gpflow.name_scope("Kuf")
@@ -27,39 +28,16 @@ def Kuf(feat, kern, Xnew):
 
     assert kern.colour_channels == 1
     C = kern.colour_channels
-
     N = tf.shape(Xnew)[0]
-    M = len(feat)
-    P = kern.num_patches
     H, W = kern.Hin, kern.Win
-    h, w = kern.patch_size
+    image_shape = (N, H, W, C)
 
-    # strides = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
-    # Xr = tf.reshape(Xnew, [N, H, W, C])
-    # ones_kernel = tf.ones((h, w, C, 1), dtype=Xr.dtype)
-    # XtX = tf.nn.conv2d(Xr ** 2, ones_kernel, strides, padding="VALID")
-    # XtX = tf.reshape(XtX, [N, P])  # NxP
+    Xr = tf.reshape(Xnew, image_shape)
+    Z = feat.Z
 
-    # Z_filter = tf.transpose(tf.reshape(feat.Z, [M, h, w, 1]), [1, 2, 3, 0])  # hxwx1xM
-    # # Z_filter = tf.cast(Z_filter, tf.float32)
-    # XtZ = tf.nn.conv2d(Xr, Z_filter, pad, padding="VALID")  # NxPhxPwxM
-    # XtZ = tf.reshape(tf.transpose(XtZ, [0, 3, 1, 2]), [N, M, P])  # NxMxP
-
-    # ZtZ = tf.reduce_sum(feat.Z**2, axis=1)  # M
-    # # ZtZ = tf.cast(ZtZ, tf.float32)
-
-    # r = XtX[:, None, :] + ZtZ[None, :, None] - 2 * XtZ
-    # # r = tf.cast(r, tf.float64)
-    # K = kern.basekern.Kr(r)
-    # return tf.transpose(K, [1, 0, 2])[:, None, ...]  # MxL/1xNxP
-
-    # ZtZ = tf.nn.conv2d(Xr**2, tf.ones((5, 5, 1, 1)), [1, 1, 1, 1], padding="VALID") # NxHxWxO
-
-    debug_kuf(feat, kern)
-    Xp = kern._get_patches(Xnew)  # NxPxwh
-    N, P = tf.shape(Xp)[0], tf.shape(Xp)[1]
-    Kmn = kern.basekern.K(feat.Z, tf.reshape(Xp, (N * P, -1)))  # MxNP
-    return tf.reshape(Kmn, (len(feat), 1, N, P))  # MxL/1xNxP  TODO: add L
+    dist = make_proper_name_for_me(Xr, Z, kern.patch_size, image_shape)
+    K = kern.basekern.K_r2(dist)
+    return tf.transpose(K, [1, 0, 2])[:, None, ...]  # MxL/1xNxP
 
 
 @dispatch(InducingPatch, ConvKernel)

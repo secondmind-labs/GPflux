@@ -12,9 +12,9 @@ from gpflow import Param, params_as_tensors, settings
 from gpflow.kernels import Kern
 from gpflow.multioutput.kernels import Mok
 
-from ..conv_square_dists import (diag_conv_dist_squared,
-                                 full_conv_dist_squared,
-                                 patchwise_conv_dist_squared)
+from ..conv_square_dists import (diag_conv_square_dist,
+                                 full_conv_square_dist,
+                                 patchwise_conv_square_dist)
 
 
 class ConvKernel(Mok):
@@ -57,9 +57,9 @@ class ConvKernel(Mok):
         X2 = X if X2 is None else tf.reshape(X2 / lengthscales, (-1, H, W, C))
 
         if full_output_cov:
-            dist = full_conv_dist_squared(X, X2, self.patch_size)  # NxPxN2xP
+            dist = full_conv_square_dist(X, X2, self.patch_size)  # NxPxN2xP
         else:
-            dist = patchwise_conv_dist_squared(X, X2, self.patch_size)  # PxNxN
+            dist = patchwise_conv_square_dist(X, X2, self.patch_size)  # PxNxN
 
         dist = tf.squeeze(dist)  # TODO: get rid of colour channel dimension. Assumes that only C is 1.
         return self.basekern.K_r2(dist)  # NxPxN2xP
@@ -79,7 +79,7 @@ class ConvKernel(Mok):
         X = tf.reshape(X, (-1, H, W, C))
         # TODO(@awav): works only for stationary non-ARD case
         # Oterwise, you need divide Ximg by lengthscales before passing it to dotconv (and use back_prop)
-        dist = diag_conv_dist_squared(X, self.patch_size, back_prop=False)  # NxPxPx1
+        dist = diag_conv_square_dist(X, self.patch_size, back_prop=False)  # NxPxPx1
         dist = tf.squeeze(dist, axis=[3])
 
         dist /= self.basekern.lengthscales ** 2

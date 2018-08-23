@@ -5,9 +5,10 @@ import tensorflow as tf
 
 
 __all__ = [
-    'diag_conv_dist_squared',
-    'full_conv_dist_squared',
-    'pathwise_conv_dist_squared',
+    'diag_conv_square_dist',
+    'full_conv_square_dist',
+    'pathwise_conv_square_dist',
+    'make_proper_name_for_me'
 ]
 
 Int = Union[tf.Tensor, int]
@@ -19,8 +20,28 @@ padding = 'VALID'
 strides = (1, 1, 1, 1)
 
 
-def diag_conv_dist_squared(A: tf.Tensor, filter_shape: FilterShape,
-                           **map_kwargs) -> tf.Tensor:
+def make_proper_name_for_me(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape, image_shape: ImageShape) -> tf.Tensor:
+    h, w = filter_shape
+    M = tf.shape(B)[0]
+    N, H, W, C = image_shape
+    P = _grid_patch_size(H, W, filter_shape)
+    dtype = A.dtype
+
+    B_filter = tf.transpose(tf.reshape(B, (M, h, w, C)), [1, 2, 3, 0])  # hxwx1xM
+    ones = tf.ones((h, w, C, 1), dtype=dtype)
+    AtA = tf.nn.conv2d(A ** 2, ones, strides, padding)
+    AtA = tf.reshape(AtA, (N, P))  # NxP
+
+    ABt = tf.nn.conv2d(A, B_filter, strides, padding)  # NxPhxPwxM
+    ABt = tf.reshape(tf.transpose(ABt, [0, 3, 1, 2]), (N, M, P))  # NxMxP
+
+    BtB = tf.reduce_sum(B ** 2, axis=1)  # M
+
+    return -2 * ABt + AtA[:, None, :] + BtB[None, :, None]
+
+
+def diag_conv_square_dist(A: tf.Tensor, filter_shape: FilterShape,
+                          **map_kwargs) -> tf.Tensor:
     asserts = _input_tensor_asserts(A)
     with tf.control_dependencies(asserts):
         image_shape = _image_shape(A)
@@ -30,7 +51,7 @@ def diag_conv_dist_squared(A: tf.Tensor, filter_shape: FilterShape,
     return -2 * AAt + AtA[:, :, None, :] + AtA[:, None, :, :]
 
 
-def full_conv_dist_squared(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
+def full_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
                            **map_kwargs) -> tf.Tensor:
     """
     Args:
@@ -49,7 +70,7 @@ def full_conv_dist_squared(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape
     return -2 * ABt + AtA[:, :, None, None, :] + BtB[None, None, :, :, :]
 
 
-def patchwise_conv_dist_squared(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
+def patchwise_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
                                 **map_kwargs) -> tf.Tensor:
     """
     Args:
