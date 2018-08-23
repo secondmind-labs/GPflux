@@ -44,9 +44,9 @@ def full_conv_dist_squared(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape
     with tf.control_dependencies(asserts):
         image_shape = _image_shape(A)
 
-    AtA, BtB = self_inner_prod(A, B, image_shape, filter_shape)
-    ABt = full_conv_inner_prod(A, B, filter_shape, **map_kwargs)
-    return -2 * ABt + AtA[None, :, None, :, :] + BtB[:, None, :, None, :]
+    AtA, BtB = self_inner_prod(A, B, image_shape, filter_shape)  # NxPxC, NxPxC
+    ABt = full_conv_inner_prod(A, B, filter_shape, **map_kwargs)  # NxPxNxPxC
+    return -2 * ABt + AtA[:, :, None, None, :] + BtB[None, None, :, :, :]
 
 
 def patchwise_conv_dist_squared(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
@@ -64,8 +64,10 @@ def patchwise_conv_dist_squared(A: tf.Tensor, B: tf.Tensor, filter_shape: Filter
         image_shape = _image_shape(A)
 
     AtA, BtB = self_inner_prod(A, B, image_shape, filter_shape)
+    AtA = tf.transpose(AtA, [1, 0, 2])
+    BtB = AtA if AtA is BtB else tf.transpose(BtB, [1, 0, 2])
     ABt = patchwise_conv_inner_prod(A, B, filter_shape, **map_kwargs)
-    return -2 * ABt + AtA[:, None, :, :] + BtB[:, :, None, :]
+    return -2 * ABt + AtA[:, :, None, :] + BtB[:, None, :, :]
 
 
 ### Inner products
@@ -138,9 +140,9 @@ def full_conv_inner_prod(A: tf.Tensor,
     P = _grid_patch_size(H, W, filter_shape)
 
     def fn(idx: tf.Tensor) -> tf.Tensor:
-        kernel = _extract_kernel(B, idx, filter_shape, Ph, Pw)  # NxhxwxC
+        kernel = _extract_kernel(A, idx, filter_shape, Ph, Pw)  # NxhxwxC
         kernel = tf.transpose(kernel, [1, 2, 3, 0])  # hxwxCxN
-        return tf.nn.depthwise_conv2d(A, kernel, strides, padding)
+        return tf.nn.depthwise_conv2d(B, kernel, strides, padding)
 
     result = _map_indices(fn, P,
                           swap_memory=swap_memory,
@@ -148,7 +150,7 @@ def full_conv_inner_prod(A: tf.Tensor,
                           back_prop=back_prop, dtype=A.dtype)  # PxNxPhxPwx(C*N)
 
     result = tf.reshape(result, [P, N, P, C, N])
-    return tf.transpose(result, [0, 1, 2, 4, 3])  # PxNxPxNxC
+    return tf.transpose(result, [4, 0, 1, 2, 3])  # NxPxNxPxC
 
 
 def patchwise_conv_inner_prod(A: tf.Tensor,
@@ -243,9 +245,10 @@ def _extract_kernel(A: tf.Tensor,
                     filter_shape: FilterShape,
                     height: Int,
                     width: Int) -> tf.Tensor:
-    sh, sw = idx // width, idx % width
     h, w = filter_shape
-    return A[:, sh:(sh + h), sw:(sw + w), :]
+    sh, sw = idx // width, idx % width
+    eh, ew = sh + h, sw + w
+    return A[:, sh:eh, sw:ew, :]
 
 
 def _grid_patch_shape(H: Int, W: Int, filter_shape: FilterShape) -> Tuple[Int, Int]:

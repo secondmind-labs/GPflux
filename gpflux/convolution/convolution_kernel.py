@@ -62,7 +62,7 @@ class ConvKernel(Mok):
             dist = patchwise_conv_dist_squared(X, X2, self.patch_size)  # PxNxN
 
         dist = tf.squeeze(dist)  # TODO: get rid of colour channel dimension. Assumes that only C is 1.
-        return self.basekern.K_r(dist)  # NxPxN2xP
+        return self.basekern.K_r2(dist)  # NxPxN2xP
 
 
     @gpflow.name_scope("conv_kernel_K_diag")
@@ -87,7 +87,7 @@ class ConvKernel(Mok):
         if not full_output_cov:
             Xr = tf.matrix_diag_part(dist)  # NxP
 
-        return self.basekern.K_r(dist)
+        return self.basekern.K_r2(dist)
 
     @property
     def patch_len(self):

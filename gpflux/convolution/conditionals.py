@@ -26,18 +26,18 @@ def Kuf(feat, kern, Xnew):
     """
 
     assert kern.colour_channels == 1
-    C = self.colour_channels
+    C = kern.colour_channels
 
     N = tf.shape(Xnew)[0]
     M = len(feat)
     P = kern.num_patches
     H, W = kern.Hin, kern.Win
     h, w = kern.patch_size
-    strides = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
 
-    Xr = tf.reshape(Xnew, [N, H, W, C])
-    ones_kernel = tf.ones((h, w, C, 1), dtype=Xr.dtype)
-    XtX = tf.nn.conv2d(Xr ** 2, ones_kernel, strides, padding="VALID")
+    # strides = [1, 1, 1, 1]  # TODO(VD) add striding from kernel
+    # Xr = tf.reshape(Xnew, [N, H, W, C])
+    # ones_kernel = tf.ones((h, w, C, 1), dtype=Xr.dtype)
+    # XtX = tf.nn.conv2d(Xr ** 2, ones_kernel, strides, padding="VALID")
     # XtX = tf.reshape(XtX, [N, P])  # NxP
 
     # Z_filter = tf.transpose(tf.reshape(feat.Z, [M, h, w, 1]), [1, 2, 3, 0])  # hxwx1xM
