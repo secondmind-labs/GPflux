@@ -8,49 +8,71 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow import settings
-from gpflow.dispatch import conditional, dispatch
+from gpflow.dispatch import conditional, dispatch, sample_conditional
 from gpflow.multioutput.conditionals import independent_interdomain_conditional
-from gpflow.conditionals import base_conditional
+from gpflow.conditionals import base_conditional, _sample_mvn
 from gpflow.multioutput.features import debug_kuf, debug_kuu
 
-from .convolution_kernel import ConvKernel, IndexedConvKernel, PoolingIndexedConvKernel
+from .convolution_kernel import ConvKernel, WeightedSum_ConvKernel
 from .inducing_patch import InducingPatch, IndexedInducingPatch
 from ..conv_square_dists import image_patch_conv_square_dist
 
 
-@gpflow.name_scope("Kuf")
+# -------------------------------------
+# (Indexed)InducingPatch and ConvKernel
+# -------------------------------------
+
 @dispatch(InducingPatch, ConvKernel, object)
+@gpflow.name_scope("Kuf_InducingPatch_ConvKernel")
 def Kuf(feat, kern, Xnew):
     """
     :param Xnew: NxWH
     :return:  MxLxNxP
     """
+    debug_kuf(feat, kern)
 
     assert kern.colour_channels == 1
     C = kern.colour_channels
-    N = tf.shape(Xnew)[0]
-    H, W = kern.Hin, kern.Win
-    image_shape = (N, H, W, C)
-
-    Xr = tf.reshape(Xnew, image_shape)
+    H, W = kern.image_shape
+    X = tf.reshape(Xnew, [-1, H, W, C])
+    N = tf.shape(X)[0]
     Z = feat.Z
+    M = len(feat)
 
-    dist = image_patch_conv_square_dist(Xr, Z, kern.patch_size, image_shape) # NxMxP
-    K = kern.basekern.K_r2(dist)
-    return tf.transpose(K, [1, 0, 2])[:, None, ...]  # MxL/1xNxP
+    dist = image_patch_conv_square_dist(X, Z, kern.patch_size) # NxMxP
+    Kmn = kern.basekern.K_r2(dist)
+    Kmn = tf.squeeze(Kmn)  # TODO: get rid of colour channel dimension; it assumes that C is 1.
+
+    if kern.with_indexing:
+        if not isinstance(feat, IndexedInducingPatch):
+            raise ValueError("When kern is configured with "
+                             "`with_indexing` a IndexedInducingPatch "
+                             "should be used")
+
+        Pmn = kern.index_kernel.K(feat.indices, kern.IJ)  # MxP
+        Kmn = Kmn * Pmn[:, None, :]  # MxNxP
+
+    if kern.pooling > 1:
+        Kmn = tf.reshape(Kmn, [M, N, kern.Hout, kern.pooling, kern.Wout, kern.pooling])
+        Kmn = tf.reduce_sum(Kmn, axis=[3, 5])  # MxNxP'
+
+    return tf.reshape(Kmn, [M, 1, N, kern.num_patches])  # MxL/1xNxP  TODO: add L
 
 
 @dispatch(InducingPatch, ConvKernel)
+@gpflow.name_scope("Kuu_InducingPatch_ConvKernel")
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = kern.basekern.K(feat.Z)  # MxM
-    jittermat = jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)  # MxM
+    jittermat = jitter * tf.eye(len(feat), dtype=Kmm.dtype)  # MxM
     return (Kmm + jittermat)[None, :, :]  # L/1xMxM  TODO: add L
 
+    if kern.with_indexing:
+        Pmm = kern.index_kernel.K(feat.indices)  # MxM
+        Kmm = Kmm * Pmm
 
-# ------------
-# Condtitional
-# ------------
+    return (Kmm + jittermat)[None, :, :]  # L/1xMxM  TODO: add L
+
 
 @conditional.register(object, InducingPatch, ConvKernel, object)
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
@@ -77,7 +99,38 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                                                q_sqrt=q_sqrt, white=white)
 
 
-@conditional.register(object, IndexedInducingPatch, IndexedConvKernel, object)
+@sample_conditional.register(object, InducingPatch, ConvKernel, object)
+@gpflow.name_scope("sample_conditional")
+def _sample_conditional(Xnew, feat, kern, f, *, q_sqrt=None, white=False, **kwargs):
+    settings.logger().debug("sample conditional: InducingPatch, ConvKernel")
+    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=True, q_sqrt=q_sqrt, white=white)  # NxP, NxPxP
+    sample = _sample_mvn(mean, var, cov_structure="full")
+    return sample
+
+# -------------------------------------------------
+# (Indexed)InducingPatch and WeightedSum_ConvKernel
+# -------------------------------------------------
+
+@dispatch(InducingPatch, WeightedSum_ConvKernel, object)
+@gpflow.name_scope("Kuu_InducingPatch_WeightedSum_ConvKernel")
+def Kuf(feat, kern, Xnew):
+    debug_kuf(feat, kern)
+    Kuf_func = Kuf.dispatch(InducingPatch, ConvKernel, object)
+    Kmn = Kuf_func(feat, kern, Xnew)[:, 0, :, :]  # MxNxP
+    Kmn = tf.einsum("mnp,p->mn", Kmn, kern.weights)
+    return Kmn / kern.num_patches  # MxN
+
+
+@dispatch(InducingPatch, WeightedSum_ConvKernel)
+@gpflow.name_scope("Kuu_InducingPatch_WeightedSum_ConvKernel")
+def Kuu(feat, kern, *, jitter=0.0):
+    debug_kuu(feat, kern, jitter)
+    Kuu_func = Kuu.dispatch(InducingPatch, ConvKernel)
+    Kmm = Kuu_func(feat, kern, jitter=jitter)
+    return Kmm[0, ...]  # MxM
+
+
+@conditional.register(object, InducingPatch, WeightedSum_ConvKernel, object)
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     :param Xnew: NxD
@@ -88,91 +141,12 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param white:
     :return:
     """
-    settings.logger().debug("conditional: IndexedInducingPatch -- IndexedConvKernel ")
+    settings.logger().debug("Conditional: InducingPatch, WeightedSum_ConvKernel")
+    Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # MxM
+    Kmn = Kuf(feat, kern, Xnew)  # MxN
+    Knn = kern.K(Xnew, full_output_cov=True) if full_cov else kern.Kdiag(Xnew, full_output_cov=True)
 
-    Pmm = kern.index_kernel.K(feat.indices.Z)  # MxM
-    Kmm2 = Kuu(feat.patches, kern.conv_kernel, jitter=settings.numerics.jitter_level) # LxMxM
-    Kmm = Kmm2 * Pmm[None, ...]  # LxMxM
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
+                                   q_sqrt=q_sqrt, white=white)  # NxR,  RxNxN or NxR
+    return fmean, fvar
 
-    # IJ: Nx2, cartesian product of output indices
-    H_out = kern.conv_kernel.Hout
-    W_out = kern.conv_kernel.Wout
-    IJ = np.vstack([x.flatten() \
-                    for x\
-                    in np.meshgrid(np.arange(H_out), np.arange(W_out))]).T  # Px2
-    IJ = IJ.astype(settings.float_type)  # (H_out * W_out)x2 = Px2
-
-    Pmn = kern.index_kernel.K(feat.indices.Z, IJ)  # MxP
-    Kmn = Kuf(feat.patches, kern.conv_kernel, Xnew)  # MxLxNxP
-    Kmn = Kmn * Pmn[:, None, None, :]  # MxLxNxP
-
-    # Pnn = kern.index_kernel.K(IJ)  # PxP
-    Pnn = kern.index_kernel.Kdiag(IJ)  # P
-    if full_cov:
-        # Knn = kern.conv_kernel.K(Xnew, full_output_cov=True)  # NxPxNxP
-        # Knn = Knn * Pnn[None, :, None, :]  # NxPxNxP
-        Knn = kern.conv_kernel.K(Xnew, full_output_cov=full_output_cov)  # PxNxN
-    else:
-        # Knn = kern.conv_kernel.Kdiag(Xnew, full_output_cov=True)  # NxPxP
-        # Knn = Knn * Pnn[None, :, :]  # NxPxP
-        Knn = kern.conv_kernel.Kdiag(Xnew, full_output_cov=full_output_cov)  # NxP
-        Knn = Knn * Pnn[None, :]  # NxP
-
-    m, v = independent_interdomain_conditional(Kmn, Kmm, Knn, f,
-                                               full_cov=full_cov,
-                                               full_output_cov=full_output_cov,
-                                               q_sqrt=q_sqrt, white=white)
-    return m, v  # NxP, NxP
-
-
-@conditional.register(object, IndexedInducingPatch, PoolingIndexedConvKernel, object)
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
-    """
-    :param Xnew: NxD
-    :param f: MxL
-    :param full_cov:
-    :param full_cov_output:
-    :param q_sqrt: LxM  or LxMxM
-    :param white:
-    :return:
-    """
-    # assert full_cov_output == False and full_cov == False
-
-    settings.logger().debug("conditional: IndexedInducingPatch -- PullingIndexedConvKernel ")
-
-    Pmm = kern.index_kernel.K(feat.indices.Z)  # MxM
-    Kmm2 = Kuu(feat.patches, kern.conv_kernel, jitter=settings.numerics.jitter_level) # LxMxM
-    Kmm = Kmm2 * Pmm[None, ...]  # LxMxM
-
-    # IJ: Nx2, cartesian product of output indices
-    H_out = kern.conv_kernel.Hout
-    W_out = kern.conv_kernel.Wout
-    IJ = np.vstack([x.flatten() \
-                    for x\
-                    in np.meshgrid(np.arange(H_out), np.arange(W_out))]).T  # Px2
-    IJ = IJ.astype(settings.float_type)  # (H_out * W_out)x2 = Px2
-
-    W = kern.weights  # Px1
-    Pmn = kern.index_kernel.K(feat.indices.Z, IJ)  # MxP
-    Pmn = Pmn * tf.transpose(W)  # MxP
-    Kmn = Kuf(feat.patches, kern.conv_kernel, Xnew)  # MxLxNxP
-    Kmn = Kmn * Pmn[:, None, None, :]  # MxLxNxP
-
-    # Pnn = kern.index_kernel.Kdiag(IJ)  # P
-    # if full_cov:
-    #     # Knn = kern.conv_kernel.K(Xnew, full_output_cov=True)  # NxPxNxP
-    #     # Knn = Knn * Pnn[None, :, None, :]  # NxPxNxP
-    #     Knn = kern.conv_kernel.K(Xnew, full_output_cov=full_output_cov)  # PxNxN
-    # else:
-    WW = tf.matmul(W, W, transpose_b=True)  # PxP
-    Pnn = kern.index_kernel.K(IJ) * WW  # PxP
-    Knn = kern.conv_kernel.Kdiag(Xnew, full_output_cov=True)  # NxPxP
-    Knn = Knn * Pnn[None, :, :]  # NxPxP
-
-    Kmn = tf.reduce_sum(Kmn, axis=3, keepdims=True)  # MxLxNx1
-    Kmn = Kmn[:, 0, :, 0] / kern.conv_kernel.num_patches  # MxN
-    Knn = tf.reduce_sum(Knn, axis=[1, 2], keepdims=False)  # N
-    Knn = Knn / kern.conv_kernel.num_patches  ** 2 # N
-    Kmm = Kmm[0, ...]  # MxM
-
-    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)

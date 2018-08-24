@@ -3,27 +3,30 @@
 # Proprietary and confidential
 
 
-import numpy as np
-import gpflow
-
 from typing import List, Optional, Union
-from gpflow import settings
-from gpflow.mean_functions import MeanFunction
+
+import gpflow
+import numpy as np
 
 from .layers import GPLayer
 from .. import init
-from ..convolution import ConvKernel, InducingPatch, \
-                    IndexedConvKernel, IndexedInducingPatch, \
-                    PoolingIndexedConvKernel
+from ..convolution import ConvKernel, WeightedSum_ConvKernel
+from ..convolution import InducingPatch, IndexedInducingPatch
 
 
-Initializer = Union[np.ndarray, init.Initializer]
+def _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
 
+    if (input_shape[0] - patch_size[0] + 1) % pooling != 0:
+        return False
+    if (input_shape[1] - patch_size[1] + 1) % pooling != 0:
+        return False
+    if ((input_shape[0] - patch_size[0] + 1) / pooling) != output_shape[0]:
+        return False
+    if ((input_shape[1] - patch_size[1] + 1) / pooling) != output_shape[1]:
+        return False
 
-def _check_input_output_shape(input_shape, output_shape, patch_size):
-    width_check = (input_shape[0] - patch_size[0] + 1 == output_shape[0])
-    height_check = (input_shape[1] - patch_size[1] + 1 == output_shape[1])
-    return width_check and height_check
+    return True
+
 
 
 def _from_patches_initializer_to_patches(initializer, shape):
@@ -47,14 +50,16 @@ class ConvLayer(GPLayer):
                  input_shape: List,
                  output_shape: List,
                  number_inducing: int,
-                 patch_size: List, *,
-                 stride: int = 1,
-                 num_filters: int = 1,
+                 patch_size: List,
+                 num_latents: int = 1,
+                 *,
+                 with_indexing: bool = False,
+                 pooling: int = 1,
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
-                 mean_function: Optional[MeanFunction] = None,
-                 base_kernel_class: type = gpflow.kernels.RBF,
-                 patches_initializer: Optional[Initializer] = None):
+                 mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
+                 base_kernel: Optional[gpflow.kernels.Kern] = None,
+                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
         """
         This layer constructs a convolutional GP layer.
         :input_shape: tuple
@@ -67,191 +72,118 @@ class ConvLayer(GPLayer):
             Number of inducing patches, M
 
         Optional:
-        :param stride: int
-            An integer specifying the strides of the convolution along the height and width.
-        :param num_filters: int
-            Number of filters in the convolution
+        :param with_indexing: bool (default False)
+            Add translation invariant kernel
+        :param pooling: int (default 1: no pooling)
+            Number of patches that are being summed.
+            If pooling is 1 no summing of patches is happening
         :param q_mu and q_sqrt: np.ndarrays
             Variatial posterior parameterisation.
-        :param patches_initializer: init.Initializer or np.ndarray
+        :param patches_initializer: init.Initializer or np.ndarray (default: NormalInitializer)
             Instance of the class `init.Initializer` that initializes the inducing patches,
             can also be a np.ndarray, if this is the case the patches_initializer param
             holds the inducing patches M x w x h
         """
-        assert num_filters == 1 and stride == 1  # TODO
 
-        if not _check_input_output_shape(input_shape, output_shape, patch_size):
-            print("input_shape: ", input_shape)
-            print("output_shape: ", output_shape)
-            print("patch_size: ", patch_size)
+        if not _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
             raise ValueError("The input, output and patch size are inconsistent in the ConvLayer. "
-                             "The correct dimension should be: output = input - patch_size + 1.")
-
+                             "The correct dimension should be: "
+                             "output = (input - patch_size + 1.) / pooling\n"
+                             "input_shape: {}\noutput_shape: {}\npatch_size: {}"
+                             .format(input_shape, output_shape, patch_size))
         # inducing patches
+        if patches_initializer is None:
+            patches_initializer = init.NormalInitializer()
         shape = [number_inducing, *patch_size]  # tuple with values: M x w x h
-        init_patches = _from_patches_initializer_to_patches(patches_initializer, shape)  # M x w x h
-        inducing_patches = InducingPatch(init_patches)
+        patches = _from_patches_initializer_to_patches(patches_initializer, shape)  # M x w x h
 
-        base_kernel = base_kernel_class(np.prod(patch_size))  # TODO: we are using the default kernel hyps
-        conv_kernel = ConvKernel(base_kernel, input_shape, patch_size, colour_channels=1)  # TODO add colour
+        if with_indexing:
+            val = input_shape[0] - patch_size[0] + 1
+            indices = np.random.randint(0, val, size=[number_inducing, len(input_shape)])
+            indices = indices.astype(np.float64)
+            feat = IndexedInducingPatch(patches, indices)
+        else:
+            feat = InducingPatch(patches)
 
-        super().__init__(conv_kernel, inducing_patches, num_latents=1,
+        # Convolutional kernel
+        if base_kernel is None:
+            base_kernel = gpflow.kernels.RBF(np.prod(patch_size))
+        else:
+            assert base_kernel.input_dim == np.prod(patch_size)
+
+        kern = ConvKernel(base_kernel,
+                          img_size=input_shape,
+                          patch_size=patch_size,
+                          pooling=pooling,
+                          with_indexing=with_indexing)
+
+        super().__init__(kern, feat, num_latents=num_latents,
                          q_mu=q_mu, q_sqrt=q_sqrt, mean_function=mean_function)
 
-        self.base_kernel_class = base_kernel_class
+        self.with_indexing = with_indexing
+        self.pooling = pooling
+        self.base_kernel_type = base_kernel.__class__.__name__
         self.patch_size= patch_size
 
     def describe(self):
         desc = "\n\t+ Conv: patch {}".format(self.patch_size)
-        desc += " base_kern {}".format(self.base_kernel_class.__name__)
+        desc += " base_kern {}".format(self.base_kernel_type)
+        desc += " pooling {}".format(self.pooling)
+        if self.with_indexing:
+            desc += " with_indexing "
+
         return super().describe() + desc
 
 
-class IndexedConvLayer(GPLayer):
-
-    def __init__(self,
-                 input_shape: List,
-                 output_shape: List,
-                 number_inducing: int,
-                 patch_size: List, *,
-                 stride: int = 1,
-                 num_filters: int = 1,
-                 q_mu: Optional[np.ndarray] = None,
-                 q_sqrt: Optional[np.ndarray] = None,
-                 mean_function: Optional[MeanFunction] = None,
-                 # base_kernel_class: type = gpflow.kernels.RBF,
-                 # index_kernel_class: type = gpflow.kernels.RBF,
-                 patches_initializer: Optional[Initializer] = None):
-        """
-        This layer constructs a convolutional GP layer.
-        :input_shape: tuple
-            shape of the input images, W x H
-        :output_shape: tuple
-            shape of the output images
-        :param patch_size: tuple
-            Shape of the patches (a.k.a filter_shape of filter_size)
-        :param number_inducing: int
-            Number of inducing patches, M
-
-        Optional:
-        :param stride: int
-            An integer specifying the strides of the convolution along the height and width.
-        :param num_filters: int
-            Number of filters in the convolution
-        :param q_mu and q_sqrt: np.ndarrays
-            Variatial posterior parameterisation.
-        :param patches_initializer: init.Initializer or np.ndarray
-            Instance of the class `init.Initializer` that initializes the inducing patches,
-            can also be a np.ndarray, if this is the case the patches_initializer param
-            holds the inducing patches M x w x h
-        """
-        # assert num_filters == 1 and stride == 1  # TODO
-        assert stride == 1  # TODO
-        assert len(output_shape) == 2, "Index kernel defined over 2-dim indices"
-        assert output_shape[0] == output_shape[1], "Square images are supported only"
-
-        patches_initializer = patches_initializer or init.NormalInitializer()
-
-        if not _check_input_output_shape(input_shape, output_shape, patch_size):
-            print("input_shape:", input_shape)
-            print("output_shape:", output_shape)
-            print("patch_size:", patch_size)
-            raise ValueError("The input, output and patch size are inconsistent in the ConvLayer. "
-                             "The correct dimension should be: output = input - patch_size + 1.")
-
-        # Construct feature
-        Z_indices = np.random.randint(0,
-                                      output_shape[0],
-                                      size=(number_inducing, len(output_shape)))
-        inducing_indices = gpflow.features.InducingPoints(Z_indices)
-        shape = [number_inducing, *patch_size]  # tuple with values: M x w x h
-        init_patches = _from_patches_initializer_to_patches(patches_initializer, shape)  # M x w x h
-        inducing_patches = InducingPatch(init_patches)
-        feature = IndexedInducingPatch(inducing_patches, inducing_indices)
-
-        base_kernel_class = gpflow.kernels.RBF
-        index_kernel_class = gpflow.kernels.RBF
-        # Construct kernel
-        index_kernel = index_kernel_class(len(output_shape), lengthscales=10.)
-        base_kernel = base_kernel_class(np.prod(patch_size))  # TODO: we are using the default kernel hyps
-        conv_kernel = ConvKernel(base_kernel, input_shape, patch_size, colour_channels=1)  # TODO add colour
-        kernel = IndexedConvKernel(conv_kernel, index_kernel)
-
-        super().__init__(kernel, feature, num_latents=num_filters,
-                         q_mu=q_mu, q_sqrt=q_sqrt, mean_function=mean_function)
-
-        # Save info for future self.describe() calls
-        # self.base_kernel_class = base_kernel_class
-        self.patch_size= patch_size
-        # self.index_kernel_class = index_kernel_class
-
-    def describe(self):
-        desc = "\n\t+ Indexed Conv: patch {}".format(self.patch_size)
-        # desc += " base_kern {}".format(self.base_kernel_class.__name__)
-        # desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
-        return super().describe() + desc
-
-
-class PoolingIndexedConvLayer(IndexedConvLayer):
+class WeightedSum_ConvLayer(ConvLayer):
 
     def __init__(self,
                  input_shape: List,
                  number_inducing: int,
-                 patch_size: List, *,
-                 stride: int = 1,
-                 num_filters: int = 1,
+                 patch_size: List,
+                 num_latents: int = 1,
+                 *,
+                 with_indexing: bool = False,
+                 with_weights: bool = False,
+                 pooling: int = 1,
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
-                 mean_function: Optional[MeanFunction] = None,
-                 # base_kernel_class: type = gpflow.kernels.RBF,
-                 # index_kernel_class: type = gpflow.kernels.RBF,
-                 patches_initializer: Optional[Initializer] = None):
+                 mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
+                 base_kernel: Optional[gpflow.kernels.Kern] = None,
+                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
         """
-        This layer constructs a Pooling Indexed Convolutional GP layer.
-        :input_shape: tuple
-            shape of the input images, W x H
-        :param patch_size: tuple
-            Shape of the patches (a.k.a filter_shape of filter_size)
-        :param number_inducing: int
-            Number of inducing patches, M
-
-        Optional:
-        :param stride: int
-            An integer specifying the strides of the convolution along the height and width.
-        :param num_filters: int
-            Number of filters in the convolution
-        :param q_mu and q_sqrt: np.ndarrays
-            Variatial posterior parameterisation.
-        :param patches_initializer: init.Initializer or np.ndarray
-            Instance of the class `init.Initializer` that initializes the inducing patches,
-            can also be a np.ndarray, if this is the case the patches_initializer param
-            holds the inducing patches M x w x h
+        See `ConvLayer` for docstrings.
         """
-
-        patches_initializer = patches_initializer or init.NormalInitializer()
-        output_shape = [input_shape[0] - patch_size[0] + 1,
-                        input_shape[1] - patch_size[1] + 1]
+        output_shape0 = (input_shape[0] - patch_size[0] + 1) // pooling
+        output_shape1 = (input_shape[1] - patch_size[1] + 1) // pooling
+        output_shape = [output_shape0, output_shape1]
 
         super().__init__(input_shape,
                          output_shape,
                          number_inducing,
                          patch_size,
-                         stride=stride,
-                         num_filters=num_filters,
+                         num_latents,
+                         with_indexing=with_indexing,
+                         pooling=pooling,
                          q_mu=q_mu,
                          q_sqrt=q_sqrt,
                          mean_function=mean_function,
-                         # base_kernel_class=base_kernel_class,
-                         # index_kernel_class=index_kernel_class,
+                         base_kernel=base_kernel,
                          patches_initializer=patches_initializer)
 
-        # Use the Pooling Index kernel instead of the normal Indexed one
-        self.kern = PoolingIndexedConvKernel(self.kern.conv_kernel,
-                                             self.kern.index_kernel)
+        if base_kernel is None:
+            base_kernel = gpflow.kernels.RBF(np.prod(patch_size))
+        else:
+            assert base_kernel.input_dim == np.prod(patch_size)
 
+        self.kern = WeightedSum_ConvKernel(base_kernel,
+                                      img_size=input_shape,
+                                      patch_size=patch_size,
+                                      pooling=pooling,
+                                      with_indexing=with_indexing,
+                                      with_weights=with_weights)
 
     def describe(self):
-        desc = "\n\t+ Pooling Indexed Conv: patch {}".format(self.patch_size)
-        # desc += " base_kern {}".format(self.base_kernel_class.__name__)
-        # desc += "\n\t+ index_kern: {}".format(self.index_kernel_class.__name__)
+        desc = "\nWeighted"
         return super().describe() + desc
+

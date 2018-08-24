@@ -23,6 +23,8 @@ class PerceptronLayer(LinearLayer):
     @params_as_tensors
     def propagate(self, X, sampling=True, **kwargs):
         linear_transformation = super().propagate(X, sampling)
+        # LinearLayer.propagate() checks that sampling=True, as the following is not defined
+        # for sampling=False. Will be cleaner once we split up propagate()...
 
         if self.activation is not None:
             return self.activation(linear_transformation)

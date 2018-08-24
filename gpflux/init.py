@@ -11,7 +11,7 @@ from gpflow.kernels import RBF
 from sklearn.feature_extraction.image import extract_patches_2d
 
 
-class Initializer(object):
+class Initializer:
     """
     Base class for parameter initializers.
     It should be subclassed when implementing new types.
@@ -35,7 +35,8 @@ class PatchSamplerInitializer(Initializer):
             if X.ndim <= 2:
                 raise ValueError("Impossible to infer image width and height")
             else:
-                width, height = X.shape[1], X.shape[2]
+                assert X.ndim == 3
+                width, height = X.shape[1:]
 
         self.X = np.reshape(X, [-1, width, height])
         self.unique = unique
@@ -92,6 +93,7 @@ class KernelStructureMixingMatrixInitializer(Initializer):
         :param shape: tuple, P x L.
         Note that P is both used for the dimension and the matrix.
         """
+        #TODO(vincent): why is this image *width*? not width * height?
         im_width, num_latent = shape  # P x L
         IJ = np.vstack([x.flatten() for x in np.meshgrid(np.arange(im_width), np.arange(im_width))]).T
         K_IJ = self.kern.compute_K_symm(IJ) + np.eye(im_width ** 2) * 1E-6

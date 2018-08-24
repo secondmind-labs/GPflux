@@ -3,13 +3,11 @@
 # Proprietary and confidential
 
 
-import numpy as np
-import gpflow
-
 from typing import Optional
 
-from gpflow import features, settings, params_as_tensors, \
-                    Param, Parameterized, settings
+import gpflow
+import numpy as np
+from gpflow import Param, Parameterized, features, params_as_tensors, settings
 from gpflow.conditionals import conditional, sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
@@ -47,7 +45,7 @@ class GPLayer(BaseLayer):
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None):
-        r"""
+        """
         A sparse variational GP layer in whitened representation. This layer holds the kernel,
         variational parameters, inducing points and mean function.
 
@@ -112,4 +110,3 @@ class GPLayer(BaseLayer):
                        self.feature.__class__.__name__,
                        self.mean_function.__class__.__name__,
                        self.num_latents)
-
