@@ -15,7 +15,7 @@ from gpflow.multioutput.features import debug_kuf, debug_kuu
 
 from .convolution_kernel import ConvKernel, IndexedConvKernel, PoolingIndexedConvKernel
 from .inducing_patch import InducingPatch, IndexedInducingPatch
-from ..conv_square_dists import make_proper_name_for_me
+from ..conv_square_dists import image_patch_conv_square_dist
 
 
 @gpflow.name_scope("Kuf")
@@ -35,7 +35,7 @@ def Kuf(feat, kern, Xnew):
     Xr = tf.reshape(Xnew, image_shape)
     Z = feat.Z
 
-    dist = make_proper_name_for_me(Xr, Z, kern.patch_size, image_shape)
+    dist = image_patch_conv_square_dist(Xr, Z, kern.patch_size, image_shape) # NxMxP
     K = kern.basekern.K_r2(dist)
     return tf.transpose(K, [1, 0, 2])[:, None, ...]  # MxL/1xNxP
 

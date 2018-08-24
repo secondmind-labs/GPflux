@@ -49,7 +49,7 @@ def create_conv_kernel(image_size=None, filter_size=None, colour_channels=1):
 
 
 def test_diag_conv_square_dist(session_tf):
-    img = DT.img1
+    img = tf.convert_to_tensor(DT.img1)
     image_size = DT.H * DT.W
     patch_size = np.prod(DT.filter_size)
 
@@ -57,7 +57,7 @@ def test_diag_conv_square_dist(session_tf):
     rbf = create_rbf()
     X = get_patches(img, DT.image_shape, DT.filter_shape)
 
-    dist = diag_conv_square_dist(img, DT.filter_shape, parallel=1)
+    dist = diag_conv_square_dist(img, DT.filter_shape)
     dist = tf.squeeze(dist)
 
     gotten = rbf.K_r2(dist)
@@ -86,7 +86,7 @@ def test_full_conv_square_dist(session_tf):
     expect = tf.reshape(rbf.K(X1, X2), (N, P, N, P))
     expect = tf.squeeze(expect)
 
-    dist = full_conv_square_dist(img1, img2, DT.filter_shape, image_shape=DT.image_shape)
+    dist = full_conv_square_dist(img1, img2, DT.filter_shape)
     dist = tf.squeeze(dist)
     gotten = rbf.K_r2(dist)
 
@@ -109,7 +109,7 @@ def test_pairwise_conv_square_dist(session_tf):
 
     expect = tf.map_fn(lambda Xs: rbf.K(*Xs), (X1t, X2t), dtype=dtype)
     expect = tf.squeeze(expect)
-    dist = patchwise_conv_square_dist(img1, img2, DT.filter_shape, image_shape=DT.image_shape)
+    dist = patchwise_conv_square_dist(img1, img2, DT.filter_shape)
     dist = tf.squeeze(dist)
     gotten = rbf.K_r2(dist)
 
@@ -117,7 +117,7 @@ def test_pairwise_conv_square_dist(session_tf):
     assert_allclose(expect_np, gotten_np)
 
     expect = tf.map_fn(lambda x: rbf.K(x), X1t, dtype=dtype)
-    dist = patchwise_conv_square_dist(img1, img1, DT.filter_shape, image_shape=DT.image_shape)
+    dist = patchwise_conv_square_dist(img1, img1, DT.filter_shape)
     dist = tf.squeeze(dist)
     gotten = rbf.K_r2(dist)
 
