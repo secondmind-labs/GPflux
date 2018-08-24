@@ -32,16 +32,19 @@ def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
 
     assert kern.colour_channels == 1
+    assert kern.basekern.ARD == False
     C = kern.colour_channels
     H, W = kern.img_size
+    lengthscales = kern.basekern.lengthscales
     Z = feat.Z
     M = len(feat)
 
     X = tf.reshape(Xnew, [-1, H, W, C])
     N = tf.shape(X)[0]
     dist = image_patch_conv_square_dist(X, Z, kern.patch_size)  # NxMxP
+    dist /= lengthscales ** 2
     Kmn = kern.basekern.K_r2(dist)
-    # Kmn = tf.squeeze(Kmn)  # TODO: get rid of colour channel dimension; it assumes that C is 1.
+    Kmn = tf.transpose(Kmn, [1, 0, 2])  # MxNxP
 
     if kern.with_indexing:
         if not isinstance(feat, IndexedInducingPatch):

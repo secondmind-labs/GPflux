@@ -11,24 +11,30 @@ from numpy.testing import assert_allclose
 import gpflux
 from gpflux.conv_square_dists import (diag_conv_square_dist,
                                       full_conv_square_dist,
+                                      image_patch_conv_square_dist,
                                       patchwise_conv_square_dist)
 from gpflux.convolution.convolution_kernel import ConvKernel
 from gpflux.utils import get_image_patches
 
 
 class DT:
-    N, H, W, C = image_shape = 2, 3, 3, 1
+    N, H, W, C = image_shape = 4, 6, 6, 1
+    M = 3
     h, w = filter_shape = 2, 2
+    feat_size = M * h * w
     filter_size = h * w
     Ph, Pw = H - h + 1, W - w + 1
     P = Ph * Pw
     rng = np.random.RandomState(911911)
     img1 = rng.randn(*image_shape)
     img2 = rng.randn(*image_shape)
+    feat = rng.randn(M, h * w)
 
 
 def create_rbf(filter_size=None):
-    return RBF(filter_size or DT.filter_size)
+    k = RBF(filter_size or DT.filter_size)
+    k.lengthscales = 0.2
+    return k
 
 
 def create_conv_kernel(image_size=None, filter_size=None, colour_channels=1):
@@ -46,6 +52,7 @@ def test_diag_conv_square_dist(session_tf):
     X = get_image_patches(img, DT.image_shape, DT.filter_shape)
 
     dist = diag_conv_square_dist(img, DT.filter_shape)
+    dist /= rbf.lengthscales.constrained_tensor ** 2
     dist = tf.squeeze(dist)
 
     gotten = rbf.K_r2(dist)
@@ -75,6 +82,7 @@ def test_full_conv_square_dist(session_tf):
     expect = tf.squeeze(expect)
 
     dist = full_conv_square_dist(img1, img2, DT.filter_shape)
+    dist /= rbf.lengthscales.constrained_tensor ** 2
     dist = tf.squeeze(dist)
     gotten = rbf.K_r2(dist)
 
@@ -98,6 +106,7 @@ def test_pairwise_conv_square_dist(session_tf):
     expect = tf.map_fn(lambda Xs: rbf.K(*Xs), (X1t, X2t), dtype=dtype)
     expect = tf.squeeze(expect)
     dist = patchwise_conv_square_dist(img1, img2, DT.filter_shape)
+    dist /= rbf.lengthscales.constrained_tensor ** 2
     dist = tf.squeeze(dist)
     gotten = rbf.K_r2(dist)
 
@@ -106,9 +115,30 @@ def test_pairwise_conv_square_dist(session_tf):
 
     expect = tf.map_fn(lambda x: rbf.K(x), X1t, dtype=dtype)
     dist = patchwise_conv_square_dist(img1, img1, DT.filter_shape)
+    dist /= rbf.lengthscales.constrained_tensor ** 2
     dist = tf.squeeze(dist)
     gotten = rbf.K_r2(dist)
 
     gotten_np, expect_np = session_tf.run([gotten, expect])
     assert_allclose(expect_np, gotten_np)
 
+
+def test_image_patch_conv_square_dist(session_tf):
+    rbf = create_rbf()
+    N, H, W, C = DT.image_shape
+    M, P = DT.M, DT.P
+    X = tf.convert_to_tensor(DT.img1)
+    Z = tf.convert_to_tensor(DT.feat)
+    dtype = X.dtype
+
+    dist = image_patch_conv_square_dist(X, Z, DT.filter_shape)  # [N, M, P]
+    dist /= rbf.lengthscales.constrained_tensor ** 2
+    gotten = rbf.K_r2(dist)  # [N, M, P]
+    gotten = tf.transpose(gotten, [1, 0, 2])
+
+    Xp = get_image_patches(X, DT.image_shape, DT.filter_shape)
+    expect = rbf.K(Z, tf.reshape(Xp, (N * P, -1)))
+    expect = tf.reshape(expect, [M, N, P])
+
+    gotten_np, expect_np = session_tf.run([gotten, expect])
+    assert_allclose(expect_np, gotten_np)

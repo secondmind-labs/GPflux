@@ -66,18 +66,21 @@ class ConvKernel(Mok):
 
         H, W = self.img_size
         C = self.colour_channels
+        assert self.basekern.ARD == False
         assert C == 1
 
-        lengthscales = self.basekern.lengthscales
-        X = tf.reshape(X / lengthscales, (-1, H, W, C))
-        X2 = X if X2 is None else tf.reshape(X2 / lengthscales, (-1, H, W, C))
+        X = tf.reshape(X, (-1, H, W, C))
+        X2 = X if X2 is None else tf.reshape(X2, (-1, H, W, C))
 
         if full_output_cov:
-            dist = full_conv_square_dist(X, X2, self.patch_size)  # NxPxN2xP
+            dist = full_conv_square_dist(X, X2, self.patch_size)  # NxPxN2xPxC
+            dist = tf.squeeze(dist, axis=[4])  # TODO: get rid of colour channel dimension; it assumes that C is 1.
         else:
-            dist = patchwise_conv_square_dist(X, X2, self.patch_size)  # PxNxN
+            dist = patchwise_conv_square_dist(X, X2, self.patch_size)  # PxNxNxC
+            dist = tf.squeeze(dist, axis=[3])  # TODO: get rid of colour channel dimension; it assumes that C is 1.
 
-        dist = tf.squeeze(dist)  # TODO: get rid of colour channel dimension; it assumes that C is 1.
+        lengthscales = self.basekern.lengthscales
+        dist /= lengthscales ** 2
         return self.basekern.K_r2(dist)  # NxPxN2xP
 
 
