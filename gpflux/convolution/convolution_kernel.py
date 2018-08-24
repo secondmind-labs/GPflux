@@ -133,11 +133,17 @@ class ConvKernel(Mok):
             return K  # N x P' x P'
 
         else:
-            if self.pooling > 1 or self.with_indexing:
-                raise NotImplementedError
+            if self.pooling > 1:
+                raise NotImplementedError("Pooling is not implemented in ConvKernel.Kdiag() for "
+                                          "`full_output_cov` False.")
 
-            return tf.map_fn(lambda x: self.basekern.Kdiag(x), Xp)  # N x P
+            K = tf.map_fn(lambda x: self.basekern.Kdiag(x), Xp)  # N x P
 
+            if self.with_indexing:
+                Pij = self.index_kernel.Kdiag(self.IJ)  # P
+                K = K * Pij[None, :]  # N x P
+
+            return K
 
     @property
     def patch_len(self):

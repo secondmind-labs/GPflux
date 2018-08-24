@@ -140,6 +140,53 @@ class DeepGP(Model):
     def predict_f_with_Ws_full_cov(self, X, Ws):
         return self._build_decoder(X, Ws=Ws, full_cov=True, latent_var_mode=LatentVarMode.GIVEN)
 
+    @autoflow([settings.float_type, [None, None]],
+              [settings.int_type, ] )
+    def nll(self, Y, num):
+        """
+        X: empty shape of Ws
+        Ws: Nw x L, Nw: monte carlo samples, L: latent dim
+        Y: Ns x D, NS: num test points, D output dim
+        """
+        # m is Nw x D, and v is Nw x D x D
+
+        # debug_op = tf.py_func(_debug_func2, [Ws], [tf.bool])
+        # with tf.control_dependencies(debug_op):
+        #     Ws = tf.identity(Ws, name='out')
+
+        X = tf.zeros([num, 0], dtype=settings.float_type)
+        m, v = self._build_decoder(X,
+                                   full_cov=False,
+                                   full_output_cov=True,
+                                   latent_var_mode=LatentVarMode.PRIOR)
+        # P is Nw x D
+        P = self.likelihood.predict_mean_from_f_full_output_cov(m, v)
+        Pr = tf.tile(P[None, ...], multiples=[tf.shape(Y)[0], 1, 1])  # Ns x Nw x D
+
+        # val = tf.reduce_sum(tf.is_nan(Pr))
+        # Pr = tf.Print(Pr, ["nans in Pr", val])
+
+        def _debug_func(p, l, y):
+            import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+            from IPython import embed; embed()  # XXX DEBUG
+            return False
+
+
+        Yr = tf.tile(Y[:, None, :], multiples=[1, num, 1])  # Ns x Nw x D
+        L = self.likelihood.eval(Pr, Yr)
+
+        # debug_op = tf.py_func(_debug_func, [Pr, L, Y], [tf.bool])
+        # with tf.control_dependencies(debug_op):
+        #     L = tf.identity(L, name='out')
+
+        # val = tf.reduce_sum(tf.is_nan(Pr))
+        # Pr = tf.Print(Pr, ["nans in Pr", val])
+
+        L = tf.reduce_sum(L, axis=2)  # Ns x Nw
+        L = tf.reduce_logsumexp(L, axis=1) - tf.log(tf.cast(num, tf.float64))  # Ns
+        return - tf.reduce_mean(L)
+
+
     @autoflow()
     def compute_KL_U(self):
         return self.KL_U_layers

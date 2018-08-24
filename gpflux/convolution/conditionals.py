@@ -77,6 +77,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :return:
     """
     settings.logger().debug("conditional: InducingPatch -- ConvKernel")
+    print("full_cov", full_cov)
+    print("full_output_cov", full_output_cov)
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     if full_cov:

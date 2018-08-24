@@ -69,7 +69,7 @@ class LatentVariableLayer(BaseLayer):
 
     def KL(self):
         self.encode_once()
-        return gauss_kl(self.q_mu, self.q_sqrt)
+        return gauss_kl(self.q_mu, self.q_sqrt) * self.root.scale
 
     def propagate(self, X, sampling=True, W=None, **kwargs):
         raise NotImplementedError
@@ -97,14 +97,16 @@ class LatentVariableConcatLayer(LatentVariableLayer):
         self.encode_once()
         if sampling:
             if latent_var_mode == LatentVarMode.POSTERIOR:
-                z= tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
+                z = tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
                 W = self.q_mu + z * self.q_sqrt
 
             elif latent_var_mode == LatentVarMode.PRIOR:
+                print("PRIOR")
                 W = tf.random_normal([tf.shape(X)[0], self.latent_dim],
                                      dtype=settings.float_type)
 
             elif latent_var_mode == LatentVarMode.GIVEN:
+                print("GIVEN")
                 assert isinstance(W, tf.Tensor)
 
 
