@@ -2,6 +2,7 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
+import gpflow
 
 
 __all__ = [
@@ -20,6 +21,7 @@ padding = 'VALID'
 strides = (1, 1, 1, 1)
 
 
+@gpflow.name_scope()
 def image_patch_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape) -> tf.Tensor:
     """
     Square distance between image and patch using convolution operations.
@@ -51,6 +53,7 @@ def image_patch_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: Filte
     return -2 * ABt + AtA[:, None, :] + BtB[None, :, None]  # [N, M, P]
 
 
+@gpflow.name_scope()
 def diag_conv_square_dist(A: tf.Tensor, filter_shape: FilterShape,
                           **map_kwargs) -> tf.Tensor:
     """
@@ -74,6 +77,7 @@ def diag_conv_square_dist(A: tf.Tensor, filter_shape: FilterShape,
     return -2 * AAt + AtA[:, :, None, :] + AtA[:, None, :, :]
 
 
+@gpflow.name_scope()
 def full_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
                           **map_kwargs) -> tf.Tensor:
     """
@@ -97,6 +101,7 @@ def full_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
     return -2 * ABt + AtA[:, :, None, None, :] + BtB[None, None, :, :, :]
 
 
+@gpflow.name_scope()
 def patchwise_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
                                **map_kwargs) -> tf.Tensor:
     """

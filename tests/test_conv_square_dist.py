@@ -13,6 +13,7 @@ from gpflux.conv_square_dists import (diag_conv_square_dist,
                                       full_conv_square_dist,
                                       patchwise_conv_square_dist)
 from gpflux.convolution.convolution_kernel import ConvKernel
+from gpflux.utils import get_image_patches
 
 
 class DT:
@@ -24,19 +25,6 @@ class DT:
     rng = np.random.RandomState(911911)
     img1 = rng.randn(*image_shape)
     img2 = rng.randn(*image_shape)
-
-
-def get_patches(X, image_shape, filter_shape):
-    N, W, H, C = image_shape
-    h, w = filter_shape
-    dtype = X.dtype
-    castX = tf.transpose(tf.reshape(X, tf.stack([tf.shape(X)[0], -1, C])), [0, 2, 1])
-    castX = tf.cast(castX, dtype, name="castX")
-    castX_r = tf.reshape(castX, [-1, H, W, 1], name="rX")
-    patches = tf.extract_image_patches(castX_r, [1, h, w, 1], [1, 1, 1, 1], [1, 1, 1, 1], "VALID")
-    shp = tf.shape(patches)  # img x out_rows x out_cols
-    patches_r = tf.reshape(patches, [tf.shape(X)[0], C * shp[1] * shp[2], shp[3]])
-    return tf.cast(patches_r, dtype)
 
 
 def create_rbf(filter_size=None):
@@ -55,7 +43,7 @@ def test_diag_conv_square_dist(session_tf):
 
     dtype = img.dtype
     rbf = create_rbf()
-    X = get_patches(img, DT.image_shape, DT.filter_shape)
+    X = get_image_patches(img, DT.image_shape, DT.filter_shape)
 
     dist = diag_conv_square_dist(img, DT.filter_shape)
     dist = tf.squeeze(dist)
@@ -78,8 +66,8 @@ def test_full_conv_square_dist(session_tf):
     img1 = tf.convert_to_tensor(DT.img1)
     img2 = tf.convert_to_tensor(DT.img2)
 
-    X1 = get_patches(img1, DT.image_shape, DT.filter_shape)
-    X2 = get_patches(img2, DT.image_shape, DT.filter_shape)
+    X1 = get_image_patches(img1, DT.image_shape, DT.filter_shape)
+    X2 = get_image_patches(img2, DT.image_shape, DT.filter_shape)
     X1 = tf.reshape(X1, (-1, DT.filter_size))
     X2 = tf.reshape(X2, (-1, DT.filter_size))
 
@@ -102,8 +90,8 @@ def test_pairwise_conv_square_dist(session_tf):
     img2 = tf.convert_to_tensor(DT.img2)
     dtype = img1.dtype
 
-    X1 = get_patches(img1, DT.image_shape, DT.filter_shape)
-    X2 = get_patches(img2, DT.image_shape, DT.filter_shape)
+    X1 = get_image_patches(img1, DT.image_shape, DT.filter_shape)
+    X2 = get_image_patches(img2, DT.image_shape, DT.filter_shape)
     X1t = tf.transpose(X1, [1, 0, 2])
     X2t = tf.transpose(X2, [1, 0, 2])
 
