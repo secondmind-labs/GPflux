@@ -31,7 +31,7 @@ def image_patch_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: Filte
         B: Patch tensor of shape [M, h, w, C]
         filter_shape: Two element tuple with height and width sizes of filter respectively.
     Returns:
-        Tensor of shape [N, M, P, C].
+        Tensor of shape [N, M, P].
     """
     h, w = filter_shape
     M = tf.shape(B)[0]
