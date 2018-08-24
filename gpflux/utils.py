@@ -49,5 +49,5 @@ def get_image_patches(img, image_shape, filter_shape):
         img = tf.reshape(img, [-1, H, W, 1])
         patches = tf.extract_image_patches(img, [1, h, w, 1], [1, 1, 1, 1], [1, 1, 1, 1], 'VALID')
         shp = tf.shape(patches)  # img x out_rows x out_cols
-        return tf.reshape(patches, [tf.shape(img)[0], C * shp[1] * shp[2], shp[3]])
+        return tf.reshape(patches, [tf.shape(img)[0], C * shp[1] * shp[2], shp[3]]) # NxPxwh
 

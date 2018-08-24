@@ -18,14 +18,14 @@ from gpflux.utils import get_image_patches
 
 
 class DT:
-    N, H, W, C = image_shape = 4, 6, 6, 1
-    M = 3
-    h, w = filter_shape = 2, 2
+    N, H, W, C = image_shape = 10, 28, 28, 1
+    M = 100
+    h, w = filter_shape = 5, 5
     feat_size = M * h * w
     filter_size = h * w
     Ph, Pw = H - h + 1, W - w + 1
     P = Ph * Pw
-    rng = np.random.RandomState(911911)
+    rng = np.random.RandomState(1010101)
     img1 = rng.randn(*image_shape)
     img2 = rng.randn(*image_shape)
     feat = rng.randn(M, h * w)
@@ -45,7 +45,7 @@ def create_conv_kernel(image_size=None, filter_size=None, colour_channels=1):
 def test_diag_conv_square_dist(session_tf):
     img = tf.convert_to_tensor(DT.img1)
     image_size = DT.H * DT.W
-    patch_size = np.prod(DT.filter_size)
+    patch_size = DT.filter_size
 
     dtype = img.dtype
     rbf = create_rbf()
@@ -57,11 +57,13 @@ def test_diag_conv_square_dist(session_tf):
 
     gotten = rbf.K_r2(dist)
     expect = tf.map_fn(lambda x: rbf.K(x), X, dtype=dtype)
+
     gotten_np, expect_np = session_tf.run([gotten, expect])
     assert_allclose(expect_np, gotten_np)
 
     gotten_diag = tf.matrix_diag_part(rbf.K_r2(dist))
     expect_diag = tf.map_fn(lambda x: rbf.Kdiag(x), X, dtype=dtype)
+
     gotten_diag_np, expect_diag_np = session_tf.run([gotten_diag, expect_diag])
     assert_allclose(expect_diag_np, gotten_diag_np)
 

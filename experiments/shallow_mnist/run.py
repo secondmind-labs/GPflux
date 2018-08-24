@@ -34,10 +34,10 @@ def config():
     base_kern = "RBF"
 
     # weighted sum
-    with_weights = False
+    with_weights = True
 
     # indexing
-    with_indexing = False
+    with_indexing = True
 
     # init patches
     init_patches = "patches-unique" # 'patches', 'random'

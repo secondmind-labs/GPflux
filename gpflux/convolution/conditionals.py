@@ -68,7 +68,6 @@ def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = kern.basekern.K(feat.Z)  # MxM
     jittermat = jitter * tf.eye(len(feat), dtype=Kmm.dtype)  # MxM
-    return (Kmm + jittermat)[None, :, :]  # L/1xMxM  TODO: add L
 
     if kern.with_indexing:
         Pmm = kern.index_kernel.K(feat.indices)  # MxM
