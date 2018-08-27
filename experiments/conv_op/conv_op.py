@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     sess = tf.Session()
     X_1 = X[..., None]
-    tf_x_dotconv = diag_conv_inner_prod(X_1, filter_shape, parallel=10, back_prop=False)
+    tf_x_dotconv = diag_conv_inner_prod(X_1, filter_shape, parallel_iterations=10, back_prop=False)
 
     import timeit
 

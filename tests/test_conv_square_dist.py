@@ -18,9 +18,9 @@ from gpflux.utils import get_image_patches
 
 
 class DT:
-    N, H, W, C = image_shape = 10, 28, 28, 1
+    N, H, W, C = image_shape = 9, 10, 10, 1
     M = 100
-    h, w = filter_shape = 5, 5
+    h, w = filter_shape = 3, 3
     feat_size = M * h * w
     filter_size = h * w
     Ph, Pw = H - h + 1, W - w + 1

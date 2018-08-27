@@ -91,12 +91,11 @@ class ConvKernel(Mok):
         C = self.colour_channels
 
         X = tf.reshape(X, (-1, H, W, C))
-        dist = diag_conv_square_dist(X, self.patch_size, back_prop=False)  # NxPxPx1
-        dist = tf.squeeze(dist, axis=[3]) # TODO: get rid of colour channel dimension; it assumes that C is 1.
-        dist /= self.basekern.lengthscales ** 2  # Dividing after computing distances
-                                                 # helps to avoid unnecessary backpropagation.
-
         if full_output_cov:
+            dist = diag_conv_square_dist(X, self.patch_size, back_prop=False)  # NxPxPx1
+            dist = tf.squeeze(dist, axis=[3]) # TODO: get rid of colour channel dimension; it assumes that C is 1.
+            dist /= self.basekern.lengthscales ** 2  # Dividing after computing distances
+                                                     # helps to avoid unnecessary backpropagation.
             K = self.basekern.K_r2(dist)  # NxPxP
             if self.with_indexing:
                 Pij = self.index_kernel.K(self.IJ)  # PxP
@@ -113,8 +112,13 @@ class ConvKernel(Mok):
         if self.pooling > 1 or self.with_indexing:
             raise NotImplementedError
 
-        dist_diag = tf.matrix_diag_part(dist)  # NxP
-        return self.basekern.K_r2(dist_diag)
+        # dist_diag = tf.matrix_diag_part(dist)  # NxP
+        # return self.basekern.K_r2(dist_diag)
+        # TODO(@awav): Squared distance for object itself is 0.
+        #              In RBF case we return $variance^2$ alone.
+        # return self.basekern.variance ** 2 * tf.ones([N, P])
+
+        return self.basekern.variance ** 2
 
 
     @property
