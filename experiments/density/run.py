@@ -11,7 +11,7 @@ import gpflow
 import gpflow.training.monitor as mon
 import gpflux
 from data import fixed_binarized_mnist
-from utils import calculate_nll
+from utils import calculate_nll, plot_latents
 
 SUCCESS = 0
 NAME = "FixBinMnist"
@@ -53,12 +53,13 @@ class PcaResnetEncoder(gpflux.encoders.RecognitionNetwork):
     
     @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
     def eval(self, X):
-        return self.__call__(X)
+        m, v = self.__call__(X)
+        return m, tf.nn.softplus(v - 3.0)
     
 
 def init_pca_projection_matrix(X, latent_dim):
     pca = PCA(n_components=latent_dim, whiten=True).fit(X)
-    return pca.components_.T / np.sqrt(5)  # P x L
+    return pca.components_.T / np.sqrt(5.0)  # P x L
 
 
 @ex.config
@@ -129,9 +130,10 @@ def setup_model(X, minibatch_size, patch_size, num_inducing):
     layer0 = gpflux.layers.LatentVariableConcatLayer(latent_dim, encoder=enc)
 
     ## layer 1
-    kern_list = [gpflow.kernels.RBF(latent_dim) for _ in range(20)]
-    W = np.random.randn(20, 1024)
-    kern = gpflow.multioutput.kernels.SeparateMixedMok(kern_list, W.T)
+    # kern_list = [gpflow.kernels.RBF(latent_dim) for _ in range(20)]
+    W = init_pca_projection_matrix(X, latent_dim)
+    kern = gpflow.multioutput.kernels.SharedMixedMok(
+        gpflow.kernels.RBF(latent_dim), W.T)
     feat = gpflow.multioutput.features.MixedKernelSharedMof(
             gpflow.features.InducingPoints(np.random.randn(100, latent_dim)))
     layer1 = gpflux.layers.GPLayer(kern, feat, num_latents=20)
@@ -201,12 +203,23 @@ def setup_monitor_tasks(Xs, model, optimizer,
           .with_exit_condition(True)\
           .with_flush_immediately(True)]
 
+    plot_latents_func = plot_latents(model.layers[0].encoder)
+    tasks += [\
+          mon.ImageToTensorBoardTask(fw, plot_latents_func, "plot_latents")\
+          .with_name('plot_latents')\
+          .with_condition(mon.PeriodicIterationCondition(hz))\
+          .with_exit_condition(True)\
+          .with_flush_immediately(True)]
+
+    # /////////// SLOW TASKS, only run very occasionally... //////////////
+
     tasks += [\
           mon.ScalarFuncToTensorBoardTask(fw, error_slow, "error_full")\
           .with_name('error_full')\
           .with_condition(mon.PeriodicIterationCondition(hz_slow))\
           .with_exit_condition(True)\
           .with_flush_immediately(True)]
+
 
     return tasks
 
@@ -253,6 +266,17 @@ def main():
 
     X, Xs = data()
 
+    X_tmp = np.zeros([1000, 32, 32])
+    X2 = X[:1000, :].reshape(-1, 28, 28)
+    print(X[:1000, ...].shape)
+    print(X2.shape)
+    print(X_tmp[:, 2:30, 2:30].shape)
+    X_tmp[:, 2:30, 2:30] = X2
+
+    from utils import plot
+    plot(X_tmp[:100])
+
+    return 0
     model = setup_model(X)
 
     model.compile()

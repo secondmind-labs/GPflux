@@ -53,5 +53,22 @@ def trace(T, sess, name):
     with open(name, 'w') as f:
         f.write(chrome_trace)
 
-def plot_latents(X, Y, encoder)
+def plot_latents(encoder, n=1000):
     import matplotlib.pyplot as plt
+    from observations import mnist
+
+    (Xall, Yall), (_, _) = mnist("./data")
+    Xall /= 255.
+
+    X = Xall[:n]
+    Y = Yall[:n]
+
+    def func():
+        qL_mean, qL_var = encoder.eval(X)
+        fig, ax = plt.subplots(1, 1)
+        ax.scatter(qL_mean[:, 0], qL_mean[:, 1], c=Y, s=np.sqrt(qL_var).max(axis=1))
+        return fig
+    
+    return func
+
+
