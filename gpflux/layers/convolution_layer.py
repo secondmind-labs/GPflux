@@ -27,6 +27,7 @@ def _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
     return True
 
 
+
 def _from_patches_initializer_to_patches(initializer, shape):
     """
     If initializer is an instance of init.Initializer it will create
@@ -65,7 +66,7 @@ class ConvLayer(GPLayer):
         :output_shape: tuple
             shape of the output images
         :param patch_size: tuple
-            Shape of the patches (a.k.a kernel_size of filter_size)
+            Shape of the patches (a.k.a filter_shape of filter_size)
         :param number_inducing: int
             Number of inducing patches, M
 
