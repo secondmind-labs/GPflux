@@ -32,3 +32,19 @@ class InducingPatch(Mof):
     @property
     def outputs(self):  # a.k.a. L
         return 1
+
+
+class IndexedInducingPatch(InducingPatch):
+    """
+    Inducing feature combining patches and indices.
+    """
+
+    def __init__(self, patches, indices):
+        super().__init__(patches)
+        self.indices = Param(indices)
+
+    @property
+    def patches(self):
+        return self.Z
+
+

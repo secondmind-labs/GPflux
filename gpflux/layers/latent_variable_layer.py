@@ -74,7 +74,7 @@ class LatentVariableLayer(BaseLayer):
     def propagate(self, X, sampling=True, W=None, **kwargs):
         raise NotImplementedError
 
-    def __str__(self):
+    def describe(self):
         return "{} with latent dim {}"\
                     .format(self.__class__.__name__,
                             self.latent_dim)

@@ -153,12 +153,12 @@ class DeepGP(Model):
         l = norm.logpdf(Y, loc=m, scale=v**0.5)
         return np.average(l)
 
-    def __str__(self):
+    def describe(self):
         """ High-level description of the model """
         desc = self.__class__.__name__
         desc += "\nLayers"
         desc += "\n------\n"
-        desc += "\n".join(str(l) for l in self.layers)
+        desc += "\n".join(l.describe() for l in self.layers)
         desc += "\nlikelihood: " + self.likelihood.__class__.__name__
         return desc
 

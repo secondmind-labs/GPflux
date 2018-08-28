@@ -3,5 +3,5 @@
 # Proprietary and confidential
 
 from . import conditionals
-from .convolution_kernel import ConvKernel
-from .inducing_patch import InducingPatch
+from .convolution_kernel import ConvKernel, WeightedSum_ConvKernel
+from .inducing_patch import InducingPatch, IndexedInducingPatch

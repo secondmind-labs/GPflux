@@ -32,7 +32,7 @@ class BaseLayer(Parameterized):
         """ returns KL[q(U) || p(U)] """
         raise NotImplementedError()  # pragma: no cover
 
-    def __str__(self):
+    def describe(self):
         """ describes the key properties of a layer """
         raise NotImplementedError()  # pragma: no cover
 
@@ -103,7 +103,7 @@ class GPLayer(BaseLayer):
         return gauss_kl(self.q_mu, self.q_sqrt)
 
 
-    def __str__(self):
+    def describe(self):
         """ returns a string with the key properties of a GPlayer """
         return "GPLayer: kern {}, features {}, mean {}, L {}".\
                 format(self.kern.__class__.__name__,

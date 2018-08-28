@@ -55,6 +55,6 @@ class LinearLayer(BaseLayer):
     def KL(self):
         return tf.cast(0.0, settings.float_type)
 
-    def __str__(self):
+    def describe(self):
         return "LinearLayer: input_dim {}, output_dim {}".\
                 format(self.input_dim, self.output_dim)

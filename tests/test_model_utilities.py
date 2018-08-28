@@ -49,7 +49,7 @@ def test_to_str():
                           Data.X,
                           layers=[latent_layer, layer1, layer2, layer3])
 
-    description = str(model)
+    description = model.describe()
     description = description.split('\n')
     assert len(description) == 9
     assert description[0] == "DeepGP"

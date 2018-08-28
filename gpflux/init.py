@@ -26,7 +26,7 @@ class Initializer:
 
 class PatchSamplerInitializer(Initializer):
 
-    def __init__(self, X, width=None, height=None):
+    def __init__(self, X, width=None, height=None, unique=False):
         """
         :param X: np.array
             N x W x H
@@ -39,6 +39,7 @@ class PatchSamplerInitializer(Initializer):
                 width, height = X.shape[1:]
 
         self.X = np.reshape(X, [-1, width, height])
+        self.unique = unique
 
     def sample(self, shape):
         """
@@ -51,9 +52,15 @@ class PatchSamplerInitializer(Initializer):
         patch_size = shape[1:]  # w x h
 
         patches = np.array([extract_patches_2d(im, patch_size) for im in self.X])
-        patches = np.reshape(patches, [-1, *patch_size])  # (N * P) x w x h
+        patches = np.concatenate(patches, axis=0)
+        patches = np.reshape(patches, [-1, np.prod(patch_size)])
+        if self.unique:
+            print("selecting unique patches")
+            patches = np.unique(patches, axis=0)
+
+        # patches = np.reshape(patches, [-1, *patch_size])  # (N * P) x w x h
         idx = np.random.permutation(range(len(patches)))[:num]  # M
-        return patches[idx, ...]  # M x w x h
+        return patches[idx, ...].reshape(shape)  # M x w x h
 
 
 class NormalInitializer(Initializer):
@@ -64,7 +71,7 @@ class NormalInitializer(Initializer):
     :param mean: float
         Mean of initial parameters.
     """
-    def __init__(self, std=0.01, mean=0.0):
+    def __init__(self, std=1.0, mean=0.0):
         self.std = std
         self.mean = mean
 
