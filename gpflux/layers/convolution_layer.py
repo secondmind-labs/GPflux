@@ -15,7 +15,6 @@ from ..convolution import InducingPatch, IndexedInducingPatch
 
 
 def _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
-
     if (input_shape[0] - patch_size[0] + 1) % pooling != 0:
         return False
     if (input_shape[1] - patch_size[1] + 1) % pooling != 0:
@@ -26,6 +25,7 @@ def _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
         return False
 
     return True
+
 
 
 def _from_patches_initializer_to_patches(initializer, shape):
@@ -66,7 +66,7 @@ class ConvLayer(GPLayer):
         :output_shape: tuple
             shape of the output images
         :param patch_size: tuple
-            Shape of the patches (a.k.a kernel_size of filter_size)
+            Shape of the patches (a.k.a filter_shape of filter_size)
         :param number_inducing: int
             Number of inducing patches, M
 
@@ -122,7 +122,7 @@ class ConvLayer(GPLayer):
         self.with_indexing = with_indexing
         self.pooling = pooling
         self.base_kernel_type = base_kernel.__class__.__name__
-        self.patch_size= patch_size
+        self.patch_size = patch_size
 
     def describe(self):
         desc = "\n\t+ Conv: patch {}".format(self.patch_size)
@@ -176,13 +176,12 @@ class WeightedSum_ConvLayer(ConvLayer):
             assert base_kernel.input_dim == np.prod(patch_size)
 
         self.kern = WeightedSum_ConvKernel(base_kernel,
-                                      img_size=input_shape,
-                                      patch_size=patch_size,
-                                      pooling=pooling,
-                                      with_indexing=with_indexing,
-                                      with_weights=with_weights)
+                                           img_size=input_shape,
+                                           patch_size=patch_size,
+                                           pooling=pooling,
+                                           with_indexing=with_indexing,
+                                           with_weights=with_weights)
 
     def describe(self):
         desc = "\nWeighted"
         return super().describe() + desc
-

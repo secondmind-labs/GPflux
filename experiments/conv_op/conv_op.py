@@ -1,5 +1,7 @@
 import numpy as np
 import itertools as it
+from gpflux.conv_square_dists import diag_conv_inner_prod
+import tensorflow as tf
 
 from sklearn.feature_extraction.image import extract_patches_2d
 
@@ -105,16 +107,29 @@ if __name__ == "__main__":
     H, W = 28, 28  # height and width of the images
     h, w = 3, 3  # height and width of the patch
 
+    filter_shape = [h, w]
     # create dummy images
     X = np.random.randn(N, H, W)
 
+    sess = tf.Session()
+    X_1 = X[..., None]
+    tf_x_dotconv = diag_conv_inner_prod(X_1, filter_shape, parallel_iterations=10, back_prop=False)
+
     import timeit
-    t = timeit.timeit(lambda: patch_inner_product2(X, [h, w]), number=1)
-    print(t)
-    t = timeit.timeit(lambda: patch_inner_product(X, [h, w]), number=1)
+
+    t = timeit.timeit(lambda: patch_inner_product2(X, filter_shape), number=1)
     print(t)
 
-    r1 = patch_inner_product(X, [h, w])
-    r2 = patch_inner_product2(X, [h, w])
+    t = timeit.timeit(lambda: patch_inner_product(X, filter_shape), number=1)
+    print(t)
+
+    t = timeit.timeit(lambda: sess.run(tf_x_dotconv), number=1)
+    print(t)
+
+    r1 = patch_inner_product(X, filter_shape)
+    r2 = patch_inner_product2(X, filter_shape)
+    r3 = np.squeeze(sess.run(tf_x_dotconv))
 
     np.testing.assert_almost_equal(r1, r2)
+    np.testing.assert_almost_equal(r1, r3)
+    np.testing.assert_almost_equal(r2, r3)
