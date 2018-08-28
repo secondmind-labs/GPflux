@@ -52,3 +52,6 @@ def trace(T, sess, name):
     chrome_trace = fetched_timeline.generate_chrome_trace_format()
     with open(name, 'w') as f:
         f.write(chrome_trace)
+
+def plot_latents(X, Y, encoder)
+    import matplotlib.pyplot as plt

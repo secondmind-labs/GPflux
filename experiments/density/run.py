@@ -1,8 +1,11 @@
+from typing import List, Optional
+
 import os
 
 import numpy as np
 import tensorflow as tf
 from sacred import Experiment
+from sklearn.decomposition import PCA
 
 import gpflow
 import gpflow.training.monitor as mon
@@ -25,6 +28,38 @@ class MoBernoulli(gpflow.likelihoods.Bernoulli):
 
     def eval(self, P, Y):
         return gpflow.logdensities.bernoulli(Y, P)
+
+class PcaResnetEncoder(gpflux.encoders.RecognitionNetwork):
+
+    def __init__(self,
+                 latent_dim: int,
+                 mean: np.ndarray,
+                 pca_projection_matrix: np.ndarray,
+                 network_dims: List[int],
+                 activation_func = None,
+                 name: Optional[str] = None):
+        input_dim = pca_projection_matrix.shape[1]
+        super().__init__(latent_dim, input_dim, network_dims, activation_func=activation_func, name=name)
+        self.pca_projection_matrix = pca_projection_matrix  # [D x L]
+        self.mean = mean
+        for w in self.Ws:
+            w = w.read_value() / 5.0  # reduce weights
+
+    @gpflow.decors.params_as_tensors
+    def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
+        Z = tf.matmul(Z - self.mean, self.pca_projection_matrix)  # [N, L]
+        m, v = super().__call__(Z)
+        return m + Z, v
+    
+    @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
+    def eval(self, X):
+        return self.__call__(X)
+    
+
+def init_pca_projection_matrix(X, latent_dim):
+    pca = PCA(n_components=latent_dim, whiten=True).fit(X)
+    return pca.components_.T / np.sqrt(5)  # P x L
+
 
 @ex.config
 def config():
@@ -54,9 +89,6 @@ def data(basepath):
 
     path = os.path.join(basepath, "data")
     X, Xs = fixed_binarized_mnist(path)
-
-    # X, m, s = normalize(X)
-    # Xs, _, _ = normalize(Xs, m, s)
 
     return X, Xs
 
@@ -91,7 +123,9 @@ def setup_model(X, minibatch_size, patch_size, num_inducing):
     # H = int(X.shape[1]**.5)
 
     ## layer 0
-    enc = gpflux.encoders.RecognitionNetwork(latent_dim, X.shape[1], [200, 200, 100])
+    # enc = gpflux.encoders.RecognitionNetwork(latent_dim, X.shape[1], [200, 200, 100])
+    A = init_pca_projection_matrix(X[:1000], latent_dim)
+    enc = PcaResnetEncoder(latent_dim, np.mean(X, axis=0), A, network_dims=[10, 10])
     layer0 = gpflux.layers.LatentVariableConcatLayer(latent_dim, encoder=enc)
 
     ## layer 1
@@ -214,42 +248,10 @@ def finish(X, Xs, model, basepath):
     np.savetxt(fn, nll)
 
 
-def init_pca_matrix(X):
-
-    X = (X - np.mean(X, axis=0))
-    # X /= (np.std(X, axis=0) + 1e-6)
-
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=2, whiten=True)
-    T = pca.fit_transform(X)
-    A = pca.components_.T / np.sqrt(5)  # P x L
-    return A
-
-
-
-    print(np.std(T2, axis=0))
-
-    print(T.shape)
-    print(T2.shape)
-    # print(T/T2)
-    # np.testing.assert_array_almost_equal(T, T2)
-
-
 @ex.automain
 def main():
 
     X, Xs = data()
-
-    A = init_pca_matrix(X[:100])
-    X = (X - np.mean(X, axis=0))
-    T = (X @ A)
-
-    import matplotlib.pyplot as plt
-    plt.plot(T[:, 0], T[:, 1], "ko", alpha=.1)
-    plt.show()
-
-    return 0
-
 
     model = setup_model(X)
 
