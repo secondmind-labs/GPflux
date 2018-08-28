@@ -108,17 +108,17 @@ class ConvKernel(Mok):
                 HW = self.Hout * self.Wout
                 K = tf.reshape(K, [-1, HW, HW])
             return K  # NxP'xP'
+        else:
+            if self.pooling > 1 or self.with_indexing:
+                raise NotImplementedError
 
-        if self.pooling > 1 or self.with_indexing:
-            raise NotImplementedError
+            # dist_diag = tf.matrix_diag_part(dist)  # NxP
+            # return self.basekern.K_r2(dist_diag)
+            # TODO(@awav): Squared distance for object itself is 0.
+            #              In RBF case we return $variance^2$ alone.
+            # return self.basekern.variance ** 2 * tf.ones([N, P])
 
-        # dist_diag = tf.matrix_diag_part(dist)  # NxP
-        # return self.basekern.K_r2(dist_diag)
-        # TODO(@awav): Squared distance for object itself is 0.
-        #              In RBF case we return $variance^2$ alone.
-        # return self.basekern.variance ** 2 * tf.ones([N, P])
-
-        return self.basekern.variance ** 2
+            return self.basekern.variance ** 2
 
 
     @property

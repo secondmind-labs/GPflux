@@ -108,9 +108,10 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
                     with_weights, with_indexing):
     args = np.array(
         [
+            "conv_ops",
             dataset,
             "W", with_weights,
-            "I", with_indexing,
+            "Ti", with_indexing,
             "init_patches", init_patches,
             "kern", base_kern,
             "adam", adam_lr,
