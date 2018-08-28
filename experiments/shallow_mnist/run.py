@@ -1,14 +1,13 @@
 import os
+
 import gpflow
 import gpflow.training.monitor as mon
-import gpflux
 import numpy as np
-import tensorflow as tf
-
-from sacred import Experiment
 from observations import mnist, cifar10
-
+from sacred import Experiment
 from utils import get_error_cb, calc_multiclass_error, calc_binary_error
+
+import gpflux
 
 SUCCESS = 0
 NAME = "mnist"
@@ -40,7 +39,7 @@ def config():
     with_indexing = True
 
     # init patches
-    init_patches = "patches-unique" # 'patches', 'random'
+    init_patches = "patches-unique"  # 'patches', 'random'
 
     restore = False
 
@@ -51,7 +50,6 @@ def config():
 
 @ex.capture
 def data(basepath, dataset):
-
     def general_preprocess(X, Y, Xs, Ys):
         Y = Y.astype(int)
         Ys = Ys.astype(int)
@@ -72,12 +70,12 @@ def data(basepath, dataset):
         def rgb2gray(rgb):
             rgb = np.transpose(rgb, [0, 2, 3, 1])
             proj_matrix = [0.299, 0.587, 0.114]
-            return np.dot(rgb[...,:3], proj_matrix)
+            return np.dot(rgb[..., :3], proj_matrix)
 
         X = rgb2gray(X)
         Xs = rgb2gray(Xs)
-        X = X.reshape(-1, 32**2)
-        Xs = Xs.reshape(-1, 32**2)
+        X = X.reshape(-1, 32 ** 2)
+        Xs = Xs.reshape(-1, 32 ** 2)
         return X, Y, Xs, Ys
 
     def preprocess_full(X, Y, Xs, Ys):
@@ -98,8 +96,7 @@ def data(basepath, dataset):
     X, Y, Xs, Ys = preprocess_func(X, Y, Xs, Ys)
 
     alpha = 255.0
-    return X/alpha, Y, Xs/alpha, Ys
-
+    return X / alpha, Y, Xs / alpha, Ys
 
 
 @ex.capture
@@ -134,8 +131,6 @@ def restore_session(session, restore, basepath):
 @ex.capture
 def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
                 init_patches, basepath, restore, with_weights, with_indexing):
-
-
     if dataset == "mnist01":
         like = gpflow.likelihoods.Bernoulli()
         num_filters = 1
@@ -143,21 +138,21 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
         like = gpflow.likelihoods.SoftMax(10)
         num_filters = 10
 
-    H = int(X.shape[1]**.5)
+    H = int(X.shape[1] ** .5)
 
     if init_patches == "random":
         patches = gpflux.init.NormalInitializer()
     else:
         unique = init_patches == "patches-unique"
         patches = gpflux.init.PatchSamplerInitializer(
-                        X[:100], width=H, height=H, unique=unique)
+            X[:100], width=H, height=H, unique=unique)
 
     layer0 = gpflux.layers.WeightedSum_ConvLayer(
-                            [H, H], M, patch_size,
-                            num_latents=num_filters,
-                            with_indexing=with_indexing,
-                            with_weights=with_weights,
-                            patches_initializer=patches)
+        [H, H], M, patch_size,
+        num_latents=num_filters,
+        with_indexing=with_indexing,
+        with_weights=with_weights,
+        patches_initializer=patches)
 
     # init kernel
     if with_indexing:
@@ -177,18 +172,18 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
                           name="my_deep_gp")
     return model
 
+
 @ex.capture
 def setup_monitor_tasks(Xs, Ys, model, optimizer,
                         hz, hz_slow, basepath, dataset, adam_lr):
-
     tb_path = os.path.join(basepath, NAME, "tensorboards", experiment_name())
     model_path = os.path.join(basepath, NAME, experiment_name())
     fw = mon.LogdirWriter(tb_path)
 
     # print_error = mon.CallbackTask(error_cb)\
-        # .with_name('error')\
-        # .with_condition(mon.PeriodicIterationCondition(hz))\
-        # .with_exit_condition(True)
+    # .with_name('error')\
+    # .with_condition(mon.PeriodicIterationCondition(hz))\
+    # .with_exit_condition(True)
     tasks = []
 
     if adam_lr == "decay":
@@ -196,48 +191,48 @@ def setup_monitor_tasks(Xs, Ys, model, optimizer,
             sess = model.enquire_session()
             return sess.run(optimizer._optimizer._lr)
 
-        tasks += [\
-              mon.ScalarFuncToTensorBoardTask(fw, lr, "lr")\
-              .with_name('lr')\
-              .with_condition(mon.PeriodicIterationCondition(hz))\
-              .with_exit_condition(True)\
-              .with_flush_immediately(True)]
+        tasks += [
+            mon.ScalarFuncToTensorBoardTask(fw, lr, "lr")
+                .with_name('lr')
+                .with_condition(mon.PeriodicIterationCondition(hz))
+                .with_exit_condition(True)
+                .with_flush_immediately(True)]
 
-    tasks += [\
-        mon.CheckpointTask(model_path)\
-        .with_name('saver')\
-        .with_condition(mon.PeriodicIterationCondition(hz_slow))]
+    tasks += [
+        mon.CheckpointTask(model_path)
+            .with_name('saver')
+            .with_condition(mon.PeriodicIterationCondition(hz_slow))]
 
-    tasks += [\
-        mon.ModelToTensorBoardTask(fw, model)\
-        .with_name('model_tboard')\
-        .with_condition(mon.PeriodicIterationCondition(hz))\
-        .with_exit_condition(True)\
-        .with_flush_immediately(True)]
+    tasks += [
+        mon.ModelToTensorBoardTask(fw, model)
+            .with_name('model_tboard')
+            .with_condition(mon.PeriodicIterationCondition(hz))
+            .with_exit_condition(True)
+            .with_flush_immediately(True)]
 
-    tasks += [\
-        mon.PrintTimingsTask().with_name('print')\
-        .with_condition(mon.PeriodicIterationCondition(hz))\
-        .with_exit_condition(True)]
+    tasks += [
+        mon.PrintTimingsTask().with_name('print')
+            .with_condition(mon.PeriodicIterationCondition(hz))
+            .with_exit_condition(True)]
 
     error_func = calc_binary_error if dataset == "mnist01" \
-                    else calc_multiclass_error
+        else calc_multiclass_error
 
     f1 = get_error_cb(model, Xs, Ys, error_func)
-    tasks += [\
-          mon.ScalarFuncToTensorBoardTask(fw, f1, "error")\
-          .with_name('error')\
-          .with_condition(mon.PeriodicIterationCondition(hz))\
-          .with_exit_condition(True)\
-          .with_flush_immediately(True)]
+    tasks += [
+        mon.ScalarFuncToTensorBoardTask(fw, f1, "error")
+            .with_name('error')
+            .with_condition(mon.PeriodicIterationCondition(hz))
+            .with_exit_condition(True)
+            .with_flush_immediately(True)]
 
     f2 = get_error_cb(model, Xs, Ys, error_func, full=True)
-    tasks += [\
-          mon.ScalarFuncToTensorBoardTask(fw, f2, "error_full")\
-          .with_name('error_full')\
-          .with_condition(mon.PeriodicIterationCondition(hz_slow))\
-          .with_exit_condition(True)\
-          .with_flush_immediately(True)]
+    tasks += [
+        mon.ScalarFuncToTensorBoardTask(fw, f2, "error_full")
+            .with_name('error_full')
+            .with_condition(mon.PeriodicIterationCondition(hz_slow))
+            .with_exit_condition(True)
+            .with_flush_immediately(True)]
 
     print("# tasks:", len(tasks))
     return tasks
@@ -245,7 +240,6 @@ def setup_monitor_tasks(Xs, Ys, model, optimizer,
 
 @ex.capture
 def setup_optimizer(model, global_step, adam_lr):
-
     if adam_lr == "decay":
         print("decaying lr")
         lr = 0.01 * 1.0 / (1 + global_step // 5000 / 3)
@@ -259,9 +253,9 @@ def setup_optimizer(model, global_step, adam_lr):
 
     return gpflow.train.AdamOptimizer(lr)
 
+
 @ex.capture
 def run(model, session, global_step, monitor_tasks, optimizer, iterations):
-
     monitor = mon.Monitor(monitor_tasks, session, global_step, print_summary=True)
 
     with monitor:
@@ -281,7 +275,7 @@ def _save(model, filename):
 def finish(X, Y, Xs, Ys, model, dataset, basepath):
     print(model)
     error_func = calc_binary_error if dataset == "mnist01" \
-                    else calc_multiclass_error
+        else calc_multiclass_error
     error_func = get_error_cb(model, Xs, Ys, error_func, full=True)
     print("error test", error_func())
     print("error train", error_func())
@@ -292,8 +286,7 @@ def finish(X, Y, Xs, Ys, model, dataset, basepath):
 
 @ex.capture
 def trace_run(model, sess, M, minibatch_size, adam_lr):
-
-    name =  "M_{}_N_{}_pyfunc_gpu".format(M, minibatch_size)
+    name = "M_{}_N_{}_pyfunc_gpu".format(M, minibatch_size)
     # name =  "test"
     from utils import trace
 
@@ -304,6 +297,7 @@ def trace_run(model, sess, M, minibatch_size, adam_lr):
         adam_opt = gpflow.train.AdamOptimizer(learning_rate=0.01)
         adam_step = adam_opt.make_optimize_tensor(model, session=sess)
         trace(adam_step, sess, "trace_adam_{}.json".format(name))
+
 
 @ex.automain
 def main():
@@ -322,7 +316,7 @@ def main():
 
     optimizer = setup_optimizer(model, step)
     monitor_tasks = setup_monitor_tasks(Xs, Ys, model, optimizer)
-    ll = run(model, sess, step,  monitor_tasks, optimizer)
+    ll = run(model, sess, step, monitor_tasks, optimizer)
     print("after optimisation ll", ll)
 
     finish(X, Y, Xs, Ys, model)
