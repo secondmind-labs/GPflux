@@ -12,7 +12,7 @@ from functools import reduce
 
 from typing import Optional, List
 
-from gpflow import settings
+from gpflow import settings, Param
 from gpflow.decors import params_as_tensors, autoflow
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
@@ -65,6 +65,9 @@ class DeepGP(Model):
             self.X = DataHolder(X)
             self.Y = DataHolder(Y)
             self.scale = 1.0
+        
+        self.alpha = Param(1.0)
+        self.alpha.set_trainable(False)
 
     def _get_Ws_iter(self, latent_var_mode: LatentVarMode, Ws=None) -> iter:
         i = 0
@@ -109,9 +112,11 @@ class DeepGP(Model):
         f_mean, f_var = self._build_decoder(self.X)  # N x P, N x P
         self.E_log_prob = tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y))
 
-        self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))
+        # self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))
+        self.KLs_global = reduce(tf.add, (l.KL_global() for l in self.layers))
+        self.KLs_minibatch = reduce(tf.add, (l.KL_minibatch() for l in self.layers))
 
-        ELBO = self.E_log_prob * self.scale - self.KL_U_layers
+        ELBO = (self.E_log_prob - self.KLs_minibatch) * self.scale - self.alpha * self.KLs_global
         return tf.cast(ELBO, settings.float_type)
 
     def _predict_f(self, X):
@@ -137,8 +142,28 @@ class DeepGP(Model):
         return self._build_decoder(X, Ws=Ws, full_output_cov=True, latent_var_mode=LatentVarMode.GIVEN)
 
     @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
+    def predict_ys_with_Ws_full_output_cov(self, X, Ws):
+        Fm, Fv = self._build_decoder(X, Ws=Ws, full_output_cov=True, latent_var_mode=LatentVarMode.GIVEN)
+        Fs = gpflow.conditionals._sample_mvn(Fm, Fv, "full")
+        return self.likelihood.conditional_mean(Fs)
+
+    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_cov(self, X, Ws):
         return self._build_decoder(X, Ws=Ws, full_cov=True, latent_var_mode=LatentVarMode.GIVEN)
+
+    @autoflow()
+    def compute_KL_global(self):
+        return self.KLs_global
+
+    @autoflow()
+    def compute_KL_minibatch(self):
+        return self.scale * self.KLs_minibatch
+
+    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
+    def decode_inner_layer(self, X, W):
+        Z = self.layers[0].propagate(X, sampling=True, W=W, latent_var_mode=LatentVarMode.GIVEN)
+        Z = self.layers[1].propagate(Z, sampling=True, W=None, full_cov=False, full_output_cov=True)
+        return Z
 
     @autoflow([settings.float_type, [None, None]],
               [settings.int_type, ] )

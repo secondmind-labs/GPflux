@@ -61,15 +61,23 @@ class LatentVariableLayer(BaseLayer):
     def encode_once(self):
         if not self.is_encoded:
             XY = tf.concat([self.root.X, self.root.Y], 1)
-            q_mu, log_q_sqrt = self.encoder(XY)
+            q_mu, q_sqrt = self.encoder(XY)
             self.q_mu = q_mu
-            self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
+            self.q_sqrt = q_sqrt
             #TODO(vincent) document this hard-coded feature ^^^
             self.is_encoded = True
 
     def KL(self):
         self.encode_once()
-        return gauss_kl(self.q_mu, self.q_sqrt) * self.root.scale
+        return gauss_kl(self.q_mu, self.q_sqrt)
+
+    @params_as_tensors
+    def KL_minibatch(self):
+        self.encode_once()
+        return gauss_kl(self.q_mu, self.q_sqrt)
+
+    def KL_global(self):
+        return tf.cast(0.0, settings.float_type)
 
     def propagate(self, X, sampling=True, W=None, **kwargs):
         raise NotImplementedError

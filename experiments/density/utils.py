@@ -53,22 +53,110 @@ def trace(T, sess, name):
     with open(name, 'w') as f:
         f.write(chrome_trace)
 
-def plot_latents(encoder, n=1000):
+def plot_latents(model, Xs=None, n=1000):
     import matplotlib.pyplot as plt
     from observations import mnist
+
+    encoder = model.layers[0].encoder
 
     (Xall, Yall), (_, _) = mnist("./data")
     Xall /= 255.
 
-    X = Xall[:n]
-    Y = Yall[:n]
-
     def func():
+        if Xs is None:
+            indices = np.random.choice(np.arange(len(Xall)), n, replace=False)
+            X = Xall[indices, ...]
+            Y = Yall[indices, ...]
+        else:
+            X = Xs
+            Y = [1]*len(Xs)
         qL_mean, qL_var = encoder.eval(X)
         fig, ax = plt.subplots(1, 1)
-        ax.scatter(qL_mean[:, 0], qL_mean[:, 1], c=Y, s=np.sqrt(qL_var).max(axis=1))
+        Zs = model.layers[1].feature.feat.Z.read_value(model.enquire_session())
+        ax.scatter(qL_mean[:, 0], qL_mean[:, 1], c=Y, s=2*(qL_var).max(axis=1))
+        print("mean q(W) std: ", np.mean((qL_var)))
+        ax.plot(Zs[:, 0], Zs[:, 1], 'kx', ms=4)
+        ax.set_xlim(-3, 3)
+        ax.set_ylim(-3, 3)
         return fig
     
     return func
 
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import gpflow
 
+
+def plot_inducing_patches(model):
+
+    def func():
+        patches = model.layers[2].feature.Z.read_value(model.enquire_session())
+        vmin, vmax = patches.min(), patches.max()
+
+        fig, axes = plt.subplots(30, 30, figsize=(10, 10))
+        for patch, ax in zip(patches, axes.flat):
+            im = ax.matshow(patch.reshape(5, 5), vmin=vmin, vmax=vmax)
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+        cbar_ax = fig.add_axes([0.95, .1, .01, 0.8])
+        fig.colorbar(im, cax=cbar_ax)
+        return fig
+
+    return func
+
+
+
+def __plot_samples(model, axes=None, n=25, inner_gp=False, Ws=None):
+
+    assert n / np.sqrt(n) == int(np.sqrt(n))
+
+    if Ws is None:
+        Ws = np.random.randn(n, model.layers[0].latent_dim)
+    else:
+        assert Ws.shape[0] ==n
+
+    Xs = np.zeros([n, 0])
+    
+    if inner_gp:
+        vals = model.decode_inner_layer(Xs, Ws)
+        width = 32
+    else:
+        vals = model.predict_ys_with_Ws_full_output_cov(Xs, Ws)
+        width = 28
+    
+    if axes is None:
+        n = int(np.sqrt(n))
+        fig, axes = plt.subplots(n, 2 * n, figsize=(28, 14))
+    
+    vals_min = vals.min()
+    vals_max = vals.max()
+    for i, ax in enumerate(axes.flat):
+        ax.set_title("{:.2f}, {:.2f}".format(Ws[i, 0], Ws[i, 1]))
+        im = ax.imshow(vals[i].reshape(width, width), vmin=vals_min, vmax=vals_max)
+        # print(Fs[i].min(), Fs[i].max(), Ps[i].min(), Ps[i].max())
+        ax.set_xticks([])
+        ax.set_yticks([])
+    
+    return im
+
+
+def plot_samples(model):
+
+    def func():
+        fig, axes = plt.subplots(5, 2 * 5, figsize=(20, 10))
+
+        ww = np.linspace(-2, 2, 5)
+        Ws = np.vstack([x.flatten() for x in np.meshgrid(ww, ww)]).T  # Px2
+        # Ws = np.random.randn(25, model.layers[0].latent_dim)
+        im1 = __plot_samples(model, axes=axes[:, :5], n=25, inner_gp=True, Ws=Ws)
+        im2 = __plot_samples(model, axes=axes[:, 5:], n=25, inner_gp=False, Ws=Ws)
+
+        fig.subplots_adjust(left=.05, right=.95)
+        cbar_ax = fig.add_axes([0., .1, .01, 0.8])
+        fig.colorbar(im1, cax=cbar_ax)
+        cbar_ax2 = fig.add_axes([0.95, .1, .01, 0.8])
+        fig.colorbar(im2, cax=cbar_ax2)
+        return fig
+
+    return func

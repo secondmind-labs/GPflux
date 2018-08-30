@@ -7,6 +7,8 @@ from typing import Optional
 
 import gpflow
 import numpy as np
+import tensorflow as tf
+
 from gpflow import Param, Parameterized, features, params_as_tensors, settings
 from gpflow.conditionals import conditional, sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
@@ -94,14 +96,20 @@ class GPLayer(BaseLayer):
                                     full_output_cov=full_output_cov, white=True)
             return mean + self.mean_function(X), var  # N x P, variance depends on args
 
-    @params_as_tensors
-    def KL(self):
-        """
-        The KL divergence from the variational distribution to the prior
-        :return: KL divergence from N(q_mu, q_sqrt) to N(0, I), independently for each GP
-        """
-        return gauss_kl(self.q_mu, self.q_sqrt)
+    # @params_as_tensors
+    # def KL(self):
+    #     """
+    #     The KL divergence from the variational distribution to the prior
+    #     :return: KL divergence from N(q_mu, q_sqrt) to N(0, I), independently for each GP
+    #     """
+    #     return gauss_kl(self.q_mu, self.q_sqrt)
 
+    def KL_minibatch(self):
+        return tf.cast(0.0, settings.float_type)
+
+    @params_as_tensors
+    def KL_global(self):
+        return gauss_kl(self.q_mu, self.q_sqrt)
 
     def describe(self):
         """ returns a string with the key properties of a GPlayer """
