@@ -45,7 +45,7 @@ class ConvKernel(Mok):
         self.with_indexing = with_indexing
         if self.with_indexing:
             self._setup_indices()
-            self.index_kernel = gpflow.kernels.RBF(len(img_size), lengthscales=3.0)
+            self.index_kernel = gpflow.kernels.Matern52(len(img_size), lengthscales=3.0)
 
     def _setup_indices(self):
         # IJ: Nx2, cartesian product of output indices
@@ -61,6 +61,7 @@ class ConvKernel(Mok):
         :param X: 2 dimensional, Nx(W*H)
         :param X2: 2 dimensional, Nx(W*H)
         """
+        print(">>> conv kernel K <<<")
         if self.pooling > 1 or self.with_indexing:
             raise NotImplementedError
 
@@ -87,6 +88,7 @@ class ConvKernel(Mok):
     @gpflow.name_scope("conv_kernel_K_diag")
     @gpflow.params_as_tensors
     def Kdiag(self, X, full_output_cov=False):
+        print(">>> conv kernel Kdiag <<<")
         H, W = self.img_size
         C = self.colour_channels
 
@@ -121,7 +123,8 @@ class ConvKernel(Mok):
             #              In RBF case we return $variance^2$ alone.
             N = tf.shape(X)[0]
             P = (self.Hin - self.patch_size[0] + 1) * (self.Win - self.patch_size[1] + 1)
-            K = self.basekern.variance ** 2 * tf.ones([N, P], dtype=settings.float_type)
+            K = self.basekern.variance * tf.ones([N, P], dtype=settings.float_type)
+            print(">>>> WE ARE HERE")
 
             if self.with_indexing:
                 Pij = self.index_kernel.Kdiag(self.IJ)  # P

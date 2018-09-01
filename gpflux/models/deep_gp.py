@@ -116,7 +116,13 @@ class DeepGP(Model):
         self.KLs_global = reduce(tf.add, (l.KL_global() for l in self.layers))
         self.KLs_minibatch = reduce(tf.add, (l.KL_minibatch() for l in self.layers))
 
-        ELBO = (self.E_log_prob - self.KLs_minibatch) * self.scale - self.alpha * self.KLs_global
+        self.KLs_global = tf.check_numerics(self.KLs_global, 'KL global NAN')
+        self.KLs_minibatch = tf.check_numerics(self.KLs_minibatch, 'KL minibatch NAN')
+
+        ELBO = (self.E_log_prob - self.KLs_minibatch) * self.scale - self.KLs_global
+
+        ELBO = tf.check_numerics(ELBO, 'nan in ELBO')
+
         return tf.cast(ELBO, settings.float_type)
 
     def _predict_f(self, X):

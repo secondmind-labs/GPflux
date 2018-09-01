@@ -91,9 +91,10 @@ def plot_inducing_patches(model):
 
     def func():
         patches = model.layers[2].feature.Z.read_value(model.enquire_session())
+        n = int(np.sqrt(patches.shape[0]))
         vmin, vmax = patches.min(), patches.max()
 
-        fig, axes = plt.subplots(30, 30, figsize=(10, 10))
+        fig, axes = plt.subplots(n, n, figsize=(10, 10))
         for patch, ax in zip(patches, axes.flat):
             im = ax.matshow(patch.reshape(5, 5), vmin=vmin, vmax=vmax)
             ax.set_xticks([])
@@ -105,6 +106,18 @@ def plot_inducing_patches(model):
 
     return func
 
+
+def plot_inducing_indices(model):
+
+    def func():
+        indices = model.layers[2].feature.indices.read_value(model.enquire_session())
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        ax.scatter(indices[:, 0], indices[:, 1], alpha=.1)
+        ax.set_xlim(0, 28)
+        ax.set_ylim(0, 28)
+        return fig
+
+    return func
 
 
 def __plot_samples(model, axes=None, n=25, inner_gp=False, Ws=None):
@@ -146,9 +159,12 @@ def plot_samples(model):
     def func():
         fig, axes = plt.subplots(5, 2 * 5, figsize=(20, 10))
 
-        ww = np.linspace(-2, 2, 5)
-        Ws = np.vstack([x.flatten() for x in np.meshgrid(ww, ww)]).T  # Px2
-        # Ws = np.random.randn(25, model.layers[0].latent_dim)
+        if model.layers[0].latent_dim == 2:
+            ww = np.linspace(-2, 2, 5)
+            Ws = np.vstack([x.flatten() for x in np.meshgrid(ww, ww)]).T  # Px2
+        else:
+            Ws = np.random.randn(25, model.layers[0].latent_dim)
+
         im1 = __plot_samples(model, axes=axes[:, :5], n=25, inner_gp=True, Ws=Ws)
         im2 = __plot_samples(model, axes=axes[:, 5:], n=25, inner_gp=False, Ws=Ws)
 

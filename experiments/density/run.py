@@ -1,6 +1,5 @@
-from typing import List, Optional
-
 import os
+from typing import List, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -11,7 +10,8 @@ import gpflow
 import gpflow.training.monitor as mon
 import gpflux
 from data import fixed_binarized_mnist
-from utils import calculate_nll, plot_latents, plot_samples, plot_inducing_patches
+from utils import (calculate_nll, plot_inducing_indices, plot_inducing_patches,
+                   plot_latents, plot_samples)
 
 SUCCESS = 0
 NAME = "FixBinMnist"
@@ -28,6 +28,41 @@ class MoBernoulli(gpflow.likelihoods.Bernoulli):
 
     def eval(self, P, Y):
         return gpflow.logdensities.bernoulli(Y, P)
+
+
+class MyPca:
+    def __init__(self, X, L):
+        pca = PCA(n_components=L, whiten=True)
+        pca.fit(X)
+        self.mean = pca.mean_  # D
+        C = pca.components_.T  # D x L
+        v = np.sqrt(pca.explained_variance_)[None, :]  # 1 x L
+        self.A = C / v  # D x L
+        self.B = C * v  # D x L
+    
+    def down(self, X):
+        X = X - self.mean
+        X = np.matmul(X, self.A)
+        return X
+    
+    def up(self, X):
+        return np.matmul(X, self.B.T) + self.mean
+
+    def B_enlarge(self, Hnew):
+        Bold = self.B.T  # L x D
+        Hold = int(np.sqrt(Bold.shape[1]))
+        pad = int((Hnew - Hold) // 2)
+        padding = [(0, 0), (pad, pad), (pad, pad)]
+        Bnew = np.pad(np.reshape(Bold, (-1, Hold, Hold)), padding, mode="constant").reshape(-1, Hnew**2)
+        return Bnew.T
+
+    def mean_enlarge(self, Hnew):
+        Hold = int(np.sqrt(self.B.T.shape[1]))
+        pad = int((Hnew - Hold) // 2)
+        padding = [(pad, pad), (pad, pad)]
+        mean = np.pad(self.mean.reshape(Hold, Hold), padding, mode="constant").flatten()
+        return mean
+
 
 class PcaResnetEncoder(gpflux.encoders.RecognitionNetwork):
 
@@ -49,17 +84,17 @@ class PcaResnetEncoder(gpflux.encoders.RecognitionNetwork):
     def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
         Z = tf.matmul(Z - self.mean, self.pca_projection_matrix)  # [N, L]
         m, v = super().__call__(Z)
-        return m + Z, tf.nn.softplus(v - 1.0)
+        return m + Z, tf.nn.softplus(v - 2.0)
     
     @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
     def eval(self, X):
         return self.__call__(X)
     
 
-def init_pca_projection_matrix(X, latent_dim, norm=True):
-    pca = PCA(n_components=latent_dim, whiten=True).fit(X)
-    div = np.sqrt(5) if norm else 1.0
-    return pca.components_.T / div  # P x L
+# def init_pca_projection_matrix(X, latent_dim, norm=True):
+#     pca = PCA(n_components=latent_dim, whiten=True).fit(X)
+#     div = np.sqrt(5) if norm else 1.0
+#     return pca.components_.T / div  # P x L
 
 
 @ex.config
@@ -70,7 +105,7 @@ def config():
     # number of inducing points
     num_inducing_2 = 750
     # adam learning rate
-    adam_lr = "decay"
+    adam_lr = 0.01
     # training iterations
     iterations = int(50000)
     # patch size
@@ -86,11 +121,18 @@ def config():
     # latent dim
     latent_dim = 2
 
+    # indexing
+    indexing = True
+
     # number of gps in the first layer
     num_gps1 = 10
 
+    natgrad = False
+    gamma = 0.1
+
     # print hz
     hz = 20
+    hz_fast = 2
     hz_slow = 500
 
 
@@ -113,25 +155,31 @@ def _strip_restore(restore):
 
 
 @ex.capture
-def experiment_name(adam_lr, num_inducing_1, num_inducing_2, minibatch_size, patch_size, latent_dim, num_gps1,
-                    restore):
+def experiment_name(adam_lr, num_inducing_1, num_inducing_2, minibatch_size, patch_size, latent_dim, 
+                    num_gps1, restore, indexing, natgrad, gamma):
     if restore != "":
         restore = _strip_restore(restore)
         return restore + "_restored"
 
-    args = np.array(
+    args = \
         [
             "mean",
-            "matern",
+            "RBF",
             "adam", adam_lr,
             "M1", num_inducing_1,
             "M2", num_inducing_2,
             "gps1", num_gps1,
             "L", latent_dim,
+            "ti", indexing,
             "minibatch_size", minibatch_size,
             "patch", patch_size[0],
-        ])
-    return "_".join(args.astype(str))
+            "natgrad", natgrad,
+        ]
+
+    if natgrad:
+        args += ["gamma", gamma]
+    
+    return "_".join(np.array(args).astype(str))
 
 
 @ex.capture
@@ -148,68 +196,72 @@ def restore_session(session, restore, basepath):
 
 @gpflow.defer_build()
 @ex.capture
-def setup_model(X, minibatch_size, patch_size, num_inducing_1, num_inducing_2, latent_dim, num_gps1):
+def setup_model(X, minibatch_size, patch_size, num_inducing_1, num_inducing_2, latent_dim, num_gps1,
+                indexing):
 
     assert patch_size[0] == patch_size[1]
     assert patch_size[0] == 5
 
     # H = int(X.shape[1]**.5)
 
+    pca = MyPca(X[:1000], latent_dim)
     ## layer 0
     # enc = gpflux.encoders.RecognitionNetwork(latent_dim, X.shape[1], [200, 200, 100])
-    A = init_pca_projection_matrix(X[:1000], latent_dim)
-    enc = PcaResnetEncoder(latent_dim, np.mean(X, axis=0), A, network_dims=[5, 5])
+    enc = PcaResnetEncoder(latent_dim, pca.mean, pca.A, network_dims=[5, 5])
     layer0 = gpflux.layers.LatentVariableConcatLayer(latent_dim, encoder=enc)
 
     ## layer 1
     X_tmp = np.zeros([1000, 32, 32])
     X_tmp[:, 2:30, 2:30] = X[:1000, :].reshape(-1, 28, 28)
     X_tmp = X_tmp.reshape(-1, 32**2)
-    PCA = init_pca_projection_matrix(X_tmp, latent_dim, norm=False)  # P x L
-    mean = gpflow.mean_functions.Linear(A=PCA.T)
+    # PCA = init_pca_projection_matrix(X_tmp, latent_dim, norm=False)  # P x L
+    mean = gpflow.mean_functions.Linear(A=pca.B_enlarge(32).T, b=pca.mean_enlarge(32))
 
-    W = np.random.randn(32**2, num_gps1) / num_gps1
+    # W = np.random.randn(32**2, num_gps1) / num_gps1**2
+    pca2 = MyPca(X[:1000], num_gps1)
+    W = pca2.B_enlarge(32)
     kern = gpflow.multioutput.kernels.SharedMixedMok(
-                gpflow.kernels.Matern52(latent_dim), W)
+                gpflow.kernels.RBF(latent_dim), W)
     feat = gpflow.multioutput.features.MixedKernelSharedMof(
                 gpflow.features.InducingPoints(np.random.randn(num_inducing_1, latent_dim)))
     layer1 = gpflux.layers.GPLayer(kern, feat, num_latents=num_gps1, mean_function=mean)
     # layer1.kern.kern.lengthscales = 0.3
 
     ## layer 2: indexed conv patch 5x5
-    Y1 = np.random.randn(100, latent_dim) @ PCA.T
-    Y1 = (np.reshape(Y1, (-1, 32, 32)))[:, 8:24, 8:24]
-    init_patches = gpflux.init.PatchSamplerInitializer(Y1, width=16, height=16, unique=True)
-    patches = init_patches.sample([num_inducing_2, *patch_size])
+    Y1 = pca.up(pca.down(X[:500]))
+    print(Y1.shape)
+    # Y1 = (np.reshape(Y1, (-1, 32, 32)))[:, 8:24, 8:24]
+    init_patches = gpflux.init.PatchIndexSamplerInitializer(Y1, width=28, height=28, unique=True)
+    indices, patches = init_patches.sample([num_inducing_2, *patch_size])
 
-    proj = patches
-    width = 5
-    vmin, vmax = proj.min(), proj.max()
+    # import matplotlib.pyplot as plt
+    # proj = patches
+    # width = 5
+    # vmin, vmax = proj.min(), proj.max()
 
-    import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(10, 10, figsize=(10, 10))
-    for patch, ax in zip(proj, axes.flat):
-        im = ax.matshow(patch.reshape(width, width), vmin=vmin, vmax=vmax)
-        ax.set_xticks([])
-        ax.set_yticks([])
+    # fig, axes = plt.subplots(30, 30, figsize=(10, 10))
+    # for patch, ax in zip(proj, axes.flat):
+    #     im = ax.matshow(patch.reshape(width, width), vmin=vmin, vmax=vmax)
+    #     ax.set_xticks([])
+    #     ax.set_yticks([])
 
-    cbar_ax = fig.add_axes([0.95, .1, .01, 0.8])
-    fig.colorbar(im, cax=cbar_ax)
-    plt.show()
-    exit(0)
+    # cbar_ax = fig.add_axes([0.95, .1, .01, 0.8])
+    # fig.colorbar(im, cax=cbar_ax)
+    # plt.show()
+    # exit(0)
 
     # patches = ((patches - np.mean(patches, axis=0)) / (np.std(patches, axis=0) + 1e-6)) / 3.0
     # patches = np.random.randn(*patches.shape) * 1e-3
 
     layer2 = gpflux.layers.ConvLayer([32, 32], [28, 28], num_inducing_2, 
                                      patch_size=[5, 5], 
-                                     with_indexing=True,
-                                     patches_initializer=init_patches)
+                                     with_indexing=indexing,
+                                     patches_initializer=patches,
+                                     indices_initializer=indices)
 
     # layer2.q_sqrt = layer2.q_sqrt.read_value() * 1e-3
     # layer2.q_sqrt.set_trainable(True)
     # layer2.feature.set_trainable(True)
-
 
     like = MoBernoulli()
 
@@ -217,23 +269,36 @@ def setup_model(X, minibatch_size, patch_size, num_inducing_1, num_inducing_2, l
                          layers=[layer0, layer1, layer2],
                          likelihood=like,
                          batch_size=minibatch_size,
-                         name="my_latent_deep_gp")
+                         name="gp")
 
     ## RE-INIT SOME PARAMS
-    model.layers[1].q_sqrt = layer1.q_sqrt.read_value() * 1e-3
+    # model.layers[1].q_sqrt = layer1.q_sqrt.read_value() * 1e-2
     # layer2.kern.index_kernel.lengthscales = 3.0
     # layer2.kern.index_kernel.variance = 1.0
     # layer2.kern.basekern.variance = 1.0
-    model.layers[2].kern.basekern.lengthscales = 0.02
+    if indexing:
+        model.layers[2].kern.index_kernel.lengthscales = 3.0
+        model.layers[2].kern.index_kernel.set_trainable(False)
+
+    model.layers[2].kern.basekern.lengthscales = 1.0
+    model.layers[1].kern.kern.lengthscales = 0.1
 
 
     ## FIX SOME PARAMS
-    # model.layers[0].encoder.set_trainable(False)
-    model.layers[1].mean_function.set_trainable(False)
+    model.layers[0].encoder.set_trainable(False)
+    # model.layers[1].mean_function.set_trainable(False)
     model.layers[1].feature.set_trainable(False)
-    model.layers[2].feature.set_trainable(False)
+    model.layers[2].feature.set_trainable(True)
+    model.layers[1].kern.W.set_trainable(True)
+    model.layers[1].mean_function.set_trainable(False)
+    # model.layers[2].feature.set_trainable(True)
     # layer1.q_sqrt.set_trainable(True)
     # layer2.kern.basekern.lengthscales.set_trainable(True)
+    # model.set_trainable(False)
+    # model.layers[1].q_mu.set_trainable(True)
+    # model.layers[1].q_sqrt.set_trainable(True)
+    # model.layers[2].q_mu.set_trainable(True)
+    # model.layers[2].q_sqrt.set_trainable(True)
     
     model.alpha = 1.0
 
@@ -242,25 +307,34 @@ def setup_model(X, minibatch_size, patch_size, num_inducing_1, num_inducing_2, l
 
 @ex.capture
 def setup_monitor_tasks(Xs, model, optimizer, latent_dim,
-                        hz, hz_slow, basepath, adam_lr):
+                        hz, hz_slow, hz_fast, basepath, adam_lr):
 
     tb_path = os.path.join(basepath, NAME, "tensorboards", experiment_name())
     model_path = os.path.join(basepath, NAME, experiment_name())
-    fw = mon.LogdirWriter(tb_path)
+    fw = mon.LogdirWriter(tb_path, graph=tf.get_default_graph())
+
+    def _print_all_hyps(sess):
+        tensors = [p.constrained_tensor for p in list(model.parameters) if p.size == 1]
+        names = [p.pathname for p in list(model.parameters) if p.size == 1]
+        values = sess.run(tensors)
+        for n, v in zip(names, values):
+            print(n, v)
 
     tasks = []
 
     if adam_lr == "decay":
         def lr(*args, **kwargs):
             sess = model.enquire_session()
+            _print_all_hyps(sess)
             return sess.run(optimizer._optimizer._lr)
 
         tasks += [\
               mon.ScalarFuncToTensorBoardTask(fw, lr, "lr")\
               .with_name('lr')\
-              .with_condition(mon.PeriodicIterationCondition(hz))\
+              .with_condition(mon.PeriodicIterationCondition(hz_fast))\
               .with_exit_condition(True)\
               .with_flush_immediately(True)]
+
 
     tasks += [\
         mon.CheckpointTask(model_path)\
@@ -268,7 +342,7 @@ def setup_monitor_tasks(Xs, model, optimizer, latent_dim,
         .with_condition(mon.PeriodicIterationCondition(hz))]
 
     tasks += [\
-        mon.ModelToTensorBoardTask(fw, model)\
+        mon.ModelToTensorBoardTask(fw, model, only_scalars=True)\
         .with_name('model_tboard')\
         .with_condition(mon.PeriodicIterationCondition(hz))\
         .with_exit_condition(True)\
@@ -314,6 +388,14 @@ def setup_monitor_tasks(Xs, model, optimizer, latent_dim,
         .with_exit_condition(True)\
         .with_flush_immediately(True)]
 
+    plot_indices_func = plot_inducing_indices(model)
+    tasks += [\
+        mon.ImageToTensorBoardTask(fw, plot_indices_func, "plot_indices")\
+        .with_name('plot_indices')\
+        .with_condition(mon.PeriodicIterationCondition(hz))\
+        .with_exit_condition(True)\
+        .with_flush_immediately(True)]
+
     plot_samples_func = plot_samples(model)
     tasks += [\
         mon.ImageToTensorBoardTask(fw, plot_samples_func, "plot_samples")\
@@ -349,7 +431,7 @@ def setup_optimizer(model, global_step, adam_lr):
 
     if adam_lr == "decay":
         print("decaying lr")
-        lr = 0.01 * 1.0 / (1 + global_step // 5000 / 3)
+        lr = 0.001 * 1.0 / (1 + global_step // 5000 / 3)
         # lr = tf.train.exponential_decay(learning_rate=0.01, global_step=global_step, 
         # decay_steps=-10000, decay_rate=10, staircase=True)
     else:
@@ -358,24 +440,37 @@ def setup_optimizer(model, global_step, adam_lr):
     return gpflow.train.AdamOptimizer(lr)
 
 
-# def run_nat_grad(model, session, global_step, monitor_tasks, optimizer, iterations):
-#     try:
-#         with mon.Monitor(monitor_tasks, sess, global_step, print_summary=True) as monitor:
-#             try:
-#                 mon.restore_session(sess, checkpoint_path)
-#             except ValueError:
-#                 pass
+@ex.capture
+def run2(model, session, global_step, monitor_tasks, optimizer, iterations, natgrad, gamma):
 
-#             print(sess.run(global_step))
+    # Adam
+    adam_op = optimizer.make_optimize_tensor(model, global_step=global_step)
 
-#             for it in range(max([ARGS.iterations - sess.run(global_step), 0])):
-#                 sess.run(op_increment)
-#                 monitor()
-#                 sess.run(op_ng)
-#                 sess.run(op_adam)
+    if natgrad:
+        params = [model.layers[-1].q_mu, model.layers[-1].q_sqrt]
+        _ = [p.set_trainable(False) for p in params]
+        nat_grad_opt = gpflow.train.NatGradOptimizer(gamma)
+        natgrad_op = nat_grad_opt.make_optimize_tensor(model, 
+                                                       var_list=[(params[0], params[1])])
 
-#     except(KeyboardInterrupt):
-#         pass
+    monitor = mon.Monitor(monitor_tasks, session, global_step, print_summary=True)
+
+    # from tensorflow.python import debug as tf_debug
+    # session = tf_debug.LocalCLIDebugWrapperSession(session)
+
+    try:
+        with monitor:
+            for it in range(iterations):
+                print("Opt step:", it)
+                monitor(it)
+                if natgrad:
+                    session.run(natgrad_op)
+                session.run(adam_op)
+
+    except(KeyboardInterrupt):
+        print("Keyboardinterrupt: stop training")
+    finally:
+        model.anchor(session)
 
 @ex.capture
 def run(model, session, global_step, monitor_tasks, optimizer, iterations):
@@ -393,7 +488,7 @@ def run(model, session, global_step, monitor_tasks, optimizer, iterations):
 
 
 @ex.capture
-def finish(X, Xs, model, basepath):
+def finish(model, X, Xs, basepath):
 
     nll = calculate_nll(model, Xs[:5000])
     print("error test", nll)
@@ -406,88 +501,12 @@ def finish(X, Xs, model, basepath):
     np.savetxt(fn, nll)
 
 
-from sklearn.decomposition import PCA
-
-class MyPca:
-    def __init__(self, X, L):
-        pca = PCA(n_components=L, whiten=True)
-        pca.fit(X)
-        self.mean = pca.mean_
-        C = pca.components_.T  # D x L
-        v = np.sqrt(pca.explained_variance_)[None, :]  # 1 x L
-        self.A = C / v
-        self.B = C * v
-    
-    def down(self, X):
-        X = X - self.mean
-        X = np.matmul(X, self.A)
-        return X
-    
-    def up(self, X):
-        return np.matmul(X, self.B.T) + self.mean
 
 
 @ex.automain
 def main():
 
     X, Xs = data()
-
-    pca = MyPca(X[:500], 100)
-
-    XX = X[500:510]
-    low = pca.down(XX)
-    XXr = pca.up(low)
-
-    import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(10, 2)
-    for i, (x, xr) in enumerate(zip(XX, XXr)):
-        axes[i, 0].matshow(x.reshape(28, 28))
-        axes[i, 1].matshow(xr.reshape(28, 28))
-    plt.show()
-    
-
-    return 0
-    
-    L = 3
-    X = X[:100]
-
-    from sklearn.decomposition import PCA
-    pca = PCA(n_components=L, whiten=True)
-    Y = pca.fit_transform(X)
-    X2 = pca.inverse_transform(Y)
-    print(X.shape)
-    print(Y.shape)
-
-    print(X - X2)
-    print(np.mean((X - X2)**2))
-
-    return 0
-
-
-
-    # L = 10
-    # PCA = init_pca_projection_matrix(X, L).T  # L x P
-
-    # # # ww = np.linspace(-2, 2, 5)
-    # # # Ws = np.vstack([x.flatten() for x in np.meshgrid(ww, ww)]).T  # Nx2
-    # Ws = np.random.randn(100, L)
-
-    # proj = Ws @ PCA
-
-    # vmin, vmax = proj.min(), proj.max()
-
-    # import matplotlib.pyplot as plt
-    # fig, axes = plt.subplots(10, 10, figsize=(10, 10))
-    # for patch, ax in zip(proj, axes.flat):
-    #     im = ax.matshow(patch.reshape(28, 28), vmin=vmin, vmax=vmax)
-    #     ax.set_xticks([])
-    #     ax.set_yticks([])
-
-    # cbar_ax = fig.add_axes([0.95, .1, .01, 0.8])
-    # fig.colorbar(im, cax=cbar_ax)
-    # plt.show()
-
-    # return 0
 
     model = setup_model(X)
     model.compile()
@@ -503,9 +522,9 @@ def main():
 
     optimizer = setup_optimizer(model, step)
     monitor_tasks = setup_monitor_tasks(Xs, model, optimizer)
-    ll = run(model, sess, step,  monitor_tasks, optimizer)
+    ll = run2(model, sess, step,  monitor_tasks, optimizer)
     print("after optimisation ll", ll)
 
-    finish(X, Xs, model)
+    finish(model, X, Xs)
 
     return SUCCESS

@@ -63,6 +63,36 @@ class PatchSamplerInitializer(Initializer):
         return patches[idx, ...].reshape(shape)  # M x w x h
 
 
+class PatchIndexSamplerInitializer(PatchSamplerInitializer):
+
+    def sample(self, shape, jitter=0.1):
+        """
+        Returns both the indices of the patches and the patches,
+        jitter is added to indices
+        :param shape: tuple
+            M x w x h, number of patches x patch width x patch height
+        :return: np.array
+            returns M patches of size w x h, specified by the `shape` param.
+        """
+        h, w = shape[1:]
+        val = self.X.shape[1] - shape[1] + 1
+        indices = np.random.randint(3, val-3, size=[shape[0], 2])
+
+        patches = []
+        for i,j in indices:
+            patch_added = False
+            while not patch_added:
+                random_index = np.random.randint(0, len(self.X))
+                patch = self.X[random_index, i:i+h, j:j+h]
+                if not np.array([(patch == p).all() for p in patches]).any():
+                    patches.append(patch)
+                    patch_added = True
+
+        indices = indices.astype(np.float64) + np.random.randn(*indices.shape) * jitter
+        return indices, np.array(patches)
+
+
+
 class NormalInitializer(Initializer):
     """
     Sample initial weights from the Normal distribution.

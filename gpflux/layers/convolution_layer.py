@@ -42,6 +42,19 @@ def _from_patches_initializer_to_patches(initializer, shape):
     else:
         raise ValueError
 
+def _from_indices_initializer_to_indices(initializer, shape):
+    """
+    If initializer is an instance of init.Initializer it will create
+    the patches by calling the initializer with the given shape.
+    If the initializer is actually a np.ndarray the array gives
+    the patches.
+    """
+    if isinstance(initializer, init.Initializer):
+        return initializer(shape)  # M x w x h
+    elif isinstance(initializer, np.ndarray):
+        return initializer  # M x w x h
+    else:
+        raise ValueError
 
 class ConvLayer(GPLayer):
 
@@ -58,7 +71,8 @@ class ConvLayer(GPLayer):
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
                  base_kernel: Optional[gpflow.kernels.Kern] = None,
-                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
+                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None,
+                 indices_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
         """
         This layer constructs a convolutional GP layer.
         :input_shape: tuple
@@ -97,9 +111,12 @@ class ConvLayer(GPLayer):
         patches = _from_patches_initializer_to_patches(patches_initializer, shape)  # M x w x h
 
         if with_indexing:
-            val = input_shape[0] - patch_size[0] + 1
-            indices = np.random.randint(0, val, size=[number_inducing, len(input_shape)])
-            indices = indices.astype(np.float64)
+            if indices_initializer is None:
+                val = input_shape[0] - patch_size[0] + 1
+                indices = np.random.randint(0, val, size=[number_inducing, len(input_shape)])
+                indices = indices.astype(np.float64)
+            else:
+                indices = indices_initializer
             feat = IndexedInducingPatch(patches, indices)
         else:
             feat = InducingPatch(patches)
