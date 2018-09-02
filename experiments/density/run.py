@@ -119,7 +119,7 @@ def config():
     restore = ""
 
     # latent dim
-    latent_dim = 2
+    latent_dim = 5
 
     # indexing
     indexing = True
@@ -278,14 +278,14 @@ def setup_model(X, minibatch_size, patch_size, num_inducing_1, num_inducing_2, l
     # layer2.kern.basekern.variance = 1.0
     if indexing:
         model.layers[2].kern.index_kernel.lengthscales = 3.0
-        model.layers[2].kern.index_kernel.set_trainable(False)
+        model.layers[2].kern.index_kernel.set_trainable(True)
 
     model.layers[2].kern.basekern.lengthscales = 1.0
-    model.layers[1].kern.kern.lengthscales = 0.1
+    model.layers[1].kern.kern.lengthscales = 1.0
 
 
     ## FIX SOME PARAMS
-    model.layers[0].encoder.set_trainable(False)
+    # model.layers[0].encoder.set_trainable(True)
     # model.layers[1].mean_function.set_trainable(False)
     model.layers[1].feature.set_trainable(False)
     model.layers[2].feature.set_trainable(True)
@@ -515,6 +515,11 @@ def main():
     step = mon.create_global_step(sess)
 
     restore_session(sess)
+
+    model.set_trainable(True)
+    model.alpha.set_trainable(False)
+    print(model)
+
     print("X", np.min(X), np.max(X))
     print("Xs", np.min(Xs), np.max(Xs))
 

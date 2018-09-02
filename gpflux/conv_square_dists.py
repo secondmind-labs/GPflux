@@ -10,6 +10,10 @@ __all__ = [
     'full_conv_square_dist',
     'pathwise_conv_square_dist',
     'image_patch_conv_square_dist'
+    'diag_conv_inner_prod',
+    'full_conv_inner_prod',
+    'patchwise_conv_inner_prod',
+    'self_inner_prod'
 ]
 
 Int = Union[tf.Tensor, int]
