@@ -38,7 +38,6 @@ class Data:
     Z = np.random.randn(M, np.prod(patch_size))
 
 
-# @pytest.mark.skip
 @pytest.mark.parametrize("order", [0, 1, 2])
 @pytest.mark.parametrize("weight_variance", np.random.rand(1))
 @pytest.mark.parametrize("bias_variance", np.random.rand(1))
@@ -69,7 +68,6 @@ def test_Kdiag(session_tf, order, weight_variance, bias_variance, variance):
     np.testing.assert_allclose(value, expected)
 
 
-# @pytest.mark.skip
 @pytest.mark.parametrize("order", [0, 1, 2])
 @pytest.mark.parametrize("weight_variance", np.random.rand(1))
 @pytest.mark.parametrize("bias_variance", np.random.rand(1))
@@ -114,6 +112,7 @@ def test_Kuf(session_tf, order, weight_variance, bias_variance, variance):
 
 from gpflux.convolution.convolution_kernel import StationaryImageKernel, ArcCosineImageKernel
 
+
 @pytest.mark.parametrize("order", [0, 1, 2])
 @pytest.mark.parametrize("weight_variance", np.random.rand(1))
 @pytest.mark.parametrize("bias_variance", np.random.rand(1))
@@ -121,8 +120,7 @@ from gpflux.convolution.convolution_kernel import StationaryImageKernel, ArcCosi
 def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance, variance):
 
     patches = Data.X_patches
-    kern = ArcCosineImageKernel(np.prod(Data.patch_size), 
-                                image_size=[28, 28, 1], patch_size=[5, 5],
+    kern = ArcCosineImageKernel(image_size=[28, 28, 1], patch_size=[5, 5],
                                 order=order, variance=variance,
                                 weight_variances=weight_variance,
                                 bias_variance=bias_variance, ARD=False)
@@ -132,7 +130,40 @@ def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance,
     value = kern.compute_K_image(Data.X_2d)
     np.testing.assert_allclose(value, expected)
 
+    # Kdiag [N, P, P]
+    patches_per_image = np.reshape(patches, [Data.N, -1, np.prod(Data.patch_size)])  # [N, P, h*w]
+    expected = np.array([kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
+    value = kern.compute_K_image_full_output_cov(Data.X_2d)
+    np.testing.assert_allclose(value, expected)
+
     # Kuf
-    expected = kern.compute_K(Data.Z, patches).reshape(Data.M, Data.N, -1)
+    expected = kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
+    value = kern.compute_K_image_inducing_patches(Data.X_2d, Data.Z)
+    np.testing.assert_allclose(value, expected)
+
+from gpflux.convolution.convolution_kernel import RBFImageKernel 
+
+
+@pytest.mark.parametrize("lengthscales", np.random.rand(2))
+@pytest.mark.parametrize("variance", np.random.rand(2))
+def test_RBFImageKernel(session_tf, lengthscales, variance):
+
+    patches = Data.X_patches
+    kern = RBFImageKernel(image_size=[28, 28, 1], patch_size=[5, 5],
+                          variance=variance, lengthscales=lengthscales, ARD=False)
+
+    # Kdiag [N,P]
+    expected = kern.compute_Kdiag(patches).reshape(Data.N, -1)
+    value = kern.compute_K_image(Data.X_2d)
+    np.testing.assert_allclose(value, expected)
+
+    # Kdiag [N, P, P]
+    patches_per_image = np.reshape(patches, [Data.N, -1, np.prod(Data.patch_size)])  # [N, P, h*w]
+    expected = np.array([kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
+    value = kern.compute_K_image_full_output_cov(Data.X_2d)
+    np.testing.assert_allclose(value, expected)
+
+    # Kuf
+    expected = kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
     value = kern.compute_K_image_inducing_patches(Data.X_2d, Data.Z)
     np.testing.assert_allclose(value, expected)

@@ -31,21 +31,11 @@ def Kuf(feat, kern, Xnew):
     """
     debug_kuf(feat, kern)
 
-    assert kern.colour_channels == 1
-    assert kern.basekern.ARD == False
-    C = kern.colour_channels
-    H, W = kern.img_size
-    lengthscales = kern.basekern.lengthscales
-    Z = feat.Z
     M = len(feat)
+    N = tf.shape(Xnew)[0]
 
-    X = tf.reshape(Xnew, [-1, H, W, C])
-    N = tf.shape(X)[0]
-    dist = image_patch_conv_square_dist(X, Z, kern.patch_size)  # NxMxP
-    dist = tf.check_numerics(dist, "NAN in dist", name="check_op_Kuf")
-    dist /= lengthscales ** 2
-    Kmn = kern.basekern.K_r2(dist)
-    Kmn = tf.transpose(Kmn, [1, 0, 2])  # MxNxP
+    Knm = kern.basekern.K_image_inducing_patches(Xnew, feat.Z)  # [N, P, M]
+    Kmn = tf.transpose(Knm, [2, 0, 1])  # MxNxP
 
     if kern.with_indexing:
         if not isinstance(feat, IndexedInducingPatch):
@@ -70,23 +60,9 @@ def Kuu(feat, kern, *, jitter=0.0):
     Kmm = kern.basekern.K(feat.Z)  # MxM
     jittermat = jitter * tf.eye(len(feat), dtype=Kmm.dtype)  # MxM
 
-    # Kmm = tf.check_numerics(Kmm, "nan in Kuu 1")
-    # Kmm = tf.Print(Kmm, ["Kmm1", Kmm])
-
     if kern.with_indexing:
         Pmm = kern.index_kernel.K(feat.indices)  # MxM
-        # Pmm = tf.check_numerics(Pmm, "nan in Puu")
         Kmm = Kmm * Pmm
-
-        # def _save_vals(p, k):
-        #     np.savez("Kuu_values", Kmm=k, Pmm=p)
-        #     return True
-
-        # debug_op = tf.py_func(_save_vals, [Pmm, Kmm], [tf.bool])
-        # with tf.control_dependencies(debug_op):
-        #     Kmm = tf.identity(Kmm, name='out')
-    # Kmm = tf.check_numerics(Kmm, "nan in Kuu 2")
-    # Kmm = tf.Print(Kmm, ["Kmm2", Kmm])
 
     return (Kmm + jittermat)[None, :, :]  # L/1xMxM  TODO: add L
 

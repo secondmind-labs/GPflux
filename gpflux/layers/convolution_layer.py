@@ -10,7 +10,7 @@ import numpy as np
 
 from .layers import GPLayer
 from .. import init
-from ..convolution import ConvKernel, WeightedSum_ConvKernel
+from ..convolution import ConvKernel, WeightedSum_ConvKernel, RBFImageKernel, ImageKernel
 from ..convolution import InducingPatch, IndexedInducingPatch
 
 
@@ -123,8 +123,9 @@ class ConvLayer(GPLayer):
 
         # Convolutional kernel
         if base_kernel is None:
-            base_kernel = gpflow.kernels.RBF(np.prod(patch_size))
+            base_kernel = RBFImageKernel(image_size=input_shape, patch_size=patch_size)
         else:
+            assert isinstance(base_kernel, ImageKernel)
             assert base_kernel.input_dim == np.prod(patch_size)
 
         kern = ConvKernel(base_kernel,
@@ -166,7 +167,8 @@ class WeightedSum_ConvLayer(ConvLayer):
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
                  base_kernel: Optional[gpflow.kernels.Kern] = None,
-                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
+                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None,
+                 indices_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
         """
         See `ConvLayer` for docstrings.
         """
@@ -185,13 +187,12 @@ class WeightedSum_ConvLayer(ConvLayer):
                          q_sqrt=q_sqrt,
                          mean_function=mean_function,
                          base_kernel=base_kernel,
-                         patches_initializer=patches_initializer)
+                         patches_initializer=patches_initializer,
+                         indices_initializer=indices_initializer)
 
-        if base_kernel is None:
-            base_kernel = gpflow.kernels.RBF(np.prod(patch_size))
-        else:
-            assert base_kernel.input_dim == np.prod(patch_size)
+        base_kernel = self.kern.basekern
 
+        # overwrite the kernel
         self.kern = WeightedSum_ConvKernel(base_kernel,
                                            img_size=input_shape,
                                            patch_size=patch_size,

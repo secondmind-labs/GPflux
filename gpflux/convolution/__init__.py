@@ -3,5 +3,7 @@
 # Proprietary and confidential
 
 from . import conditionals
-from .convolution_kernel import ConvKernel, WeightedSum_ConvKernel
-from .inducing_patch import InducingPatch, IndexedInducingPatch
+from .convolution_kernel import (ArcCosineImageKernel, ConvKernel, ImageKernel,
+                                 Matern12ImageKernel, RBFImageKernel,
+                                 WeightedSum_ConvKernel)
+from .inducing_patch import IndexedInducingPatch, InducingPatch

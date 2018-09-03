@@ -194,7 +194,7 @@ def main(_):
     print(p.shape)
     Pm, Xm, Ym = get_misclassified_images(p, Xs, Ys)
     print(Pm.shape)
-    np.savez("results_cnn5", Pm=Pm, Xm=Xm, Ym=Ym, Pall=p)
+    np.savez("results_cnn7", Pm=Pm, Xm=Xm, Ym=Ym, Pall=p)
 
 if __name__ == '__main__':
   main(0)
