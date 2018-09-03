@@ -25,7 +25,6 @@ def get_misclassified_images(model, Xs, Ys, batchsize=50):
     missclassified_X = []
     missclassified_Y = []
     missclassified_probs = []
-    all_probs = []
     for idx, xs, ys in zip(np.array_split(np.arange(Ns), splits),
                            np.array_split(Xs, splits),
                            np.array_split(Ys, splits)):
@@ -37,7 +36,6 @@ def get_misclassified_images(model, Xs, Ys, batchsize=50):
         p, _ = model.predict_y(xss)  # num*ns x Nc
         p = np.reshape(p, [num, ns, Nc])  # num x ns x Nc
         p = np.mean(p, axis=0, keepdims=False) # ns x Nc
-        all_probs.append(p)
         misses = np.argmax(p, axis=1) != ys[:, 0]
         missclassified_X.append(xs[misses])
         missclassified_Y.append(ys[misses])
@@ -45,8 +43,7 @@ def get_misclassified_images(model, Xs, Ys, batchsize=50):
 
     return (np.concatenate(missclassified_X, axis=0),
             np.concatenate(missclassified_Y, axis=0),
-            np.concatenate(missclassified_probs, axis=0),
-            np.concatenate(all_probs, axis=0))
+            np.concatenate(missclassified_probs, axis=0))
 
 def plot2(Xm, Pm, Ym):
     import matplotlib.pyplot as plt
@@ -82,11 +79,11 @@ if __name__ == "__main__":
     model.compile()
 
     print("Identifying missclassified images")
-    Xm, Ym_true, Pm, Pall = get_misclassified_images(model, Xs, Ys)
+    Xm, Ym_true, Pm = get_misclassified_images(model, Xs, Ys)
 
-    print(len(Xm) / len(Xs))
+    print(len(Xm))
 
     # Ym = model.predict_y(Xm)[0]
     plot2(Xm[:100], Pm[:100], Ym_true[:100])
 
-    np.savez("weighted_conv_gp_results_new", Xm=Xm, Ym=Ym_true, Pm=Pm, Pall=Pall)
+    np.savez("weighted_conv_gp_results", Xm=Xm, Ym_true=Ym_true, Pm=Pm)

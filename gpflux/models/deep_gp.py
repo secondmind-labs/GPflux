@@ -12,7 +12,7 @@ from functools import reduce
 
 from typing import Optional, List
 
-from gpflow import settings, Param
+from gpflow import settings
 from gpflow.decors import params_as_tensors, autoflow
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
@@ -65,9 +65,6 @@ class DeepGP(Model):
             self.X = DataHolder(X)
             self.Y = DataHolder(Y)
             self.scale = 1.0
-        
-        self.alpha = Param(1.0)
-        self.alpha.set_trainable(False)
 
     def _get_Ws_iter(self, latent_var_mode: LatentVarMode, Ws=None) -> iter:
         i = 0
@@ -112,17 +109,9 @@ class DeepGP(Model):
         f_mean, f_var = self._build_decoder(self.X)  # N x P, N x P
         self.E_log_prob = tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y))
 
-        # self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))
-        self.KLs_global = reduce(tf.add, (l.KL_global() for l in self.layers))
-        self.KLs_minibatch = reduce(tf.add, (l.KL_minibatch() for l in self.layers))
+        self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))
 
-        self.KLs_global = tf.check_numerics(self.KLs_global, 'KL global NAN')
-        self.KLs_minibatch = tf.check_numerics(self.KLs_minibatch, 'KL minibatch NAN')
-
-        ELBO = (self.E_log_prob - self.KLs_minibatch) * self.scale - self.KLs_global
-
-        ELBO = tf.check_numerics(ELBO, 'nan in ELBO')
-
+        ELBO = self.E_log_prob * self.scale - self.KL_U_layers
         return tf.cast(ELBO, settings.float_type)
 
     def _predict_f(self, X):
@@ -148,75 +137,8 @@ class DeepGP(Model):
         return self._build_decoder(X, Ws=Ws, full_output_cov=True, latent_var_mode=LatentVarMode.GIVEN)
 
     @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
-    def predict_ys_with_Ws_full_output_cov(self, X, Ws):
-        Fm, Fv = self._build_decoder(X, Ws=Ws, full_output_cov=True, latent_var_mode=LatentVarMode.GIVEN)
-        Fs = gpflow.conditionals._sample_mvn(Fm, Fv, "full")
-        return self.likelihood.conditional_mean(Fs)
-
-    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_cov(self, X, Ws):
         return self._build_decoder(X, Ws=Ws, full_cov=True, latent_var_mode=LatentVarMode.GIVEN)
-
-    @autoflow()
-    def compute_KL_global(self):
-        return self.KLs_global
-
-    @autoflow()
-    def compute_KL_minibatch(self):
-        return self.scale * self.KLs_minibatch
-
-    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
-    def decode_inner_layer(self, X, W):
-        Z = self.layers[0].propagate(X, sampling=True, W=W, latent_var_mode=LatentVarMode.GIVEN)
-        Z = self.layers[1].propagate(Z, sampling=True, W=None, full_cov=False, full_output_cov=True)
-        return Z
-
-    @autoflow([settings.float_type, [None, None]],
-              [settings.int_type, ] )
-    def nll(self, Y, num):
-        """
-        X: empty shape of Ws
-        Ws: Nw x L, Nw: monte carlo samples, L: latent dim
-        Y: Ns x D, NS: num test points, D output dim
-        """
-        # m is Nw x D, and v is Nw x D x D
-
-        # debug_op = tf.py_func(_debug_func2, [Ws], [tf.bool])
-        # with tf.control_dependencies(debug_op):
-        #     Ws = tf.identity(Ws, name='out')
-
-        X = tf.zeros([num, 0], dtype=settings.float_type)
-        m, v = self._build_decoder(X,
-                                   full_cov=False,
-                                   full_output_cov=True,
-                                   latent_var_mode=LatentVarMode.PRIOR)
-        # P is Nw x D
-        P = self.likelihood.predict_mean_from_f_full_output_cov(m, v)
-        Pr = tf.tile(P[None, ...], multiples=[tf.shape(Y)[0], 1, 1])  # Ns x Nw x D
-
-        # val = tf.reduce_sum(tf.is_nan(Pr))
-        # Pr = tf.Print(Pr, ["nans in Pr", val])
-
-        def _debug_func(p, l, y):
-            import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
-            from IPython import embed; embed()  # XXX DEBUG
-            return False
-
-
-        Yr = tf.tile(Y[:, None, :], multiples=[1, num, 1])  # Ns x Nw x D
-        L = self.likelihood.eval(Pr, Yr)
-
-        # debug_op = tf.py_func(_debug_func, [Pr, L, Y], [tf.bool])
-        # with tf.control_dependencies(debug_op):
-        #     L = tf.identity(L, name='out')
-
-        # val = tf.reduce_sum(tf.is_nan(Pr))
-        # Pr = tf.Print(Pr, ["nans in Pr", val])
-
-        L = tf.reduce_sum(L, axis=2)  # Ns x Nw
-        L = tf.reduce_logsumexp(L, axis=1) - tf.log(tf.cast(num, tf.float64))  # Ns
-        return - tf.reduce_mean(L)
-
 
     @autoflow()
     def compute_KL_U(self):

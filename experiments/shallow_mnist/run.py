@@ -30,7 +30,7 @@ def config():
     # minibatch size
     minibatch_size = 100
 
-    base_kern = "ArcCosine"
+    base_kern = "RBF"
 
     # weighted sum
     with_weights = True
@@ -105,7 +105,6 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
                     with_weights, with_indexing):
     args = np.array(
         [
-            "test_refactor"
             "conv_ops",
             dataset,
             "W", with_weights,
@@ -117,9 +116,7 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
             "minibatch_size", minibatch_size,
             "patch", patch_size[0],
         ])
-    name = "_".join(args.astype(str))
-    print(name)
-    return name
+    return "_".join(args.astype(str))
 
 
 @ex.capture
@@ -143,37 +140,26 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
 
     H = int(X.shape[1] ** .5)
 
-    # if init_patches == "random":
-    #     patches = gpflux.init.NormalInitializer()
-    # else:
-    #     unique = init_patches == "patches-unique"
-    # init_patches = gpflux.init.PatchIndexSamplerInitializer(Y1, width=28, height=28, unique=True)
-    # indices, patches = init_patches.sample([num_inducing_2, *patch_size])
-    init_patches = gpflux.init.PatchIndexSamplerInitializer(X[:500], width=H, height=H)
-    indices, patches = init_patches.sample([M, *patch_size])
-
-    if base_kern == "ArcCosine":
-        kern0 = gpflux.convolution.ArcCosineImageKernel([H, H], patch_size)
+    if init_patches == "random":
+        patches = gpflux.init.NormalInitializer()
     else:
-        kern0 = None
+        unique = init_patches == "patches-unique"
+        patches = gpflux.init.PatchSamplerInitializer(
+            X[:100], width=H, height=H, unique=unique)
 
     layer0 = gpflux.layers.WeightedSum_ConvLayer(
-                [H, H], M, patch_size,
-                num_latents=num_filters,
-                with_indexing=with_indexing,
-                with_weights=with_weights,
-                patches_initializer=patches,
-                indices_initializer=indices,
-                base_kernel=kern0)
+        [H, H], M, patch_size,
+        num_latents=num_filters,
+        with_indexing=with_indexing,
+        with_weights=with_weights,
+        patches_initializer=patches)
 
     # init kernel
     if with_indexing:
         layer0.kern.index_kernel.variance = 25.0
         layer0.kern.index_kernel.lengthscales = 3.0
     layer0.kern.basekern.variance = 25.0
-
-    if base_kern != "ArcCosine":
-        layer0.kern.basekern.lengthscales = 1.2
+    layer0.kern.basekern.lengthscales = 1.2
 
     # break symmetry in variational parameters
     layer0.q_sqrt = layer0.q_sqrt.read_value()

@@ -61,23 +61,15 @@ class LatentVariableLayer(BaseLayer):
     def encode_once(self):
         if not self.is_encoded:
             XY = tf.concat([self.root.X, self.root.Y], 1)
-            q_mu, q_sqrt = self.encoder(XY)
+            q_mu, log_q_sqrt = self.encoder(XY)
             self.q_mu = q_mu
-            self.q_sqrt = q_sqrt
+            self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
             #TODO(vincent) document this hard-coded feature ^^^
             self.is_encoded = True
 
     def KL(self):
         self.encode_once()
         return gauss_kl(self.q_mu, self.q_sqrt)
-
-    @params_as_tensors
-    def KL_minibatch(self):
-        self.encode_once()
-        return gauss_kl(self.q_mu, self.q_sqrt)
-
-    def KL_global(self):
-        return tf.cast(0.0, settings.float_type)
 
     def propagate(self, X, sampling=True, W=None, **kwargs):
         raise NotImplementedError
@@ -105,16 +97,14 @@ class LatentVariableConcatLayer(LatentVariableLayer):
         self.encode_once()
         if sampling:
             if latent_var_mode == LatentVarMode.POSTERIOR:
-                z = tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
+                z= tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
                 W = self.q_mu + z * self.q_sqrt
 
             elif latent_var_mode == LatentVarMode.PRIOR:
-                print("PRIOR")
                 W = tf.random_normal([tf.shape(X)[0], self.latent_dim],
                                      dtype=settings.float_type)
 
             elif latent_var_mode == LatentVarMode.GIVEN:
-                print("GIVEN")
                 assert isinstance(W, tf.Tensor)
 
 
