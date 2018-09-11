@@ -43,7 +43,7 @@ def test_to_str():
     # Layer 3
     patch_init = gpflux.init.PatchSamplerInitializer(Data.X[:10], 28, 28)
     layer3 = gpflux.layers.ConvLayer([30, 30], [28, 28], Data.M, [3, 3],
-                                     inducing_patches_initializer=patch_init)
+                                     patches_initializer=patch_init)
 
     model = gpflux.DeepGP(np.empty((Data.N, 0)),
                           Data.X,
