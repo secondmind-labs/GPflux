@@ -34,8 +34,6 @@ class InducingPatch(Mof):
         return 1
 
 
-from gpflow.decors import params_as_tensors
-
 class IndexedInducingPatch(InducingPatch):
     """
     Inducing feature combining patches and indices.
