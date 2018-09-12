@@ -13,7 +13,7 @@ from gpflow.multioutput.conditionals import independent_interdomain_conditional
 from gpflow.conditionals import base_conditional, _sample_mvn
 from gpflow.multioutput.features import debug_kuf, debug_kuu
 
-from .convolution_kernel import ConvKernel, WeightedSumConvolutional
+from .convolution_kernel import ConvKernel, WeightedSumConvKernel
 from .inducing_patch import InducingPatch, IndexedInducingPatch
 from ..conv_square_dists import image_patch_conv_square_dist
 
@@ -23,7 +23,7 @@ from ..conv_square_dists import image_patch_conv_square_dist
 # -------------------------------------
 
 @dispatch(InducingPatch, ConvKernel, object)
-@gpflow.name_scope("Kuf_InducingPatch_Convolutional")
+@gpflow.name_scope("Kuf_InducingPatch_ConvKernel")
 def Kuf(feat, kern, Xnew):
     """
     :param Xnew: NxWH
@@ -54,7 +54,7 @@ def Kuf(feat, kern, Xnew):
 
 
 @dispatch(InducingPatch, ConvKernel)
-@gpflow.name_scope("Kuu_InducingPatch_Convolutional")
+@gpflow.name_scope("Kuu_InducingPatch_ConvKernel")
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = kern.basekern.K(feat.Z)  # MxM
@@ -101,11 +101,11 @@ def _sample_conditional(Xnew, feat, kern, f, *, q_sqrt=None, white=False, **kwar
     return sample
 
 # -------------------------------------------------
-# (Indexed)InducingPatch and WeightedSumConvolutional
+# (Indexed)InducingPatch and WeightedSumConvKernel
 # -------------------------------------------------
 
-@dispatch(InducingPatch, WeightedSumConvolutional, object)
-@gpflow.name_scope("Kuu_InducingPatch_WeightedSumConvolutional")
+@dispatch(InducingPatch, WeightedSumConvKernel, object)
+@gpflow.name_scope("Kuu_InducingPatch_WeightedSumConvKernel")
 def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
     Kuf_func = Kuf.dispatch(InducingPatch, ConvKernel, object)
@@ -114,8 +114,8 @@ def Kuf(feat, kern, Xnew):
     return Kmn / kern.num_patches  # MxN
 
 
-@dispatch(InducingPatch, WeightedSumConvolutional)
-@gpflow.name_scope("Kuu_InducingPatch_WeightedSumConvolutional")
+@dispatch(InducingPatch, WeightedSumConvKernel)
+@gpflow.name_scope("Kuu_InducingPatch_WeightedSumConvKernel")
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kuu_func = Kuu.dispatch(InducingPatch, ConvKernel)
@@ -123,7 +123,7 @@ def Kuu(feat, kern, *, jitter=0.0):
     return Kmm[0, ...]  # MxM
 
 
-@conditional.register(object, InducingPatch, WeightedSumConvolutional, object)
+@conditional.register(object, InducingPatch, WeightedSumConvKernel, object)
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     :param Xnew: NxD
@@ -134,7 +134,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param white:
     :return:
     """
-    settings.logger().debug("Conditional: InducingPatch, WeightedSumConvolutional")
+    settings.logger().debug("Conditional: InducingPatch, WeightedSumConvKernel")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # MxM
     Kmn = Kuf(feat, kern, Xnew)  # MxN
     Knn = kern.K(Xnew, full_output_cov=True) if full_cov else kern.Kdiag(Xnew, full_output_cov=True)

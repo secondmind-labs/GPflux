@@ -5,5 +5,5 @@
 from . import conditionals
 from .convolution_kernel import (ImageArcCosine, ConvKernel,
                                  ImageBasedKernel, ImageMatern12,
-                                 ImageRBF, WeightedSumConvolutional)
+                                 ImageRBF, WeightedSumConvKernel)
 from .inducing_patch import IndexedInducingPatch, InducingPatch

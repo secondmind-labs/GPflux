@@ -11,7 +11,7 @@ import numpy as np
 from .. import init
 from ..convolution import (ConvKernel, ImageBasedKernel,
                            IndexedInducingPatch, InducingPatch, ImageRBF,
-                           WeightedSumConvolutional)
+                           WeightedSumConvKernel)
 from .layers import GPLayer
 
 
@@ -77,7 +77,7 @@ class ConvLayer(GPLayer):
                  patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None,
                  indices_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
         """
-        This layer constructs a convolutional GP layer.
+        This layer constructs a ConvKernel GP layer.
         :input_shape: tuple
             shape of the input images, W x H
         :output_shape: tuple
@@ -194,7 +194,7 @@ class WeightedSumConvLayer(ConvLayer):
         base_kernel = self.kern.basekern
 
         # overwrite the kernel
-        self.kern = WeightedSumConvolutional(base_kernel,
+        self.kern = WeightedSumConvKernel(base_kernel,
                                            img_size=input_shape,
                                            patch_shape=patch_shape,
                                            pooling=pooling,

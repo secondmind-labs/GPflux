@@ -13,7 +13,8 @@ from gpflow import kernels
 from gpflow import params_as_tensors, params_as_tensors_for, settings
 from gpflow.multioutput.kernels import Mok
 
-from ..conv_square_dists import (diag_conv_inner_prod, diag_conv_square_dist,
+from ..conv_square_dists import (diag_conv_inner_prod,
+                                 diag_conv_square_dist,
                                  full_conv_square_dist,
                                  patchwise_conv_square_dist)
 
