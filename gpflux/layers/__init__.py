@@ -4,7 +4,7 @@
 
 
 from .layers import GPLayer
-from .convolution_layer import ConvLayer, WeightedSum_ConvLayer
+from .convolution_layer import ConvLayer, WeightedSumConvLayer
 from .perceptron_layer import PerceptronLayer
 from .linear_layer import LinearLayer
 from .latent_variable_layer import LatentVariableConcatLayer

@@ -18,7 +18,7 @@ ctypedef np.int64_t INTTYPE_t
 
 
 @cython.cdivision(True)
-def patch_inner_product(FLOATTYPE_t[:, :, ::1] X, patch_size):
+def patch_inner_product(FLOATTYPE_t[:, :, ::1] X, patch_shape):
     """
     Calculates the inner product between every pair of patches
     for all images of X.  Assume that X[n] is an image of
@@ -29,7 +29,7 @@ def patch_inner_product(FLOATTYPE_t[:, :, ::1] X, patch_size):
     ```
     output[n, p, p'] = sum_{i,j} X[n, p](i,j) X[n, p'](i,j)
     ```
-    where 0 <= i < patch_size[0], 0 <= j < patch_size[1] and
+    where 0 <= i < patch_shape[0], 0 <= j < patch_shape[1] and
     P is the number of patches in an image.
 
     Note:
@@ -42,7 +42,7 @@ def patch_inner_product(FLOATTYPE_t[:, :, ::1] X, patch_size):
     :param X: A three dimensional tensor of size N x H x W,
         where N is the number of images, H is the height and
         W is the width of the image.
-    :param patch_size: A list of ints. 1-D tensor of length 2.
+    :param patch_shape: A list of ints. 1-D tensor of length 2.
         The size of the patches [h, w]. E.g., [3, 3] or [5, 5].
 
     Return:
@@ -53,8 +53,8 @@ def patch_inner_product(FLOATTYPE_t[:, :, ::1] X, patch_size):
 
     cdef int Hin = X.shape[1]
     cdef int Win = X.shape[2]
-    cdef int p0 = patch_size[0]
-    cdef int p1 = patch_size[1]
+    cdef int p0 = patch_shape[0]
+    cdef int p1 = patch_shape[1]
     cdef int Hout = Hin - p0 + 1
     cdef int Wout = Win - p1 + 1
     cdef int Pin = Hin * Win

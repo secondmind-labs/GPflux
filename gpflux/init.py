@@ -49,16 +49,16 @@ class PatchSamplerInitializer(Initializer):
             returns M patches of size w x h, specified by the `shape` param.
         """
         num = shape[0]  # M
-        patch_size = shape[1:]  # w x h
+        patch_shape = shape[1:]  # w x h
 
-        patches = np.array([extract_patches_2d(im, patch_size) for im in self.X])
+        patches = np.array([extract_patches_2d(im, patch_shape) for im in self.X])
         patches = np.concatenate(patches, axis=0)
-        patches = np.reshape(patches, [-1, np.prod(patch_size)])
+        patches = np.reshape(patches, [-1, np.prod(patch_shape)])
         if self.unique:
             print("selecting unique patches")
             patches = np.unique(patches, axis=0)
 
-        # patches = np.reshape(patches, [-1, *patch_size])  # (N * P) x w x h
+        # patches = np.reshape(patches, [-1, *patch_shape])  # (N * P) x w x h
         idx = np.random.permutation(range(len(patches)))[:num]  # M
         return patches[idx, ...].reshape(shape)  # M x w x h
 

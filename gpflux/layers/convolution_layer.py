@@ -8,20 +8,23 @@ from typing import List, Optional, Union
 import gpflow
 import numpy as np
 
-from .layers import GPLayer
 from .. import init
-from ..convolution import ConvKernel, WeightedSum_ConvKernel, RBFImageKernel, ImageKernel
-from ..convolution import InducingPatch, IndexedInducingPatch
+from ..convolution import (Convolutional, ImageBasedKernel,
+                           IndexedInducingPatch, InducingPatch, ImageRBF,
+                           WeightedSumConvolutional)
+from .layers import GPLayer
 
 
-def _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
-    if (input_shape[0] - patch_size[0] + 1) % pooling != 0:
+def _correct_input_output_shape(input_shape, output_shape, patch_shape, pooling):
+    h = input_shape[0] - patch_shape[0] + 1
+    w = input_shape[1] - patch_shape[1] + 1
+    if h % pooling != 0:
         return False
-    if (input_shape[1] - patch_size[1] + 1) % pooling != 0:
+    if w % pooling != 0:
         return False
-    if ((input_shape[0] - patch_size[0] + 1) / pooling) != output_shape[0]:
+    if h / pooling != output_shape[0]:
         return False
-    if ((input_shape[1] - patch_size[1] + 1) / pooling) != output_shape[1]:
+    if w / pooling != output_shape[1]:
         return False
 
     return True
@@ -62,7 +65,7 @@ class ConvLayer(GPLayer):
                  input_shape: List,
                  output_shape: List,
                  number_inducing: int,
-                 patch_size: List,
+                 patch_shape: List,
                  num_latents: int = 1,
                  *,
                  with_indexing: bool = False,
@@ -79,7 +82,7 @@ class ConvLayer(GPLayer):
             shape of the input images, W x H
         :output_shape: tuple
             shape of the output images
-        :param patch_size: tuple
+        :param patch_shape: tuple
             Shape of the patches (a.k.a filter_shape of filter_size)
         :param number_inducing: int
             Number of inducing patches, M
@@ -98,21 +101,21 @@ class ConvLayer(GPLayer):
             holds the inducing patches M x w x h
         """
 
-        if not _correct_input_output_shape(input_shape, output_shape, patch_size, pooling):
+        if not _correct_input_output_shape(input_shape, output_shape, patch_shape, pooling):
             raise ValueError("The input, output and patch size are inconsistent in the ConvLayer. "
                              "The correct dimension should be: "
-                             "output = (input - patch_size + 1.) / pooling\n"
+                             "output = (input - patch_shape + 1.) / pooling\n"
                              "input_shape: {}\noutput_shape: {}\npatch_size: {}"
-                             .format(input_shape, output_shape, patch_size))
+                             .format(input_shape, output_shape, patch_shape))
         # inducing patches
         if patches_initializer is None:
             patches_initializer = init.NormalInitializer()
-        shape = [number_inducing, *patch_size]  # tuple with values: M x w x h
+        shape = [number_inducing, *patch_shape]  # tuple with values: M x w x h
         patches = _from_patches_initializer_to_patches(patches_initializer, shape)  # M x w x h
 
         if with_indexing:
             if indices_initializer is None:
-                val = input_shape[0] - patch_size[0] + 1
+                val = input_shape[0] - patch_shape[0] + 1
                 indices = np.random.randint(0, val, size=[number_inducing, len(input_shape)])
                 indices = indices.astype(np.float64)
             else:
@@ -123,16 +126,14 @@ class ConvLayer(GPLayer):
 
         # Convolutional kernel
         if base_kernel is None:
-            base_kernel = RBFImageKernel(image_size=input_shape, patch_size=patch_size)
-        else:
-            assert isinstance(base_kernel, ImageKernel)
-            assert base_kernel.input_dim == np.prod(patch_size)
+            base_kernel = ImageRBF(image_shape=input_shape, patch_shape=patch_shape)
 
-        kern = ConvKernel(base_kernel,
-                          img_size=input_shape,
-                          patch_size=patch_size,
-                          pooling=pooling,
-                          with_indexing=with_indexing)
+        assert isinstance(base_kernel, ImageBasedKernel)
+        assert base_kernel.input_dim == np.prod(patch_shape)
+
+        kern = Convolutional(base_kernel,
+                             pooling=pooling,
+                             with_indexing=with_indexing)
 
         super().__init__(kern, feat, num_latents=num_latents,
                          q_mu=q_mu, q_sqrt=q_sqrt, mean_function=mean_function)
@@ -140,10 +141,10 @@ class ConvLayer(GPLayer):
         self.with_indexing = with_indexing
         self.pooling = pooling
         self.base_kernel_type = base_kernel.__class__.__name__
-        self.patch_size = patch_size
+        self.patch_shape = patch_shape
 
     def describe(self):
-        desc = "\n\t+ Conv: patch {}".format(self.patch_size)
+        desc = "\n\t+ Conv: patch {}".format(self.patch_shape)
         desc += " base_kern {}".format(self.base_kernel_type)
         desc += " pooling {}".format(self.pooling)
         if self.with_indexing:
@@ -152,12 +153,12 @@ class ConvLayer(GPLayer):
         return super().describe() + desc
 
 
-class WeightedSum_ConvLayer(ConvLayer):
+class WeightedSumConvLayer(ConvLayer):
 
     def __init__(self,
                  input_shape: List,
                  number_inducing: int,
-                 patch_size: List,
+                 patch_shape: List,
                  num_latents: int = 1,
                  *,
                  with_indexing: bool = False,
@@ -172,14 +173,14 @@ class WeightedSum_ConvLayer(ConvLayer):
         """
         See `ConvLayer` for docstrings.
         """
-        output_shape0 = (input_shape[0] - patch_size[0] + 1) // pooling
-        output_shape1 = (input_shape[1] - patch_size[1] + 1) // pooling
+        output_shape0 = (input_shape[0] - patch_shape[0] + 1) // pooling
+        output_shape1 = (input_shape[1] - patch_shape[1] + 1) // pooling
         output_shape = [output_shape0, output_shape1]
 
         super().__init__(input_shape,
                          output_shape,
                          number_inducing,
-                         patch_size,
+                         patch_shape,
                          num_latents,
                          with_indexing=with_indexing,
                          pooling=pooling,
@@ -193,9 +194,9 @@ class WeightedSum_ConvLayer(ConvLayer):
         base_kernel = self.kern.basekern
 
         # overwrite the kernel
-        self.kern = WeightedSum_ConvKernel(base_kernel,
+        self.kern = WeightedSumConvolutional(base_kernel,
                                            img_size=input_shape,
-                                           patch_size=patch_size,
+                                           patch_shape=patch_shape,
                                            pooling=pooling,
                                            with_indexing=with_indexing,
                                            with_weights=with_weights)

@@ -13,17 +13,17 @@ from gpflow.multioutput.conditionals import independent_interdomain_conditional
 from gpflow.conditionals import base_conditional, _sample_mvn
 from gpflow.multioutput.features import debug_kuf, debug_kuu
 
-from .convolution_kernel import ConvKernel, WeightedSum_ConvKernel
+from .convolution_kernel import Convolutional, WeightedSumConvolutional
 from .inducing_patch import InducingPatch, IndexedInducingPatch
 from ..conv_square_dists import image_patch_conv_square_dist
 
 
 # -------------------------------------
-# (Indexed)InducingPatch and ConvKernel
+# (Indexed)InducingPatch and Convolutional
 # -------------------------------------
 
-@dispatch(InducingPatch, ConvKernel, object)
-@gpflow.name_scope("Kuf_InducingPatch_ConvKernel")
+@dispatch(InducingPatch, Convolutional, object)
+@gpflow.name_scope("Kuf_InducingPatch_Convolutional")
 def Kuf(feat, kern, Xnew):
     """
     :param Xnew: NxWH
@@ -53,8 +53,8 @@ def Kuf(feat, kern, Xnew):
     return tf.reshape(Kmn, [M, 1, N, kern.num_patches])  # MxL/1xNxP  TODO: add L
 
 
-@dispatch(InducingPatch, ConvKernel)
-@gpflow.name_scope("Kuu_InducingPatch_ConvKernel")
+@dispatch(InducingPatch, Convolutional)
+@gpflow.name_scope("Kuu_InducingPatch_Convolutional")
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = kern.basekern.K(feat.Z)  # MxM
@@ -67,7 +67,7 @@ def Kuu(feat, kern, *, jitter=0.0):
     return (Kmm + jittermat)[None, :, :]  # L/1xMxM  TODO: add L
 
 
-@conditional.register(object, InducingPatch, ConvKernel, object)
+@conditional.register(object, InducingPatch, Convolutional, object)
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     :param Xnew: NxD
@@ -78,7 +78,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param white:
     :return:
     """
-    settings.logger().debug("conditional: InducingPatch -- ConvKernel")
+    settings.logger().debug("conditional: InducingPatch -- Convolutional")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # LxMxM
     Kmn = Kuf(feat, kern, Xnew)  # MxLxNxP
     if full_cov:
@@ -92,38 +92,38 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                                                q_sqrt=q_sqrt, white=white)
 
 
-@sample_conditional.register(object, InducingPatch, ConvKernel, object)
+@sample_conditional.register(object, InducingPatch, Convolutional, object)
 @gpflow.name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, q_sqrt=None, white=False, **kwargs):
-    settings.logger().debug("sample conditional: InducingPatch, ConvKernel")
+    settings.logger().debug("sample conditional: InducingPatch, Convolutional")
     mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=True, q_sqrt=q_sqrt, white=white)  # NxP, NxPxP
     sample = _sample_mvn(mean, var, cov_structure="full")
     return sample
 
 # -------------------------------------------------
-# (Indexed)InducingPatch and WeightedSum_ConvKernel
+# (Indexed)InducingPatch and WeightedSumConvolutional
 # -------------------------------------------------
 
-@dispatch(InducingPatch, WeightedSum_ConvKernel, object)
-@gpflow.name_scope("Kuu_InducingPatch_WeightedSum_ConvKernel")
+@dispatch(InducingPatch, WeightedSumConvolutional, object)
+@gpflow.name_scope("Kuu_InducingPatch_WeightedSumConvolutional")
 def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
-    Kuf_func = Kuf.dispatch(InducingPatch, ConvKernel, object)
+    Kuf_func = Kuf.dispatch(InducingPatch, Convolutional, object)
     Kmn = Kuf_func(feat, kern, Xnew)[:, 0, :, :]  # MxNxP
     Kmn = tf.einsum("mnp,p->mn", Kmn, kern.weights)
     return Kmn / kern.num_patches  # MxN
 
 
-@dispatch(InducingPatch, WeightedSum_ConvKernel)
-@gpflow.name_scope("Kuu_InducingPatch_WeightedSum_ConvKernel")
+@dispatch(InducingPatch, WeightedSumConvolutional)
+@gpflow.name_scope("Kuu_InducingPatch_WeightedSumConvolutional")
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
-    Kuu_func = Kuu.dispatch(InducingPatch, ConvKernel)
+    Kuu_func = Kuu.dispatch(InducingPatch, Convolutional)
     Kmm = Kuu_func(feat, kern, jitter=jitter)
     return Kmm[0, ...]  # MxM
 
 
-@conditional.register(object, InducingPatch, WeightedSum_ConvKernel, object)
+@conditional.register(object, InducingPatch, WeightedSumConvolutional, object)
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     :param Xnew: NxD
@@ -134,7 +134,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param white:
     :return:
     """
-    settings.logger().debug("Conditional: InducingPatch, WeightedSum_ConvKernel")
+    settings.logger().debug("Conditional: InducingPatch, WeightedSumConvolutional")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # MxM
     Kmn = Kuf(feat, kern, Xnew)  # MxN
     Knn = kern.K(Xnew, full_output_cov=True) if full_cov else kern.Kdiag(Xnew, full_output_cov=True)
