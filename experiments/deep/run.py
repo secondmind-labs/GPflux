@@ -135,7 +135,7 @@ def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
     feature0 = gpflux.convolution.IndexedInducingPatch(patches0, indices0)
 
     conv_kernel0 = gpflow.kernels.RBF(25, variance=30.0, lengthscales=1.2)
-    kernel0 = gpflux.convolution.Convolutional(conv_kernel0,
+    kernel0 = gpflux.convolution.ConvKernel(conv_kernel0,
                                             img_size=[28, 28],
                                             patch_shape=[5, 5],
                                             pooling=2,
@@ -150,7 +150,7 @@ def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
     feature1 = gpflux.convolution.IndexedInducingPatch(patches1, indices1)
 
     conv_kernel1 = gpflow.kernels.RBF(9, variance=10.0, lengthscales=1.2)
-    kernel1 = gpflux.convolution.Convolutional(conv_kernel1,
+    kernel1 = gpflux.convolution.ConvKernel(conv_kernel1,
                                             img_size=[12, 12],
                                             patch_shape=[3, 3],
                                             pooling=2,

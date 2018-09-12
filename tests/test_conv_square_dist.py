@@ -13,7 +13,7 @@ from gpflux.conv_square_dists import (diag_conv_square_dist,
                                       full_conv_square_dist,
                                       image_patch_conv_square_dist,
                                       patchwise_conv_square_dist)
-from gpflux.convolution.convolution_kernel import Convolutional
+from gpflux.convolution.convolution_kernel import ConvKernel
 from gpflux.utils import get_image_patches
 
 
@@ -39,7 +39,7 @@ def create_rbf(filter_size=None):
 
 def create_conv_kernel(image_shape=None, filter_size=None, colour_channels=1):
     rbf = create_rbf(filter_size)
-    return Convolutional(rbf, image_shape, filter_size, colour_channels=colour_channels)
+    return ConvKernel(rbf, image_shape, filter_size, colour_channels=colour_channels)
 
 
 def test_diag_conv_square_dist(session_tf):

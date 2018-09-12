@@ -5,7 +5,7 @@
 import pytest
 import numpy as np
 
-from gpflux.convolution import Convolutional, ImageRBF
+from gpflux.convolution import ConvKernel, ImageRBF
 
 
 class Data:
@@ -18,7 +18,7 @@ class Data:
 @pytest.fixture
 def conv_kernel():
     base_kern = ImageRBF(image_shape=[Data.W, Data.H], patch_shape=[Data.w, Data.h], variance=1.2, lengthscales=2.1)
-    return Convolutional(base_kern)
+    return ConvKernel(base_kern)
 
 
 def test_num_outputs(conv_kernel):

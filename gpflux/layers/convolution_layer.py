@@ -9,7 +9,7 @@ import gpflow
 import numpy as np
 
 from .. import init
-from ..convolution import (Convolutional, ImageBasedKernel,
+from ..convolution import (ConvKernel, ImageBasedKernel,
                            IndexedInducingPatch, InducingPatch, ImageRBF,
                            WeightedSumConvolutional)
 from .layers import GPLayer
@@ -124,14 +124,14 @@ class ConvLayer(GPLayer):
         else:
             feat = InducingPatch(patches)
 
-        # Convolutional kernel
+        # ConvKernel kernel
         if base_kernel is None:
             base_kernel = ImageRBF(image_shape=input_shape, patch_shape=patch_shape)
 
         assert isinstance(base_kernel, ImageBasedKernel)
         assert base_kernel.input_dim == np.prod(patch_shape)
 
-        kern = Convolutional(base_kernel,
+        kern = ConvKernel(base_kernel,
                              pooling=pooling,
                              with_indexing=with_indexing)
 

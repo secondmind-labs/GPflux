@@ -251,7 +251,7 @@ class ImageArcCosine(ImageBasedKernel, kernels.ArcCosine):
             return self.variance * (1. / np.pi) * self._J(theta) * X_patches_squared_norm_o
 
 
-class Convolutional(Mok):
+class ConvKernel(Mok):
     """
     Multi-output kernel for a GP from images to images. Constructed by
     convolving a patch function g(.) over the input image.
@@ -266,7 +266,7 @@ class Convolutional(Mok):
         """
 
         if not isinstance(basekern, ImageBasedKernel):
-            raise ValueError('Convolutional kernel works only with image based kernels.')
+            raise ValueError('ConvKernel kernel works only with image based kernels.')
 
         assert basekern.colour_channels == 1
 
@@ -322,7 +322,7 @@ class Convolutional(Mok):
         else:
             # K is [N, P]
             if self.pooling > 1:
-                msg = "Pooling is not implemented in Convolutional.Kdiag() for `full_output_cov` False."
+                msg = "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False."
                 raise NotImplementedError(msg)
 
             if self.with_indexing:
@@ -346,7 +346,7 @@ class Convolutional(Mok):
         return self.num_patches
 
 
-class WeightedSumConvolutional(Convolutional):
+class WeightedSumConvolutional(ConvKernel):
     def __init__(self,
                  basekern: kernels.Kernel,
                  pooling: int = 1,
