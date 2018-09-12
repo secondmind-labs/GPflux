@@ -195,11 +195,11 @@ class WeightedSumConvLayer(ConvLayer):
 
         # overwrite the kernel
         self.kern = WeightedSumConvKernel(base_kernel,
-                                           img_size=input_shape,
-                                           patch_shape=patch_shape,
-                                           pooling=pooling,
-                                           with_indexing=with_indexing,
-                                           with_weights=with_weights)
+                                          img_size=input_shape,
+                                          patch_shape=patch_shape,
+                                          pooling=pooling,
+                                          with_indexing=with_indexing,
+                                          with_weights=with_weights)
 
     def describe(self):
         desc = "\nWeighted"
