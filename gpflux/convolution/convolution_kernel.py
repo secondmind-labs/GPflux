@@ -51,23 +51,23 @@ class ImageBasedKernel(ABC):
         self.colour_channels = self.image_shape[-1]
         assert self.colour_channels == 1
 
-    def image_patches_inner_product(self, X, **kwargs):
+    def image_patches_inner_product(self, X, **map_fn_kwargs):
         """
         Returns the inner product between all patches in every image in `X`.
-        `ret[n, p, p'] = Xn[p] Xn[p']^T` Xn is the n-th image and [q] the q-th patch
+        `ret[n, p, p'] = Xn[p] Xn[p']ᵀ` Xn is the n-th image and [q] the q-th patch
 
         :param X: Tensor containing image data [N, H*W*C]
         :return: Tensor [N, P, P]
         """
         X = self._reshape_to_image(X)
-        inner_prod = diag_conv_inner_prod(X, self.patch_shape, **kwargs)  # [N, P, P, 1]
+        inner_prod = diag_conv_inner_prod(X, self.patch_shape, **map_fn_kwargs)  # [N, P, P, 1]
         return tf.squeeze(inner_prod, axis=[3])  # [N, P, P]
 
     def image_patches_squared_norm(self, X):
         """
         Returns the squared norm for every patch for every image in `X`.
         Corresponds to the diagonal elements of `image_patches_inner_product`.
-        `ret[n, p] = Xn[p] Xn[p]^T` Xn is the n-th image and [p] the p-th patch
+        `ret[n, p] = Xn[p]ᵀ Xn[p]` Xn is the n-th image and [p] the p-th patch
 
         :param X: Tensor containing image data [N, H*W*C]
         :return: Tensor [N, P]
@@ -79,7 +79,7 @@ class ImageBasedKernel(ABC):
 
     def inducing_patches_squared_norm(self, Z):
         """
-        Returns the squared norm of every row in `Z`. `ret[i] = Z[i] Z[i]^T`.
+        Returns the squared norm of every row in `Z`. `ret[i] = Z[i]ᵀ Z[i]`.
 
         :param Z: Tensor, inducing patches [M, h*w]
         :return: Tensor [M]
@@ -91,11 +91,11 @@ class ImageBasedKernel(ABC):
         Returns the inner product between every patch and every inducing
         point in `Z` (for every image in `X`).
 
-        `ret[n, p, m] = Xn[p] Zm^T` Xn is the n-th image and [q] the q-th patch,
+        `ret[n, p, m] = Xn[p] Zmᵀ` Xn is the n-th image and [q] the q-th patch,
         and Zm is the m-th inducing patch.
 
         :param X: Tensor containing image data [N, H*W*C]
-        :param Z: Tensor containing inducing patches [N, h*w]
+        :param Z: Tensor containing inducing patches [M, h*w]
         :return: Tensor [N, P, M]
         """
         X = self._reshape_to_image(X)
@@ -153,19 +153,19 @@ class ImageStationary(ImageBasedKernel, kernels.Stationary):
         super().__init__(input_dim, image_shape=image_shape, patch_shape=patch_shape, **kwargs)
         assert not self.ARD
 
-    def image_patches_square_dist(self, X, **map_kwargs):
+    def image_patches_square_dist(self, X, **map_fn_kwargs):
         """
         Calculates the squared distance between every patch in each image of `X`
         ```
-            ret[n,p,p'] = || Xn[p] - Xn[p'] ||^2
-                        = Xn[p]^T Xn[p] + Xn[p']^T Xn[p'] - 2 Xn[p]^T Xn[p'],
+            ret[n,p,p'] = || Xn[p] - Xn[p'] ||²
+                        = Xn[p]ᵀ Xn[p] + Xn[p']ᵀ Xn[p'] - 2 Xn[p]ᵀ Xn[p'],
             where Xn is the n-th image and .[p] operator selects the p-th patch.
         ```
         :param X: Tensor of shape [N, H, W, C]
         :return: Tensor of shape [N, P, P].
         """
 
-        Xp1tXp2 = self.image_patches_inner_product(X, **map_kwargs)  # [N, P, P]
+        Xp1tXp2 = self.image_patches_inner_product(X, **map_fn_kwargs)  # [N, P, P]
         Xp_squared = self.image_patches_squared_norm(X)  # [N, P]
         return -2 * Xp1tXp2 + Xp_squared[:, :, None] + Xp_squared[:, None, :]  # [N, P, P]
 
@@ -173,8 +173,8 @@ class ImageStationary(ImageBasedKernel, kernels.Stationary):
         """
         Calculates the squared distance between patches in X image and Z patch
         ```
-            ret[n,p,m] = || Xn[p] - Zm ||^2
-                       = Xn[p]^T Xn[p] + Zm^T Zm - 2 Xn[p]^T Zm
+            ret[n,p,m] = || Xn[p] - Zm ||²
+                       = Xn[p]ᵀ Xn[p] + Zmᵀ Zm - 2 Xn[p]ᵀ Zm
         ```
         and every inducing patch in `Z`.
 
@@ -328,8 +328,8 @@ class ConvKernel(Mok):
         else:
             # K is [N, P]
             if self.pooling > 1:
-                msg = "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False."
-                raise NotImplementedError(msg)
+                raise NotImplementedError(
+                    "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False.")
 
             if self.with_indexing:
                 Pij = self.index_kernel.Kdiag(self.IJ)  # P
