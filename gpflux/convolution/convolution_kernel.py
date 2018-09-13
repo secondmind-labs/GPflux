@@ -25,13 +25,18 @@ class ImageBasedKernel(ABC):
 
     def __init__(self, *args, image_shape=None, patch_shape=None, **kwargs):
         """
-        :param image_shape: [Height, Width, Num Color Channels] = [N, H, W, C]
+        :param image_shape: [height, width, color channels] = [H, W, C]
         :param patch_shape: [height, width] = [h, w]
         """
-        assert image_shape is not None
-        assert patch_shape is not None
+        if not (isinstance(image_shape, (list, tuple)) and
+                isinstance(patch_shape, (list, tuple))):
+            raise ValueError('Shapes must be a tuple or list.')
 
         super().__init__(*args, **kwargs)
+
+        image_shape = list(image_shape)
+        patch_shape = list(patch_shape)
+
         if len(image_shape) == 2:
             # TODO(VD) deal with color channel
             image_shape = image_shape + [1]
@@ -206,7 +211,6 @@ class ImageStationary(ImageBasedKernel, kernels.Stationary):
 
 class ImageArcCosine(ImageBasedKernel, kernels.ArcCosine):
     def __init__(self, image_shape=None, patch_shape=None, **kwargs):
-        assert isinstance(patch_shape, list)
         input_dim = np.prod(patch_shape)
         super().__init__(input_dim, image_shape=image_shape, patch_shape=patch_shape, **kwargs)
         assert not self.ARD, "ARD is not supported."
@@ -289,6 +293,7 @@ class ConvKernel(Mok):
         self.with_indexing = with_indexing
         if self.with_indexing:
             self._setup_indices()
+            # TODO(@awav): pass index kernel via arguments
             self.index_kernel = kernels.Matern52(len(basekern.image_shape), lengthscales=3.0)
 
     @gpflow.name_scope("convolutional_K")
@@ -347,7 +352,7 @@ class ConvKernel(Mok):
         return self.num_patches
 
 
-class WeightedSumConvolutional(ConvKernel):
+class WeightedSumConvKernel(ConvKernel):
     def __init__(self,
                  basekern: kernels.Kernel,
                  pooling: int = 1,

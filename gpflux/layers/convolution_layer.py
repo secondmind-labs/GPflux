@@ -154,7 +154,6 @@ class ConvLayer(GPLayer):
 
 
 class WeightedSumConvLayer(ConvLayer):
-
     def __init__(self,
                  input_shape: List,
                  number_inducing: int,
