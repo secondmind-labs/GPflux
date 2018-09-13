@@ -123,7 +123,7 @@ def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance,
 
     # Kdiag
     expected = kern.compute_Kdiag(patches).reshape(Data.N, -1)
-    value = kern.compute_K_image(Data.X_2d)
+    value = kern.compute_K_image_symm(Data.X_2d)
     np.testing.assert_allclose(value, expected)
 
     # Kdiag [N, P, P]
@@ -149,7 +149,7 @@ def test_RBFImageKernel(session_tf, lengthscales, variance):
 
     # Kdiag [N,P]
     expected = kern.compute_Kdiag(patches).reshape(Data.N, -1)
-    value = kern.compute_K_image(Data.X_2d)
+    value = kern.compute_K_image_symm(Data.X_2d)
     np.testing.assert_allclose(value, expected)
 
     # Kdiag [N, P, P]

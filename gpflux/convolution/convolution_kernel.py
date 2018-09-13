@@ -20,8 +20,8 @@ from ..conv_square_dists import (diag_conv_inner_prod,
 
 
 class ImageBasedKernel(ABC):
-    padding = 'VALID'
-    strides = (1, 1, 1, 1)
+    padding = 'VALID'  # Static variable, used by convolutional operations.
+    strides = (1, 1, 1, 1)  # Static variable, used by convolutional operations.
 
     def __init__(self, *args, image_shape=None, patch_shape=None, **kwargs):
         """
@@ -118,7 +118,7 @@ class ImageBasedKernel(ABC):
         pass
 
     @abstractmethod
-    def K_image(self, X, full_output_cov=False):
+    def K_image_symm(self, X, full_output_cov=False):
         """
         Kernel between every 2 patches in every image in `X`
         `ret[m,p,p'] = k(Xn[p], Xn[p'])`, where [p] operator selects the p-th patch.
@@ -130,12 +130,12 @@ class ImageBasedKernel(ABC):
         pass
 
     @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
-    def compute_K_image(self, X):
-        return self.K_image(X, full_output_cov=False)
+    def compute_K_image_symm(self, X):
+        return self.K_image_symm(X, full_output_cov=False)
 
     @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
     def compute_K_image_full_output_cov(self, X):
-        return self.K_image(X, full_output_cov=True)
+        return self.K_image_symm(X, full_output_cov=True)
 
     @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]),
                             (gpflow.settings.float_type, [None, None]))
@@ -197,7 +197,7 @@ class ImageStationary(ImageBasedKernel, kernels.Stationary):
         return self.K_r2(dist)  # [N, P, M]
 
     @gpflow.decors.params_as_tensors
-    def K_image(self, X, full_output_cov=False):
+    def K_image_symm(self, X, full_output_cov=False):
         """ returns [N, P, P] if full_output_cov=True, else [N, P] """
         if full_output_cov:
             dist = self.image_patches_square_dist(X, back_prop=False)  # [N, P, P]
@@ -234,7 +234,7 @@ class ImageArcCosine(ImageBasedKernel, kernels.ArcCosine):
         return self.variance * (1. / np.pi) * self._J(theta) * ZZto * XpXpto
 
     @gpflow.decors.params_as_tensors
-    def K_image(self, X, full_output_cov=False):
+    def K_image_symm(self, X, full_output_cov=False):
         """ Returns N x P x P if full_output_cov=True, else N x P """
 
         if full_output_cov:
@@ -309,7 +309,7 @@ class ConvKernel(Mok):
     @gpflow.params_as_tensors
     def Kdiag(self, X, full_output_cov=False):
 
-        K = self.basekern.K_image(X, full_output_cov=full_output_cov)
+        K = self.basekern.K_image_symm(X, full_output_cov=full_output_cov)
 
         if full_output_cov:
             # K is [N, P, P]
