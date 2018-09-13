@@ -37,15 +37,15 @@ def create_rbf(filter_size=None):
     return k
 
 
-def create_conv_kernel(image_size=None, filter_size=None, colour_channels=1):
+def create_conv_kernel(image_shape=None, filter_size=None, colour_channels=1):
     rbf = create_rbf(filter_size)
-    return ConvKernel(rbf, image_size, filter_size, colour_channels=colour_channels)
+    return ConvKernel(rbf, image_shape, filter_size, colour_channels=colour_channels)
 
 
 def test_diag_conv_square_dist(session_tf):
     img = tf.convert_to_tensor(DT.img1)
-    image_size = DT.H * DT.W
-    patch_size = DT.filter_size
+    image_shape = DT.H * DT.W
+    patch_shape = DT.filter_size
 
     dtype = img.dtype
     rbf = create_rbf()

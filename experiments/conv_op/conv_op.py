@@ -7,7 +7,7 @@ from sklearn.feature_extraction.image import extract_patches_2d
 
 
 
-def patch_inner_product(X, patch_size):
+def patch_inner_product(X, patch_shape):
     """
     Calculates the inner product between every pair of patches
     for all images of X.  Assume that X[n] is an image of
@@ -18,7 +18,7 @@ def patch_inner_product(X, patch_size):
     ```
     output[n, p, p'] = sum_{i,j} X[n, p](i,j) X[n, p'](i,j)
     ```
-    where 0 <= i < patch_size[0], 0 <= j < patch_size[1] and
+    where 0 <= i < patch_shape[0], 0 <= j < patch_shape[1] and
     P is the number of patches in an image.
 
     Note:
@@ -33,22 +33,22 @@ def patch_inner_product(X, patch_size):
     :param X: A three dimensional tensor of size N x H x W,
         where N is the number of images, H is the height and
         W is the width of the image.
-    :param patch_size: A list of ints. 1-D tensor of length 2.
+    :param patch_shape: A list of ints. 1-D tensor of length 2.
         The size of the patches [h, w]. E.g., [3, 3] or [5, 5].
 
     Return:
     ------
     A three dimensional tensor.
     """
-    patches = [extract_patches_2d(im, patch_size) for im in X]
+    patches = [extract_patches_2d(im, patch_shape) for im in X]
     patches = np.array(patches)  # N x P x h x w, where P: #patches/image
     N, P = patches.shape[0], patches.shape[1]
-    patches = np.reshape(patches, [N, P, np.prod(patch_size)])  # N x P x h*w
+    patches = np.reshape(patches, [N, P, np.prod(patch_shape)])  # N x P x h*w
     ret_value = np.einsum("npi,nqi->npq", patches, patches)
     return ret_value  # N x P x P
 
 
-def patch_inner_product2(X, patch_size):
+def patch_inner_product2(X, patch_shape):
     """
     Please see `patch_inner_product` for an explanation of the
     operation.
@@ -60,8 +60,8 @@ def patch_inner_product2(X, patch_size):
     """
 
     def _calculate_output_shape():
-        return [X.shape[1] - patch_size[0] + 1,
-                X.shape[2] - patch_size[1] + 1]
+        return [X.shape[1] - patch_shape[0] + 1,
+                X.shape[2] - patch_shape[1] + 1]
 
     Hout, Wout = _calculate_output_shape()
 
@@ -73,8 +73,8 @@ def patch_inner_product2(X, patch_size):
         i = p // Wout
         j = p % Wout
         return (np.s_[:],
-                np.s_[i:i+patch_size[0]],
-                np.s_[j:j+patch_size[1]])
+                np.s_[i:i+patch_shape[0]],
+                np.s_[j:j+patch_shape[1]])
 
     N = X.shape[0]
     P = Hout * Wout

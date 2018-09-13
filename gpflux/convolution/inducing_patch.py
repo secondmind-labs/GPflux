@@ -46,5 +46,3 @@ class IndexedInducingPatch(InducingPatch):
     @property
     def patches(self):
         return self.Z
-
-

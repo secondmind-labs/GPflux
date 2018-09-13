@@ -24,7 +24,7 @@ def config():
     # training iterations
     iterations = int(50000)
     # patch size
-    patch_size = [5, 5]
+    patch_shape = [5, 5]
     # path to save results
     basepath = "./"
     # minibatch size
@@ -101,7 +101,7 @@ def data(basepath, dataset):
 
 @ex.capture
 def experiment_name(adam_lr, M, minibatch_size, dataset,
-                    base_kern, init_patches, patch_size,
+                    base_kern, init_patches, patch_shape,
                     with_weights, with_indexing):
     args = np.array(
         [
@@ -114,7 +114,7 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
             "adam", adam_lr,
             "M", M,
             "minibatch_size", minibatch_size,
-            "patch", patch_size[0],
+            "patch", patch_shape[0],
         ])
     return "_".join(args.astype(str))
 
@@ -129,7 +129,7 @@ def restore_session(session, restore, basepath):
 
 @gpflow.defer_build()
 @ex.capture
-def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
+def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
                 init_patches, basepath, restore, with_weights, with_indexing):
     if dataset == "mnist01":
         like = gpflow.likelihoods.Bernoulli()
@@ -147,8 +147,8 @@ def setup_model(X, Y, minibatch_size, patch_size, M, dataset, base_kern,
         patches = gpflux.init.PatchSamplerInitializer(
             X[:100], width=H, height=H, unique=unique)
 
-    layer0 = gpflux.layers.WeightedSum_ConvLayer(
-        [H, H], M, patch_size,
+    layer0 = gpflux.layers.WeightedSumConvLayer(
+        [H, H], M, patch_shape,
         num_latents=num_filters,
         with_indexing=with_indexing,
         with_weights=with_weights,
