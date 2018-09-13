@@ -167,7 +167,7 @@ class ImageStationary(ImageBasedKernel, kernels.Stationary):
 
         Xp1tXp2 = self.image_patches_inner_product(X, **map_fn_kwargs)  # [N, P, P]
         Xp_squared = self.image_patches_squared_norm(X)  # [N, P]
-        return -2 * Xp1tXp2 + Xp_squared[:, :, None] + Xp_squared[:, None, :]  # [N, P, P]
+        return Xp_squared[:, :, None] + Xp_squared[:, None, :] - 2 * Xp1tXp2  # [N, P, P]
 
     def image_patches_inducing_patches_square_dist(self, X, Z):
         """
@@ -179,7 +179,7 @@ class ImageStationary(ImageBasedKernel, kernels.Stationary):
         and every inducing patch in `Z`.
 
         :param X: Tensor of shape [N, H, W, C]
-        :param Z: Tensor of shape [N, h*w]
+        :param Z: Tensor of shape [M, h*w]
         :return: Tensor of shape [N, P, M].
         """
         Xp_squared = self.image_patches_squared_norm(X)  # [N, P]
