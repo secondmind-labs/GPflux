@@ -6,6 +6,8 @@ from setuptools import setup
 requirements = [
     'numpy',
     'tensorflow',
+    'scipy',
+    'sklearn',
     'gpflow',
 ]
 
