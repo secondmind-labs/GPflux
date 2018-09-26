@@ -7,8 +7,8 @@ requirements = [
     'numpy',
     'tensorflow',
     'scipy',
-    'sklearn',
-    'gpflow',
+    'sklearn'
+    # don't import gpflow here as we need develop, add back in when we depend on the released version
 ]
 
 setup(name='gpflux',
