@@ -55,7 +55,6 @@ class PatchSamplerInitializer(Initializer):
         patches = np.concatenate(patches, axis=0)
         patches = np.reshape(patches, [-1, np.prod(patch_shape)])
         if self.unique:
-            print("selecting unique patches")
             patches = np.unique(patches, axis=0)
 
         # patches = np.reshape(patches, [-1, *patch_shape])  # (N * P) x w x h

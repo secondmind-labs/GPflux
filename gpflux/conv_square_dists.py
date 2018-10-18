@@ -146,24 +146,12 @@ def diag_conv_inner_prod(A: tf.Tensor, filter_shape: FilterShape, **map_kwargs) 
         map_kwargs: (optional) `tf.map_fn` arguments.
 
     Returns:
-        Tensor with [N,P,P,C] shape, where P = (H - h + 1) * (W - w + 1)
+        Tensor with [N, P, P, C] shape, where P = (H - h + 1) * (W - w + 1)
     """
     N, H, W, C = _image_shape(A)
     h, w = filter_shape
     Ph, Pw = _grid_patch_shape(H, W, filter_shape)
     P = _grid_patch_size(H, W, filter_shape)
-
-    # At = tf.transpose(A, [1, 2, 0, 3])  # [1, H, W, C, N]
-    # At = tf.reshape(At, [1, H, W, C*N])  # [1, H, W, C*N]
-
-    # def fn(idx: tf.Tensor) -> tf.Tensor:
-    #     kernel = _extract_kernel(At, idx, filter_shape, Ph, Pw)  # [1, h, w, C*N]
-    #     kernel = tf.transpose(kernel, [1, 2, 3, 0])  # [h, w, C*N, 1]
-    #     return tf.nn.depthwise_conv2d(At, kernel, strides=[1, 1, 1, 1], padding='VALID')
-
-    # result = _map_indices(fn, P, dtype=A.dtype, **map_kwargs)  # [P, 1, Ph, Pw, (C*N)]
-    # result = tf.reshape(result, [P, P, C, N])
-    # return tf.transpose(result, [3, 0, 1, 2])  # [N, P, P, C]
 
     At = tf.transpose(A, [3, 1, 2, 0])  # [C, H, W, N]
 

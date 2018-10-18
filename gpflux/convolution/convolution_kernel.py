@@ -3,83 +3,149 @@
 # Proprietary and confidential
 
 from abc import ABC, abstractmethod
-from typing import List
+from functools import partial
+from typing import List, Tuple, Type, Union
 
-import gpflow
 import numpy as np
 import tensorflow as tf
-from gpflow import Param
-from gpflow import kernels
-from gpflow import params_as_tensors, params_as_tensors_for, settings
+from multipledispatch import dispatch
+
+import gpflow
+from gpflow import kernels, params_as_tensors, params_as_tensors_for, settings
 from gpflow.multioutput.kernels import Mok
 
-from ..conv_square_dists import (diag_conv_inner_prod,
-                                 diag_conv_square_dist,
+from ..conv_square_dists import (diag_conv_inner_prod, diag_conv_square_dist,
                                  full_conv_square_dist,
                                  patchwise_conv_square_dist)
 
+Any = object
+PatchShape = Union[List[int], Tuple[int, int]]
+ImageShape = Union[PatchShape, Tuple[int, int, int]]
 
-class ImageBasedKernel(ABC):
-    padding = 'VALID'  # Static variable, used by convolutional operations.
-    strides = (1, 1, 1, 1)  # Static variable, used by convolutional operations.
 
-    def __init__(self, *args, image_shape=None, patch_shape=None, **kwargs):
+gpflux_image_kernel = dict()
+dispatch = partial(dispatch, namespace=gpflux_image_kernel)
+
+
+
+class ImagePatchConfig:
+    """
+    Data class containing necessary information related to image-patch processing by
+    patch handler.
+    """
+
+    def __init__(self, image_shape: ImageShape, patch_shape: PatchShape, pooling: int = 1):
         """
-        :param image_shape: [height, width, color channels] = [H, W, C]
-        :param patch_shape: [height, width] = [h, w]
+        :param image_shape: Image shape. It can be either 2 element tuple [H, W] or 3 element tuple [H, W, C],
+            where H - height, W - width, C - channel. [H, W] is equivalent to [H, W, 1]
+        :param patch_shape: Patch or filter shape. It must be 2 element tuple [h, w], where h <= H and w <= W.
+        :param pooling: Reducing resolution factor.
         """
+
         if not (isinstance(image_shape, (list, tuple)) and
                 isinstance(patch_shape, (list, tuple))):
             raise ValueError('Shapes must be a tuple or list.')
-
-        super().__init__(*args, **kwargs)
 
         image_shape = list(image_shape)
         patch_shape = list(patch_shape)
 
         if len(image_shape) == 2:
-            # TODO(VD) deal with color channel
             image_shape = image_shape + [1]
 
         height, width = image_shape[:2]
         h, w = patch_shape
+
         assert height >= h
         assert width >= w
+
+        Cin = image_shape[-1]
+        self.Hin, self.Win = height, width
+
+        Hout, Wout = height - h + 1, width - w + 1
+
+        assert Hout % pooling == 0
+        assert Wout % pooling == 0
+
+        Hout //= pooling
+        Wout //= pooling
+
+        self.pooling = pooling
+        self.Hout = Hout
+        self.Wout = Wout
         self.image_shape = image_shape
         self.patch_shape = patch_shape
-        self.patch_grid_size = (height - h + 1, width - w + 1)
-        self.colour_channels = self.image_shape[-1]
-        assert self.colour_channels == 1
+        self.Cin = Cin
+        self.num_patches = Hout * Wout * Cin
+
+
+class PatchHandler(ABC):
+    """
+    Interface for major image-patch operations:
+        * Inner product between image patches
+        * Squared norm of image patches
+        * Squared norm of inducing patches
+        * Inner product between image patches and inducing patches
+    """
+
+    def __init__(self, config: ImagePatchConfig):
+        self.config = config
+
+    @abstractmethod
+    def image_patches_inner_product(self, X, **kwargs):
+        pass
+
+    @abstractmethod
+    def image_patches_squared_norm(self, X, **kwargs):
+        pass
+
+    @abstractmethod
+    def inducing_patches_squared_norm(self, Z, **kwargs):
+        pass
+
+    @abstractmethod
+    def image_patches_inducing_patches_inner_product(self, X, Z, **kwargs):
+        pass
+
+    def reshape_to_image(self, X):
+        cfg = self.config
+        return tf.reshape(X, [-1, cfg.Hin, cfg.Win, cfg.Cin])
+
+
+class ConvPatchHandler(PatchHandler):
+    padding = 'VALID'  # Static variable, used by convolutional operations.
+    strides = (1, 1, 1, 1)  # Static variable, used by convolutional operations.
 
     def image_patches_inner_product(self, X, **map_fn_kwargs):
         """
         Returns the inner product between all patches in every image in `X`.
-        `ret[n, p, p'] = Xn[p] Xn[p']ᵀ` Xn is the n-th image and [q] the q-th patch
+        `ret[i, p, p'] = Xᵢ⁽ᵖ⁾ Xᵢ⁽ᵖ'⁾ᵀ`, Xᵢ is the i-th image and [q] the q-th patch
 
-        :param X: Tensor containing image data [N, H*W*C]
-        :return: Tensor [N, P, P]
+        :param X: Tensor containing image data [N, R], where R = H * W * C
+        :return: Tensor [N, P*C, P]
         """
-        X = self._reshape_to_image(X)
-        inner_prod = diag_conv_inner_prod(X, self.patch_shape, **map_fn_kwargs)  # [N, P, P, 1]
+        X = self.reshape_to_image(X)
+        inner_prod = diag_conv_inner_prod(X, self.config.patch_shape, **map_fn_kwargs)  # [N, P, P]
         return tf.squeeze(inner_prod, axis=[3])  # [N, P, P]
 
     def image_patches_squared_norm(self, X):
         """
         Returns the squared norm for every patch for every image in `X`.
         Corresponds to the diagonal elements of `image_patches_inner_product`.
-        `ret[n, p] = Xn[p]ᵀ Xn[p]` Xn is the n-th image and [p] the p-th patch
+        `ret[i, p] = Xᵢ⁽ᵖ⁾ Xᵢ⁽ᵖ⁾ᵀ`, where Xᵢ is the i-th image and ⁽ᵖ⁾ the p-th patch
 
         :param X: Tensor containing image data [N, H*W*C]
         :return: Tensor [N, P]
         """
-        X = self._reshape_to_image(X)
-        ones = tf.ones((*self.patch_shape, self.colour_channels, 1), dtype=X.dtype)
+        cfg = self.config
+        X = self.reshape_to_image(X)
+        ones = tf.ones((*cfg.patch_shape, cfg.Cin, 1), dtype=X.dtype)
         XpXpt = tf.nn.conv2d(X ** 2, ones, self.strides, self.padding)
         return tf.reshape(XpXpt, (tf.shape(X)[0], -1))  # [N, P]
 
     def inducing_patches_squared_norm(self, Z):
         """
-        Returns the squared norm of every row in `Z`. `ret[i] = Z[i]ᵀ Z[i]`.
+        Returns the squared norm of every row in `Z`.
+        `ret[i] = Z⁽ⁱ⁾ Z⁽ⁱ⁾ᵀ`
 
         :param Z: Tensor, inducing patches [M, h*w]
         :return: Tensor [M]
@@ -91,169 +157,127 @@ class ImageBasedKernel(ABC):
         Returns the inner product between every patch and every inducing
         point in `Z` (for every image in `X`).
 
-        `ret[n, p, m] = Xn[p] Zmᵀ` Xn is the n-th image and [q] the q-th patch,
-        and Zm is the m-th inducing patch.
+        `ret[i, p, r] = Xᵢ⁽ᵖ⁾ Zᵣᵀ`, where Xᵢ is the i-th image and (p) the p-th patch,
+        and Zᵣ is the r-th inducing patch.
 
         :param X: Tensor containing image data [N, H*W*C]
         :param Z: Tensor containing inducing patches [M, h*w]
         :return: Tensor [N, P, M]
         """
-        X = self._reshape_to_image(X)
+        X = self.reshape_to_image(X)
+        cfg = self.config
         M, N = tf.shape(Z)[0], tf.shape(X)[0]
-        Zr = tf.reshape(Z, (M, *self.patch_shape, self.colour_channels))  # [M, h, w, C]
+        Zr = tf.reshape(Z, (M, *cfg.patch_shape, cfg.Cin))  # [M, h, w, C]
         Z_filter = tf.transpose(Zr, [1, 2, 3, 0])  # [h, w, C, M]
         XpZ = tf.nn.conv2d(X, Z_filter, self.strides, self.padding)  # [N, Ph, Pw, M]
         return tf.reshape(XpZ, (N, -1, M))  # [N, P, M]
 
-    @abstractmethod
-    def K_image_inducing_patches(self, X, Z):
-        """
-        Kernel between every patch in `X` and every inducing patch in `Z`.
-        `ret[m,n,p] = k(Zm, Xn[p])`, where [p] operator selects the p-th patch.
 
-        :param X: Tensor of image data, [N, H*W*C]
-        :param Z: Tensor of inducing patches, [M, h*w]
-        :return: covariance matrix [N, P, M]
-        """
-        pass
+@dispatch(kernels.Stationary, PatchHandler, Any, Any)
+@gpflow.name_scope()
+def K_image_inducing_patches(kernel, patch_handler, X, Z) -> tf.Tensor:
+    """ returns [N, P, M] """
 
-    @abstractmethod
-    def K_image_symm(self, X, full_output_cov=False):
-        """
-        Kernel between every 2 patches in every image in `X`
-        `ret[m,p,p'] = k(Xn[p], Xn[p'])`, where [p] operator selects the p-th patch.
-
-        :param X: Tensor of image data, [N, H*W*C]
-        :param full_output_cov: boolean. If `False` only the diagonal elements are returned
-        :return: covariance matrix [N, P, P] if `full_output_cov`=True, else [N, P].
-        """
-        pass
-
-    @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
-    def compute_K_image_symm(self, X):
-        return self.K_image_symm(X, full_output_cov=False)
-
-    @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
-    def compute_K_image_full_output_cov(self, X):
-        return self.K_image_symm(X, full_output_cov=True)
-
-    @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]),
-                            (gpflow.settings.float_type, [None, None]))
-    def compute_K_image_inducing_patches(self, X, Z):
-        return self.K_image_inducing_patches(X, Z)
-
-    def _reshape_to_image(self, X):
-        """Reshapes X [N, H*W*C] from being rank 2 to proper image shape [N, H, W, C]"""
-        return tf.reshape(X, [-1, *self.image_shape])
-
-
-class ImageStationary(ImageBasedKernel, kernels.Stationary):
-    def __init__(self, image_shape=None, patch_shape=None, **kwargs):
-        input_dim = np.prod(patch_shape)
-        super().__init__(input_dim, image_shape=image_shape, patch_shape=patch_shape, **kwargs)
-        assert not self.ARD
-
-    def image_patches_square_dist(self, X, **map_fn_kwargs):
-        """
-        Calculates the squared distance between every patch in each image of `X`
-        ```
-            ret[n,p,p'] = || Xn[p] - Xn[p'] ||²
-                        = Xn[p]ᵀ Xn[p] + Xn[p']ᵀ Xn[p'] - 2 Xn[p]ᵀ Xn[p'],
-            where Xn is the n-th image and .[p] operator selects the p-th patch.
-        ```
-        :param X: Tensor of shape [N, H, W, C]
-        :return: Tensor of shape [N, P, P].
-        """
-
-        Xp1tXp2 = self.image_patches_inner_product(X, **map_fn_kwargs)  # [N, P, P]
-        Xp_squared = self.image_patches_squared_norm(X)  # [N, P]
-        return Xp_squared[:, :, None] + Xp_squared[:, None, :] - 2 * Xp1tXp2  # [N, P, P]
-
-    def image_patches_inducing_patches_square_dist(self, X, Z):
+    def image_patches_inducing_patches_square_dist():
         """
         Calculates the squared distance between patches in X image and Z patch
         ```
-            ret[n,p,m] = || Xn[p] - Zm ||²
-                       = Xn[p]ᵀ Xn[p] + Zmᵀ Zm - 2 Xn[p]ᵀ Zm
+            ret[i,p,r] = ||Xᵢ⁽ᵖ⁾ - Zᵣ||² = Xᵢ⁽ᵖ⁾ᵀ Xᵢ⁽ᵖ⁾ + Zᵣᵀ Zᵣ - 2 Xᵢ⁽ᵖ⁾ᵀ Zᵣ
         ```
         and every inducing patch in `Z`.
 
         :param X: Tensor of shape [N, H, W, C]
-        :param Z: Tensor of shape [M, h*w]
+        :param Z: Tensor of shape [N, h*w]
         :return: Tensor of shape [N, P, M].
         """
-        Xp_squared = self.image_patches_squared_norm(X)  # [N, P]
-        Zm_squared = self.inducing_patches_squared_norm(Z)  # M
-        XptZm = self.image_patches_inducing_patches_inner_product(X, Z)  # [N, P, M]
+        Xp_squared = patch_handler.image_patches_squared_norm(X)  # [N, P]
+        Zm_squared = patch_handler.inducing_patches_squared_norm(Z)  # M
+        XptZm = patch_handler.image_patches_inducing_patches_inner_product(X, Z)  # [N, P, M]
         return Xp_squared[:, :, None] + Zm_squared[None, None, :] - 2 * XptZm
 
-    @gpflow.decors.params_as_tensors
-    def K_image_inducing_patches(self, X, Z):
-        """ returns [N, P, M] """
-        dist = self.image_patches_inducing_patches_square_dist(X, Z)  # [N, P, M]
-        dist /= self.lengthscales ** 2  # Dividing after computing distances
-                                        # helps to avoid unnecessary backpropagation.
-                                        # But it will not work with ARD case.
-        return self.K_r2(dist)  # [N, P, M]
-
-    @gpflow.decors.params_as_tensors
-    def K_image_symm(self, X, full_output_cov=False):
-        """ returns [N, P, P] if full_output_cov=True, else [N, P] """
-        if full_output_cov:
-            dist = self.image_patches_square_dist(X, back_prop=False)  # [N, P, P]
-            dist /= self.lengthscales ** 2  # Dividing after computing distances
-                                            # helps to avoid unnecessary backpropagation.
-            return self.K_r2(dist)  # [N, P, P]
-        else:
-            P = np.prod(self.patch_grid_size)
-            return self.variance * tf.ones([tf.shape(X)[0], P], dtype=X.dtype)  # [N, P]
+    with gpflow.params_as_tensors_for(kernel):
+        dist = image_patches_inducing_patches_square_dist()  # [N, P, M]
+        dist /= kernel.lengthscales ** 2  # Dividing after computing distances
+                                          # helps to avoid unnecessary backpropagation.
+                                          # But it will not work with ARD case.
+        return kernel.K_r2(dist)  # [N, P, M]
 
 
-class ImageArcCosine(ImageBasedKernel, kernels.ArcCosine):
-    def __init__(self, image_shape=None, patch_shape=None, **kwargs):
-        input_dim = np.prod(patch_shape)
-        super().__init__(input_dim, image_shape=image_shape, patch_shape=patch_shape, **kwargs)
-        assert not self.ARD, "ARD is not supported."
-
-    @gpflow.decors.params_as_tensors
-    def K_image_inducing_patches(self, X, Z):
-        """ Returns N x P x M """
-        XpZ = self.image_patches_inducing_patches_inner_product(X, Z)  # [N, P, M]
-        XpZ = self.weight_variances * XpZ + self.bias_variance  # [N, P, M]
-        ZZt = self.inducing_patches_squared_norm(Z)  # M
-        ZZt = tf.sqrt(self.weight_variances * ZZt + self.bias_variance)  # M
-        XpXpt = self.image_patches_squared_norm(X)
-        XpXpt = tf.sqrt(self.weight_variances * XpXpt + self.bias_variance)  # [N, P]
+@dispatch(kernels.ArcCosine, PatchHandler, Any, Any)
+@gpflow.name_scope()
+def K_image_inducing_patches(kernel, patch_handler, X, Z):
+    """:return: Tensor [N, P, M]"""
+    with gpflow.params_as_tensors_for(kernel):
+        XpZ = patch_handler.image_patches_inducing_patches_inner_product(X, Z)  # [N, P, M]
+        XpZ = kernel.weight_variances * XpZ + kernel.bias_variance  # [N, P, M]
+        ZZt = patch_handler.inducing_patches_squared_norm(Z)  # M
+        ZZt = tf.sqrt(kernel.weight_variances * ZZt + kernel.bias_variance)  # M
+        XpXpt = patch_handler.image_patches_squared_norm(X)
+        XpXpt = tf.sqrt(kernel.weight_variances * XpXpt + kernel.bias_variance)  # [N, P]
         cos_theta = XpZ / ZZt[None, None, :] / XpXpt[:, :, None]
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
-        ZZto = ZZt[None, None, :] ** self.order
-        XpXpto = XpXpt[:, :, None] ** self.order
+        ZZto = ZZt[None, None, :] ** kernel.order
+        XpXpto = XpXpt[:, :, None] ** kernel.order
 
-        return self.variance * (1. / np.pi) * self._J(theta) * ZZto * XpXpto
+        return kernel.variance * (1. / np.pi) * kernel._J(theta) * ZZto * XpXpto
 
-    @gpflow.decors.params_as_tensors
-    def K_image_symm(self, X, full_output_cov=False):
-        """ Returns N x P x P if full_output_cov=True, else N x P """
 
+@dispatch(kernels.Stationary, PatchHandler, Any)
+@gpflow.name_scope()
+def K_image_symm(kernel, patch_handler, X, full_output_cov=False):
+    """:return: Tensor [N, P]. If full_output_cov is `True` then tensor with [N, P, P]
+    shape returned."""
+
+    def image_patches_square_dist(X):
+        """
+        Calculates the squared distance between every patch in each image of `X`
+        ```
+            ret[i,p,p'] = ||Xᵢ⁽ᵖ⁾ - Xᵢ⁽ᵖ'⁾||²
+                        = Xᵢ⁽ᵖ⁾ᵀ Xᵢ⁽ᵖ⁾ + Xᵢ⁽ᵖ'⁾ᵀ Xᵢ⁽ᵖ'⁾ - 2 Xᵢ⁽ᵖ⁾ᵀ Xᵢ⁽ᵖ'⁾,
+            where Xᵢ is the i-th image and `⁽ᵖ⁾` operator selects the p-th patch.
+        ```
+        :param X: Tensor of shape [N, H, W, C]
+        :return: Tensor of shape [N, P, P].
+        """
+        Xp1tXp2 = patch_handler.image_patches_inner_product(X, back_prop=False)  # [N, P, P]
+        Xp_squared = patch_handler.image_patches_squared_norm(X)  # [N, P]
+        return Xp_squared[:, :, None] + Xp_squared[:, None, :] - 2 * Xp1tXp2  # [N, P, P]
+
+    with gpflow.params_as_tensors_for(kernel):
         if full_output_cov:
-            Xp1tXp2 = self.image_patches_inner_product(X, back_prop=False)  # [N, P, P]
-            Xp1tXp2 = self.weight_variances * Xp1tXp2 + self.bias_variance  # [N, P, P]
+            dist = image_patches_square_dist(X)  # [N, P, P]
+            dist /= kernel.lengthscales ** 2  # Dividing after computing distances
+                                              # helps to avoid unnecessary backpropagation.
+            return kernel.K_r2(dist)  # [N, P, P]
+        else:
+            P = patch_handler.config.num_patches
+            return kernel.variance * tf.ones([tf.shape(X)[0], P], dtype=X.dtype)  # [N, P]
+
+
+@dispatch(kernels.ArcCosine, PatchHandler, Any)
+@gpflow.name_scope()
+def K_image_symm(kernel, patch_handler, X, full_output_cov=False):
+    """:return: Tentosr [N, P]. If full_output_cov is `True` then tensor [N, P, P] is returned"""
+    with gpflow.params_as_tensors_for(kernel):
+        if full_output_cov:
+            Xp1tXp2 = patch_handler.image_patches_inner_product(X, back_prop=False)  # [N, P, P]
+            Xp1tXp2 = kernel.weight_variances * Xp1tXp2 + kernel.bias_variance  # [N, P, P]
             Xp_squared = tf.sqrt(tf.matrix_diag_part(Xp1tXp2))  # [N, P]
             cos_theta = Xp1tXp2 / Xp_squared[:, None, :] / Xp_squared[:, :, None]
             jitter = 1e-15
             theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
-            Xp_squared_o1 = Xp_squared[:, None, :] ** self.order
-            Xp_squared_o2 = Xp_squared[:, :, None] ** self.order
-            return self.variance * (1. / np.pi) * self._J(theta) * Xp_squared_o1 * Xp_squared_o2
+            Xp_squared_o1 = Xp_squared[:, None, :] ** kernel.order
+            Xp_squared_o2 = Xp_squared[:, :, None] ** kernel.order
+            return kernel.variance * (1. / np.pi) * kernel._J(theta) * Xp_squared_o1 * Xp_squared_o2
         else:
-            X_patches_squared_norm = self.image_patches_squared_norm(X)
-            X_patches_squared_norm = self.weight_variances * X_patches_squared_norm + self.bias_variance
+            X_patches_squared_norm = patch_handler.image_patches_squared_norm(X)
+            X_patches_squared_norm = kernel.weight_variances * X_patches_squared_norm + kernel.bias_variance
             theta = tf.cast(0, gpflow.settings.float_type)
-            X_patches_squared_norm_o = X_patches_squared_norm ** self.order
-            return self.variance * (1. / np.pi) * self._J(theta) * X_patches_squared_norm_o
+            X_patches_squared_norm_o = X_patches_squared_norm ** kernel.order
+            return kernel.variance * (1. / np.pi) * kernel._J(theta) * X_patches_squared_norm_o
 
 
 class ConvKernel(Mok):
@@ -264,37 +288,29 @@ class ConvKernel(Mok):
 
     def __init__(self,
                  basekern: kernels.Kernel,
+                 image_shape,
+                 patch_shape,
                  pooling: int = 1,
-                 with_indexing: bool = False):
+                 with_indexing: bool = False,
+                 patch_handler: PatchHandler = None):
         """
         :param basekern: gpflow.Kernel that operates on the vectors of length w*h
         """
 
-        if not isinstance(basekern, ImageBasedKernel):
-            raise ValueError('ConvKernel kernel works only with image based kernels.')
-
-        assert basekern.colour_channels == 1
-
         super().__init__(basekern.input_dim)
-        self.Hin, self.Win = basekern.image_shape[:2]
 
-        Hout, Wout = basekern.patch_grid_size
+        config = ImagePatchConfig(image_shape, patch_shape, pooling=pooling)
+        assert config.Cin == 1
 
-        assert Hout % pooling == 0
-        assert Wout % pooling == 0
-
-        self.pooling = pooling
-        self.Hout = Hout // pooling
-        self.Wout = Wout // pooling
-        self.colour_channels = basekern.colour_channels
-        self.num_patches = self.Hout * self.Wout * self.colour_channels
+        is_handler = isinstance(patch_handler, PatchHandler)
+        self.patch_handler = ConvPatchHandler(config) if not is_handler else patch_handler
 
         self.basekern = basekern
         self.with_indexing = with_indexing
         if self.with_indexing:
             self._setup_indices()
             # TODO(@awav): pass index kernel via arguments
-            self.index_kernel = kernels.Matern52(len(basekern.image_shape), lengthscales=3.0)
+            self.index_kernel = kernels.Matern52(2, lengthscales=3.0)
 
     @gpflow.name_scope("convolutional_K")
     @gpflow.params_as_tensors
@@ -309,7 +325,8 @@ class ConvKernel(Mok):
     @gpflow.params_as_tensors
     def Kdiag(self, X, full_output_cov=False):
 
-        K = self.basekern.K_image_symm(X, full_output_cov=full_output_cov)
+        cfg = self.patch_handler.config
+        K = K_image_symm(self.basekern, self.patch_handler, X, full_output_cov=full_output_cov)
 
         if full_output_cov:
             # K is [N, P, P]
@@ -318,18 +335,18 @@ class ConvKernel(Mok):
                 Pij = self.index_kernel.K(self.IJ)  # [P, P]
                 K = K * Pij[None, :, :]  # [N, P, P]
 
-            if self.pooling > 1:
-                HpWp = self.Hout, self.pooling, self.Wout, self.pooling
+            if cfg.pooling > 1:
+                HpWp = cfg.Hout, cfg.pooling, cfg.Wout, cfg.pooling
                 K = tf.reshape(K, [-1, *HpWp, *HpWp])
                 K = tf.reduce_sum(K, axis=[2, 4, 6, 8])
-                HW = self.Hout * self.Wout
+                HW = cfg.Hout * cfg.Wout
                 K = tf.reshape(K, [-1, HW, HW])
             return K  # [N, P', P']
         else:
             # K is [N, P]
-            if self.pooling > 1:
-                raise NotImplementedError(
-                    "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False.")
+            if cfg.pooling > 1:
+                msg = "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False."
+                raise NotImplementedError(msg)
 
             if self.with_indexing:
                 Pij = self.index_kernel.Kdiag(self.IJ)  # P
@@ -339,31 +356,39 @@ class ConvKernel(Mok):
 
     def _setup_indices(self):
         # IJ: Nx2, cartesian product of output indices
-        grid = np.meshgrid(np.arange(self.Hout), np.arange(self.Wout))
+        cfg = self.patch_handler.config
+        grid = np.meshgrid(np.arange(cfg.Hout), np.arange(cfg.Wout))
         IJ = np.vstack([x.flatten() for x in grid]).T  # Px2
         self.IJ = IJ.astype(settings.float_type)  # (H_out * W_out)x2 = Px2
 
     @property
+    def pooling(self):
+        return self.patch_handler.config.pooling
+
+    @property
     def patch_len(self):
-        return np.prod(self.basekern.patch_shape)
+        return np.prod(self.patch_handler.config.patch_shape)
 
     @property
     def num_outputs(self):
-        return self.num_patches
+        return self.patch_handler.config.num_patches
 
 
 class WeightedSumConvKernel(ConvKernel):
     def __init__(self,
                  basekern: kernels.Kernel,
+                 image_shape: ImageShape,
+                 patch_shape: PatchShape,
                  pooling: int = 1,
                  with_indexing: bool = False,
                  with_weights: bool = False):
 
-        super().__init__(basekern, pooling, with_indexing)
+        super().__init__(basekern, image_shape, patch_shape,
+                         pooling=pooling, with_indexing=with_indexing)
 
         self.with_weights = with_weights
         weights = np.ones([self.num_outputs], dtype=settings.float_type)  # P
-        self.weights = Param(weights) if with_weights else weights
+        self.weights = gpflow.Param(weights) if with_weights else weights
 
     @gpflow.params_as_tensors
     def K(self, X, X2=None, full_output_cov=False):
@@ -386,9 +411,3 @@ class WeightedSumConvKernel(ConvKernel):
         K = tf.reduce_sum(K, axis=[1, 2], keepdims=False)  # N
         K = K / self.num_outputs  ** 2 # N
         return K
-
-
-# Simple stationary kernels gotten by mixin ImageStationary with originals.
-
-class ImageRBF(ImageStationary, kernels.RBF): pass
-class ImageMatern12(ImageStationary, kernels.Matern12): pass

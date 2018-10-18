@@ -6,7 +6,7 @@ from gpflow.test_util import session_tf
 from sklearn.feature_extraction.image import extract_patches_2d
 
 import gpflux
-from gpflux.convolution.convolution_kernel import ImageRBF, ImageArcCosine, ImageStationary
+from gpflux.convolution import K_image_inducing_patches, K_image_symm, ConvKernel
 
 padding = 'VALID'
 strides = (1, 1, 1, 1)
@@ -38,6 +38,10 @@ class Data:
     Z = np.random.randn(M, np.prod(patch_shape))
 
 
+def input_dim():
+    return np.prod(Data.patch_shape)
+
+
 @pytest.mark.parametrize("order", [0, 1, 2])
 @pytest.mark.parametrize("weight_variance", np.random.rand(1))
 @pytest.mark.parametrize("bias_variance", np.random.rand(1))
@@ -45,7 +49,7 @@ class Data:
 def test_Kdiag(session_tf, order, weight_variance, bias_variance, variance):
     def naive():
         patches = Data.X_patches
-        kern = gpflow.kernels.ArcCosine(np.prod(Data.patch_shape),
+        kern = gpflow.kernels.ArcCosine(input_dim(),
                                         order=order, variance=variance,
                                         weight_variances=weight_variance,
                                         bias_variance=bias_variance, ARD=False)
@@ -75,7 +79,7 @@ def test_Kdiag(session_tf, order, weight_variance, bias_variance, variance):
 def test_Kuf(session_tf, order, weight_variance, bias_variance, variance):
     def naive():
         patches = Data.X_patches
-        kern = gpflow.kernels.ArcCosine(np.prod(Data.patch_shape),
+        kern = gpflow.kernels.ArcCosine(input_dim(),
                                         order=order, variance=variance,
                                         weight_variances=weight_variance,
                                         bias_variance=bias_variance, ARD=False)
@@ -116,25 +120,34 @@ def test_Kuf(session_tf, order, weight_variance, bias_variance, variance):
 def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance, variance):
 
     patches = Data.X_patches
-    kern = ImageArcCosine(image_shape=[28, 28, 1], patch_shape=[5, 5],
-                       order=order, variance=variance,
-                       weight_variances=weight_variance,
-                       bias_variance=bias_variance, ARD=False)
+    base_kern = gpflow.kernels.ArcCosine(input_dim(),
+                    order=order, variance=variance,
+                    weight_variances=weight_variance,
+                    bias_variance=bias_variance, ARD=False)
+
+    kern = ConvKernel(base_kern, image_shape=Data.image_shape[1:], patch_shape=Data.patch_shape)
+
+    def compute_K_image_symm(X, full_output_cov=False):
+        return session_tf.run(K_image_symm(
+            base_kern, kern.patch_handler, X, full_output_cov=full_output_cov))
+
+    def compute_K_image_inducing_patches(X, Z):
+        return session_tf.run(K_image_inducing_patches(base_kern, kern.patch_handler, X, Z))
 
     # Kdiag
-    expected = kern.compute_Kdiag(patches).reshape(Data.N, -1)
-    value = kern.compute_K_image_symm(Data.X_2d)
+    expected = base_kern.compute_Kdiag(patches).reshape(Data.N, -1)
+    value = compute_K_image_symm(Data.X_2d)
     np.testing.assert_allclose(value, expected)
 
     # Kdiag [N, P, P]
     patches_per_image = np.reshape(patches, [Data.N, -1, np.prod(Data.patch_shape)])  # [N, P, h*w]
-    expected = np.array([kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
-    value = kern.compute_K_image_full_output_cov(Data.X_2d)
+    expected = np.array([base_kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
+    value = compute_K_image_symm(Data.X_2d, full_output_cov=True)
     np.testing.assert_allclose(value, expected)
 
     # Kuf
-    expected = kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
-    value = kern.compute_K_image_inducing_patches(Data.X_2d, Data.Z)
+    expected = base_kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
+    value = compute_K_image_inducing_patches(Data.X_2d, Data.Z)
     np.testing.assert_allclose(value, expected)
 
 
@@ -144,21 +157,28 @@ def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance,
 def test_RBFImageKernel(session_tf, lengthscales, variance):
 
     patches = Data.X_patches
-    kern = ImageRBF(image_shape=[28, 28, 1], patch_shape=[5, 5],
-                          variance=variance, lengthscales=lengthscales, ARD=False)
+    base_kern = gpflow.kernels.RBF(input_dim(), variance=variance, lengthscales=lengthscales, ARD=False)
+    kern = ConvKernel(base_kern, image_shape=[28, 28, 1], patch_shape=[5, 5])
+
+    def compute_K_image_symm(X, full_output_cov=False):
+        return session_tf.run(K_image_symm(
+            base_kern, kern.patch_handler, X, full_output_cov=full_output_cov))
+
+    def compute_K_image_inducing_patches(X, Z):
+        return session_tf.run(K_image_inducing_patches(base_kern, kern.patch_handler, X, Z))
 
     # Kdiag [N,P]
-    expected = kern.compute_Kdiag(patches).reshape(Data.N, -1)
-    value = kern.compute_K_image_symm(Data.X_2d)
+    expected = base_kern.compute_Kdiag(patches).reshape(Data.N, -1)
+    value = compute_K_image_symm(Data.X_2d)
     np.testing.assert_allclose(value, expected)
 
     # Kdiag [N, P, P]
-    patches_per_image = np.reshape(patches, [Data.N, -1, np.prod(Data.patch_shape)])  # [N, P, h*w]
-    expected = np.array([kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
-    value = kern.compute_K_image_full_output_cov(Data.X_2d)
+    patches_per_image = np.reshape(patches, [Data.N, -1, input_dim()])  # [N, P, h*w]
+    expected = np.array([base_kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
+    value = compute_K_image_symm(Data.X_2d, full_output_cov=True)
     np.testing.assert_allclose(value, expected)
 
     # Kuf
-    expected = kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
-    value = kern.compute_K_image_inducing_patches(Data.X_2d, Data.Z)
+    expected = base_kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
+    value = compute_K_image_inducing_patches(Data.X_2d, Data.Z)
     np.testing.assert_allclose(value, expected)

@@ -3,7 +3,8 @@
 # Proprietary and confidential
 
 from . import conditionals
-from .convolution_kernel import (ImageArcCosine, ConvKernel,
-                                 ImageBasedKernel, ImageMatern12,
-                                 ImageRBF, WeightedSumConvKernel)
+from .convolution_kernel import (ConvKernel, K_image_inducing_patches,
+                                 K_image_symm, WeightedSumConvKernel,
+                                 ImagePatchConfig, PatchHandler,
+                                 ConvPatchHandler)
 from .inducing_patch import IndexedInducingPatch, InducingPatch

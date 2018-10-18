@@ -9,8 +9,7 @@ import gpflow
 import numpy as np
 
 from .. import init
-from ..convolution import (ConvKernel, ImageBasedKernel,
-                           IndexedInducingPatch, InducingPatch, ImageRBF,
+from ..convolution import (ConvKernel, IndexedInducingPatch, InducingPatch,
                            WeightedSumConvKernel)
 from .layers import GPLayer
 
@@ -125,18 +124,18 @@ class ConvLayer(GPLayer):
             feat = InducingPatch(patches)
 
         # ConvKernel kernel
+        input_dim = np.prod(patch_shape)
         if base_kernel is None:
-            base_kernel = ImageRBF(image_shape=input_shape, patch_shape=patch_shape)
+            base_kernel = gpflow.kernels.RBF(input_dim)
 
-        assert isinstance(base_kernel, ImageBasedKernel)
-        assert base_kernel.input_dim == np.prod(patch_shape)
-
+        assert base_kernel.input_dim == input_dim
         kern = ConvKernel(base_kernel,
-                             pooling=pooling,
-                             with_indexing=with_indexing)
+                          image_shape=input_shape, patch_shape=patch_shape,
+                          pooling=pooling, with_indexing=with_indexing)
 
         super().__init__(kern, feat, num_latents=num_latents,
-                         q_mu=q_mu, q_sqrt=q_sqrt, mean_function=mean_function)
+                         q_mu=q_mu, q_sqrt=q_sqrt,
+                         mean_function=mean_function)
 
         self.with_indexing = with_indexing
         self.pooling = pooling
@@ -194,7 +193,7 @@ class WeightedSumConvLayer(ConvLayer):
 
         # overwrite the kernel
         self.kern = WeightedSumConvKernel(base_kernel,
-                                          img_size=input_shape,
+                                          image_shape=input_shape,
                                           patch_shape=patch_shape,
                                           pooling=pooling,
                                           with_indexing=with_indexing,
