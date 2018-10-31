@@ -46,8 +46,6 @@ GPFlux requires TensorFlow and GPFlow to be installed. You can install it by
 ```bash
 $ pip install -r requirements.txt
 ```
-
-
 Running the following the command installs GPflux and dependencies.
 ```bash
 $ pip install -e .
