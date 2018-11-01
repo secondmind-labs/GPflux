@@ -1,2 +1,1 @@
-pytest-cov==2.5.1
-jupyter==1.0.0
+git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow

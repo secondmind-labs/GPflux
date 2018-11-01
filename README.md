@@ -40,10 +40,15 @@ model = gpflux.DeepGP(X, Y, [layer1, layer2])
 
 ## Install
 
-GPFlux requires TensorFlow and GPFlow to be installed.
-Running the following the command adds GPFlux to your Python env.
+Assuming you are using `python3.6`.
+
+GPFlux requires TensorFlow and GPFlow to be installed. You can install it by
 ```bash
-$ python setup.py develop
+$ pip install -r requirements.txt
+```
+Running the following the command installs GPflux and dependencies.
+```bash
+$ pip install -e .
 ```
 
 ## References
