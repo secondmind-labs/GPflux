@@ -1,3 +1,8 @@
+import time
+import uuid
+from pathlib import Path
+from uuid import uuid4
+
 import numpy as np
 import keras
 from keras.datasets import mnist, cifar10, fashion_mnist
@@ -8,12 +13,57 @@ from keras.layers import Conv2D, MaxPooling2D
 import matplotlib.pyplot as plt
 from keras.regularizers import l2
 
+import argparse
+import os
+import pickle
+
 
 def rgb2gray(rgb):
-    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+    return np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
 
 
-def mnist_cnn_creator(dataset, cnn_configuration):
+class NN:
+    def __init__(self, nn_creator, config):
+        self._config = config
+        self._nn_creator = nn_creator
+
+    def fit(self, dataset):
+        init_time = time.time()
+        model = self._nn_creator(dataset, self._config)
+        results = model.fit(dataset.train_features, dataset.train_targets,
+                            validation_data=(dataset.test_features, dataset.test_targets),
+                            epochs=self._config.num_updates // self._config.batch_size,
+                            batch_size=self._config.batch_size)
+
+        self._model = model
+        self._results = results
+        self._duration = time.time() - init_time
+        return results
+
+    def store(self, path: Path):
+        path.mkdir(exist_ok=True, parents=True)
+        model_path = path / Path('mymodel.h5')
+        self._model.save(str(model_path))
+        summary_path = path / Path('summary.txt')
+        summary_path.write_text(self._config.summary())
+        with summary_path.open(mode='a') as f_handle:
+            f_handle.write('\nThe experiemnt took {} min\n'.format(self._duration / 60))
+        results_path = path / Path('results.pickle')
+        pickle.dump(self._results, open(str(results_path), mode='wb'))
+
+
+class GPWrapper:
+    def __init__(self, gp_creator, config):
+        pass
+
+    def fit(self, dataset):
+        pass
+
+    def store(self):
+        pass
+
+
+def mnist_cnn_creator(dataset, config):
     assert isinstance(dataset, ImageClassificationDataset)
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3),
@@ -28,12 +78,12 @@ def mnist_cnn_creator(dataset, cnn_configuration):
     model.add(Dense(dataset.num_classes, activation='softmax'))
 
     model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adadelta(),
+                  optimizer=config.optimiser,
                   metrics=['accuracy'])
     return model
 
 
-def mnist_fashion_cnn_creator(dataset, cnn_configuration):
+def mnist_fashion_cnn_creator(dataset, config):
     assert isinstance(dataset, ImageClassificationDataset)
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3),
@@ -48,12 +98,12 @@ def mnist_fashion_cnn_creator(dataset, cnn_configuration):
     model.add(Dense(dataset.num_classes, activation='softmax'))
 
     model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adadelta(),
+                  optimizer=config.optimiser,
                   metrics=['accuracy'])
     return model
 
 
-def cifar_cnn_creator(dataset, cnn_configuration):
+def cifar_cnn_creator(dataset, config):
     assert isinstance(dataset, ImageClassificationDataset)
     model = Sequential()
     model.add(Conv2D(32, (3, 3), padding='same',
@@ -78,10 +128,10 @@ def cifar_cnn_creator(dataset, cnn_configuration):
     model.add(Dense(dataset.num_classes))
     model.add(Activation('softmax'))
 
-    opt = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
     model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=opt,
+                  optimizer=config.optimiser,
                   metrics=['accuracy'])
+
     return model
 
 
@@ -96,15 +146,15 @@ class grey_cifar10:
 
 
 class Dataset:
-    def __init__(self, train_features, train_targets, test_features, test_targets):
-        # assumes dense representation of the classes, i.e. (num_examples, 1) shape of targets
+    def __init__(self, name, train_features, train_targets, test_features, test_targets):
+        self._name = name
         self._train_features = train_features
         self._train_targets = train_targets
         self._test_features = test_features
         self._test_targets = test_targets
 
     @classmethod
-    def from_monolitic_data(cls, features, targets, test_ratio):
+    def from_monolitic_data(cls, name, features, targets, test_ratio):
         num_examples = features.shape[0]
         ind = np.random.permutation(range(num_examples))
         train_proportion = int(num_examples * (1 - test_ratio))
@@ -112,12 +162,13 @@ class Dataset:
             ind[:train_proportion]]
         test_features, test_targets = features[ind[train_proportion:]], targets[
             ind[train_proportion:]]
-        return cls(train_features, train_targets, test_features, test_targets)
+        return cls(name, train_features, train_targets, test_features, test_targets)
 
     @classmethod
     def from_keras_format(cls, keras_dataset):
         (train_features, train_targets), (test_features, test_targets) = keras_dataset.load_data()
-        return cls(train_features, train_targets, test_features, test_targets)
+        name = keras_dataset.__name__.split('.')[-1]
+        return cls(name, train_features, train_targets, test_features, test_targets)
 
     @property
     def train_features(self):
@@ -138,6 +189,10 @@ class Dataset:
     @property
     def input_shape(self):
         return self._train_features[0].shape
+
+    @property
+    def name(self):
+        return self._name
 
 
 class ClassificationDataset(Dataset):
@@ -165,34 +220,34 @@ class ImageClassificationDataset(ClassificationDataset):
     @classmethod
     def from_keras_format(cls, keras_dataset):
         (train_features, train_targets), (test_features, test_targets) = keras_dataset.load_data()
+        # assuming pixel representation [0,255]
         train_features = train_features / train_features.max()
         test_features = test_features / train_features.max()  # this is correct - preprocessing should not be based on test set
-        return cls(train_features, train_targets, test_features, test_targets)
+        name = keras_dataset.__name__.split('.')[-1]
+        return cls(name, train_features, train_targets, test_features, test_targets)
 
 
 class Experiment:
-    def __init__(self, name, model_creator, model_configuration, dataset, experiment_configuration):
+    def __init__(self, name, dataset, model):
         self._name = name
-        self._model_creator = model_creator
-        self._model_configuration = model_configuration
+        self._model = model
         self._dataset = dataset
-        self._experiment_configuration = experiment_configuration
 
     def run(self):
+        results_path = Path('/tmp') / Path(str(self) + '-' + str(uuid.uuid4()))
         results = []
-        for _ in range(self._experiment_configuration.num_repetitions):
-            model = self._model_creator(self._dataset, self._model_configuration)
-            history = model.fit(self._dataset.train_features, self._dataset.train_targets,
-                                validation_data=(
-                                    self._dataset.test_features, self._dataset.test_targets),
-                                epochs=self._model_configuration.num_updates // self._model_configuration.batch_size,
-                                batch_size=self._model_configuration.batch_size)
-            results.append(history)
+        self._model.fit(self._dataset)
+        self._model.store(results_path)
+        # model_path = Path(results_path) / str(self)
+        # model_path.mkdir(parents=True, exist_ok=True)
         return results
 
     @property
     def name(self):
         return self._name
+
+    def __str__(self):
+        return '{}_{}'.format(self._name, self._dataset.name)
 
 
 class ExperimentSuite:
@@ -200,24 +255,41 @@ class ExperimentSuite:
         self._experiment_list = experiment_list
 
     def run(self):
-        results_dict = {}
         for experiment in self._experiment_list:
-            results_dict[experiment.name] = experiment.run()
-        return results_dict
+            experiment.run()
 
 
-class ExperimentConfiguration:
-    num_repetitions = 1
+class Configuration:
+
+    @classmethod
+    def summary(cls):
+        summary = ''
+        for name, value in cls.__dict__.items():
+            if name.startswith('_'):
+                # discard protected and private members
+                continue
+            summary += '_'.join((name, str(value))) + '\n'
+        return summary
 
 
-class MNISTCNNConfiguration:
-    num_updates = 3000
+class MNISTCNNConfiguration(Configuration):
+    num_updates = 300
     batch_size = 128
+    optimiser = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
 
 
-class CifarCNNConfiguration:
-    num_updates = 3000
+class CifarCNNConfiguration(Configuration):
+    num_updates = 500
     batch_size = 128
+    optimiser = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
+
+    @classmethod
+    def summary(cls):
+        return 'num_updates {}\n' \
+               'batch_size {}\n' \
+               'optimiser {}'.format(cls.num_updates,
+                                     cls.batch_size,
+                                     cls.optimiser)
 
 
 def group_histories(histories):
@@ -230,25 +302,29 @@ def group_histories(histories):
 
 
 def main():
-    experiment1 = Experiment('mnist_nn_experiment',
-                             model_creator=mnist_cnn_creator,
-                             model_configuration=MNISTCNNConfiguration,
-                             dataset=ImageClassificationDataset.from_keras_format(mnist),
-                             experiment_configuration=ExperimentConfiguration)
+    parser = argparse.ArgumentParser(description='Entrypoint for running experiments.')
+    parser.add_argument('-datasets', '--datasets', nargs='+',
+                        help='The experiments will be executed on these datasets.'
+                             'Available: ')
+    parser.add_argument('-models', '--models', nargs='+',
+                        help='The experiments will be executed on these models.'
+                             'Available: ')
 
-    experiment2 = Experiment('mnist_fahsion_nn_experiment',
-                             model_creator=mnist_fashion_cnn_creator,
-                             model_configuration=MNISTCNNConfiguration,
-                             dataset=ImageClassificationDataset.from_keras_format(fashion_mnist),
-                             experiment_configuration=ExperimentConfiguration)
+    args = parser.parse_args()
 
-    experiment3 = Experiment('cifar10_nn_experiment',
-                             model_creator=cifar_cnn_creator,
-                             model_configuration=CifarCNNConfiguration,
-                             dataset=ImageClassificationDataset.from_keras_format(grey_cifar10),
-                             experiment_configuration=ExperimentConfiguration)
+    experiment1 = Experiment('cnn_experiment',
+                             model=NN(mnist_cnn_creator, config=MNISTCNNConfiguration),
+                             dataset=ImageClassificationDataset.from_keras_format(mnist))
 
-    experiment_suite = ExperimentSuite(experiment_list=[experiment3])
+    experiment2 = Experiment('cnn_experiment',
+                             model=NN(mnist_cnn_creator, config=MNISTCNNConfiguration),
+                             dataset=ImageClassificationDataset.from_keras_format(fashion_mnist))
+
+    experiment3 = Experiment('cnn_experiment',
+                             model=NN(cifar_cnn_creator, config=CifarCNNConfiguration),
+                             dataset=ImageClassificationDataset.from_keras_format(grey_cifar10))
+
+    experiment_suite = ExperimentSuite(experiment_list=[experiment1, experiment2, experiment3])
     experiment_suite.run()
 
     # histories = experiment.run()
@@ -260,4 +336,5 @@ def main():
     # plt.show()
 
 
-main()
+if __name__ == '__main__':
+    main()
