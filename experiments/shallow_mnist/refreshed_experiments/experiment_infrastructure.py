@@ -1,96 +1,117 @@
 import pickle
 import time
 import uuid
+import os
+import abc
+from collections import namedtuple
 from pathlib import Path
+from typing import Callable, Any, Type, cast
 
-from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset
+from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig
+from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
+    DatasetPreprocessor
+from experiments.shallow_mnist.refreshed_experiments.nn.configs import NNConfig
+from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
+
+
+class Trainer(abc.ABC):
+    # we can easily extend the persistent outcome of an experiment
+    training_summary = namedtuple('training_summary',
+                                  'learning_history model duration')
+
+    def __init__(self, model_creator: Callable[[Dataset, Configuration], Any],
+                 config: Type[Configuration]):
+        self._config = config
+        self._model_creator = model_creator
+
+    @abc.abstractmethod
+    def fit(self, dataset: Dataset) -> 'Trainer.training_summary':
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def store(self, training_summary: 'Trainer.training_summary', path: Path) -> None:
+        raise NotImplementedError()
 
 
 class Experiment:
-    def __init__(self, name, dataset, dataset_preprocessor, trainer):
+    def __init__(self, name: str,
+                 dataset: Dataset,
+                 dataset_preprocessor: Type[DatasetPreprocessor],
+                 trainer: Trainer):
         self._name = name
         self.trainer = trainer
         self._dataset = dataset_preprocessor.preprocess(dataset)
         self._data_preprocessor = dataset_preprocessor
 
-    def run(self):
-        results_path = Path('/tmp') / Path(str(self) + '-' + str(uuid.uuid4()))
-        results = []
-        self.trainer.fit(self._dataset)
-        self.trainer.store(results_path)
-        # model_path = Path(results_path) / str(self)
-        # model_path.mkdir(parents=True, exist_ok=True)
-        return results
+    def run(self) -> Trainer.training_summary:
+        training_summary = self.trainer.fit(self._dataset)
+        return training_summary
+
+    def store(self, training_summary: Trainer.training_summary, path: Path):
+        self.trainer.store(training_summary, path)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
-    def __str__(self):
-        return '{}_{}'.format(self._name, self._dataset.name)
+    def __str__(self) -> str:
+        return '{}_{}_{}'.format(self._name, self._dataset.name, str(uuid.uuid4()))
 
 
 class ExperimentSuite:
+
     def __init__(self, experiment_list):
         self._experiment_list = experiment_list
 
     def run(self):
         for experiment in self._experiment_list:
-            experiment.run()
-
-
-class Trainer:
-
-    def fit(self, dataset: Dataset):
-        raise NotImplementedError()
-
-    def store(self, path: Path):
-        raise NotImplementedError()
+            summary = experiment.run()
+            experiment.store(summary, path=Path('/tmp', str(experiment)))
 
 
 class KerasNNTrainer(Trainer):
-    def __init__(self, nn_creator, config):
-        self._config = config
-        self._nn_creator = nn_creator
 
-    def fit(self, dataset):
-        model = self._nn_creator(dataset, self._config)
+    @property
+    def config(self) -> NNConfig:
+        return cast(NNConfig, self._config)
+
+    def fit(self, dataset: Dataset) -> Trainer.training_summary:
+        model = self._model_creator(dataset, self.config)
         init_time = time.time()
-        results = model.fit(dataset.train_features, dataset.train_targets,
-                            validation_data=(dataset.test_features, dataset.test_targets),
-                            epochs=self._config.num_updates // self._config.batch_size,
-                            batch_size=self._config.batch_size)
+        learning_history = model.fit(dataset.train_features, dataset.train_targets,
+                                     validation_data=(dataset.test_features, dataset.test_targets),
+                                     epochs=self.config.num_updates // self.config.batch_size,
+                                     batch_size=self.config.batch_size)
 
-        self._model = model
-        self._results = results
-        self._duration = time.time() - init_time
+        duration = time.time() - init_time
+        return KerasNNTrainer.training_summary(learning_history, model, duration)
 
-    def store(self, path: Path):
+    def store(self, training_summary: Trainer.training_summary, path: Path):
         path.mkdir(exist_ok=True, parents=True)
-        model_path = path / Path('mymodel.h5')
-        self._model.save(str(model_path))
+        model_path = path / Path('saved_model.h5')
+        training_summary.model.save(str(model_path))
         summary_path = path / Path('summary.txt')
         summary_path.write_text(self._config.summary())
         with summary_path.open(mode='a') as f_handle:
-            f_handle.write('\nThe experiemnt took {} min\n'.format(self._duration / 60))
-        results_path = path / Path('results.pickle')
-        pickle.dump(self._results, open(str(results_path), mode='wb'))
+            f_handle.write('\nThe experiemnt took {} min\n'.format(training_summary.duration / 60))
 
 
 class GPTrainer(Trainer):
-    def __init__(self, gp_creator, config):
-        self._gp_creator = gp_creator
-        self._config = config
 
-    def fit(self, dataset):
-        model = self._gp_creator(dataset, self._config)
+    @property
+    def config(self) -> GPConfig:
+        return cast(GPConfig, self._config)
+
+    def fit(self, dataset: Dataset):
+        model = self._model_creator(dataset, self.config)
         init_time = time.time()
         model.compile()
-        optimizer = self._config.optimiser
-        optimizer.minimize(model, maxiter=self._config.iterations)
+        optimizer = self.config.optimiser
+        optimizer.minimize(model, maxiter=self.config.iterations)
 
-        self._model = model
-        self._duration = time.time() - init_time
+        duration = time.time() - init_time
 
-    def store(self):
-        save_gpflow_model(filename, self._model)
+        return Trainer.training_summary(None, model, duration)
+
+    def store(self, training_summary: Trainer.training_summary, path: Path):
+        save_gpflow_model(path, training_summary.model)

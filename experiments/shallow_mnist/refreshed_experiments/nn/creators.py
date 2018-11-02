@@ -4,10 +4,16 @@ from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Activati
 
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import \
     ImageClassificationDataset
+from experiments.shallow_mnist.refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
+    CifarCNNConfiguration
+
+"""
+One would implement a model creator and corresponding config to try a new model. The rest should
+be done automatically.
+"""
 
 
-def mnist_cnn_creator(dataset, config):
-    assert isinstance(dataset, ImageClassificationDataset)
+def mnist_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfiguration):
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3),
                      activation='relu',
@@ -26,8 +32,7 @@ def mnist_cnn_creator(dataset, config):
     return model
 
 
-def mnist_fashion_cnn_creator(dataset, config):
-    assert isinstance(dataset, ImageClassificationDataset)
+def mnist_fashion_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfiguration):
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3),
                      activation='relu',
@@ -46,8 +51,7 @@ def mnist_fashion_cnn_creator(dataset, config):
     return model
 
 
-def cifar_cnn_creator(dataset, config):
-    assert isinstance(dataset, ImageClassificationDataset)
+def cifar_cnn_creator(dataset: ImageClassificationDataset, config: CifarCNNConfiguration):
     model = Sequential()
     model.add(Conv2D(32, (3, 3), padding='same',
                      input_shape=dataset.input_shape))

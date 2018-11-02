@@ -2,10 +2,18 @@ import gpflow
 import numpy as np
 
 import gpflux
+from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import ConvGPConfig
+from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset
+
+"""
+One would implement a model creator and corresponding config to try a new model. The rest should
+be done automatically.
+"""
 
 
 @gpflow.defer_build()
-def convgp_creator(dataset, config):
+def convgp_creator(dataset: Dataset, config: ConvGPConfig):
+    # just copied - might not work!
     x = dataset.train_features
     y = dataset.train_targets
     H = int(x.shape[1] ** .5)
@@ -28,21 +36,20 @@ def convgp_creator(dataset, config):
         with_weights=config.with_weights,
         patches_initializer=patches)
 
-    # layer0.kern.basekern.variance = 25.0
-    # layer0.kern.basekern.lengthscales = 1.2
-    #
-    # # init kernel
-    # if config.with_indexing:
-    #     layer0.kern.index_kernel.variance = 25.0
-    #     layer0.kern.index_kernel.lengthscales = 3.0
-    #
-    # # break symmetry in variational parameters
-    # layer0.q_sqrt = layer0.q_sqrt.read_value()
-    # layer0.q_mu = np.random.randn(*(layer0.q_mu.read_value().shape))
+    layer0.kern.basekern.variance = 25.0
+    layer0.kern.basekern.lengthscales = 1.2
+
+    # init kernel
+    if config.with_indexing:
+        layer0.kern.index_kernel.variance = 25.0
+        layer0.kern.index_kernel.lengthscales = 3.0
+
+    # break symmetry in variational parameters
+    layer0.q_sqrt = layer0.q_sqrt.read_value()
+    layer0.q_mu = np.random.randn(*(layer0.q_mu.read_value().shape))
 
     x = x.reshape(dataset.train_features.shape[0], -1)
     y = y.astype(np.int32)
-    print(x.shape, y.shape)
 
     model = gpflux.DeepGP(x, y,
                           layers=[layer0],
