@@ -17,4 +17,5 @@ setup(name='gpflux',
       author_email="vincent@prowler.io",
       description="GPFlux: Deep GP library",
       keywords="Deep-Gaussian-processes",
-      install_requires=requirements)
+      install_requires=requirements,
+      packages=['experiments', 'gpflux'])

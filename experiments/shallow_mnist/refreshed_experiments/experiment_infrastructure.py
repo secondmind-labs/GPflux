@@ -55,7 +55,7 @@ class Experiment:
         return self._name
 
     def __str__(self) -> str:
-        return '{}_{}_{}'.format(self._name, self._dataset.name, str(uuid.uuid4()))
+        return '{}_{}'.format(self._name, str(uuid.uuid4()))
 
 
 class ExperimentSuite:
@@ -63,10 +63,10 @@ class ExperimentSuite:
     def __init__(self, experiment_list):
         self._experiment_list = experiment_list
 
-    def run(self):
+    def run(self, path: Path):
         for experiment in self._experiment_list:
             summary = experiment.run()
-            experiment.store(summary, path=Path('/tmp', str(experiment)))
+            experiment.store(summary, path / Path(str(experiment)))
 
 
 class KerasNNTrainer(Trainer):

@@ -1,4 +1,6 @@
 import argparse
+from pathlib import Path
+
 from keras.datasets import mnist, fashion_mnist
 
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.creators import convgp_creator
@@ -58,13 +60,18 @@ def _get_experiment_dict():
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Entrypoint for running the experiments.')
+    experiments_dict = _get_experiment_dict()
+
+    parser = argparse.ArgumentParser(
+        description='Entrypoint for running the experiments. Available are:\n {}'.format(
+            ' '.join(experiments_dict.keys())))
     parser.add_argument('--experiment_names', '-e', help='The names of the experiments to run.',
                         type=str, nargs='+', required=True)
+    parser.add_argument('--path', '-p', help='The path were results will be stored', type=Path,
+                        required=True)
 
     args = parser.parse_args()
 
-    experiments_dict = _get_experiment_dict()
     experiments = []
     for name in args.experiment_names:
         try:
@@ -75,7 +82,7 @@ def main():
                            'Available are: {}'.format(name, ' '.join(experiments_dict.keys())))
 
     experiment_suite = ExperimentSuite(experiment_list=experiments)
-    experiment_suite.run()
+    experiment_suite.run(path=args.path)
 
 
 if __name__ == '__main__':
