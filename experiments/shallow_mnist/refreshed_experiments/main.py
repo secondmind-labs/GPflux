@@ -29,104 +29,52 @@ The following setup is merely an example.
 """
 
 
-def _get_dataset(dataset_name):
-    from experiments.shallow_mnist.refreshed_experiments.datasets \
-        import \
-        mnist, \
-        grey_cifar10, \
-        grey_cifar100, \
-        mnist_10percent, \
-        mnist_25percent, \
-        mnist_50percent
-    datasets = mnist, \
-               grey_cifar10, \
-               grey_cifar100, \
-               mnist_10percent, \
-               mnist_25percent, \
-               mnist_50percent
-    dataset_dict = {d.__name__: d for d in datasets}
-    try:
-        return dataset_dict[dataset_name]
-    except KeyError:
-        raise KeyError('Dataset {} not found. Available are: {}'.format(dataset_name, ' '.join(
-            dataset_dict.keys())))
-
-
-def _get_model_creator(model_creator_name):
-    from experiments.shallow_mnist.refreshed_experiments.nn.creators \
-        import \
-        cifar_cnn_creator, \
-        mnist_cnn_creator, \
-        mnist_fashion_cnn_creator
-    model_creators = cifar_cnn_creator, \
-                     mnist_cnn_creator, \
-                     mnist_fashion_cnn_creator
-    model_creator_dict = {mc.__name__: mc for mc in model_creators}
-    try:
-        return model_creator_dict[model_creator_name]
-    except KeyError:
-        raise KeyError('Model creator {} '
-                       'not found. Available are: {}'.format(model_creator_name,
-                                                             ' '.join(
-                                                                 model_creator_dict.keys())))
-
-
-def _get_model_config(config_name):
-    from experiments.shallow_mnist.refreshed_experiments.nn.configs \
-        import \
-        MNISTCNNConfiguration, \
-        CifarCNNConfiguration
-    configs = MNISTCNNConfiguration, \
-              CifarCNNConfiguration
-    configs_dict = {c.__name__: c for c in configs}
-    try:
-        return configs_dict[config_name]
-    except KeyError:
-        raise KeyError('Config {} not found. Available are: {}'.format(config_name,
-                                                                       ' '.join(
-                                                                           configs_dict.keys())))
+def _get_experiment_dict():
+    experiments = [
+        Experiment('basic_convgp_mnist_exp',
+                   trainer=GPTrainer(convgp_creator, config=ConvGPConfig),
+                   dataset=ImageClassificationDataset.from_keras_format(mnist),
+                   dataset_preprocessor=DummyPreprocessor),
+        Experiment('cnn_experiment_mnist',
+                   trainer=KerasNNTrainer(mnist_cnn_creator,
+                                          config=MNISTCNNConfiguration),
+                   dataset=ImageClassificationDataset.from_keras_format(
+                       mnist),
+                   dataset_preprocessor=DummyPreprocessor),
+        Experiment('cnn_experiment_fashion_mnist',
+                   trainer=KerasNNTrainer(mnist_cnn_creator,
+                                          config=MNISTCNNConfiguration),
+                   dataset=ImageClassificationDataset.from_keras_format(
+                       fashion_mnist),
+                   dataset_preprocessor=DummyPreprocessor),
+        Experiment('cnn_experiment_cifar10',
+                   trainer=KerasNNTrainer(cifar_cnn_creator,
+                                          config=CifarCNNConfiguration),
+                   dataset=ImageClassificationDataset.from_keras_format(
+                       grey_cifar10),
+                   dataset_preprocessor=DummyPreprocessor),
+    ]
+    return {e.name: e for e in experiments}
 
 
 def main():
     parser = argparse.ArgumentParser(description='Entrypoint for running the experiments.')
-    parser.add_argument('--model_creator', help='the model creator', type=str)
-    parser.add_argument('--model_configuration', help='the model configuration', type=str)
-    parser.add_argument('--dataset', help='dataset', type=str)
-    parser.add_argument('--trainer', help='used_trainer', type=str)
+    parser.add_argument('--experiment_names', '-e', help='The names of the experiments to run.',
+                        type=str, nargs='+', required=True)
 
     args = parser.parse_args()
-    dataset = _get_dataset(args.dataset)
-    model_creator = _get_model_creator(args.model_creator)
-    config = _get_model_config(args.config)
 
-    gp_experiment_mnist = Experiment('convgp_experiment',
-                                     trainer=GPTrainer(convgp_creator, config=ConvGPConfig),
-                                     dataset=ImageClassificationDataset.from_keras_format(
-                                         mnist),
-                                     dataset_preprocessor=DummyPreprocessor)
+    experiments_dict = _get_experiment_dict()
+    experiments = []
+    for name in args.experiment_names:
+        try:
+            experiments.append(experiments_dict[name])
 
-    cnn_experiment_mnist = Experiment('cnn_experiment',
-                                      trainer=KerasNNTrainer(mnist_cnn_creator,
-                                                             config=MNISTCNNConfiguration),
-                                      dataset=ImageClassificationDataset.from_keras_format(
-                                          mnist),
-                                      dataset_preprocessor=DummyPreprocessor)
+        except KeyError:
+            raise KeyError('Experiment {} not found. '
+                           'Available are: {}'.format(name, ' '.join(experiments_dict.keys())))
 
-    cnn_experiment_fashion_mnist = Experiment('cnn_experiment',
-                                              trainer=KerasNNTrainer(mnist_cnn_creator,
-                                                                     config=MNISTCNNConfiguration),
-                                              dataset=ImageClassificationDataset.from_keras_format(
-                                                  fashion_mnist),
-                                              dataset_preprocessor=DummyPreprocessor)
-
-    cnn_experiment_cifar10 = Experiment('cnn_experiment',
-                                        trainer=KerasNNTrainer(cifar_cnn_creator,
-                                                               config=CifarCNNConfiguration),
-                                        dataset=ImageClassificationDataset.from_keras_format(
-                                            grey_cifar10),
-                                        dataset_preprocessor=DummyPreprocessor)
-
-    experiment_suite = ExperimentSuite(experiment_list=[cnn_experiment_mnist])
+    experiment_suite = ExperimentSuite(experiment_list=experiments)
     experiment_suite.run()
 
 
