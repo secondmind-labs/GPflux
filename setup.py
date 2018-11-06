@@ -9,9 +9,6 @@ requirements = [
     'scipy==0.19.0',
     'scikit-learn==0.20.0',
     'pytest-cov==2.5.1',
-    'jupyter==1.0.0',
-    'sacred==0.7.4 ',
-    'pandas==0.23.4 '
 ]
 
 setup(name='gpflux',
