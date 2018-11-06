@@ -64,6 +64,7 @@ def get_data(dataset, model_type):
             H, W = 32, 32
         X = X.reshape(-1, H, W, 1)
         Xs = Xs.reshape(-1, H, W, 1)
+    print(X.shape, Y.shape)
     return (X, Y), (Xs, Ys)
 
 

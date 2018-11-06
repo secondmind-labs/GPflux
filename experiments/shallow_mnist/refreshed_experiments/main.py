@@ -1,10 +1,9 @@
 import argparse
 from pathlib import Path
 
-from keras.datasets import mnist, fashion_mnist
-
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.creators import convgp_creator
-from experiments.shallow_mnist.refreshed_experiments.datasets import grey_cifar10
+from experiments.shallow_mnist.refreshed_experiments.datasets import grey_cifar10, mnist, \
+    mnist_5percent, mnist_25percent, mnist_10percent
 from experiments.shallow_mnist.refreshed_experiments.nn.creators import mnist_cnn_creator, \
     cifar_cnn_creator
 from experiments.shallow_mnist.refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
@@ -16,40 +15,41 @@ from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import 
     ImageClassificationDataset
 
 """
-Main entrypoint - here we need to discuss how would you like to run the experiments.
-Things to consider:
-- ease of use
-- ability to loop over different configurations for a fixed dataset
-- ability to quickly prototype
-- ability to run a model vs different optimisation setups, i.e. don't change the inference scheme, 
-but change the optimisation procedure
-- ability to run within docker images so we can run the experiments anywhere if needed
-- ability to use autocompletion when implementing stuff - this can be achieved by dealing with
-python objects
-
-The following setup is merely an example.
+Entrypoint for running experiments.
 """
 
 
 def _get_experiment_dict():
     experiments = [
-        Experiment('basic_convgp_mnist_exp',
+        Experiment('convgp_mnist',
                    trainer=GPTrainer(convgp_creator, config=ConvGPConfig),
                    dataset=ImageClassificationDataset.from_keras_format(mnist),
                    dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_experiment_mnist',
+        Experiment('cnn_mnist',
                    trainer=KerasNNTrainer(mnist_cnn_creator,
                                           config=MNISTCNNConfiguration),
                    dataset=ImageClassificationDataset.from_keras_format(
                        mnist),
                    dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_experiment_fashion_mnist',
+        Experiment('cnn_mnist_5percent',
                    trainer=KerasNNTrainer(mnist_cnn_creator,
                                           config=MNISTCNNConfiguration),
                    dataset=ImageClassificationDataset.from_keras_format(
-                       fashion_mnist),
+                       mnist_5percent),
                    dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_experiment_cifar10',
+        Experiment('cnn_mnist_10percent',
+                   trainer=KerasNNTrainer(mnist_cnn_creator,
+                                          config=MNISTCNNConfiguration),
+                   dataset=ImageClassificationDataset.from_keras_format(
+                       mnist_10percent),
+                   dataset_preprocessor=DummyPreprocessor),
+        Experiment('cnn_mnist_25percent',
+                   trainer=KerasNNTrainer(mnist_cnn_creator,
+                                          config=MNISTCNNConfiguration),
+                   dataset=ImageClassificationDataset.from_keras_format(
+                       mnist_25percent),
+                   dataset_preprocessor=DummyPreprocessor),
+        Experiment('cnn_cifar10',
                    trainer=KerasNNTrainer(cifar_cnn_creator,
                                           config=CifarCNNConfiguration),
                    dataset=ImageClassificationDataset.from_keras_format(

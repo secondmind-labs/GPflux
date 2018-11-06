@@ -3,7 +3,8 @@ import numpy as np
 
 import gpflux
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import ConvGPConfig
-from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset
+from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
+    ImageClassificationDataset
 
 """
 One would implement a model creator and corresponding config to try a new model. The rest should
@@ -12,23 +13,22 @@ be done automatically.
 
 
 @gpflow.defer_build()
-def convgp_creator(dataset: Dataset, config: ConvGPConfig):
-    # just copied - might not work!
-    x = dataset.train_features
-    y = dataset.train_targets
-    H = int(x.shape[1] ** .5)
+def convgp_creator(dataset: ImageClassificationDataset, config: ConvGPConfig):
+    x, y = dataset.train_features, dataset.train_targets
+    # DeepGP class expects 2d inputs and labels encoded with integers
+    x, y = x.reshape(x.shape[0], -1), y.reshape(y.shape[0], -1).astype(np.int32).argmax(axis=-1)[
+        ..., None]
 
-    likelihood = gpflow.likelihoods.SoftMax(10)
+    h = int(x.shape[1] ** .5)
+    likelihood = gpflow.likelihoods.Bernoulli() if y.shape[1] == 1 \
+        else gpflow.likelihoods.SoftMax(y.shape[1])
+
     num_latents = likelihood.num_classes if hasattr(likelihood, 'num_classes') else 1
-    init_patches = 'patches-unique'
-    if init_patches == "random":
-        patches = gpflux.init.NormalInitializer()
-    else:
-        unique = init_patches == "patches-unique"
-        patches = gpflux.init.PatchSamplerInitializer(x[:100], width=H, height=H, unique=unique)
+
+    patches = config.patch_initializer(x[:100], h, h, config.init_patches)
 
     layer0 = gpflux.layers.WeightedSumConvLayer(
-        [H, H],
+        [h, h],
         config.num_inducing_points,
         config.patch_shape,
         num_latents=num_latents,
@@ -39,7 +39,6 @@ def convgp_creator(dataset: Dataset, config: ConvGPConfig):
     layer0.kern.basekern.variance = 25.0
     layer0.kern.basekern.lengthscales = 1.2
 
-    # init kernel
     if config.with_indexing:
         layer0.kern.index_kernel.variance = 25.0
         layer0.kern.index_kernel.lengthscales = 3.0
@@ -47,9 +46,6 @@ def convgp_creator(dataset: Dataset, config: ConvGPConfig):
     # break symmetry in variational parameters
     layer0.q_sqrt = layer0.q_sqrt.read_value()
     layer0.q_mu = np.random.randn(*(layer0.q_mu.read_value().shape))
-
-    x = x.reshape(dataset.train_features.shape[0], -1)
-    y = y.astype(np.int32)
 
     model = gpflux.DeepGP(x, y,
                           layers=[layer0],

@@ -1,11 +1,12 @@
-import pickle
 import time
 import uuid
-import os
 import abc
 from collections import namedtuple
 from pathlib import Path
 from typing import Callable, Any, Type, cast
+
+import gpflow
+import gpflow.training.monitor as mon
 
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
@@ -106,12 +107,16 @@ class GPTrainer(Trainer):
         model = self._model_creator(dataset, self.config)
         init_time = time.time()
         model.compile()
-        optimizer = self.config.optimiser
-        optimizer.minimize(model, maxiter=self.config.iterations)
-
+        session = gpflow.get_default_session()
+        step = mon.create_global_step(session)
+        optimiser = self.config.get_optimiser()
+        monitor_tasks = self.config.get_monitor_tasks(dataset, model, optimiser)
+        monitor = mon.Monitor(monitor_tasks, session, step, print_summary=True)
+        with monitor:
+            optimiser.minimize(model, maxiter=self.config.iterations)
         duration = time.time() - init_time
 
         return Trainer.training_summary(None, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
-        save_gpflow_model(path, training_summary.model)
+        pass
