@@ -10,12 +10,12 @@ class NNConfig(Configuration):
 
 
 class MNISTCNNConfiguration(NNConfig):
-    num_updates = 10000
+    num_updates = 20000
     batch_size = 128
     optimiser = keras.optimizers.Adadelta()
 
 
 class CifarCNNConfiguration(NNConfig):
-    num_updates = 10000
+    num_updates = 20000
     batch_size = 128
     optimiser = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)

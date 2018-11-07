@@ -5,4 +5,5 @@ cnn_mnist_5percent \
 cnn_mnist_10percent \
 cnn_mnist_25percent \
 cnn_cifar10 \
+convgp_mnist \
 --path "$1"

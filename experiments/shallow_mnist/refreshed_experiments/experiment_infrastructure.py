@@ -7,6 +7,7 @@ from typing import Callable, Any, Type, cast
 
 import gpflow
 import gpflow.training.monitor as mon
+import tensorflow as tf
 
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
@@ -104,16 +105,20 @@ class GPTrainer(Trainer):
         return cast(GPConfig, self._config)
 
     def fit(self, dataset: Dataset):
+        session = gpflow.get_default_session()
+        step = mon.create_global_step(session)
         model = self._model_creator(dataset, self.config)
         init_time = time.time()
         model.compile()
-        session = gpflow.get_default_session()
-        step = mon.create_global_step(session)
-        optimiser = self.config.get_optimiser()
+        optimiser = self.config.get_optimiser(step)
         monitor_tasks = self.config.get_monitor_tasks(dataset, model, optimiser)
         monitor = mon.Monitor(monitor_tasks, session, step, print_summary=True)
         with monitor:
-            optimiser.minimize(model, maxiter=self.config.iterations)
+            optimiser.minimize(model,
+                               maxiter=self.config.iterations,
+                               step_callback=monitor,
+                               global_step=step
+                               )
         duration = time.time() - init_time
 
         return Trainer.training_summary(None, model, duration)
