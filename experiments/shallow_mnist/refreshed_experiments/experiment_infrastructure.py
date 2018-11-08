@@ -5,6 +5,7 @@ import abc
 from collections import namedtuple
 from pathlib import Path
 from typing import Callable, Any, Type, cast
+import tqdm
 
 import gpflow
 import gpflow.training.monitor as mon
@@ -82,8 +83,8 @@ class KerasNNTrainer(Trainer):
         init_time = time.time()
         learning_history = model.fit(dataset.train_features, dataset.train_targets,
                                      validation_data=(dataset.test_features, dataset.test_targets),
-                                     epochs=self.config.num_updates // self.config.batch_size,
-                                     batch_size=self.config.batch_size)
+                                     batch_size=self.config.batch_size,
+                                     epochs=self.config.epochs)
 
         duration = time.time() - init_time
         return KerasNNTrainer.training_summary(learning_history, model, duration)
@@ -124,17 +125,19 @@ class ClassificationGPTrainer(Trainer):
 
         session = model.enquire_session(session)
         train_acc, test_acc = [], []
+        num_epochs = self.config.num_epochs
+        num_batches = x_train.shape[0] // self.config.batch_size
         with session.as_default():
-            for step in range(self.config.num_updates):
-                if step % self.config.stats_freq == 0:
-                    train_er = calc_multiclass_error(model, x_train[:500, :], y_train[:500, :])
-                    test_er = calc_multiclass_error(model, x_test[:500, :], y_test[:500, :])
-                    print('Steps {} train error rate {} test error rate {}.'.format(step,
-                                                                                    train_er,
-                                                                                    test_er))
-                    train_acc.append(1 - train_er)
-                    test_acc.append(1 - test_er)
-                opt()
+            for epoch in range(num_epochs):
+                for _ in tqdm.tqdm(range(num_batches), desc='Epoch {}'.format(epoch)):
+                    opt()
+                train_er = calc_multiclass_error(model, x_train[:500, :], y_train[:500, :])
+                test_er = calc_multiclass_error(model, x_test, y_test)
+                print('Epochs {} train error rate {} test error rate {}.'.format(epoch,
+                                                                                 train_er,
+                                                                                 test_er))
+                train_acc.append((epoch, 1 - train_er))
+                test_acc.append((epoch, 1 - test_er))
 
         duration = time.time() - init_time
         learning_history = {'train_acc': train_acc, 'test_acc': test_acc}
