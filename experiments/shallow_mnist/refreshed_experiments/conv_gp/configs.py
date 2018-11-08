@@ -5,10 +5,11 @@ from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
 import gpflow.training.monitor as mon
 import numpy as np
 
+
 class GPConfig(Configuration):
     batch_size = 128
     optimiser = gpflow.train.AdamOptimizer(0.001)
-    iterations = 5000
+    num_updates = 5000
 
     @staticmethod
     def get_monitor_tasks():
@@ -27,7 +28,8 @@ class ConvGPConfig(GPConfig):
         "lr": 1e-4
     }
 
-    iterations = 50000
+    num_updates = 50
+    stats_freq = 50
     patch_shape = [5, 5]
     batch_size = 128
     num_inducing_points = 1000
@@ -56,9 +58,8 @@ class ConvGPConfig(GPConfig):
         Xs, Ys = Xs.reshape(Xs.shape[0], -1), \
                Ys.reshape(Ys.shape[0], -1).astype(np.int32).argmax(axis=-1)[
                    ..., None]
-        path = 'CONVGP'
+        path = 'CONVGP2'
         fw = mon.LogdirWriter(path)
-
         tasks = []
 
         def lr(*args, **kwargs):
@@ -127,8 +128,7 @@ class ConvGPConfig(GPConfig):
                 .with_condition(periodic_short())
                 .with_exit_condition(True)]
 
-        error_func = calc_binary_error if dataset == "mnist01" \
-            else calc_multiclass_error
+        error_func = calc_multiclass_error
 
         f1 = get_error_cb(model, Xs, Ys, error_func)
         tasks += [

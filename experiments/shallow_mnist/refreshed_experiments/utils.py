@@ -21,3 +21,23 @@ def rgb2gray(rgb):
 def group_results(results):
     return np.array([result.history['loss'] for result in results]), \
            np.array([result.history['val_loss'] for result in results])
+
+
+def labels_onehot_to_int(labels):
+    return labels.argmax(axis=-1)[..., None]
+
+
+def reshape_to_2d(x):
+    return x.reshape(x.shape[0], -1)
+
+
+def calc_multiclass_error(model, Xs, Ys, batchsize=100):
+    Ns = len(Xs)
+    splits = Ns // batchsize
+    hits = []
+    for xs, ys in zip(np.array_split(Xs, splits), np.array_split(Ys, splits)):
+        p, _ = model.predict_y(xs)
+        acc = p.argmax(1) == ys[:, 0]
+        hits.append(acc)
+    error = 1.0 - np.concatenate(hits, 0)
+    return np.sum(error) * 100.0 / len(error)

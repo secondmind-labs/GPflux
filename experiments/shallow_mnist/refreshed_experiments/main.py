@@ -10,7 +10,7 @@ from experiments.shallow_mnist.refreshed_experiments.nn.configs import MNISTCNNC
     CifarCNNConfiguration
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import ConvGPConfig
 from experiments.shallow_mnist.refreshed_experiments.experiment_infrastructure import Experiment, \
-    ExperimentSuite, KerasNNTrainer, GPTrainer
+    ExperimentSuite, KerasNNTrainer, ClassificationGPTrainer
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import DummyPreprocessor, \
     ImageClassificationDataset
 
@@ -20,46 +20,47 @@ Entrypoint for running experiments.
 
 
 def _get_experiment_dict():
-    experiments = [
-        Experiment('convgp_mnist',
-                   trainer=GPTrainer(convgp_creator, config=ConvGPConfig),
-                   dataset=ImageClassificationDataset.from_keras_format(mnist),
-                   dataset_preprocessor=DummyPreprocessor),
-        Experiment('convgp_mnist10percent',
-                   trainer=GPTrainer(convgp_creator, config=ConvGPConfig),
-                   dataset=ImageClassificationDataset.from_keras_format(mnist_10percent),
-                   dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_mnist',
-                   trainer=KerasNNTrainer(mnist_cnn_creator,
-                                          config=MNISTCNNConfiguration),
-                   dataset=ImageClassificationDataset.from_keras_format(
-                       mnist),
-                   dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_mnist_5percent',
-                   trainer=KerasNNTrainer(mnist_cnn_creator,
-                                          config=MNISTCNNConfiguration),
-                   dataset=ImageClassificationDataset.from_keras_format(
-                       mnist_5percent),
-                   dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_mnist_10percent',
-                   trainer=KerasNNTrainer(mnist_cnn_creator,
-                                          config=MNISTCNNConfiguration),
-                   dataset=ImageClassificationDataset.from_keras_format(
-                       mnist_10percent),
-                   dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_mnist_25percent',
-                   trainer=KerasNNTrainer(mnist_cnn_creator,
-                                          config=MNISTCNNConfiguration),
-                   dataset=ImageClassificationDataset.from_keras_format(
-                       mnist_25percent),
-                   dataset_preprocessor=DummyPreprocessor),
-        Experiment('cnn_cifar10',
-                   trainer=KerasNNTrainer(cifar_cnn_creator,
-                                          config=CifarCNNConfiguration),
-                   dataset=ImageClassificationDataset.from_keras_format(
-                       grey_cifar10),
-                   dataset_preprocessor=DummyPreprocessor),
-    ]
+    experiments = \
+        [
+            Experiment('convgp_mnist',
+                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig),
+                       dataset=ImageClassificationDataset.from_keras_format(mnist),
+                       dataset_preprocessor=DummyPreprocessor),
+            Experiment('convgp_mnist10percent',
+                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig),
+                       dataset=ImageClassificationDataset.from_keras_format(mnist_10percent),
+                       dataset_preprocessor=DummyPreprocessor),
+            Experiment('cnn_mnist',
+                       trainer=KerasNNTrainer(mnist_cnn_creator,
+                                              config=MNISTCNNConfiguration),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           mnist),
+                       dataset_preprocessor=DummyPreprocessor),
+            Experiment('cnn_mnist_5percent',
+                       trainer=KerasNNTrainer(mnist_cnn_creator,
+                                              config=MNISTCNNConfiguration),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           mnist_5percent),
+                       dataset_preprocessor=DummyPreprocessor),
+            Experiment('cnn_mnist_10percent',
+                       trainer=KerasNNTrainer(mnist_cnn_creator,
+                                              config=MNISTCNNConfiguration),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           mnist_10percent),
+                       dataset_preprocessor=DummyPreprocessor),
+            Experiment('cnn_mnist_25percent',
+                       trainer=KerasNNTrainer(mnist_cnn_creator,
+                                              config=MNISTCNNConfiguration),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           mnist_25percent),
+                       dataset_preprocessor=DummyPreprocessor),
+            Experiment('cnn_cifar10',
+                       trainer=KerasNNTrainer(cifar_cnn_creator,
+                                              config=CifarCNNConfiguration),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           grey_cifar10),
+                       dataset_preprocessor=DummyPreprocessor),
+        ]
     return {e.name: e for e in experiments}
 
 

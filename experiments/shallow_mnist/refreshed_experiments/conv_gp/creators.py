@@ -15,13 +15,13 @@ be done automatically.
 @gpflow.defer_build()
 def convgp_creator(dataset: ImageClassificationDataset, config: ConvGPConfig):
     x, y = dataset.train_features, dataset.train_targets
+    num_classes = y.shape[1]
     # DeepGP class expects 2d inputs and labels encoded with integers
     x, y = x.reshape(x.shape[0], -1), y.reshape(y.shape[0], -1).astype(np.int32).argmax(axis=-1)[
         ..., None]
 
     h = int(x.shape[1] ** .5)
-    likelihood = gpflow.likelihoods.Bernoulli() if y.shape[1] == 1 \
-        else gpflow.likelihoods.SoftMax(y.shape[1])
+    likelihood = gpflow.likelihoods.SoftMax(num_classes)
 
     num_latents = likelihood.num_classes if hasattr(likelihood, 'num_classes') else 1
 

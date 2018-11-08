@@ -1,3 +1,4 @@
+import pickle
 import time
 import uuid
 import abc
@@ -7,13 +8,12 @@ from typing import Callable, Any, Type, cast
 
 import gpflow
 import gpflow.training.monitor as mon
-import tensorflow as tf
-
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
     DatasetPreprocessor
 from experiments.shallow_mnist.refreshed_experiments.nn.configs import NNConfig
-from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
+from experiments.shallow_mnist.refreshed_experiments.utils import Configuration, reshape_to_2d, \
+    labels_onehot_to_int, calc_multiclass_error
 
 
 class Trainer(abc.ABC):
@@ -98,7 +98,7 @@ class KerasNNTrainer(Trainer):
             f_handle.write('\nThe experiemnt took {} min\n'.format(training_summary.duration / 60))
 
 
-class GPTrainer(Trainer):
+class ClassificationGPTrainer(Trainer):
 
     @property
     def config(self) -> GPConfig:
@@ -111,17 +111,41 @@ class GPTrainer(Trainer):
         init_time = time.time()
         model.compile()
         optimiser = self.config.get_optimiser(step)
-        monitor_tasks = self.config.get_monitor_tasks(dataset, model, optimiser)
-        monitor = mon.Monitor(monitor_tasks, session, step, print_summary=True)
-        with monitor:
-            optimiser.minimize(model,
-                               maxiter=self.config.iterations,
-                               step_callback=monitor,
-                               global_step=step
-                               )
-        duration = time.time() - init_time
 
-        return Trainer.training_summary(None, model, duration)
+        x_train, y_train = reshape_to_2d(dataset.train_features), \
+                           labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
+
+        x_test, y_test = reshape_to_2d(dataset.test_features), \
+                         labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
+
+        opt = optimiser.make_optimize_action(model,
+                                             session=session,
+                                             var_list=model.trainable_tensors)
+
+        session = model.enquire_session(session)
+        train_acc, test_acc = [], []
+        with session.as_default():
+            for step in range(self.config.num_updates):
+                if step % self.config.stats_freq == 0:
+                    train_er = calc_multiclass_error(model, x_train[:500, :], y_train[:500, :])
+                    test_er = calc_multiclass_error(model, x_test[:500, :], y_test[:500, :])
+                    print('Steps {} train error rate {} test error rate {}.'.format(step,
+                                                                                    train_er,
+                                                                                    test_er))
+                    train_acc.append(1 - train_er)
+                    test_acc.append(1 - test_er)
+                opt()
+
+        duration = time.time() - init_time
+        learning_history = {'train_acc': train_acc, 'test_acc': test_acc}
+        return Trainer.training_summary(learning_history, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
-        pass
+        path.mkdir(exist_ok=True, parents=True)
+        summary_path = path / Path('summary.txt')
+        summary_path.write_text(self._config.summary())
+        with summary_path.open(mode='a') as f_handle:
+            f_handle.write('\nThe experiemnt took {} min\n'.format(training_summary.duration / 60))
+        training_summary_path = path / Path('training_summary.c')
+        with training_summary_path.open(mode='wb') as f_handle:
+            pickle.dump(training_summary.learning_history, f_handle)
