@@ -9,12 +9,15 @@ import tqdm
 
 import gpflow
 import gpflow.training.monitor as mon
-from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig
+
+from experiments.shallow_mnist.experiment import convgp_setup_optimizer, convgp_monitor_tasks, \
+    convgp_setup_model
+from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig, ConvGPConfig
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
     DatasetPreprocessor
 from experiments.shallow_mnist.refreshed_experiments.nn.configs import NNConfig
 from experiments.shallow_mnist.refreshed_experiments.utils import Configuration, reshape_to_2d, \
-    labels_onehot_to_int, calc_multiclass_error
+    labels_onehot_to_int, calc_multiclass_error, calc_avg_nll
 
 
 class Trainer(abc.ABC):
@@ -96,7 +99,7 @@ class KerasNNTrainer(Trainer):
         summary_path = path / Path('summary.txt')
         summary_path.write_text(self._config.summary())
         with summary_path.open(mode='a') as f_handle:
-            f_handle.write('\nThe experiemnt took {} min\n'.format(training_summary.duration / 60))
+            f_handle.write('\nThe experiment took {} min\n'.format(training_summary.duration / 60))
 
 
 class ClassificationGPTrainer(Trainer):
@@ -106,41 +109,55 @@ class ClassificationGPTrainer(Trainer):
         return cast(GPConfig, self._config)
 
     def fit(self, dataset: Dataset):
-        session = gpflow.get_default_session()
-        step = mon.create_global_step(session)
-        model = self._model_creator(dataset, self.config)
         init_time = time.time()
-        model.compile()
-        optimiser = self.config.get_optimiser(step)
-
         x_train, y_train = reshape_to_2d(dataset.train_features), \
                            labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
-
         x_test, y_test = reshape_to_2d(dataset.test_features), \
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
+        num_classes = dataset.train_targets.shape[1]
+        session = gpflow.get_default_session()
+        step = mon.create_global_step(session)
+        model = self._model_creator(x_train, y_train, self.config)
+        model.compile()
 
-        opt = optimiser.make_optimize_action(model,
+        lr = ConvGPConfig.lr_cfg['lr'] * 1.0 / (1 + step // 5000 / 3)
+        optimizer = gpflow.train.AdamOptimizer(lr)
+        opt = optimizer.make_optimize_action(model,
                                              session=session,
-                                             var_list=model.trainable_tensors)
+                                             global_step=step)
 
-        session = model.enquire_session(session)
-        train_acc, test_acc = [], []
+        train_acc_list, test_acc_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
         num_batches = x_train.shape[0] // self.config.batch_size
+        stats_fraction = 10000
+
         with session.as_default():
             for epoch in range(num_epochs):
+                train_acc = 100 - calc_multiclass_error(model, x_train[:stats_fraction, :],
+                                                        y_train[:stats_fraction, :])
+                test_acc = 100 - calc_multiclass_error(model, x_test[:stats_fraction, :],
+                                                       y_test[:stats_fraction, :])
+                train_avg_nll = calc_avg_nll(model, x_train[:stats_fraction, :],
+                                             y_train[:stats_fraction, :], num_classes)
+                test_avg_nll = calc_avg_nll(model, x_train[:stats_fraction, :],
+                                            y_train[:stats_fraction, :], num_classes)
+                print('Epochs {} train accuracy {} '
+                      'test accuracy {} train avg_nll {} test avg nll {}.'.format(epoch,
+                                                                                  train_acc,
+                                                                                  test_acc,
+                                                                                  train_avg_nll,
+                                                                                  test_avg_nll))
                 for _ in tqdm.tqdm(range(num_batches), desc='Epoch {}'.format(epoch)):
                     opt()
-                train_er = calc_multiclass_error(model, x_train[:500, :], y_train[:500, :])
-                test_er = calc_multiclass_error(model, x_test, y_test)
-                print('Epochs {} train error rate {} test error rate {}.'.format(epoch,
-                                                                                 train_er,
-                                                                                 test_er))
-                train_acc.append((epoch, 1 - train_er))
-                test_acc.append((epoch, 1 - test_er))
+
+                train_acc_list.append(train_acc)
+                test_acc_list.append(test_acc)
+                train_avg_nll_list.append(test_avg_nll)
+                test_avg_nll_list.append(test_avg_nll)
 
         duration = time.time() - init_time
-        learning_history = {'train_acc': train_acc, 'test_acc': test_acc}
+        learning_history = {'train_acc': train_acc_list, 'test_acc': test_acc_list,
+                            'train_loss': train_avg_nll_list, 'test_loss': test_avg_nll_list}
         return Trainer.training_summary(learning_history, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
@@ -148,7 +165,7 @@ class ClassificationGPTrainer(Trainer):
         summary_path = path / Path('summary.txt')
         summary_path.write_text(self._config.summary())
         with summary_path.open(mode='a') as f_handle:
-            f_handle.write('\nThe experiemnt took {} min\n'.format(training_summary.duration / 60))
+            f_handle.write('\nThe experiment took {} min\n'.format(training_summary.duration / 60))
         training_summary_path = path / Path('training_summary.c')
         with training_summary_path.open(mode='wb') as f_handle:
             pickle.dump(training_summary.learning_history, f_handle)

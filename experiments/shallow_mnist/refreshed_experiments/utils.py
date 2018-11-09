@@ -24,7 +24,7 @@ def group_results(results):
 
 
 def labels_onehot_to_int(labels):
-    return labels.argmax(axis=-1)[..., None]
+    return labels.argmax(axis=-1)[..., None].astype(np.int32)
 
 
 def reshape_to_2d(x):
@@ -41,3 +41,13 @@ def calc_multiclass_error(model, Xs, Ys, batchsize=100):
         hits.append(acc)
     error = 1.0 - np.concatenate(hits, 0)
     return np.sum(error) * 100.0 / len(error)
+
+
+def calc_avg_nll(model, x, y, num_classes, batchsize=100):
+    num_examples = len(x)
+    splits = num_examples // batchsize
+    ll = 0
+    for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
+        p, _ = model.predict_y(xs)
+        ll += np.log(p[ys[:, 0]]).sum() / num_classes
+    return -ll / num_examples
