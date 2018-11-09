@@ -6,7 +6,7 @@ from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
 
 class GPConfig(Configuration):
     batch_size = 128
-    num_epochs = 150
+    num_epochs = 200
 
     @staticmethod
     def get_monitor_tasks():

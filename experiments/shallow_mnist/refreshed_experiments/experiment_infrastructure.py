@@ -129,7 +129,7 @@ class ClassificationGPTrainer(Trainer):
         train_acc_list, test_acc_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
         num_batches = x_train.shape[0] // self.config.batch_size
-        stats_fraction = 10000
+        stats_fraction = 1000
 
         with session.as_default():
             for epoch in range(num_epochs):
