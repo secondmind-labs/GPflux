@@ -10,11 +10,11 @@ import tqdm
 import gpflow
 import gpflow.training.monitor as mon
 
-from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig, ConvGPConfig
-from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
+from refreshed_experiments import GPConfig, ConvGPConfig
+from refreshed_experiments.data_infrastructure import Dataset, \
     DatasetPreprocessor
-from experiments.shallow_mnist.refreshed_experiments.nn.configs import NNConfig
-from experiments.shallow_mnist.refreshed_experiments.utils import Configuration, reshape_to_2d, \
+from refreshed_experiments.nn.configs import NNConfig
+from refreshed_experiments.utils import Configuration, reshape_to_2d, \
     labels_onehot_to_int, calc_multiclass_error, calc_avg_nll
 
 

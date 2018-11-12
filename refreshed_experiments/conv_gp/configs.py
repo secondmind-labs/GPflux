@@ -1,7 +1,7 @@
 import gpflow
 
 import gpflux
-from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
+from refreshed_experiments.utils import Configuration
 
 
 class GPConfig(Configuration):

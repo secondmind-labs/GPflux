@@ -1,6 +1,6 @@
 import numpy as np
 
-from experiments.shallow_mnist.refreshed_experiments.utils import rgb2gray
+from refreshed_experiments.utils import rgb2gray
 
 
 class mnist:

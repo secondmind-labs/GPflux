@@ -1,6 +1,6 @@
 import keras
 
-from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
+from refreshed_experiments.utils import Configuration
 
 
 class NNConfig(Configuration):

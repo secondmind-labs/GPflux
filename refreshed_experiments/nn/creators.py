@@ -2,15 +2,10 @@ import keras
 from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Activation
 
-from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import \
+from refreshed_experiments.data_infrastructure import \
     ImageClassificationDataset
-from experiments.shallow_mnist.refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
+from refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
     CifarCNNConfiguration
-
-"""
-One would implement a model creator and corresponding config to try a new model. The rest should
-be done automatically.
-"""
 
 
 def mnist_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfiguration):

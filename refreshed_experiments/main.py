@@ -1,18 +1,17 @@
 import argparse
 from pathlib import Path
 
-from experiments.shallow_mnist.refreshed_experiments.conv_gp.creators import convgp_creator
-from experiments.shallow_mnist.refreshed_experiments.datasets import grey_cifar10, mnist, \
+from refreshed_experiments import convgp_creator
+from refreshed_experiments.datasets import grey_cifar10, mnist, \
     mnist_5percent, mnist_25percent, mnist_10percent
-from experiments.shallow_mnist.refreshed_experiments.nn.creators import mnist_cnn_creator, \
+from refreshed_experiments import mnist_cnn_creator, \
     cifar_cnn_creator
-from experiments.shallow_mnist.refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
+from refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
     CifarCNNConfiguration
-from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import ConvGPConfig
-from experiments.shallow_mnist.refreshed_experiments.experiment_infrastructure import Experiment, \
+from refreshed_experiments import ConvGPConfig
+from refreshed_experiments.experiment_infrastructure import Experiment, \
     ExperimentSuite, KerasNNTrainer, ClassificationGPTrainer
-from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import DummyPreprocessor, \
-    ImageClassificationDataset, MaxNormalisingPreprocessor
+from refreshed_experiments.data_infrastructure import ImageClassificationDataset, MaxNormalisingPreprocessor
 
 """
 Entrypoint for running experiments.

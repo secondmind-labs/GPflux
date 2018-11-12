@@ -14,7 +14,7 @@ from tensorflow.keras.regularizers import l2
 import gpflow
 import gpflow.training.monitor as mon
 import gpflux
-from experiments.shallow_mnist.utils import (calc_binary_error, calc_multiclass_error, get_dataset,
+from utils import (calc_binary_error, calc_multiclass_error, get_dataset,
                    get_error_cb, save_gpflow_model)
 
 NAME = "mnist"
@@ -64,7 +64,6 @@ def get_data(dataset, model_type):
             H, W = 32, 32
         X = X.reshape(-1, H, W, 1)
         Xs = Xs.reshape(-1, H, W, 1)
-    print(X.shape, Y.shape)
     return (X, Y), (Xs, Ys)
 
 
@@ -121,8 +120,10 @@ def get_likelihood(dataset):
 
 
 @ex.capture
-def patch_initializer(X, H, W):
-    unique = "patches-unique"
+def patch_initializer(X, H, W, init_patches):
+    if init_patches == "random":
+        return gpflux.init.NormalInitializer()
+    unique = init_patches == "patches-unique"
     return gpflux.init.PatchSamplerInitializer(X, width=W, height=H, unique=unique)
 
 
@@ -135,7 +136,7 @@ def convgp_setup_model(train_data, batch_size,
     X, Y = train_data
     H = int(X.shape[1] ** .5)
 
-    likelihood = gpflow.likelihoods.SoftMax(10)
+    likelihood = get_likelihood()
     num_latents = likelihood.num_classes if hasattr(likelihood, 'num_classes') else 1
 
     patches = patch_initializer(X[:100], H, H)
@@ -172,7 +173,7 @@ def convgp_setup_model(train_data, batch_size,
 @ex.capture
 def convgp_monitor_tasks(train_data, model, optimizer, hz, basepath, dataset):
     Xs, Ys = train_data
-    path = 'test'
+    path = experiment_path()
     fw = mon.LogdirWriter(path)
 
     tasks = []
@@ -194,10 +195,10 @@ def convgp_monitor_tasks(train_data, model, optimizer, hz, basepath, dataset):
             .with_exit_condition(True)
             .with_flush_immediately(True)]
 
-    # tasks += [
-    #     mon.CheckpointTask(path)
-    #         .with_name('saver')
-    #         .with_condition(periodic_short())]
+    tasks += [
+        mon.CheckpointTask(path)
+            .with_name('saver')
+            .with_condition(periodic_short())]
 
     tasks += [
         mon.ModelToTensorBoardTask(fw, model)
