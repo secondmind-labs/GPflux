@@ -10,7 +10,7 @@ import tqdm
 import gpflow
 import gpflow.training.monitor as mon
 
-from refreshed_experiments import GPConfig, ConvGPConfig
+from refreshed_experiments.conv_gp.configs import GPConfig, ConvGPConfig
 from refreshed_experiments.data_infrastructure import Dataset, \
     DatasetPreprocessor
 from refreshed_experiments.nn.configs import NNConfig

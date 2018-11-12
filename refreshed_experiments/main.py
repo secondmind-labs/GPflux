@@ -1,14 +1,14 @@
 import argparse
 from pathlib import Path
 
-from refreshed_experiments import convgp_creator
+from refreshed_experiments.conv_gp.creators import convgp_creator
 from refreshed_experiments.datasets import grey_cifar10, mnist, \
     mnist_5percent, mnist_25percent, mnist_10percent
-from refreshed_experiments import mnist_cnn_creator, \
+from refreshed_experiments.nn.creators import mnist_cnn_creator, \
     cifar_cnn_creator
 from refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
     CifarCNNConfiguration
-from refreshed_experiments import ConvGPConfig
+from refreshed_experiments.conv_gp.configs import ConvGPConfig
 from refreshed_experiments.experiment_infrastructure import Experiment, \
     ExperimentSuite, KerasNNTrainer, ClassificationGPTrainer
 from refreshed_experiments.data_infrastructure import ImageClassificationDataset, MaxNormalisingPreprocessor

@@ -2,7 +2,7 @@ import gpflow
 import numpy as np
 
 import gpflux
-from refreshed_experiments import ConvGPConfig
+from refreshed_experiments.conv_gp.configs import ConvGPConfig
 from refreshed_experiments.utils import reshape_to_2d, \
     labels_onehot_to_int
 
