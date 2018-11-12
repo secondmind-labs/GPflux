@@ -36,18 +36,20 @@ def calc_multiclass_error(model, Xs, Ys, batchsize=100):
     splits = Ns // batchsize
     hits = []
     for xs, ys in zip(np.array_split(Xs, splits), np.array_split(Ys, splits)):
-        p, _ = model.predict_y(xs)
-        acc = p.argmax(1) == ys[:, 0]
+        logits, _ = model.predict_y(xs)
+        acc = logits.argmax(1) == ys[:, 0]
         hits.append(acc)
     error = 1.0 - np.concatenate(hits, 0)
     return np.sum(error) * 100.0 / len(error)
 
 
-def calc_avg_nll(model, x, y, num_classes, batchsize=100):
-    num_examples = len(x)
+def calc_avg_nll(model, x, y, batchsize=100):
+    num_examples = x.shape[0]
     splits = num_examples // batchsize
     ll = 0
     for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
         p, _ = model.predict_y(xs)
-        ll += np.log(p[ys[:, 0]]).sum() / num_classes
-    return -ll / num_examples
+        p = ((ys == np.arange(10)[None, :]) * p).sum(-1)
+        ll += np.log(p).sum()
+    ll /= num_examples
+    return -ll

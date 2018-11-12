@@ -10,7 +10,7 @@ class NNConfig(Configuration):
 
 
 class MNISTCNNConfiguration(NNConfig):
-    epochs = 30
+    epochs = 100
     batch_size = 128
     optimiser = keras.optimizers.Adadelta()
 

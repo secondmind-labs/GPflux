@@ -6,12 +6,11 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Callable, Any, Type, cast
 import tqdm
+import tensorflow as tf
 
 import gpflow
 import gpflow.training.monitor as mon
 
-from experiments.shallow_mnist.experiment import convgp_setup_optimizer, convgp_monitor_tasks, \
-    convgp_setup_model
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import GPConfig, ConvGPConfig
 from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import Dataset, \
     DatasetPreprocessor
@@ -84,13 +83,13 @@ class KerasNNTrainer(Trainer):
     def fit(self, dataset: Dataset) -> Trainer.training_summary:
         model = self._model_creator(dataset, self.config)
         init_time = time.time()
-        learning_history = model.fit(dataset.train_features, dataset.train_targets,
-                                     validation_data=(dataset.test_features, dataset.test_targets),
-                                     batch_size=self.config.batch_size,
-                                     epochs=self.config.epochs)
+        summary = model.fit(dataset.train_features, dataset.train_targets,
+                            validation_data=(dataset.test_features, dataset.test_targets),
+                            batch_size=self.config.batch_size,
+                            epochs=self.config.epochs)
 
         duration = time.time() - init_time
-        return KerasNNTrainer.training_summary(learning_history, model, duration)
+        return KerasNNTrainer.training_summary(summary.history, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
         path.mkdir(exist_ok=True, parents=True)
@@ -100,6 +99,9 @@ class KerasNNTrainer(Trainer):
         summary_path.write_text(self._config.summary())
         with summary_path.open(mode='a') as f_handle:
             f_handle.write('\nThe experiment took {} min\n'.format(training_summary.duration / 60))
+        training_summary_path = path / Path('training_summary.c')
+        with training_summary_path.open(mode='wb') as f_handle:
+            pickle.dump(training_summary.learning_history, f_handle)
 
 
 class ClassificationGPTrainer(Trainer):
@@ -114,14 +116,11 @@ class ClassificationGPTrainer(Trainer):
                            labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
         x_test, y_test = reshape_to_2d(dataset.test_features), \
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
-        num_classes = dataset.train_targets.shape[1]
         session = gpflow.get_default_session()
         step = mon.create_global_step(session)
         model = self._model_creator(x_train, y_train, self.config)
         model.compile()
-
-        lr = ConvGPConfig.lr_cfg['lr'] * 1.0 / (1 + step // 5000 / 3)
-        optimizer = gpflow.train.AdamOptimizer(lr)
+        optimizer = ConvGPConfig.get_optimiser(step)
         opt = optimizer.make_optimize_action(model,
                                              session=session,
                                              global_step=step)
@@ -129,7 +128,7 @@ class ClassificationGPTrainer(Trainer):
         train_acc_list, test_acc_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
         num_batches = x_train.shape[0] // self.config.batch_size
-        stats_fraction = 1000
+        stats_fraction = self.config.stats_fraction
 
         with session.as_default():
             for epoch in range(num_epochs):
@@ -138,15 +137,15 @@ class ClassificationGPTrainer(Trainer):
                 test_acc = 100 - calc_multiclass_error(model, x_test[:stats_fraction, :],
                                                        y_test[:stats_fraction, :])
                 train_avg_nll = calc_avg_nll(model, x_train[:stats_fraction, :],
-                                             y_train[:stats_fraction, :], num_classes)
+                                             y_train[:stats_fraction, :])
                 test_avg_nll = calc_avg_nll(model, x_train[:stats_fraction, :],
-                                            y_train[:stats_fraction, :], num_classes)
+                                            y_train[:stats_fraction, :])
                 print('Epochs {} train accuracy {} '
-                      'test accuracy {} train avg_nll {} test avg nll {}.'.format(epoch,
-                                                                                  train_acc,
-                                                                                  test_acc,
-                                                                                  train_avg_nll,
-                                                                                  test_avg_nll))
+                      'test accuracy {} train loss {} test loss {}.'.format(epoch,
+                                                                            train_acc,
+                                                                            test_acc,
+                                                                            train_avg_nll,
+                                                                            test_avg_nll))
                 for _ in tqdm.tqdm(range(num_batches), desc='Epoch {}'.format(epoch)):
                     opt()
 
@@ -155,9 +154,16 @@ class ClassificationGPTrainer(Trainer):
                 train_avg_nll_list.append(test_avg_nll)
                 test_avg_nll_list.append(test_avg_nll)
 
+        final_train_acc = 100 - calc_multiclass_error(model, x_train, y_train)
+        final_test_acc = 100 - calc_multiclass_error(model, x_test, y_test)
+        final_train_avg_nll = calc_avg_nll(model, x_train, y_train)
+        final_test_avg_nll = calc_avg_nll(model, x_train, y_train)
+
         duration = time.time() - init_time
-        learning_history = {'train_acc': train_acc_list, 'test_acc': test_acc_list,
-                            'train_loss': train_avg_nll_list, 'test_loss': test_avg_nll_list}
+        learning_history = {'acc': train_acc_list, 'val_acc': test_acc_list,
+                            'loss': train_avg_nll_list, 'val_loss': test_avg_nll_list,
+                            'final_acc': final_train_acc, 'final_val_acc': final_test_acc,
+                            'final_loss': final_train_avg_nll, 'final_val_loss': final_test_avg_nll}
         return Trainer.training_summary(learning_history, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
