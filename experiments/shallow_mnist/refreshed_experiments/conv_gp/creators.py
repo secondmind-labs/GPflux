@@ -3,20 +3,17 @@ import numpy as np
 
 import gpflux
 from experiments.shallow_mnist.refreshed_experiments.conv_gp.configs import ConvGPConfig
-from experiments.shallow_mnist.refreshed_experiments.data_infrastructure import \
-    ImageClassificationDataset
-from experiments.shallow_mnist.refreshed_experiments.utils import labels_onehot_to_int, \
-    reshape_to_2d
+from experiments.shallow_mnist.refreshed_experiments.utils import reshape_to_2d, \
+    labels_onehot_to_int
 
 
 @gpflow.defer_build()
-def convgp_creator(x_train, y_train, config: ConvGPConfig):
-    # x_train, y_train = dataset.train_features, dataset.train_targets
-    # num_classes = y_train.shape[1]
-    # # DeepGP class expects 2d inputs and labels encoded with integers
-    # x_train, y_train = reshape_to_2d(dataset.train_features), \
-    #                    labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
-    num_classes = 10
+def convgp_creator(dataset, config: ConvGPConfig):
+    x_train, y_train = dataset.train_features, dataset.train_targets
+    num_classes = y_train.shape[1]
+    # DeepGP class expects 2d inputs and labels encoded with integers
+    x_train, y_train = reshape_to_2d(dataset.train_features), \
+                       labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
     h = int(x_train.shape[1] ** .5)
     likelihood = gpflow.likelihoods.SoftMax(num_classes)
     patches = config.patch_initializer(x_train[:100], h, h, config.init_patches)

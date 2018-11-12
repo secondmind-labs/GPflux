@@ -118,7 +118,7 @@ class ClassificationGPTrainer(Trainer):
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
         session = gpflow.get_default_session()
         step = mon.create_global_step(session)
-        model = self._model_creator(x_train, y_train, self.config)
+        model = self._model_creator(dataset, self.config)
         model.compile()
         optimizer = ConvGPConfig.get_optimiser(step)
         opt = optimizer.make_optimize_action(model,

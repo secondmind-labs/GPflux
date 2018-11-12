@@ -5,8 +5,8 @@ from experiments.shallow_mnist.refreshed_experiments.utils import Configuration
 
 
 class GPConfig(Configuration):
-    batch_size = 128
-    num_epochs = 250
+    batch_size = 150
+    num_epochs = 200
 
     @staticmethod
     def get_monitor_tasks():
@@ -18,12 +18,7 @@ class GPConfig(Configuration):
 
 
 class ConvGPConfig(GPConfig):
-
-    lr_cfg = {
-        "decay": "custom",
-        "lr": 1e-4
-    }
-
+    lr = 0.01
     patch_shape = [5, 5]
     num_inducing_points = 1000
     base_kern = "RBF"
@@ -41,5 +36,5 @@ class ConvGPConfig(GPConfig):
 
     @staticmethod
     def get_optimiser(step):
-        lr = ConvGPConfig.lr_cfg['lr']
+        lr = ConvGPConfig.lr * 1.0 / (1 + step // 5000 / 3)
         return gpflow.train.AdamOptimizer(lr)
