@@ -117,9 +117,9 @@ class MaxNormalisingPreprocessor(DatasetPreprocessor):
     @staticmethod
     def preprocess(dataset: Dataset) -> Dataset:
         train_features, test_features = dataset.train_features, dataset.test_features
-        max = train_features.max()  # we infer max only from train data
-        train_features = train_features / max
-        test_features = test_features / max
+        _max = train_features.max()  # we infer max only from train data
+        train_features = train_features / _max
+        test_features = test_features / _max
         return dataset.from_train_test_split(dataset.name + '_max_normalised',
                                              train_features,
                                              dataset.train_targets,
