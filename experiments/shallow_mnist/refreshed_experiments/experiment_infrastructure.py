@@ -6,7 +6,6 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Callable, Any, Type, cast
 import tqdm
-import tensorflow as tf
 
 import gpflow
 import gpflow.training.monitor as mon
@@ -89,7 +88,13 @@ class KerasNNTrainer(Trainer):
                             epochs=self.config.epochs)
 
         duration = time.time() - init_time
-        return KerasNNTrainer.training_summary(summary.history, model, duration)
+        results_dict = summary.history
+
+        results_dict.update({'final_acc': results_dict['acc'][-1],
+                             'final_val_acc': results_dict['val_acc'][-1],
+                             'final_loss': results_dict['loss'][-1],
+                             'final_val_loss': results_dict['val_loss'][-1]})
+        return KerasNNTrainer.training_summary(results_dict, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
         path.mkdir(exist_ok=True, parents=True)

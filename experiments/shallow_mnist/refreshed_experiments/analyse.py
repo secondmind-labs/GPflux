@@ -1,5 +1,6 @@
 import os
 import pickle
+import argparse
 
 
 def read_results(results_path):
@@ -20,6 +21,7 @@ def plot(results_dict, summary_dict, name, stat):
     print(summary_dict[name])
     print('train {} {} test {} {}'.format(results_dict[name][stat][-1], stat,
                                           results_dict[name]['val_' + stat][-1], stat))
+    plt.show()
 
 
 def analyse(results_path, stat):
@@ -29,6 +31,12 @@ def analyse(results_path, stat):
 
 
 if __name__ == '__main__':
-    stat = 'loss'
-    results_path = ...
-    analyse(results_path, stat)
+    parser = argparse.ArgumentParser(
+        description='Entrypoint for plotting the results:\n {}')
+    parser.add_argument('--results_path', '-r', help='The path to the result.',
+                        type=str, required=True)
+    parser.add_argument('--stat', '-s', help='The statistic to plot', type=str,
+                        required=True)
+
+    args = parser.parse_args()
+    analyse(args.results_path, args.stat)
