@@ -23,7 +23,7 @@ class MNISTCNNConfiguration(NNConfig):
 class CifarCNNConfiguration(NNConfig):
     def __init__(self):
         super().__init__()
-        self.epochs = 100
+        self.epochs = 200
         self.batch_size = 128
         self.optimiser_parameters = {'lr': 0.0001, 'decay': 1e-6}
         self.optimiser = keras.optimizers.rmsprop(**self.optimiser_parameters)

@@ -7,7 +7,7 @@ def read_results(results_path):
     result_folders = os.listdir(results_path)
     results_dict = {}
     summary_dict = {}
-    for folder in result_folders:
+    for folder in sorted(result_folders):
         training_summary_path = os.path.join(results_path, folder, 'training_summary.c')
         results_dict[folder] = pickle.load(open(training_summary_path, 'rb'))
         summary_path = os.path.join(results_path, folder, 'summary.txt')
@@ -15,28 +15,25 @@ def read_results(results_path):
     return results_dict, summary_dict
 
 
-def plot(results_dict, summary_dict, name, stats):
-    import matplotlib.pyplot as plt
+def get_report_str(results_dict, summary_dict, name, stats):
     summary_str = '--------------------------------------\n'
     summary_str += 'Experiment ' + ' '.join(name.split('_')[:-1]) + '\n'
     summary_str += 'Hyperparameters:\n'
     summary_str += summary_dict[name] + '\n'
-    # plt.plot(results_dict[name][stat])
-    # plt.plot(results_dict[name]['val_' + stat])
     for stat in stats:
         summary_str += ('Final train {} {}, final test {} {}'.format(
             results_dict[name]['final_' + stat], stat,
-            results_dict[name]['final_val_' + stat],
+            results_dict[name]['final_test_' + stat],
             stat)) + '\n'
     summary_str += '--------------------------------------\n'
-    print(summary_str)
-    # plt.show()
+    return summary_str
 
 
 def analyse(results_path, stat):
     results_dict, summart_dict = read_results(results_path)
     for name in results_dict.keys():
-        plot(results_dict, summart_dict, name, stat)
+        report_str = get_report_str(results_dict, summart_dict, name, stat)
+        print(report_str)
 
 
 if __name__ == '__main__':

@@ -3,7 +3,8 @@ from pathlib import Path
 
 from refreshed_experiments.conv_gp.creators import convgp_creator
 from refreshed_experiments.datasets import grey_cifar10, mnist, \
-    mnist_5percent, mnist_25percent, mnist_10percent
+    mnist_5percent, mnist_25percent, mnist_10percent, grey_cifar10_5percent, grey_cifar10_10percent, \
+    grey_cifar10_25percent
 from refreshed_experiments.nn.creators import mnist_cnn_creator, \
     cifar_cnn_creator
 from refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
@@ -11,7 +12,8 @@ from refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
 from refreshed_experiments.conv_gp.configs import ConvGPConfig
 from refreshed_experiments.experiment_infrastructure import Experiment, \
     ExperimentSuite, KerasNNTrainer, ClassificationGPTrainer
-from refreshed_experiments.data_infrastructure import ImageClassificationDataset, MaxNormalisingPreprocessor
+from refreshed_experiments.data_infrastructure import ImageClassificationDataset, \
+    MaxNormalisingPreprocessor
 
 """
 Entrypoint for running experiments.
@@ -61,11 +63,45 @@ def _get_experiment_dict():
                        dataset=ImageClassificationDataset.from_keras_format(
                            mnist_25percent),
                        dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_cifar10',
+            Experiment('cnn_grey_cifar10',
                        trainer=KerasNNTrainer(cifar_cnn_creator,
                                               config=CifarCNNConfiguration()),
                        dataset=ImageClassificationDataset.from_keras_format(
                            grey_cifar10),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('cnn_grey_cifar10_5percent',
+                       trainer=KerasNNTrainer(cifar_cnn_creator,
+                                              config=CifarCNNConfiguration()),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           grey_cifar10_5percent),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('cnn_grey_cifar10_10percent',
+                       trainer=KerasNNTrainer(cifar_cnn_creator,
+                                              config=CifarCNNConfiguration()),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           grey_cifar10_10percent),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('cnn_grey_cifar10_25percent',
+                       trainer=KerasNNTrainer(cifar_cnn_creator,
+                                              config=CifarCNNConfiguration()),
+                       dataset=ImageClassificationDataset.from_keras_format(
+                           grey_cifar10_25percent),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('convgp_grey_cifar10_5percent',
+                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
+                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10_5percent),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('convgp_grey_cifar10_10percent',
+                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
+                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10_10percent),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('convgp_grey_cifar10_25percent',
+                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
+                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10_25percent),
+                       dataset_preprocessor=MaxNormalisingPreprocessor),
+            Experiment('convgp_grey_cifar10',
+                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
+                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10),
                        dataset_preprocessor=MaxNormalisingPreprocessor),
         ]
     return {e.name: e for e in experiments}
