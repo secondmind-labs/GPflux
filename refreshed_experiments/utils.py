@@ -3,14 +3,13 @@ import numpy as np
 
 class Configuration:
 
-    @classmethod
-    def summary(cls):
+    def summary(self):
         summary_str = []
-        for name, value in cls.__dict__.items():
+        for name, value in self.__dict__.items():
             if name.startswith('_'):
                 # discard protected and private members
                 continue
-            summary_str.append('{}_{}\n'.format(name, str(value)))
+            summary_str.append('{} {}\n'.format(name, str(value)))
         return ''.join(summary_str)
 
 

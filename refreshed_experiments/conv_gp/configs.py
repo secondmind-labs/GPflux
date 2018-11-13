@@ -5,27 +5,23 @@ from refreshed_experiments.utils import Configuration
 
 
 class GPConfig(Configuration):
-    batch_size = 150
-    num_epochs = 200
-
-    @staticmethod
-    def get_monitor_tasks():
-        raise NotImplementedError()
-
-    @staticmethod
-    def get_optimiser():
-        raise NotImplementedError()
+    def __init__(self):
+        super().__init__()
+        self.batch_size = 150
+        self.num_epochs = 400
+        self.monitor_stats_fraction = 1000
 
 
 class ConvGPConfig(GPConfig):
-    lr = 0.01
-    patch_shape = [5, 5]
-    num_inducing_points = 1000
-    base_kern = "RBF"
-    with_weights = True
-    with_indexing = True
-    init_patches = "patches-unique"  # 'patches', 'random'
-    stats_fraction = 1000
+    def __init__(self):
+        super().__init__()
+        self.lr = 0.01
+        self.patch_shape = [5, 5]
+        self.num_inducing_points = 1000
+        self.base_kern = "RBF"
+        self.with_weights = True
+        self.with_indexing = True
+        self.init_patches = "patches-unique"  # 'patches', 'random'
 
     @staticmethod
     def patch_initializer(x, h, w, init_patches):
@@ -34,7 +30,6 @@ class ConvGPConfig(GPConfig):
         unique = init_patches == "patches-unique"
         return gpflux.init.PatchSamplerInitializer(x, width=w, height=h, unique=unique)
 
-    @staticmethod
-    def get_optimiser(step):
-        lr = ConvGPConfig.lr * 1.0 / (1 + step // 5000 / 3)
+    def get_optimiser(self, step):
+        lr = self.lr * 1.0 / (1 + step // 5000 / 3)
         return gpflow.train.AdamOptimizer(lr)

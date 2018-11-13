@@ -8,26 +8,35 @@ def read_results(results_path):
     results_dict = {}
     summary_dict = {}
     for folder in result_folders:
-        results_dict[folder] = pickle.load(open('results/' + folder + '/training_summary.c', 'rb'))
-        summary_dict[folder] = str(
-            '\n'.join(open('results/' + folder + '/summary.txt', 'r').readlines()))
+        training_summary_path = os.path.join(results_path, folder, 'training_summary.c')
+        results_dict[folder] = pickle.load(open(training_summary_path, 'rb'))
+        summary_path = os.path.join(results_path, folder, 'summary.txt')
+        summary_dict[folder] = str('\n'.join(open(summary_path, 'r').readlines()))
     return results_dict, summary_dict
 
 
-def plot(results_dict, summary_dict, name, stat):
+def plot(results_dict, summary_dict, name, stats):
     import matplotlib.pyplot as plt
-    plt.plot(results_dict[name][stat])
-    plt.plot(results_dict[name]['val_' + stat])
-    print(summary_dict[name])
-    print('train {} {} test {} {}'.format(results_dict[name][stat][-1], stat,
-                                          results_dict[name]['val_' + stat][-1], stat))
-    plt.show()
+    summary_str = '--------------------------------------\n'
+    summary_str += 'Experiment ' + ' '.join(name.split('_')[:-1]) + '\n'
+    summary_str += 'Hyperparameters:\n'
+    summary_str += summary_dict[name] + '\n'
+    # plt.plot(results_dict[name][stat])
+    # plt.plot(results_dict[name]['val_' + stat])
+    for stat in stats:
+        summary_str += ('Final train {} {}, final test {} {}'.format(
+            results_dict[name]['final_' + stat], stat,
+            results_dict[name]['final_val_' + stat],
+            stat)) + '\n'
+    summary_str += '--------------------------------------\n'
+    print(summary_str)
+    # plt.show()
 
 
 def analyse(results_path, stat):
     results_dict, summart_dict = read_results(results_path)
     for name in results_dict.keys():
-        plot(results_path, summart_dict, name, stat)
+        plot(results_dict, summart_dict, name, stat)
 
 
 if __name__ == '__main__':
@@ -35,8 +44,8 @@ if __name__ == '__main__':
         description='Entrypoint for plotting the results:\n {}')
     parser.add_argument('--results_path', '-r', help='The path to the result.',
                         type=str, required=True)
-    parser.add_argument('--stat', '-s', help='The statistic to plot', type=str,
-                        required=True)
+    parser.add_argument('--stats', '-s', help='The statistic to plot', type=str,
+                        required=True, nargs='+')
 
     args = parser.parse_args()
-    analyse(args.results_path, args.stat)
+    analyse(args.results_path, args.stats)

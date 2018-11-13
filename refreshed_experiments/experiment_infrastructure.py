@@ -5,10 +5,13 @@ import abc
 from collections import namedtuple
 from pathlib import Path
 from typing import Callable, Any, Type, cast
+
+import keras
 import tqdm
 
 import gpflow
 import gpflow.training.monitor as mon
+from sklearn.model_selection import train_test_split
 
 from refreshed_experiments.conv_gp.configs import GPConfig, ConvGPConfig
 from refreshed_experiments.data_infrastructure import Dataset, \
@@ -24,7 +27,7 @@ class Trainer(abc.ABC):
                                   'learning_history model duration')
 
     def __init__(self, model_creator: Callable[[Dataset, Configuration], Any],
-                 config: Type[Configuration]):
+                 config: Configuration):
         self._config = config
         self._model_creator = model_creator
 
@@ -82,18 +85,28 @@ class KerasNNTrainer(Trainer):
     def fit(self, dataset: Dataset) -> Trainer.training_summary:
         model = self._model_creator(dataset, self.config)
         init_time = time.time()
-        summary = model.fit(dataset.train_features, dataset.train_targets,
-                            validation_data=(dataset.test_features, dataset.test_targets),
+        x, y = dataset.train_features, dataset.train_targets
+        x_train, x_valid, y_train, y_valid = \
+            train_test_split(x, y, test_size=self.config.validation_proportion)
+
+        callbacks = []
+        if self.config.early_stopping:
+            callbacks += [keras.callbacks.EarlyStopping(patience=3)]
+
+        summary = model.fit(x_train, y_train,
+                            validation_data=(x_valid, y_valid),
                             batch_size=self.config.batch_size,
-                            epochs=self.config.epochs)
+                            epochs=self.config.epochs,
+                            callbacks=callbacks)
 
         duration = time.time() - init_time
         results_dict = summary.history
+        test_loss, test_acc = model.evaluate(dataset.test_features, dataset.test_targets)
 
         results_dict.update({'final_acc': results_dict['acc'][-1],
-                             'final_val_acc': results_dict['val_acc'][-1],
+                             'final_test_acc': test_acc,
                              'final_loss': results_dict['loss'][-1],
-                             'final_val_loss': results_dict['val_loss'][-1]})
+                             'final_test_loss': test_loss})
         return KerasNNTrainer.training_summary(results_dict, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
@@ -103,7 +116,7 @@ class KerasNNTrainer(Trainer):
         summary_path = path / Path('summary.txt')
         summary_path.write_text(self._config.summary())
         with summary_path.open(mode='a') as f_handle:
-            f_handle.write('\nThe experiment took {} min\n'.format(training_summary.duration / 60))
+            f_handle.write('The experiment took {} min\n'.format(training_summary.duration / 60))
         training_summary_path = path / Path('training_summary.c')
         with training_summary_path.open(mode='wb') as f_handle:
             pickle.dump(training_summary.learning_history, f_handle)
@@ -125,7 +138,7 @@ class ClassificationGPTrainer(Trainer):
         step = mon.create_global_step(session)
         model = self._model_creator(dataset, self.config)
         model.compile()
-        optimizer = ConvGPConfig.get_optimiser(step)
+        optimizer = self._config.get_optimiser(step)
         opt = optimizer.make_optimize_action(model,
                                              session=session,
                                              global_step=step)
@@ -133,7 +146,7 @@ class ClassificationGPTrainer(Trainer):
         train_acc_list, test_acc_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
         num_batches = x_train.shape[0] // self.config.batch_size
-        stats_fraction = self.config.stats_fraction
+        stats_fraction = self.config.monitor_stats_fraction
 
         with session.as_default():
             for epoch in range(num_epochs):
@@ -167,8 +180,9 @@ class ClassificationGPTrainer(Trainer):
         duration = time.time() - init_time
         learning_history = {'acc': train_acc_list, 'val_acc': test_acc_list,
                             'loss': train_avg_nll_list, 'val_loss': test_avg_nll_list,
-                            'final_acc': final_train_acc, 'final_val_acc': final_test_acc,
-                            'final_loss': final_train_avg_nll, 'final_val_loss': final_test_avg_nll}
+                            'final_acc': final_train_acc, 'final_test_acc': final_test_acc,
+                            'final_loss': final_train_avg_nll,
+                            'final_test_loss': final_test_avg_nll}
         return Trainer.training_summary(learning_history, model, duration)
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
@@ -176,7 +190,7 @@ class ClassificationGPTrainer(Trainer):
         summary_path = path / Path('summary.txt')
         summary_path.write_text(self._config.summary())
         with summary_path.open(mode='a') as f_handle:
-            f_handle.write('\nThe experiment took {} min\n'.format(training_summary.duration / 60))
+            f_handle.write('The experiment took {} min\n'.format(training_summary.duration / 60))
         training_summary_path = path / Path('training_summary.c')
         with training_summary_path.open(mode='wb') as f_handle:
             pickle.dump(training_summary.learning_history, f_handle)
