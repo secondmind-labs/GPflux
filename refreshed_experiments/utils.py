@@ -1,16 +1,15 @@
+import gpflow
 import numpy as np
 
+from gpflux.convolution import PatchHandler, ImagePatchConfig
 
-class Configuration:
 
-    def summary(self):
-        summary_str = []
-        for name, value in self.__dict__.items():
-            if name.startswith('_'):
-                # discard protected and private members
-                continue
-            summary_str.append('{} {}\n'.format(name, str(value)))
-        return ''.join(summary_str)
+def get_from_module(name, module):
+    if hasattr(module, name):
+        return name
+    else:
+        available = ' '.join([item for item in dir(module) if not item.startswith('__')])
+        raise ValueError('{} not found. Available are {}'.format(name, available))
 
 
 def rgb2gray(rgb):
@@ -52,3 +51,46 @@ def calc_avg_nll(model, x, y, batchsize=100):
         ll += np.log(p).sum()
     ll /= num_examples
     return -ll
+
+
+class ImagePatchConfigCoder(gpflow.saver.coders.ObjectCoder):
+    @classmethod
+    def encoding_type(cls):
+        return ImagePatchConfig
+
+
+class PatchHandlerCoder(gpflow.saver.coders.ObjectCoder):
+    @classmethod
+    def encoding_type(cls):
+        return PatchHandler
+
+
+def save_gpflow_model(filename, model) -> None:
+    context = gpflow.SaverContext(coders=[ImagePatchConfigCoder, PatchHandlerCoder])
+    gpflow.Saver().save(filename, model, context=context)
+
+
+def get_dataset_fraction(dataset, fraction):
+    (train_features, train_targets), (test_features, test_targets) = dataset.load_data()
+    seed = np.random.get_state()
+    # fix the seed for numpy, so we always get the same fraction of examples
+    np.random.seed(0)
+    train_ind = np.random.permutation(range(train_features.shape[0]))[
+                :int(train_features.shape[0] * fraction)]
+    train_features, train_targets = train_features[train_ind], train_targets[train_ind]
+    np.random.set_state(seed)
+    return (train_features, train_targets), (test_features, test_targets)
+
+
+def get_dataset_fixed_examples_per_class(dataset, num_examples):
+    (train_features, train_targets), (test_features, test_targets) = dataset.load_data()
+    selected_examples = []
+    selected_targets = []
+    num_classes = set(train_targets)
+    for i in num_classes:
+        indices = train_targets == i
+        selected_examples.append(train_features[indices][:num_examples])
+        selected_targets.append(train_targets[indices][:num_examples])
+    selected_examples = np.vstack(selected_examples)
+    selected_targets = np.hstack(selected_targets)
+    return (selected_examples, selected_targets), (test_features, test_targets)

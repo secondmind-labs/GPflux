@@ -15,6 +15,29 @@ def read_results(results_path):
     return results_dict, summary_dict
 
 
+def _plot_train_valid(plot_path, results_dict, stats):
+    import matplotlib.pyplot as plt
+    for stat in stats:
+        training_stat = results_dict['val' + stat]
+        validation_stat = results_dict[stat]
+        plt.plot(training_stat)
+        plt.plot(validation_stat)
+    plt.show()
+
+
+def generate_report():
+    latex_template = """"""
+    return latex_template
+
+
+def gather_to_table(results_dict, stats):
+    tables = {stat: [] for stat in stats}
+    for stat in sorted(stats):
+        for name in sorted(results_dict.keys()):
+            r = results_dict[name]['final_' + stat]
+            tables[stat].append(r)
+
+
 def get_report_str(results_dict, summary_dict, name, stats):
     summary_str = '--------------------------------------\n'
     summary_str += 'Experiment ' + ' '.join(name.split('_')[:-1]) + '\n'

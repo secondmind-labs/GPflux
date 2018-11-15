@@ -24,15 +24,12 @@ class Dataset:
         num_examples = features.shape[0]
         ind = np.random.permutation(range(num_examples))
         num_train = int(num_examples * (1 - test_ratio))
-        train_features, train_targets = features[ind[:num_train]], targets[
-            ind[:num_train]]
-        test_features, test_targets = features[ind[num_train:]], targets[
-            ind[num_train:]]
+        train_features, train_targets = features[ind[:num_train]], targets[ind[:num_train]]
+        test_features, test_targets = features[ind[num_train:]], targets[ind[num_train:]]
         return cls(name, train_features, train_targets, test_features, test_targets)
 
     @classmethod
-    def from_keras_format(cls,
-                          keras_dataset):
+    def from_keras_format(cls,keras_dataset):
         (train_features, train_targets), (test_features, test_targets) = keras_dataset.load_data()
         name = keras_dataset.__name__.split('.')[-1]
         return cls(name, train_features, train_targets, test_features, test_targets)

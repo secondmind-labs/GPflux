@@ -1,114 +1,55 @@
 import argparse
 from pathlib import Path
 
-from refreshed_experiments.conv_gp.creators import convgp_creator
-from refreshed_experiments.datasets import grey_cifar10, mnist, \
-    mnist_5percent, mnist_25percent, mnist_10percent, grey_cifar10_5percent, grey_cifar10_10percent, \
-    grey_cifar10_25percent
-from refreshed_experiments.nn.creators import mnist_cnn_creator, \
-    cifar_cnn_creator
-from refreshed_experiments.nn.configs import MNISTCNNConfiguration, \
-    CifarCNNConfiguration
-from refreshed_experiments.conv_gp.configs import ConvGPConfig
-from refreshed_experiments.experiment_infrastructure import Experiment, \
-    ExperimentSuite, KerasNNTrainer, ClassificationGPTrainer
-from refreshed_experiments.data_infrastructure import ImageClassificationDataset, \
-    MaxNormalisingPreprocessor
+from refreshed_experiments.experiments import get_experiment_dict
+from refreshed_experiments.experiment_infrastructure import ExperimentRunner, Experiment
+from refreshed_experiments.utils import get_from_module
+from refreshed_experiments import configs, creators, trainers, datasets
 
 """
 Entrypoint for running experiments.
 """
 
-
-def _get_experiment_dict():
-    experiments = \
-        [
-            Experiment('convgp_mnist',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(mnist),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_mnist5percent',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(mnist_5percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_mnist10percent',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(mnist_10percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_mnist25percent',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(mnist_25percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_mnist',
-                       trainer=KerasNNTrainer(mnist_cnn_creator,
-                                              config=MNISTCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           mnist),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_mnist_5percent',
-                       trainer=KerasNNTrainer(mnist_cnn_creator,
-                                              config=MNISTCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           mnist_5percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_mnist_10percent',
-                       trainer=KerasNNTrainer(mnist_cnn_creator,
-                                              config=MNISTCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           mnist_10percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_mnist_25percent',
-                       trainer=KerasNNTrainer(mnist_cnn_creator,
-                                              config=MNISTCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           mnist_25percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_grey_cifar10',
-                       trainer=KerasNNTrainer(cifar_cnn_creator,
-                                              config=CifarCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           grey_cifar10),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_grey_cifar10_5percent',
-                       trainer=KerasNNTrainer(cifar_cnn_creator,
-                                              config=CifarCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           grey_cifar10_5percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_grey_cifar10_10percent',
-                       trainer=KerasNNTrainer(cifar_cnn_creator,
-                                              config=CifarCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           grey_cifar10_10percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('cnn_grey_cifar10_25percent',
-                       trainer=KerasNNTrainer(cifar_cnn_creator,
-                                              config=CifarCNNConfiguration()),
-                       dataset=ImageClassificationDataset.from_keras_format(
-                           grey_cifar10_25percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_grey_cifar10_5percent',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10_5percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_grey_cifar10_10percent',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10_10percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_grey_cifar10_25percent',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10_25percent),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-            Experiment('convgp_grey_cifar10',
-                       trainer=ClassificationGPTrainer(convgp_creator, config=ConvGPConfig()),
-                       dataset=ImageClassificationDataset.from_keras_format(grey_cifar10),
-                       dataset_preprocessor=MaxNormalisingPreprocessor),
-        ]
-    return {e.name: e for e in experiments}
-
+def get_name(trainer, config, creator, dataset):
+    return "{}_{}_{}_{}".format(trainer.name, config.name, creator.name, dataset.name)
 
 def main():
-    experiments_dict = _get_experiment_dict()
+    parser = argparse.ArgumentParser(
+        description="""Entrypoint for running the experiments. Run with:
+        python main.py -d dataset -mc model_creator -t trainer -c config
+        Available are:\n""".format())
+
+    parser.add_argument('--model_creator', '-mc', help='The names of the experiments to run.',
+                        type=str, required=True)
+    parser.add_argument('--config', '-c', help='config.',
+                        type=str, required=True)
+    parser.add_argument('--dataset', '-d', help='dataset.',
+                        type=str, required=True)
+    parser.add_argument('--trainer', '-t', help='trainer.',
+                        type=str, required=True)
+    parser.add_argument('--path', '-p', help='The path were results will be stored', type=Path,
+                        required=True)
+
+    args = parser.parse_args()
+
+    config = get_from_module(args.config, configs)
+    model_creator = get_from_module(args.model_creator, creators)
+    trainer = get_from_module(args.trainer, trainers)
+    dataset = get_from_module(args.dataset, datasets)
+
+    trainer_instance = trainer(model_creator=model_creator,
+                               config=config)
+
+    experiment = Experiment(name=get_name(trainer_instance, config, model_creator, dataset),
+                            dataset=dataset,
+                            trainer=trainer_instance)
+
+    experiment_runner = ExperimentRunner(experiment_list=[experiment])
+    experiment_runner.run(path=args.path)
+
+
+def _main():
+    experiments_dict = get_experiment_dict()
 
     parser = argparse.ArgumentParser(
         description='Entrypoint for running the experiments. Available are:\n {}'.format(
@@ -129,7 +70,7 @@ def main():
             raise KeyError('Experiment {} not found. '
                            'Available are: {}'.format(name, ' '.join(experiments_dict.keys())))
 
-    experiment_suite = ExperimentSuite(experiment_list=experiments)
+    experiment_suite = ExperimentRunner(experiment_list=experiments)
     experiment_suite.run(path=args.path)
 
 
