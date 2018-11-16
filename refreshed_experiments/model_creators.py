@@ -1,3 +1,5 @@
+import functools
+
 import gpflow
 import keras
 import numpy as np
@@ -5,15 +7,14 @@ from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Activation
 
 import gpflux
-from refreshed_experiments.configs import ConvGPConfig, MNISTCNNConfiguration, CifarCNNConfiguration
+from refreshed_experiments.configs import ConvGPConfig, MNISTCNNConfig, CifarCNNConfig
 from refreshed_experiments.data_infrastructure import ImageClassificationDataset
 from refreshed_experiments.utils import reshape_to_2d, labels_onehot_to_int
 
 
 @gpflow.defer_build()
-def convgp_creator(dataset, config: ConvGPConfig):
-    x_train, y_train = dataset.train_features, dataset.train_targets
-    num_classes = y_train.shape[1]
+def convgp_creator(dataset: ImageClassificationDataset, config: ConvGPConfig):
+    num_classes = dataset.num_classes
     # DeepGP class expects 2d inputs and labels encoded with integers
     x_train, y_train = reshape_to_2d(dataset.train_features), \
                        labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
@@ -48,7 +49,7 @@ def convgp_creator(dataset, config: ConvGPConfig):
     return model
 
 
-def mnist_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfiguration):
+def mnist_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfig):
     model = Sequential()
     model.add(Conv2D(32, kernel_size=(3, 3),
                      activation='relu',
@@ -61,32 +62,21 @@ def mnist_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfi
     model.add(Dropout(0.5))
     model.add(Dense(dataset.num_classes, activation='softmax'))
 
-    model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=config.optimiser,
-                  metrics=['accuracy'])
-    return model
+    def top2_accuracy(y_true, y_pred):
+        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
 
-
-def mnist_fashion_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfiguration):
-    model = Sequential()
-    model.add(Conv2D(32, kernel_size=(3, 3),
-                     activation='relu',
-                     input_shape=dataset.input_shape))
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-    model.add(Flatten())
-    model.add(Dense(128, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(dataset.num_classes, activation='softmax'))
+    def top3_accuracy(y_true, y_pred):
+        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
 
     model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=config.optimiser,
-                  metrics=['accuracy'])
+                  metrics=[keras.metrics.categorical_accuracy,
+                           top2_accuracy,
+                           top3_accuracy])
     return model
 
 
-def cifar_cnn_creator(dataset: ImageClassificationDataset, config: CifarCNNConfiguration):
+def cifar_cnn_creator(dataset: ImageClassificationDataset, config: CifarCNNConfig):
     model = Sequential()
     model.add(Conv2D(32, (3, 3), padding='same',
                      input_shape=dataset.input_shape))

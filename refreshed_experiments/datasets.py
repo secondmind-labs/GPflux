@@ -1,202 +1,96 @@
-import pickle
-from pathlib import Path
+import os
+import subprocess
+from scipy.io import loadmat
+import numpy as np
 
+from refreshed_experiments.data_infrastructure import ImageClassificationDataset, \
+    MaxNormalisingPreprocessor
 from refreshed_experiments.utils import rgb2gray, get_dataset_fraction, \
     get_dataset_fixed_examples_per_class
 
-_CACHE_DIR = Path('/tmp/.datasets')
 
-
-def get_cached(name):
-    cached = set(_CACHE_DIR.iterdir())
-    if name in cached:
-        with (_CACHE_DIR / Path(name)).open(mode='rb') as f_handle:
-            return pickle.load(f_handle)
+def _get_max_normalised(data, name):
+    (train_features, train_targets), (test_features, test_targets) = data
+    dataset = \
+        ImageClassificationDataset.from_train_test_split(name,
+                                                         train_features=train_features,
+                                                         train_targets=train_targets,
+                                                         test_features=test_features,
+                                                         test_targets=test_targets)
+    return MaxNormalisingPreprocessor.preprocess(dataset)
 
 
 class mnist:
 
-    @staticmethod
-    def load_data():
+    @classmethod
+    def load_data(cls):
         from keras.datasets import mnist
-        (train_features, train_targets), (test_features, test_targets) = mnist.load_data()
-        return (train_features, train_targets), (test_features, test_targets)
+        return _get_max_normalised(mnist.load_data(), cls.__name__)
 
 
 class mnist_5percent:
 
-    @staticmethod
-    def load_data():
+    @classmethod
+    def load_data(cls):
         from keras.datasets import mnist
-        return get_dataset_fraction(mnist, 0.05)
-
-
-class mnist_10percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import mnist
-        return get_dataset_fraction(mnist, 0.1)
-
-
-class mnist_25percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import mnist
-        return get_dataset_fraction(mnist, 0.5)
+        data_fraction = get_dataset_fraction(mnist, 0.05)
+        return _get_max_normalised(data_fraction, cls.__name__)
 
 
 class mnist_1epc:
 
-    @staticmethod
-    def load_data():
+    @classmethod
+    def load_data(cls):
         from keras.datasets import mnist
-        return get_dataset_fixed_examples_per_class(mnist, 1)
-
-
-class mnist_10epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import mnist
-        return get_dataset_fixed_examples_per_class(mnist, 10)
-
-
-class mnist_100epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import mnist
-        return get_dataset_fixed_examples_per_class(mnist, 100)
-
-
-class mnist_500epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import mnist
-        return get_dataset_fixed_examples_per_class(mnist, 500)
+        data_fraction = get_dataset_fixed_examples_per_class(mnist, 1)
+        return _get_max_normalised(data_fraction, cls.__name__)
 
 
 class grey_cifar10:
 
-    @staticmethod
-    def load_data():
+    @classmethod
+    def load_data(cls):
         from keras.datasets import cifar10
         (train_features, train_targets), (test_features, test_targets) = cifar10.load_data()
         train_features = rgb2gray(train_features)
         test_features = rgb2gray(test_features)
-        return (train_features, train_targets), (test_features, test_targets)
-
-
-class grey_cifar10_5percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import cifar10
-        (train_features, train_targets), (test_features, test_targets) \
-            = get_dataset_fraction(cifar10, 0.05)
-        train_features = rgb2gray(train_features)
-        test_features = rgb2gray(test_features)
-        return (train_features, train_targets), (test_features, test_targets)
-
-
-class grey_cifar10_10percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import cifar10
-        (train_features, train_targets), (test_features, test_targets) \
-            = get_dataset_fraction(cifar10, 0.1)
-        train_features = rgb2gray(train_features)
-        test_features = rgb2gray(test_features)
-        return (train_features, train_targets), (test_features, test_targets)
-
-
-class grey_cifar10_25percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import cifar10
-        (train_features, train_targets), (test_features, test_targets) \
-            = get_dataset_fraction(cifar10, 0.25)
-        train_features = rgb2gray(train_features)
-        test_features = rgb2gray(test_features)
-        return (train_features, train_targets), (test_features, test_targets)
-
-
-class grey_cifar100:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import cifar100
-        (train_features, train_targets), (test_features, test_targets) = cifar100.load_data()
-        train_features = rgb2gray(train_features)
-        test_features = rgb2gray(test_features)
-        return (train_features, train_targets), (test_features, test_targets)
+        dataset = \
+            ImageClassificationDataset.from_train_test_split(cls.__name__,
+                                                             train_features=train_features,
+                                                             train_targets=train_targets,
+                                                             test_features=test_features,
+                                                             test_targets=test_targets)
+        return MaxNormalisingPreprocessor.preprocess(dataset)
 
 
 class fashion_mnist:
 
-    @staticmethod
-    def load_data():
+    @classmethod
+    def load_data(cls):
         from keras.datasets import fashion_mnist
-        (train_features, train_targets), (test_features, test_targets) = fashion_mnist.load_data()
-        return (train_features, train_targets), (test_features, test_targets)
+        return _get_max_normalised(fashion_mnist.load_data(), cls.__name__)
 
 
-class fashion_mnist_5percent:
+class svhn:
 
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fraction(fashion_mnist, 0.05)
-
-
-class fashion_mnist_10percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fraction(fashion_mnist, 0.10)
-
-
-class fashion_mnist_25percent:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fraction(fashion_mnist, 0.25)
-
-
-class fashion_mnist_1epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fixed_examples_per_class(fashion_mnist, 1)
-
-
-class fashion_mnist_10epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fixed_examples_per_class(fashion_mnist, 10)
-
-
-class fashion_mnist_100epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fixed_examples_per_class(fashion_mnist, 100)
-
-
-class fashion_mnist_500epc:
-
-    @staticmethod
-    def load_data():
-        from keras.datasets import fashion_mnist
-        return get_dataset_fixed_examples_per_class(fashion_mnist, 500)
+    @classmethod
+    def load_data(cls):
+        if not os.path.exists('/tmp/svhn_train.mat'):
+            subprocess.call(
+                ["wget", "-O", "/tmp/svhn_train.mat",
+                 "http://ufldl.stanford.edu/housenumbers/train_32x32.mat"])
+        if not os.path.exists('/tmp/svhn_test.mat'):
+            subprocess.call(
+                ["wget", "-O", "/tmp/svhn_test.mat",
+                 "http://ufldl.stanford.edu/housenumbers/test_32x32.mat"])
+        train_data = loadmat('/tmp/svhn_train.mat')
+        test_data = loadmat('/tmp/svhn_test.mat')
+        x_train, y_train = train_data['X'], train_data['y']
+        x_test, y_test = test_data['X'], test_data['y']
+        x_train, x_test = np.transpose(x_train, [3, 0, 1, 2]), np.transpose(x_test, [3, 0, 1, 2])
+        x_train, x_test = rgb2gray(x_train), rgb2gray(x_test)
+        num_classes = len(set(y_train.ravel()))
+        y_train, y_test = y_train == np.arange(num_classes)[None, :], y_test == np.arange(
+            num_classes)[None, :]
+        data = (x_train, y_train), (x_test, y_test)
+        return _get_max_normalised(data, cls.__name__)

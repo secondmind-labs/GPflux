@@ -18,7 +18,7 @@ class Experiment:
         return training_summary
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
-        self.trainer.store(training_summary, path)
+        self.trainer.store(self._name, training_summary, path)
 
     @property
     def name(self) -> str:

@@ -1,12 +1,12 @@
 import gpflow
+import keras
 import numpy as np
 
 from gpflux.convolution import PatchHandler, ImagePatchConfig
 
-
 def get_from_module(name, module):
     if hasattr(module, name):
-        return name
+        return getattr(module, name)
     else:
         available = ' '.join([item for item in dir(module) if not item.startswith('__')])
         raise ValueError('{} not found. Available are {}'.format(name, available))
@@ -29,11 +29,11 @@ def reshape_to_2d(x):
     return x.reshape(x.shape[0], -1)
 
 
-def calc_multiclass_error(model, Xs, Ys, batchsize=100):
-    Ns = len(Xs)
+def calc_multiclass_error(model, x, y, batchsize=100):
+    Ns = len(x)
     splits = Ns // batchsize
     hits = []
-    for xs, ys in zip(np.array_split(Xs, splits), np.array_split(Ys, splits)):
+    for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
         logits, _ = model.predict_y(xs)
         acc = logits.argmax(1) == ys[:, 0]
         hits.append(acc)
@@ -70,6 +70,11 @@ def save_gpflow_model(filename, model) -> None:
     gpflow.Saver().save(filename, model, context=context)
 
 
+def load_gpflow_model(filename, model) -> None:
+    context = gpflow.SaverContext(coders=[ImagePatchConfigCoder, PatchHandlerCoder])
+    return gpflow.Saver().load(filename, context=context)
+
+
 def get_dataset_fraction(dataset, fraction):
     (train_features, train_targets), (test_features, test_targets) = dataset.load_data()
     seed = np.random.get_state()
@@ -94,3 +99,30 @@ def get_dataset_fixed_examples_per_class(dataset, num_examples):
     selected_examples = np.vstack(selected_examples)
     selected_targets = np.hstack(selected_targets)
     return (selected_examples, selected_targets), (test_features, test_targets)
+
+
+def get_top_n_error(model, x, y, n, batchsize=100):
+    num_examples = x.shape[0]
+    splits = num_examples // batchsize
+    hits = 0
+    for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
+        p, _ = model.predict_y(xs)
+        hits += (ys == p.argsort(-1)[:, -n:]).sum()
+    return 1 - hits / num_examples
+
+
+def get_avg_nll_missclassified(model, x, y, batchsize=100):
+    num_examples = x.shape[0]
+    splits = num_examples // batchsize
+    ll = 0
+    num_missclassified = 0
+    for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
+        p, _ = model.predict_y(xs)
+        full_p = ((ys == np.arange(10)[None, :]) * p).sum(-1)  # (batchsize,)
+        # we need to keep only missclassified
+        missclassified_ind = (ys != p.argmax(-1)[..., None]).ravel()
+        num_missclassified += np.sum(missclassified_ind)
+        missclassified_p = full_p[missclassified_ind]
+        ll += np.log(missclassified_p).sum()
+    ll /= num_missclassified
+    return -ll
