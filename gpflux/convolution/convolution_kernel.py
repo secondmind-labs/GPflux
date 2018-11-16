@@ -116,12 +116,12 @@ class ExtractPatchHandler(PatchHandler):
 
     @lru_cache(maxsize=10)
     def get_image_patches(self, X: tf.Tensor):
-    """
-    Extract image patches method with LRU cache.
-    
-    :param X: input tensor.
-    :return: Extracted image patches. When the same object tensor passed to the function, cached value is returned back. Output tensor shape - [N, P*C, wh].
-    """
+        """
+        Extract image patches method with LRU cache.
+
+        :param X: input tensor.
+        :return: Extracted image patches. When the same object tensor passed to the function, cached value is returned back. Output tensor shape - [N, P*C, wh].
+        """
         X = self.reshape_to_image(X)
         image_shape = self.config.image_shape
         patch_shape = self.config.patch_shape
