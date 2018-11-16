@@ -30,6 +30,8 @@ class DT:
     img2 = rng.randn(*image_shape)
     feat = rng.randn(M, h * w)
 
+    image_shape = image_shape[1:]
+
 
 def create_rbf(filter_size=None):
     k = RBF(filter_size or DT.filter_size)
@@ -49,20 +51,21 @@ def test_diag_conv_square_dist(session_tf):
 
     dtype = img.dtype
     rbf = create_rbf()
-    X = get_image_patches(img, DT.image_shape, DT.filter_shape)
+    Xp = get_image_patches(img, DT.image_shape, DT.filter_shape)
 
     dist = diag_conv_square_dist(img, DT.filter_shape)
     dist /= rbf.lengthscales.constrained_tensor ** 2
     dist = tf.squeeze(dist)
 
     gotten = rbf.K_r2(dist)
-    expect = tf.map_fn(lambda x: rbf.K(x), X, dtype=dtype)
+
+    expect = rbf.K(Xp)
 
     gotten_np, expect_np = session_tf.run([gotten, expect])
     assert_allclose(expect_np, gotten_np)
 
     gotten_diag = tf.matrix_diag_part(rbf.K_r2(dist))
-    expect_diag = tf.map_fn(lambda x: rbf.Kdiag(x), X, dtype=dtype)
+    expect_diag = rbf.Kdiag(Xp)
 
     gotten_diag_np, expect_diag_np = session_tf.run([gotten_diag, expect_diag])
     assert_allclose(expect_diag_np, gotten_diag_np)
@@ -70,7 +73,8 @@ def test_diag_conv_square_dist(session_tf):
 
 def test_full_conv_square_dist(session_tf):
     rbf = create_rbf()
-    N, H, W, C = DT.image_shape
+    N = DT.N
+    H, W, C = DT.image_shape
     P = DT.P
     img1 = tf.convert_to_tensor(DT.img1)
     img2 = tf.convert_to_tensor(DT.img2)
@@ -94,7 +98,7 @@ def test_full_conv_square_dist(session_tf):
 
 def test_pairwise_conv_square_dist(session_tf):
     rbf = create_rbf()
-    N, H, W, C = DT.image_shape
+    H, W, C = DT.image_shape
     P = DT.P
     img1 = tf.convert_to_tensor(DT.img1)
     img2 = tf.convert_to_tensor(DT.img2)
@@ -127,7 +131,8 @@ def test_pairwise_conv_square_dist(session_tf):
 
 def test_image_patch_conv_square_dist(session_tf):
     rbf = create_rbf()
-    N, H, W, C = DT.image_shape
+    N = DT.N
+    H, W, C = DT.image_shape
     M, P = DT.M, DT.P
     X = tf.convert_to_tensor(DT.img1)
     Z = tf.convert_to_tensor(DT.feat)

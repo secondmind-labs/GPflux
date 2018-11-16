@@ -78,7 +78,7 @@ def diag_conv_square_dist(A: tf.Tensor, filter_shape: FilterShape,
 
     AtA, _ = self_inner_prod(A, None, filter_shape)
     AAt = diag_conv_inner_prod(A, filter_shape, **map_kwargs)
-    return -2 * AAt + AtA[:, :, None, :] + AtA[:, None, :, :]
+    return -2 * AAt + AtA[:, :, :, None, None] + AtA[:, None, None, :, :]
 
 
 @gpflow.name_scope()

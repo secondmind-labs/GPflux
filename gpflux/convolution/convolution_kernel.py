@@ -110,6 +110,7 @@ class PatchHandler(ABC):
         cfg = self.config
         return tf.reshape(X, [-1, cfg.Hin, cfg.Win, cfg.Cin])
 
+
 class ExtractPatchHandler(PatchHandler):
     padding = 'VALID'  # Static variable, used by convolutional operations.
     strides = (1, 1, 1, 1)  # Static variable, used by convolutional operations.
