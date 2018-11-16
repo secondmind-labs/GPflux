@@ -3,7 +3,7 @@
 # Proprietary and confidential
 
 from abc import ABC, abstractmethod
-from functools import partial
+from functools import partial, lru_cache
 from typing import List, Tuple, Type, Union
 
 import numpy as np
@@ -13,6 +13,7 @@ from multipledispatch import dispatch
 import gpflow
 from gpflow import kernels, params_as_tensors, params_as_tensors_for, settings
 from gpflow.multioutput.kernels import Mok
+from .. import utils
 
 from ..conv_square_dists import (diag_conv_inner_prod, diag_conv_square_dist,
                                  full_conv_square_dist,
@@ -25,7 +26,6 @@ ImageShape = Union[PatchShape, Tuple[int, int, int]]
 
 gpflux_image_kernel = dict()
 dispatch = partial(dispatch, namespace=gpflux_image_kernel)
-
 
 
 class ImagePatchConfig:
@@ -110,6 +110,76 @@ class PatchHandler(ABC):
         cfg = self.config
         return tf.reshape(X, [-1, cfg.Hin, cfg.Win, cfg.Cin])
 
+class ExtractPatchHandler(PatchHandler):
+    padding = 'VALID'  # Static variable, used by convolutional operations.
+    strides = (1, 1, 1, 1)  # Static variable, used by convolutional operations.
+
+    @lru_cache(maxsize=10)
+    def get_image_patches(self, X: tf.Tensor):
+    """
+    Extract image patches method with LRU cache.
+    
+    :param X: input tensor.
+    :return: Extracted image patches. When the same object tensor passed to the function, cached value is returned back. Output tensor shape - [N, P*C, wh].
+    """
+        X = self.reshape_to_image(X)
+        image_shape = self.config.image_shape
+        patch_shape = self.config.patch_shape
+        return utils.get_image_patches(X, image_shape, patch_shape)
+
+    def image_patches_inner_product(self, X, **map_fn_kwargs):
+        """
+        Returns the inner product between all patches in every image in `X`.
+        `ret[i, p, p'] = Xᵢ⁽ᵖ⁾ᵀ Xᵢ⁽ᵖ'⁾`, Xᵢ is the i-th image and [q] the q-th patch
+
+        :param X: Tensor containing image data [N, R], where R = H * W * C
+        :return: Tensor [N, P*C, P*C]
+        """
+
+        Xp = self.get_image_patches(X)
+        return tf.matmul(Xp, Xp, transpose_b=True)  # [N, P*C, P*C]
+
+    def image_patches_squared_norm(self, X):
+        """
+        Returns the squared norm for every patch for every image in `X`.
+        Corresponds to the diagonal elements of `image_patches_inner_product`.
+        `ret[i, p] = Xᵢ⁽ᵖ⁾ᵀ Xᵢ⁽ᵖ⁾`, where Xᵢ is the i-th image and ⁽ᵖ⁾ the p-th patch
+
+        :param X: Tensor containing image data [N, H*W*C]
+        :return: Tensor [N, P*C]
+        """
+        cfg = self.config
+        Xp = self.get_image_patches(X)
+        XpXpt = tf.reduce_sum(Xp ** 2, axis=-1)
+        return tf.reshape(XpXpt, (tf.shape(X)[0], -1))  # [N, P*C]
+
+    def inducing_patches_squared_norm(self, Z):
+        """
+        Returns the squared norm of every row in `Z`.
+        `ret[i] = Z⁽ⁱ⁾ᵀ Z⁽ⁱ⁾`
+
+        :param Z: Tensor, inducing patches [M, h*w]
+        :return: Tensor [M]
+        """
+        return tf.reduce_sum(Z ** 2, axis=1)  # M
+
+    def image_patches_inducing_patches_inner_product(self, X, Z):
+        """
+        Returns the inner product between every patch and every inducing
+        point in `Z` (for every image in `X`).
+
+        `ret[i, p, r] = Xᵢ⁽ᵖ⁾ᵀ Zᵣ`, where Xᵢ is the i-th image and (p) the p-th patch,
+        and Zᵣ is the r-th inducing patch.
+
+        :param X: Tensor containing image data [N, H*W*C]
+        :param Z: Tensor containing inducing patches [M, h*w]
+        :return: Tensor [N, P*C, M]
+        """
+
+        Xp = self.get_image_patches(X)
+        shape = tf.concat([tf.shape(Xp)[:-2], tf.shape(Z)], 0)  # [..., M, w*h]
+        return tf.matmul(Xp, tf.broadcast_to(Z, shape), transpose_b=True)  # [N, P*C, M]
+
 
 class ConvPatchHandler(PatchHandler):
     padding = 'VALID'  # Static variable, used by convolutional operations.
@@ -124,29 +194,29 @@ class ConvPatchHandler(PatchHandler):
         :return: Tensor [N, P*C, P]
         """
         X = self.reshape_to_image(X)
-        inner_prod = diag_conv_inner_prod(X, self.config.patch_shape, **map_fn_kwargs)  # [N, P, P]
-        return tf.squeeze(inner_prod, axis=[3])  # [N, P, P]
+        inner_prod = diag_conv_inner_prod(X, self.config.patch_shape, **map_fn_kwargs)  # [N, P, C, P, C]
+        inner_prod_shape = tf.shape(inner_prod)
+        P, C = inner_prod_shape[-2], inner_prod_shape[-1]
+        return tf.reshape(inner_prod, [-1, P*C, P*C])  # [N, P*C, P*C]
 
     def image_patches_squared_norm(self, X):
         """
         Returns the squared norm for every patch for every image in `X`.
         Corresponds to the diagonal elements of `image_patches_inner_product`.
         `ret[i, p] = Xᵢ⁽ᵖ⁾ Xᵢ⁽ᵖ⁾ᵀ`, where Xᵢ is the i-th image and ⁽ᵖ⁾ the p-th patch
-
         :param X: Tensor containing image data [N, H*W*C]
-        :return: Tensor [N, P]
+        :return: Tensor [N, P*C]
         """
         cfg = self.config
         X = self.reshape_to_image(X)
         ones = tf.ones((*cfg.patch_shape, cfg.Cin, 1), dtype=X.dtype)
         XpXpt = tf.nn.conv2d(X ** 2, ones, self.strides, self.padding)
-        return tf.reshape(XpXpt, (tf.shape(X)[0], -1))  # [N, P]
+        return tf.reshape(XpXpt, (tf.shape(X)[0], -1))  # [N, P*C]
 
     def inducing_patches_squared_norm(self, Z):
         """
         Returns the squared norm of every row in `Z`.
-        `ret[i] = Z⁽ⁱ⁾ Z⁽ⁱ⁾ᵀ`
-
+        `ret[i] = Z⁽ⁱ⁾ᵀ Z⁽ⁱ⁾`
         :param Z: Tensor, inducing patches [M, h*w]
         :return: Tensor [M]
         """
@@ -156,21 +226,27 @@ class ConvPatchHandler(PatchHandler):
         """
         Returns the inner product between every patch and every inducing
         point in `Z` (for every image in `X`).
-
-        `ret[i, p, r] = Xᵢ⁽ᵖ⁾ Zᵣᵀ`, where Xᵢ is the i-th image and (p) the p-th patch,
+        `ret[i, p, r] = Xᵢ⁽ᵖ⁾ᵀ Zᵣ`, where Xᵢ is the i-th image and (p) the p-th patch,
         and Zᵣ is the r-th inducing patch.
-
         :param X: Tensor containing image data [N, H*W*C]
         :param Z: Tensor containing inducing patches [M, h*w]
-        :return: Tensor [N, P, M]
+        :return: Tensor [N, P*C, M]
         """
-        X = self.reshape_to_image(X)
+        X = self.reshape_to_image(X) # [N, H, W, C]
         cfg = self.config
-        M, N = tf.shape(Z)[0], tf.shape(X)[0]
-        Zr = tf.reshape(Z, (M, *cfg.patch_shape, cfg.Cin))  # [M, h, w, C]
-        Z_filter = tf.transpose(Zr, [1, 2, 3, 0])  # [h, w, C, M]
-        XpZ = tf.nn.conv2d(X, Z_filter, self.strides, self.padding)  # [N, Ph, Pw, M]
-        return tf.reshape(XpZ, (N, -1, M))  # [N, P, M]
+
+        Xshape = tf.shape(X)
+        M = tf.shape(Z)[0]
+        N, H, W, C = Xshape[0], Xshape[1], Xshape[2], Xshape[3]
+        Z = tf.reshape(Z, (M, *cfg.patch_shape, 1))  # [M, h, w, 1]
+        Z_filter = tf.transpose(Z, [1, 2, 3, 0])  # [h, w, 1, M]
+
+        X = tf.transpose(X, [0, 3, 1, 2])  # [N, C, H, W]
+        X = tf.reshape(X, [N*C, H, W, 1])
+        XpZ = tf.nn.depthwise_conv2d(X, Z_filter, self.strides, self.padding)  # [N*C, Ph, Pw, M]
+        XpZ = tf.reshape(XpZ, [N, C, -1, M])
+        XpZ = tf.transpose(XpZ, [0, 2, 1, 3])
+        return tf.reshape(XpZ, [N, -1, M])  # [N, P*C, M]
 
 
 @dispatch(kernels.Stationary, PatchHandler, Any, Any)
@@ -303,7 +379,7 @@ class ConvKernel(Mok):
         assert config.Cin == 1
 
         is_handler = isinstance(patch_handler, PatchHandler)
-        self.patch_handler = ConvPatchHandler(config) if not is_handler else patch_handler
+        self.patch_handler = ExtractPatchHandler(config) if not is_handler else patch_handler
 
         self.basekern = basekern
         self.with_indexing = with_indexing

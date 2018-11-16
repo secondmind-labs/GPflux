@@ -146,7 +146,7 @@ def diag_conv_inner_prod(A: tf.Tensor, filter_shape: FilterShape, **map_kwargs) 
         map_kwargs: (optional) `tf.map_fn` arguments.
 
     Returns:
-        Tensor with [N, P, P, C] shape, where P = (H - h + 1) * (W - w + 1)
+        Tensor with [N, P, C, P, C] shape, where P = (H - h + 1) * (W - w + 1)
     """
     N, H, W, C = _image_shape(A)
     h, w = filter_shape
@@ -160,10 +160,9 @@ def diag_conv_inner_prod(A: tf.Tensor, filter_shape: FilterShape, **map_kwargs) 
         kernel = tf.transpose(kernel, [1, 2, 3, 0])  # [h, w, N, C]
         return tf.nn.depthwise_conv2d(At, kernel, strides, padding)
 
-    result = _map_indices(fn, P, dtype=A.dtype, **map_kwargs)  # [P, C, Ph, Pw, N]
-    result = tf.reshape(result, [P, C, P, N])
-    return tf.transpose(result, [3, 0, 2, 1])  # [N, P, P, C]
-
+    result = _map_indices(fn, P, dtype=A.dtype, **map_kwargs)  # [P, C, Ph, Pw, N*C]
+    result = tf.reshape(result, [P, C, P, N, C])
+    return tf.transpose(result, [3, 0, 1, 2, 4])  # [N, P, C, P, C]
 
 def full_conv_inner_prod(A: tf.Tensor,
                          B: tf.Tensor,

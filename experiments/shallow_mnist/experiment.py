@@ -223,13 +223,13 @@ def convgp_monitor_tasks(train_data, model, optimizer, hz, basepath, dataset):
             .with_exit_condition(True)
             .with_flush_immediately(True)]
 
-    # f2 = get_error_cb(model, Xs, Ys, error_func, full=True)
-    # tasks += [
-    #     mon.ScalarFuncToTensorBoardTask(fw, f2, "error_full")
-    #         .with_name('error_full')
-    #         .with_condition(periodic_slow())
-    #         .with_exit_condition(True)
-    #         .with_flush_immediately(True)]
+    f2 = get_error_cb(model, Xs, Ys, error_func, full=True)
+    tasks += [
+        mon.ScalarFuncToTensorBoardTask(fw, f2, "error_full")
+            .with_name('error_full')
+            .with_condition(periodic_slow())
+            .with_exit_condition(True)
+            .with_flush_immediately(True)]
 
     print("# tasks:", len(tasks))
     return tasks
