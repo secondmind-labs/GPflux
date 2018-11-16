@@ -134,20 +134,23 @@ def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance,
     def compute_K_image_inducing_patches(X, Z):
         return session_tf.run(K_image_inducing_patches(base_kern, kern.patch_handler, X, Z))
 
+    X_2d = tf.convert_to_tensor(Data.X_2d)
+    Z = tf.convert_to_tensor(Data.Z)
+
     # Kdiag
     expected = base_kern.compute_Kdiag(patches).reshape(Data.N, -1)
-    value = compute_K_image_symm(Data.X_2d)
+    value = compute_K_image_symm(X_2d)
     np.testing.assert_allclose(value, expected)
 
     # Kdiag [N, P, P]
     patches_per_image = np.reshape(patches, [Data.N, -1, np.prod(Data.patch_shape)])  # [N, P, h*w]
     expected = np.array([base_kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
-    value = compute_K_image_symm(Data.X_2d, full_output_cov=True)
+    value = compute_K_image_symm(X_2d, full_output_cov=True)
     np.testing.assert_allclose(value, expected)
 
     # Kuf
     expected = base_kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
-    value = compute_K_image_inducing_patches(Data.X_2d, Data.Z)
+    value = compute_K_image_inducing_patches(X_2d, Z)
     np.testing.assert_allclose(value, expected)
 
 
@@ -167,18 +170,21 @@ def test_RBFImageKernel(session_tf, lengthscales, variance):
     def compute_K_image_inducing_patches(X, Z):
         return session_tf.run(K_image_inducing_patches(base_kern, kern.patch_handler, X, Z))
 
+    X_2d = tf.convert_to_tensor(Data.X_2d)
+    Z = tf.convert_to_tensor(Data.Z)
+
     # Kdiag [N,P]
     expected = base_kern.compute_Kdiag(patches).reshape(Data.N, -1)
-    value = compute_K_image_symm(Data.X_2d)
+    value = compute_K_image_symm(X_2d)
     np.testing.assert_allclose(value, expected)
 
     # Kdiag [N, P, P]
     patches_per_image = np.reshape(patches, [Data.N, -1, input_dim()])  # [N, P, h*w]
     expected = np.array([base_kern.compute_K_symm(x) for x in patches_per_image])  # [N, P, P]
-    value = compute_K_image_symm(Data.X_2d, full_output_cov=True)
+    value = compute_K_image_symm(X_2d, full_output_cov=True)
     np.testing.assert_allclose(value, expected)
 
     # Kuf
     expected = base_kern.compute_K(patches, Data.Z).reshape(Data.N, -1, Data.M)
-    value = compute_K_image_inducing_patches(Data.X_2d, Data.Z)
+    value = compute_K_image_inducing_patches(X_2d, Z)
     np.testing.assert_allclose(value, expected)
