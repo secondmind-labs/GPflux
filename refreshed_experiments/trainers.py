@@ -1,10 +1,10 @@
 import abc
 import pickle
 import time
-from collections.__init__ import namedtuple
+from collections import namedtuple
 from pathlib import Path
 from typing import cast, Callable, Any
-
+import numpy as np
 import gpflow
 import keras
 import tqdm
@@ -14,7 +14,8 @@ from sklearn.model_selection import train_test_split
 from refreshed_experiments.configs import NNConfig, GPConfig, Configuration
 from refreshed_experiments.data_infrastructure import Dataset
 from refreshed_experiments.utils import reshape_to_2d, labels_onehot_to_int, calc_multiclass_error, \
-    calc_avg_nll, save_gpflow_model, get_avg_nll_missclassified, get_top_n_error
+    calc_avg_nll, save_gpflow_model, get_avg_nll_missclassified, get_top_n_error, name_to_summary, \
+    calc_ece_from_probs, calculate_ece_score
 
 
 class Trainer(abc.ABC):
@@ -28,7 +29,7 @@ class Trainer(abc.ABC):
         self._model_creator = model_creator
 
     @abc.abstractmethod
-    def fit(self, dataset: Dataset) -> 'Trainer.training_summary':
+    def fit(self, dataset: Dataset, path: Path) -> 'Trainer.training_summary':
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -46,7 +47,7 @@ class KerasClassificationTrainer(Trainer):
     def config(self) -> NNConfig:
         return cast(NNConfig, self._config)
 
-    def fit(self, dataset: Dataset) -> Trainer.training_summary:
+    def fit(self, dataset: Dataset, path: Path) -> Trainer.training_summary:
         model = self._model_creator(dataset, self.config)
         init_time = time.time()
         x, y = dataset.train_features, dataset.train_targets
@@ -64,14 +65,24 @@ class KerasClassificationTrainer(Trainer):
                             callbacks=callbacks)
 
         results_dict = summary.history
-        test_loss, test_acc = model.evaluate(dataset.test_features, dataset.test_targets)
-
+        test_loss, test_acc, test_acc_top2, test_acc_top3 = model.evaluate(dataset.test_features,
+                                                                           dataset.test_targets)
+        test_probs = model.predict(dataset.test_features)
+        incorrectly_classified = test_probs.argmax(-1) != dataset.test_targets.argmax(-1)
+        final_test_avg_nll_missclassified = -np.log(test_probs[incorrectly_classified]).mean()
+        ece_score = calc_ece_from_probs(test_probs, dataset.test_targets.argmax(-1))
         duration = time.time() - init_time
         print('Final test loss {}, final test accuracy {}'.format(test_loss, test_acc))
-        results_dict.update({'final_acc': results_dict['acc'][-1],
+        results_dict.update({'final_acc': results_dict['categorical_accuracy'][-1],
+                             'final_acc_top2': results_dict['top2_accuracy'][-1],
+                             'final_acc_top3': results_dict['top2_accuracy'][-1],
                              'final_test_acc': test_acc,
+                             'final_test_acc_top2': test_acc_top2,
+                             'final_test_acc_top3': test_acc_top3,
+                             'final_test_loss_missclassified': final_test_avg_nll_missclassified,
                              'final_loss': results_dict['loss'][-1],
-                             'final_test_loss': test_loss})
+                             'final_test_loss': test_loss,
+                             'final_test_ece': ece_score})
         return KerasClassificationTrainer.training_summary(results_dict, model, duration)
 
     def store(self, name, training_summary: Trainer.training_summary, path: Path):
@@ -79,8 +90,7 @@ class KerasClassificationTrainer(Trainer):
         model_path = path / Path('saved_model.h5')
         training_summary.model.save(str(model_path))
         summary_path = path / Path('summary.txt')
-        summary_path.write_text(name+'\n')
-        summary_path.write_text(self._config.summary())
+        summary_path.write_text(name_to_summary(name) + self._config.summary())
         with summary_path.open(mode='a') as f_handle:
             f_handle.write('The experiment took {} min\n'.format(training_summary.duration / 60))
         training_summary_path = path / Path('training_summary.c')
@@ -94,7 +104,7 @@ class ClassificationGPTrainer(Trainer):
     def config(self) -> GPConfig:
         return cast(GPConfig, self._config)
 
-    def fit(self, dataset: Dataset):
+    def fit(self, dataset: Dataset, path: Path):
         init_time = time.time()
         x_train, y_train = reshape_to_2d(dataset.train_features), \
                            labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
@@ -111,7 +121,33 @@ class ClassificationGPTrainer(Trainer):
         num_epochs = self.config.num_epochs
         num_batches = x_train.shape[0] // self.config.batch_size
         stats_fraction = self.config.monitor_stats_fraction
-        monitor = mon.Monitor([], session, step, print_summary=False)
+        tasks = []
+        fw = mon.LogdirWriter(str(path))
+
+        tasks += [
+            mon.CheckpointTask(str(path))
+                .with_name('saver')
+                .with_condition(mon.PeriodicIterationCondition(self.config.store_frequency))]
+
+        tasks += [
+            mon.ModelToTensorBoardTask(fw, model)
+                .with_name('model_tboard')
+                .with_condition(mon.PeriodicIterationCondition(self.config.store_frequency))
+                .with_exit_condition(True)
+                .with_flush_immediately(True)]
+
+        def error_func(*args, **kwargs):
+            xs, ys = x_test[:stats_fraction], y_test[:stats_fraction]
+            return calc_multiclass_error(model, xs, ys, batchsize=50)
+
+        tasks += [
+            mon.ScalarFuncToTensorBoardTask(fw, error_func, "error")
+                .with_name('error')
+                .with_condition(mon.PeriodicIterationCondition(self.config.store_frequency))
+                .with_exit_condition(True)
+                .with_flush_immediately(True)]
+
+        monitor = mon.Monitor(tasks, session, step, print_summary=False)
 
         with monitor:
             with session.as_default():
@@ -150,8 +186,7 @@ class ClassificationGPTrainer(Trainer):
     def store(self, name, training_summary: Trainer.training_summary, path: Path):
         path.mkdir(exist_ok=True, parents=True)
         summary_path = path / Path('summary.txt')
-        summary_path.write_text(name+'\n')
-        summary_path.write_text(self._config.summary())
+        summary_path.write_text(name_to_summary(name) + self._config.summary())
         with summary_path.open(mode='a') as f_handle:
             f_handle.write('The experiment took {} min\n'.format(training_summary.duration / 60))
         training_summary_path = path / Path('training_summary.c')
@@ -162,10 +197,6 @@ class ClassificationGPTrainer(Trainer):
 
     @staticmethod
     def get_final_statistics(model, x_train, y_train, x_test, y_test):
-        x_test = x_test[:1000, :]
-        x_train = x_train[:1000, :]
-        y_train = y_train[:1000, :]
-        y_test = y_test[:1000, :]
         final_train_acc = 100 - calc_multiclass_error(model, x_train, y_train)
         final_test_acc = 100 - calc_multiclass_error(model, x_test, y_test)
         final_train_avg_nll = calc_avg_nll(model, x_train, y_train)
@@ -173,6 +204,9 @@ class ClassificationGPTrainer(Trainer):
         final_test_avg_nll_missclassified = get_avg_nll_missclassified(model, x_test, y_test)
         final_test_acc_top_2_acc = 1 - get_top_n_error(model, x_test, y_test, n=2)
         final_test_acc_top_3_acc = 1 - get_top_n_error(model, x_test, y_test, n=3)
+        final_train_acc_top_2_acc = 1 - get_top_n_error(model, x_train, y_train, n=2)
+        final_train_acc_top_3_acc = 1 - get_top_n_error(model, x_train, y_train, n=3)
+        final_test_ece = calculate_ece_score(model, x_test, y_test)
 
         print(
             'Final test loss {}, final test accuracy {}'.format(final_test_avg_nll, final_test_acc))
@@ -186,5 +220,8 @@ class ClassificationGPTrainer(Trainer):
                 'final_loss': final_train_avg_nll,
                 'final_test_loss': final_test_avg_nll,
                 'final_test_loss_missclassified': final_test_avg_nll_missclassified,
-                'final_test_acc_2top': final_test_acc_top_2_acc,
-                'final_test_acc_3top': final_test_acc_top_3_acc}
+                'final_test_acc_top2': final_test_acc_top_2_acc,
+                'final_test_acc_top3': final_test_acc_top_3_acc,
+                'final_acc_top2': final_train_acc_top_2_acc,
+                'final_acc_top3': final_train_acc_top_3_acc,
+                'final_test_ece': final_test_ece}

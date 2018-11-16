@@ -11,7 +11,7 @@ Entrypoint for running experiments.
 
 
 def get_name(trainer, config, creator, dataset):
-    return "experiment_{}_{}_{}_{}".format(trainer.name, config.name, creator.__name__,
+    return "experiment-{}-{}-{}-{}".format(trainer.name, config.name, creator.__name__,
                                 dataset.name)
 
 

@@ -39,16 +39,15 @@ def gather_to_table(results_dict, stats):
 
 
 def get_report_str(results_dict, summary_dict, name, stats):
-    summary_str = '--------------------------------------\n'
-    summary_str += 'Experiment ' + ' '.join(name.split('_')[:-1]) + '\n'
-    summary_str += 'Hyperparameters:\n'
+    summary_str = '-----------------------------------------------------------------------------\n'
+    summary_str += 'Name: ' + name + '\n\n'
     summary_str += summary_dict[name] + '\n'
-    for stat in stats:
-        summary_str += ('Final train {} {}, final test {} {}'.format(
-            results_dict[name]['final_' + stat], stat,
+    for stat in sorted(stats):
+        summary_str += ('final test {} {}'.format(
+            # results_dict[name]['final_' + stat], stat,
             results_dict[name]['final_test_' + stat],
             stat)) + '\n'
-    summary_str += '--------------------------------------\n'
+    summary_str += '-----------------------------------------------------------------------------\n'
     return summary_str
 
 

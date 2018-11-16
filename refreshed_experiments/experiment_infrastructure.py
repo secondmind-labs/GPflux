@@ -12,9 +12,10 @@ class Experiment:
         self._name = name
         self.trainer = trainer
         self._dataset = dataset
+        self._uuid = str(uuid.uuid4())
 
-    def run(self) -> Trainer.training_summary:
-        training_summary = self.trainer.fit(self._dataset)
+    def run(self, path:Path) -> Trainer.training_summary:
+        training_summary = self.trainer.fit(self._dataset, path)
         return training_summary
 
     def store(self, training_summary: Trainer.training_summary, path: Path):
@@ -25,7 +26,7 @@ class Experiment:
         return self._name
 
     def __str__(self) -> str:
-        return '{}_{}'.format(self._name, str(uuid.uuid4()))
+        return '{}_{}'.format(self._name, self._uuid)
 
 
 class ExperimentRunner:
@@ -35,7 +36,7 @@ class ExperimentRunner:
 
     def run(self, path: Path):
         for experiment in self._experiment_list:
-            summary = experiment.run()
+            summary = experiment.run(path / Path(str(experiment)))
             experiment.store(summary, path / Path(str(experiment)))
 
 

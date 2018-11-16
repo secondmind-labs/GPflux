@@ -7,7 +7,7 @@ import gpflux
 class Configuration:
 
     def summary(self):
-        summary_str = []
+        summary_str = ['Configuration parameters:\n']
         for name, value in self.__dict__.items():
             if name.startswith('_'):
                 # discard protected and private members
@@ -26,10 +26,11 @@ class Configuration:
 class GPConfig(Configuration):
     def __init__(self):
         super().__init__()
-        self.batch_size = 100
-        self.num_epochs = 5
+        self.batch_size = 110
+        self.num_epochs = 550
         self.monitor_stats_fraction = 1000
         self.lr = 0.01
+        self.store_frequency = 1000
 
     def get_optimiser(self, step):
         lr = self.lr * 1.0 / (1 + step // 5000 / 3)
@@ -42,7 +43,7 @@ class ConvGPConfig(GPConfig):
         self.patch_shape = [5, 5]
         self.num_inducing_points = 1000
         self.base_kern = "RBF"
-        self.with_weights = False
+        self.with_weights = True
         self.with_indexing = False
         self.init_patches = "patches-unique"  # 'patches', 'random'
 
@@ -57,7 +58,6 @@ class ConvGPConfig(GPConfig):
 class TickConvGPConfig(ConvGPConfig):
     def __init__(self):
         super().__init__()
-        self.with_weights = True
         self.with_indexing = True
 
 
@@ -73,7 +73,7 @@ class NNConfig(Configuration):
 class MNISTCNNConfig(NNConfig):
     def __init__(self):
         super().__init__()
-        self.epochs = 20
+        self.epochs = 1
         self.batch_size = 128
         self.optimiser = keras.optimizers.Adadelta()
         self.early_stopping = False
