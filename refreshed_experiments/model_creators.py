@@ -3,13 +3,18 @@ import functools
 import gpflow
 import keras
 import numpy as np
+from gpflow.features import InducingPoints
 from keras import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Activation
+from keras.initializers import truncated_normal, constant
+from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense, Activation, MaxPool2D
 
 import gpflux
-from refreshed_experiments.configs import ConvGPConfig, MNISTCNNConfig, CifarCNNConfig
+from gpflux.layers import GPLayer
+from refreshed_experiments.configs import ConvGPConfig, MNISTCNNConfig, CifarCNNConfig, GPConfig, \
+    RBFGPConfig
 from refreshed_experiments.data_infrastructure import ImageClassificationDataset
 from refreshed_experiments.utils import reshape_to_2d, labels_onehot_to_int
+from scipy.cluster.vq import kmeans2
 
 
 @gpflow.defer_build()
@@ -45,7 +50,65 @@ def convgp_creator(dataset: ImageClassificationDataset, config: ConvGPConfig):
                           layers=[layer0],
                           likelihood=likelihood,
                           batch_size=config.batch_size,
-                          name="my_deep_gp")
+                          name="conv_gp")
+    return model
+
+
+@gpflow.defer_build()
+def rbf_gp_creator(dataset: ImageClassificationDataset, config: RBFGPConfig):
+    num_classes = dataset.num_classes
+    input_dim = np.prod(dataset.input_shape)
+    x_train, y_train = reshape_to_2d(dataset.train_features), \
+                       labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
+    likelihood = gpflow.likelihoods.SoftMax(num_classes)
+    kernel = gpflow.kernels.RBF(input_dim)
+    Z = kmeans2(x_train[::10,:], config.num_inducing_points, minit='points')[0]
+    inducing_feature = InducingPoints(Z)
+    layer0 = GPLayer(kern=kernel, feature=inducing_feature, num_latents=num_classes)
+    model = gpflux.DeepGP(x_train, y_train,
+                          layers=[layer0],
+                          likelihood=likelihood,
+                          batch_size=config.batch_size,
+                          name="rbf_gp")
+    return model
+
+
+def basic_cnn_creator(dataset: ImageClassificationDataset, config):
+    def MaxPool():
+        return MaxPool2D(pool_size=(2, 2), strides=(2, 2))
+
+    def Conv(num_kernels):
+        return Conv2D(num_kernels, (5, 5), strides=(1, 1),
+                      activation='relu', padding='same',
+                      kernel_initializer=truncated_normal(stddev=0.1))
+
+    def FullyConnected(num_outputs, activation=None):
+        return Dense(num_outputs,
+                     activation=activation,
+                     bias_initializer=constant(0.1),
+                     kernel_initializer=truncated_normal(stddev=0.1))
+
+    model = Sequential()
+    model.add(Conv(32))
+    model.add(MaxPool())
+    model.add(Conv(64))
+    model.add(MaxPool())
+    model.add(Flatten())
+    model.add(FullyConnected(1024, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(FullyConnected(10, activation='softmax'))
+
+    def top2_accuracy(y_true, y_pred):
+        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
+
+    def top3_accuracy(y_true, y_pred):
+        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
+
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                  optimizer=config.optimiser,
+                  metrics=[keras.metrics.categorical_accuracy,
+                           top2_accuracy,
+                           top3_accuracy])
     return model
 
 

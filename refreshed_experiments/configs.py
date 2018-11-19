@@ -28,6 +28,22 @@ class GPConfig(Configuration):
         super().__init__()
         self.batch_size = 110
         self.num_epochs = 550
+        self.num_inducing_points = 100
+        self.monitor_stats_fraction = 1000
+        self.lr = 0.01
+        self.store_frequency = 1000
+
+    def get_optimiser(self, step):
+        lr = self.lr * 1.0 / (1 + step // 5000 / 3)
+        return gpflow.train.AdamOptimizer(lr)
+
+
+class RBFGPConfig(GPConfig):
+    def __init__(self):
+        super().__init__()
+        self.batch_size = 128
+        self.num_epochs = 500
+        self.num_inducing_points = 1000
         self.monitor_stats_fraction = 1000
         self.lr = 0.01
         self.store_frequency = 1000
@@ -66,14 +82,23 @@ class NNConfig(Configuration):
         self.epochs = 1
         self.batch_size = 128
         self.optimiser = keras.optimizers.Adam()
-        self.validation_proportion = 0.05
-        self.early_stopping = True
+        self.validation_proportion = 0.00
+        self.early_stopping = False
+
+
+class BasicCNNConfig(NNConfig):
+    def __init__(self):
+        super().__init__()
+        self.epochs = 12
+        self.batch_size = 128
+        self.optimiser = keras.optimizers.Adam()
+        self.early_stopping = False
 
 
 class MNISTCNNConfig(NNConfig):
     def __init__(self):
         super().__init__()
-        self.epochs = 1
+        self.epochs = 20
         self.batch_size = 128
         self.optimiser = keras.optimizers.Adadelta()
         self.early_stopping = False
