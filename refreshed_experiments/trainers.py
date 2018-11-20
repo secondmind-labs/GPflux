@@ -67,12 +67,12 @@ class KerasClassificationTrainer(Trainer):
         results_dict = summary.history
         test_loss, test_acc, test_acc_top2, test_acc_top3 = model.evaluate(dataset.test_features,
                                                                            dataset.test_targets)
+        print('Final test loss {}, final test accuracy {}'.format(test_loss, test_acc))
         test_probs = model.predict(dataset.test_features)
         incorrectly_classified = test_probs.argmax(-1) != dataset.test_targets.argmax(-1)
         final_test_avg_nll_missclassified = -np.log(test_probs[incorrectly_classified]).mean()
         ece_score = calc_ece_from_probs(test_probs, dataset.test_targets.argmax(-1))
         duration = time.time() - init_time
-        print('Final test loss {}, final test accuracy {}'.format(test_loss, test_acc))
         results_dict.update({'final_acc': results_dict['categorical_accuracy'][-1],
                              'final_acc_top2': results_dict['top2_accuracy'][-1],
                              'final_acc_top3': results_dict['top2_accuracy'][-1],

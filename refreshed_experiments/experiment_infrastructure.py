@@ -14,7 +14,7 @@ class Experiment:
         self._dataset = dataset
         self._uuid = str(uuid.uuid4())
 
-    def run(self, path:Path) -> Trainer.training_summary:
+    def run(self, path: Path) -> Trainer.training_summary:
         training_summary = self.trainer.fit(self._dataset, path)
         return training_summary
 
@@ -40,3 +40,18 @@ class ExperimentRunner:
             experiment.store(summary, path / Path(str(experiment)))
 
 
+class AverageExperimentRunner:
+
+    def __init__(self, experiment_list):
+        self._experiment_list = experiment_list
+
+    def run(self, path: Path):
+        summaries = []
+        for experiment in self._experiment_list:
+            summary = experiment.run(path / Path(str(experiment)))
+            experiment.store(summary, path / Path(str(experiment)))
+            summaries.append(summary)
+        self._store_collective_summary(summaries, path / Path(str(experiment)))
+
+    def _store_collective_summary(self, summary_list, path):
+        pass

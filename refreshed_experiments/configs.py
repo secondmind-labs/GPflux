@@ -98,7 +98,7 @@ class BasicCNNConfig(NNConfig):
 class MNISTCNNConfig(NNConfig):
     def __init__(self):
         super().__init__()
-        self.epochs = 20
+        self.epochs = 12
         self.batch_size = 128
         self.optimiser = keras.optimizers.Adadelta()
         self.early_stopping = False

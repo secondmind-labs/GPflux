@@ -31,6 +31,8 @@ def main():
                         type=str, required=True)
     parser.add_argument('--path', '-p', help='The path were results will be stored', type=Path,
                         required=True)
+    parser.add_argument('--repetitions', '-r', help='The number of repetitions of the experiment',
+                        type=int, default=1)
 
     args = parser.parse_args()
 
@@ -39,16 +41,17 @@ def main():
     trainer = get_from_module(args.trainer, trainers)
     dataset = get_from_module(args.dataset, datasets)().load_data()
 
-    trainer_instance = trainer(model_creator=model_creator,
-                               config=config)
-    name = get_name(trainer_instance, config, model_creator, dataset)
-    print('Running {}'.format(name))
-    experiment = Experiment(name=name,
-                            dataset=dataset,
-                            trainer=trainer_instance)
+    for _ in range(args.repetitions):
+        trainer_instance = trainer(model_creator=model_creator,
+                                   config=config)
+        name = get_name(trainer_instance, config, model_creator, dataset)
+        print('Running {}'.format(name))
+        experiment = Experiment(name=name,
+                                dataset=dataset,
+                                trainer=trainer_instance)
 
-    experiment_runner = ExperimentRunner(experiment_list=[experiment])
-    experiment_runner.run(path=args.path)
+        experiment_runner = ExperimentRunner(experiment_list=[experiment])
+        experiment_runner.run(path=args.path)
 
 
 if __name__ == '__main__':
