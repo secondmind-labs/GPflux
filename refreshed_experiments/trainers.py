@@ -150,6 +150,7 @@ class ClassificationGPTrainer(Trainer):
                     test_errors_list.append(test_error)
                     train_avg_nll_list.append(test_avg_nll)
                     test_avg_nll_list.append(test_avg_nll)
+            opt.model.anchor(session)
         final_statistics = self.get_final_statistics(model, x_train, y_train, x_test, y_test)
         duration = time.time() - init_time
         learning_history = {'errors': train_errors_list,

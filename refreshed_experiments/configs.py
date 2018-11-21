@@ -28,7 +28,7 @@ class GPConfig(Configuration):
     def __init__(self):
         super().__init__()
         self.batch_size = 110
-        self.num_epochs = 550
+        self.num_epochs = 1
         self.num_inducing_points = 100
         self.monitor_stats_fraction = 1000
         self.lr = 0.01
@@ -46,7 +46,7 @@ class RBFGPConfig(GPConfig):
     def __init__(self):
         super().__init__()
         self.batch_size = 128
-        self.num_epochs = 500
+        self.num_epochs = 550
         self.num_inducing_points = 1000
         self.monitor_stats_fraction = 1000
         self.lr = 0.01
@@ -61,6 +61,7 @@ class ConvGPConfig(GPConfig):
     def __init__(self):
         super().__init__()
         self.patch_shape = [5, 5]
+        self.num_epochs = 550
         self.num_inducing_points = 1000
         self.base_kern = "RBF"
         self.with_weights = True
@@ -99,8 +100,9 @@ class ConvGPConfig(GPConfig):
             mon.ScalarFuncToTensorBoardTask(fw, error_func, "error")
                 .with_name('error')
                 .with_condition(mon.PeriodicIterationCondition(self.store_frequency))
-                .with_exit_condition(True)
+                .with_exit_condition(False)
                 .with_flush_immediately(True)]
+        return tasks
 
 
 class TickConvGPConfig(ConvGPConfig):
