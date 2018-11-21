@@ -1,7 +1,8 @@
 import gpflow
 import keras
-
+from gpflow.training import monitor as mon
 import gpflux
+from refreshed_experiments.utils import calc_multiclass_error
 
 
 class Configuration:
@@ -37,6 +38,9 @@ class GPConfig(Configuration):
         lr = self.lr * 1.0 / (1 + step // 5000 / 3)
         return gpflow.train.AdamOptimizer(lr)
 
+    def get_tasks(self, model, path):
+        return []
+
 
 class RBFGPConfig(GPConfig):
     def __init__(self):
@@ -70,6 +74,34 @@ class ConvGPConfig(GPConfig):
         unique = init_patches == "patches-unique"
         return gpflux.init.PatchSamplerInitializer(x, width=w, height=h, unique=unique)
 
+    def get_tasks(self, model, path):
+        stats_fraction = self.monitor_stats_fraction
+        tasks = []
+        fw = mon.LogdirWriter(str(path))
+
+        tasks += [
+            mon.CheckpointTask(str(path))
+                .with_name('saver')
+                .with_condition(mon.PeriodicIterationCondition(self.store_frequency))]
+
+        tasks += [
+            mon.ModelToTensorBoardTask(fw, model)
+                .with_name('model_tboard')
+                .with_condition(mon.PeriodicIterationCondition(self.store_frequency))
+                .with_exit_condition(True)
+                .with_flush_immediately(True)]
+
+        def error_func(model, x, y, batchsize=50):
+            x, y = x[:stats_fraction], y[:stats_fraction]
+            return calc_multiclass_error(model, x, y, batchsize=batchsize)
+
+        tasks += [
+            mon.ScalarFuncToTensorBoardTask(fw, error_func, "error")
+                .with_name('error')
+                .with_condition(mon.PeriodicIterationCondition(self.store_frequency))
+                .with_exit_condition(True)
+                .with_flush_immediately(True)]
+
 
 class TickConvGPConfig(ConvGPConfig):
     def __init__(self):
@@ -83,32 +115,50 @@ class NNConfig(Configuration):
         self.batch_size = 128
         self.optimiser = keras.optimizers.Adam()
         self.validation_proportion = 0.00
+        self.callbacks = []
         self.early_stopping = False
+        self.keras_log_dir = '/tmp/logs'
+        self.callbacks = [keras.callbacks.TensorBoard(log_dir=self.keras_log_dir)]
+
+
+class EarlyStoppingNNConfig(NNConfig):
+    def __init__(self):
+        super().__init__()
+        self.epochs = 100
+        self.validation_proportion = 0.1
+        self.callbacks += [keras.callbacks.EarlyStopping(patience=3)]
+
+
+class EarlyStoppingAccuracyNNConfig(NNConfig):
+    def __init__(self):
+        super().__init__()
+        self.epochs = 200
+        self.validation_proportion = 0.1
+        self.callbacks += [keras.callbacks.EarlyStopping(patience=3, monitor='val_acc')]
 
 
 class BasicCNNConfig(NNConfig):
     def __init__(self):
         super().__init__()
         self.epochs = 12
-        self.batch_size = 128
-        self.optimiser = keras.optimizers.Adam()
-        self.early_stopping = False
+
+
+class BasicCNNLongConfig(NNConfig):
+    def __init__(self):
+        super().__init__()
+        self.epochs = 100
 
 
 class MNISTCNNConfig(NNConfig):
     def __init__(self):
         super().__init__()
         self.epochs = 12
-        self.batch_size = 128
         self.optimiser = keras.optimizers.Adadelta()
-        self.early_stopping = False
 
 
 class CifarCNNConfig(NNConfig):
     def __init__(self):
         super().__init__()
         self.epochs = 200
-        self.batch_size = 128
         self.optimiser_parameters = {'lr': 0.0001, 'decay': 1e-6}
         self.optimiser = keras.optimizers.rmsprop(**self.optimiser_parameters)
-        self.early_stopping = False

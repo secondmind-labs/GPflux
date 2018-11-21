@@ -1,8 +1,27 @@
+import os
+import subprocess
+
 import gpflow
 import keras
 import numpy as np
+from scipy.io import loadmat
+from sklearn.model_selection import train_test_split
 
 from gpflux.convolution import PatchHandler, ImagePatchConfig
+from refreshed_experiments.data_infrastructure import ImageClassificationDataset, \
+    MaxNormalisingPreprocessor
+
+
+def top1_error(y_true, y_pred):
+    return (1 - keras.metrics.categorical_accuracy(y_true, y_pred)) * 100
+
+
+def top2_error(y_true, y_pred):
+    return (1 - keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)) * 100
+
+
+def top3_error(y_true, y_pred):
+    return (1 - keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)) * 100
 
 
 def get_from_module(name, module):
@@ -171,3 +190,49 @@ def calculate_ece_score(model, x, y, batchsize=100):
     probs = np.concatenate(probs, axis=0)
 
     return calc_ece_from_probs(probs, y)
+
+
+def _get_max_normalised(data, name):
+    (train_features, train_targets), (test_features, test_targets) = data
+    dataset = \
+        ImageClassificationDataset.from_train_test_split(name,
+                                                         train_features=train_features,
+                                                         train_targets=train_targets,
+                                                         test_features=test_features,
+                                                         test_targets=test_targets)
+    return MaxNormalisingPreprocessor.preprocess(dataset)
+
+
+def _mix_train_test(data, random_state):
+    (train_features, train_targets), (test_features, test_targets) = data
+    ratio = len(train_targets) / (len(train_targets) + len(train_features))
+    features = np.concatenate((train_features, test_features), axis=0)
+    targets = np.concatenate((train_targets, test_targets), axis=0)
+    train_features, test_features, train_targets, test_targets = \
+        train_test_split(features,
+                         targets,
+                         test_size=ratio,
+                         random_state=random_state)
+    return (train_features, train_targets), (test_features, test_targets)
+
+
+def load_svhn():
+    if not os.path.exists('/tmp/svhn_train.mat'):
+        subprocess.call(
+            ["wget", "-O", "/tmp/svhn_train.mat",
+             "http://ufldl.stanford.edu/housenumbers/train_32x32.mat"])
+    if not os.path.exists('/tmp/svhn_test.mat'):
+        subprocess.call(
+            ["wget", "-O", "/tmp/svhn_test.mat",
+             "http://ufldl.stanford.edu/housenumbers/test_32x32.mat"])
+    train_data = loadmat('/tmp/svhn_train.mat')
+    test_data = loadmat('/tmp/svhn_test.mat')
+    x_train, y_train = train_data['X'], train_data['y']
+    x_test, y_test = test_data['X'], test_data['y']
+    x_train, x_test = np.transpose(x_train, [3, 0, 1, 2]), np.transpose(x_test, [3, 0, 1, 2])
+    x_train, x_test = rgb2gray(x_train), rgb2gray(x_test)
+    num_classes = len(set(y_train.ravel()))
+    y_train, y_test = y_train == np.arange(num_classes)[None, :], y_test == np.arange(
+        num_classes)[None, :]
+    data = (x_train, y_train), (x_test, y_test)
+    return data

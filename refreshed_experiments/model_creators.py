@@ -13,7 +13,8 @@ from gpflux.layers import GPLayer
 from refreshed_experiments.configs import ConvGPConfig, MNISTCNNConfig, CifarCNNConfig, GPConfig, \
     RBFGPConfig
 from refreshed_experiments.data_infrastructure import ImageClassificationDataset
-from refreshed_experiments.utils import reshape_to_2d, labels_onehot_to_int
+from refreshed_experiments.utils import reshape_to_2d, labels_onehot_to_int, top1_error, top2_error, \
+    top3_error
 from scipy.cluster.vq import kmeans2
 
 
@@ -97,18 +98,9 @@ def basic_cnn_creator(dataset: ImageClassificationDataset, config):
     model.add(FullyConnected(1024, activation='relu'))
     model.add(Dropout(0.5))
     model.add(FullyConnected(10, activation='softmax'))
-
-    def top2_accuracy(y_true, y_pred):
-        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
-
-    def top3_accuracy(y_true, y_pred):
-        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
-
     model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=config.optimiser,
-                  metrics=[keras.metrics.categorical_accuracy,
-                           top2_accuracy,
-                           top3_accuracy])
+                  metrics=[top1_error, top2_error, top3_error])
     return model
 
 
@@ -125,17 +117,9 @@ def mnist_cnn_creator(dataset: ImageClassificationDataset, config: MNISTCNNConfi
     model.add(Dropout(0.5))
     model.add(Dense(dataset.num_classes, activation='softmax'))
 
-    def top2_accuracy(y_true, y_pred):
-        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=2)
-
-    def top3_accuracy(y_true, y_pred):
-        return keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)
-
     model.compile(loss=keras.losses.categorical_crossentropy,
                   optimizer=config.optimiser,
-                  metrics=[keras.metrics.categorical_accuracy,
-                           top2_accuracy,
-                           top3_accuracy])
+                  metrics=[top1_error, top2_error, top3_error])
     return model
 
 

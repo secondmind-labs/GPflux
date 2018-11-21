@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 from refreshed_experiments.data_infrastructure import Dataset
-from refreshed_experiments.trainers import Trainer
+from refreshed_experiments.trainers import Trainer, TrainingSummary
 
 
 class Experiment:
@@ -14,11 +14,11 @@ class Experiment:
         self._dataset = dataset
         self._uuid = str(uuid.uuid4())
 
-    def run(self, path: Path) -> Trainer.training_summary:
+    def run(self, path: Path) -> TrainingSummary:
         training_summary = self.trainer.fit(self._dataset, path)
         return training_summary
 
-    def store(self, training_summary: Trainer.training_summary, path: Path):
+    def store(self, training_summary: TrainingSummary, path: Path):
         self.trainer.store(self._name, training_summary, path)
 
     @property
