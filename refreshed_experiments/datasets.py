@@ -37,6 +37,24 @@ class mnist_5percent:
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
+class mnist_10percent:
+
+    @classmethod
+    def load_data(cls):
+        from keras.datasets import mnist
+        data_fraction = get_dataset_fraction(mnist, 0.10)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class mnist_25percent:
+
+    @classmethod
+    def load_data(cls):
+        from keras.datasets import mnist
+        data_fraction = get_dataset_fraction(mnist, 0.25)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
 class mnist_1epc:
 
     @classmethod

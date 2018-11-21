@@ -68,7 +68,7 @@ def analyse_average(results_path, name_prefix, stats):
                 gathered_results[name_prefix][stat].append(results_dict[name]['final_test_' + stat])
     for name, results in gathered_results.items():
         for stat in sorted(stats):
-            print(name, stat, np.mean(results[stat]), np.std(results[stat]))
+            print(name, stat, '{0:.4f} {1:.4f}'.format(np.mean(results[stat]), np.std(results[stat])))
 
 
 if __name__ == '__main__':

@@ -2,8 +2,6 @@ import argparse
 
 from refreshed_experiments.analyse import analyse_average
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Entrypoint for plotting the results:\n {}')
@@ -11,7 +9,8 @@ if __name__ == '__main__':
                         type=str, required=True)
     parser.add_argument('--stats', '-s', help='The statistic to plot', type=str,
                         required=True, nargs='+')
-    parser.add_argument('--name_prefix', '-np', help='The name prefix of a method to gather', type=str,
+    parser.add_argument('--name_prefix', '-np', help='The name prefix of a method to gather',
+                        type=str,
                         required=True, nargs='+')
 
     args = parser.parse_args()
