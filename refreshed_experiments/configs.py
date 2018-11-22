@@ -1,11 +1,12 @@
+import datetime
+
 import gpflow
 import keras
 from gpflow.training import monitor as mon
 import gpflux
-from refreshed_experiments.utils import calc_multiclass_error
 
 
-class Configuration:
+class _Configuration:
 
     def summary(self):
         summary_str = ['Configuration parameters:\n']
@@ -24,21 +25,21 @@ class Configuration:
         return self.__class__.__name__
 
 
-class GPConfig(Configuration):
+class GPConfig(_Configuration):
     def __init__(self):
         super().__init__()
-        self.batch_size = 110
+        self.batch_size = 128
         self.num_epochs = 1
         self.num_inducing_points = 100
-        self.monitor_stats_fraction = 1000
+        self.monitor_stats_num = 1000
         self.lr = 0.01
-        self.store_frequency = 1000
+        self.store_frequency = 2000
 
     def get_optimiser(self, step):
         lr = self.lr * 1.0 / (1 + step // 5000 / 3)
         return gpflow.train.AdamOptimizer(lr)
 
-    def get_tasks(self, model, path):
+    def get_tasks(self, x, y, model, path):
         return []
 
 
@@ -48,9 +49,7 @@ class RBFGPConfig(GPConfig):
         self.batch_size = 128
         self.num_epochs = 550
         self.num_inducing_points = 1000
-        self.monitor_stats_fraction = 1000
         self.lr = 0.01
-        self.store_frequency = 1000
 
     def get_optimiser(self, step):
         lr = self.lr * 1.0 / (1 + step // 5000 / 3)
@@ -60,6 +59,7 @@ class RBFGPConfig(GPConfig):
 class ConvGPConfig(GPConfig):
     def __init__(self):
         super().__init__()
+        self.batch_size = 110
         self.patch_shape = [5, 5]
         self.num_epochs = 550
         self.num_inducing_points = 1000
@@ -75,8 +75,9 @@ class ConvGPConfig(GPConfig):
         unique = init_patches == "patches-unique"
         return gpflux.init.PatchSamplerInitializer(x, width=w, height=h, unique=unique)
 
-    def get_tasks(self, model, path):
-        stats_fraction = self.monitor_stats_fraction
+    def get_tasks(self, x, y, model, path):
+        from refreshed_experiments.utils import calc_multiclass_error
+        stats_fraction = self.monitor_stats_num
         tasks = []
         fw = mon.LogdirWriter(str(path))
 
@@ -92,15 +93,15 @@ class ConvGPConfig(GPConfig):
                 .with_exit_condition(True)
                 .with_flush_immediately(True)]
 
-        def error_func(model, x, y, batchsize=50):
-            x, y = x[:stats_fraction], y[:stats_fraction]
-            return calc_multiclass_error(model, x, y, batchsize=batchsize)
+        def error_func(*args, **kwargs):
+            xs, ys = x[:stats_fraction], y[:stats_fraction]
+            return calc_multiclass_error(model, xs, ys, batchsize=50)
 
         tasks += [
             mon.ScalarFuncToTensorBoardTask(fw, error_func, "error")
                 .with_name('error')
                 .with_condition(mon.PeriodicIterationCondition(self.store_frequency))
-                .with_exit_condition(False)
+                .with_exit_condition(True)
                 .with_flush_immediately(True)]
         return tasks
 
@@ -111,7 +112,7 @@ class TickConvGPConfig(ConvGPConfig):
         self.with_indexing = True
 
 
-class NNConfig(Configuration):
+class NNConfig(_Configuration):
     def __init__(self):
         self.epochs = 1
         self.batch_size = 128
@@ -119,7 +120,7 @@ class NNConfig(Configuration):
         self.validation_proportion = 0.00
         self.callbacks = []
         self.early_stopping = False
-        self.keras_log_dir = '/tmp/logs'
+        self.keras_log_dir = '/tmp/logs{}'.format(str(datetime.datetime.now()).replace(' ', '_'))
         self.callbacks = [keras.callbacks.TensorBoard(log_dir=self.keras_log_dir)]
 
 

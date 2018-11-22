@@ -10,7 +10,7 @@ import tqdm
 from gpflow.training import monitor as mon
 from sklearn.model_selection import train_test_split
 
-from refreshed_experiments.configs import NNConfig, GPConfig, Configuration
+from refreshed_experiments.configs import NNConfig, GPConfig, _Configuration
 from refreshed_experiments.data_infrastructure import Dataset
 from refreshed_experiments.utils import reshape_to_2d, labels_onehot_to_int, calc_multiclass_error, \
     calc_avg_nll, save_gpflow_model, get_avg_nll_missclassified, get_top_n_error, name_to_summary, \
@@ -22,8 +22,8 @@ TrainingSummary = namedtuple('training_summary',
 
 class Trainer(abc.ABC):
 
-    def __init__(self, model_creator: Callable[[Dataset, Configuration], Any],
-                 config: Configuration):
+    def __init__(self, model_creator: Callable[[Dataset, _Configuration], Any],
+                 config: _Configuration):
         self._config = config
         self._model_creator = model_creator
 
@@ -121,8 +121,8 @@ class ClassificationGPTrainer(Trainer):
         train_errors_list, test_errors_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
         num_batches = x_train.shape[0] // self.config.batch_size
-        stats_fraction = self.config.monitor_stats_fraction
-        monitor = mon.Monitor(self.config.get_tasks(model, path), session, step,
+        stats_fraction = self.config.monitor_stats_num
+        monitor = mon.Monitor(self.config.get_tasks(x_test, y_test, model, path), session, step,
                               print_summary=False)
 
         with monitor:
@@ -150,8 +150,8 @@ class ClassificationGPTrainer(Trainer):
                     test_errors_list.append(test_error)
                     train_avg_nll_list.append(test_avg_nll)
                     test_avg_nll_list.append(test_avg_nll)
-            opt.model.anchor(session)
         final_statistics = self.get_final_statistics(model, x_train, y_train, x_test, y_test)
+        final_statistics = {}
         duration = time.time() - init_time
         learning_history = {'errors': train_errors_list,
                             'val_errors': test_errors_list,
@@ -186,7 +186,7 @@ class ClassificationGPTrainer(Trainer):
         final_test_ece = calculate_ece_score(model, x_test, y_test)
 
         print('Final test loss {}, final test error rate {}'.format(final_test_avg_nll,
-                                                               final_test_error))
+                                                                    final_test_error))
 
         return {'final_error': final_train_error,
                 'final_test_error': final_test_error,
