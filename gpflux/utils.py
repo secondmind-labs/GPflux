@@ -41,13 +41,13 @@ def xavier_weights(input_dim: int, output_dim: int) -> np.ndarray:
     return np.random.randn(input_dim, output_dim) * xavier_std
 
 
-def get_image_patches(img, image_shape, filter_shape):
+def get_image_patches(img, image_shape, patch_shape):
     with tf.name_scope('image_patches'):
-        N, W, H, C = image_shape
-        h, w = filter_shape
-        img = tf.transpose(tf.reshape(img, tf.stack([tf.shape(img)[0], -1, C])), [0, 2, 1])
+        H, W, C = image_shape
+        h, w = patch_shape
+        N = tf.shape(img)[0]
+        img = tf.transpose(tf.reshape(img, tf.stack([N, -1, C])), [0, 2, 1])
         img = tf.reshape(img, [-1, H, W, 1])
         patches = tf.extract_image_patches(img, [1, h, w, 1], [1, 1, 1, 1], [1, 1, 1, 1], 'VALID')
         shp = tf.shape(patches)  # img x out_rows x out_cols
-        return tf.reshape(patches, [tf.shape(img)[0], C * shp[1] * shp[2], shp[3]]) # NxPxwh
-
+        return tf.reshape(patches, [N, C * shp[1] * shp[2], shp[3]])  # [N, P, w * h]

@@ -6,5 +6,5 @@ from . import conditionals
 from .convolution_kernel import (ConvKernel, K_image_inducing_patches,
                                  K_image_symm, WeightedSumConvKernel,
                                  ImagePatchConfig, PatchHandler,
-                                 ConvPatchHandler)
+                                 ConvPatchHandler, ExtractPatchHandler)
 from .inducing_patch import IndexedInducingPatch, InducingPatch
