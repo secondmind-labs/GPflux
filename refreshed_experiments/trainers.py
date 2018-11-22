@@ -151,7 +151,6 @@ class ClassificationGPTrainer(Trainer):
                     train_avg_nll_list.append(test_avg_nll)
                     test_avg_nll_list.append(test_avg_nll)
         final_statistics = self.get_final_statistics(model, x_train, y_train, x_test, y_test)
-        final_statistics = {}
         duration = time.time() - init_time
         learning_history = {'errors': train_errors_list,
                             'val_errors': test_errors_list,
