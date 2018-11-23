@@ -1,6 +1,23 @@
 import argparse
+from collections import defaultdict
 
-from refreshed_experiments.analyse import analyse_average
+import numpy as np
+
+from refreshed_experiments.analyse import read_results
+
+
+def analyse_average(results_path, name_prefix, stats):
+    results_dict, summart_dict = read_results(results_path)
+    gathered_results = defaultdict(lambda: defaultdict(list))
+    for stat in sorted(stats):
+        for name in results_dict.keys():
+            if name.startswith(name_prefix):
+                gathered_results[name_prefix][stat].append(results_dict[name]['final_test_' + stat])
+    for name, results in gathered_results.items():
+        for stat in sorted(stats):
+            print(name, stat,
+                  '{0:.4f} {1:.4f}'.format(np.mean(results[stat]), np.std(results[stat])))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

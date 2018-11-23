@@ -212,3 +212,10 @@ def load_svhn():
         num_classes)[None, :]
     data = (x_train, y_train), (x_test, y_test)
     return data
+
+def load_grey_cifar():
+    from keras.datasets import cifar10
+    (train_features, train_targets), (test_features, test_targets) = cifar10.load_data()
+    train_features = rgb2gray(train_features)
+    test_features = rgb2gray(test_features)
+    return (train_features, train_targets), (test_features, test_targets)

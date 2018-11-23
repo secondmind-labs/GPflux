@@ -1,8 +1,7 @@
 import numpy as np
 
-from refreshed_experiments.data_infrastructure import ImageClassificationDataset, \
-    MaxNormalisingPreprocessor
-from refreshed_experiments.utils import rgb2gray, _get_max_normalised, _mix_train_test, load_svhn
+from refreshed_experiments.utils import rgb2gray, _get_max_normalised, _mix_train_test, load_svhn, \
+    load_grey_cifar
 
 
 def _get_dataset_fraction(dataset, fraction):
@@ -115,17 +114,39 @@ class grey_cifar10:
 
     @classmethod
     def load_data(cls):
-        from keras.datasets import cifar10
-        (train_features, train_targets), (test_features, test_targets) = cifar10.load_data()
-        train_features = rgb2gray(train_features)
-        test_features = rgb2gray(test_features)
-        dataset = \
-            ImageClassificationDataset.from_train_test_split(cls.__name__,
-                                                             train_features=train_features,
-                                                             train_targets=train_targets,
-                                                             test_features=test_features,
-                                                             test_targets=test_targets)
-        return MaxNormalisingPreprocessor.preprocess(dataset)
+        dataset = load_grey_cifar()
+        return _get_max_normalised(dataset, cls.__name__)
+
+
+class grey_cifar10_100epc:
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fixed_examples_per_class(load_grey_cifar(), 100)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class grey_cifar10_5percent:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fraction(load_grey_cifar(), 0.05)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class grey_cifar10_10percent:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fraction(load_grey_cifar(), 0.1)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class grey_cifar10_25percent:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fraction(load_grey_cifar(), 0.25)
+        return _get_max_normalised(data_fraction, cls.__name__)
 
 
 class fashion_mnist:
