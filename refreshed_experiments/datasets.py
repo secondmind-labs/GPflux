@@ -5,7 +5,7 @@ from refreshed_experiments.utils import rgb2gray, _get_max_normalised, _mix_trai
 
 
 def _get_dataset_fraction(dataset, fraction):
-    (train_features, train_targets), (test_features, test_targets) = dataset.load_data()
+    (train_features, train_targets), (test_features, test_targets) = dataset
     seed = np.random.get_state()
     # fix the seed for numpy, so we always get the same fraction of examples
     np.random.seed(0)
@@ -17,11 +17,12 @@ def _get_dataset_fraction(dataset, fraction):
 
 
 def _get_dataset_fixed_examples_per_class(dataset, num_examples):
-    (train_features, train_targets), (test_features, test_targets) = dataset.load_data()
+    (train_features, train_targets), (test_features, test_targets) = dataset
     selected_examples = []
     selected_targets = []
-    num_classes = set(train_targets)
-    for i in num_classes:
+    print(train_targets.shape)
+    classes = set(train_targets.ravel())
+    for i in classes:
         indices = train_targets == i
         selected_examples.append(train_features[indices][:num_examples])
         selected_targets.append(train_targets[indices][:num_examples])
@@ -79,7 +80,7 @@ class mnist_5percent:
     @classmethod
     def load_data(cls):
         from keras.datasets import mnist
-        data_fraction = _get_dataset_fraction(mnist, 0.05)
+        data_fraction = _get_dataset_fraction(mnist.load_data(), 0.05)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -88,7 +89,7 @@ class mnist_10percent:
     @classmethod
     def load_data(cls):
         from keras.datasets import mnist
-        data_fraction = _get_dataset_fraction(mnist, 0.10)
+        data_fraction = _get_dataset_fraction(mnist.load_data(), 0.10)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -97,7 +98,7 @@ class mnist_25percent:
     @classmethod
     def load_data(cls):
         from keras.datasets import mnist
-        data_fraction = _get_dataset_fraction(mnist, 0.25)
+        data_fraction = _get_dataset_fraction(mnist.load_data(), 0.25)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -106,7 +107,7 @@ class mnist_100epc:
     @classmethod
     def load_data(cls):
         from keras.datasets import mnist
-        data_fraction = _get_dataset_fixed_examples_per_class(mnist, 100)
+        data_fraction = _get_dataset_fixed_examples_per_class(mnist.load_data(), 100)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -162,7 +163,7 @@ class fashion_mnist_5percent:
     @classmethod
     def load_data(cls):
         from keras.datasets import fashion_mnist
-        data_fraction = _get_dataset_fraction(fashion_mnist, 0.05)
+        data_fraction = _get_dataset_fraction(fashion_mnist.load_data(), 0.05)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -171,7 +172,7 @@ class fashion_mnist_10percent:
     @classmethod
     def load_data(cls):
         from keras.datasets import fashion_mnist
-        data_fraction = _get_dataset_fraction(fashion_mnist, 0.1)
+        data_fraction = _get_dataset_fraction(fashion_mnist.load_data(), 0.1)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -180,7 +181,7 @@ class fashion_mnist_25percent:
     @classmethod
     def load_data(cls):
         from keras.datasets import fashion_mnist
-        data_fraction = _get_dataset_fraction(fashion_mnist, 0.25)
+        data_fraction = _get_dataset_fraction(fashion_mnist.load_data(), 0.25)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -189,7 +190,7 @@ class fashion_mnist_100epc:
     @classmethod
     def load_data(cls):
         from keras.datasets import fashion_mnist
-        data_fraction = _get_dataset_fixed_examples_per_class(fashion_mnist, 100)
+        data_fraction = _get_dataset_fixed_examples_per_class(fashion_mnist.load_data(), 100)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 
@@ -198,3 +199,35 @@ class svhn:
     @classmethod
     def load_data(cls):
         return _get_max_normalised(load_svhn(), cls.__name__)
+
+
+class svhn_100epc:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fixed_examples_per_class(load_svhn(), 100)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class svhn_5percent:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fraction(load_svhn(), 0.05)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class svhn_10percent:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fraction(load_svhn(), 0.1)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class svhn_25percent:
+
+    @classmethod
+    def load_data(cls):
+        data_fraction = _get_dataset_fraction(load_svhn(), 0.25)
+        return _get_max_normalised(data_fraction, cls.__name__)

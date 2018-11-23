@@ -207,10 +207,7 @@ def load_svhn():
     x_test, y_test = test_data['X'], test_data['y']
     x_train, x_test = np.transpose(x_train, [3, 0, 1, 2]), np.transpose(x_test, [3, 0, 1, 2])
     x_train, x_test = rgb2gray(x_train), rgb2gray(x_test)
-    num_classes = len(set(y_train.ravel()))
-    y_train, y_test = y_train == np.arange(num_classes)[None, :], y_test == np.arange(
-        num_classes)[None, :]
-    data = (x_train, y_train), (x_test, y_test)
+    data = (x_train, y_train.ravel()-1), (x_test, y_test.ravel()-1)
     return data
 
 def load_grey_cifar():

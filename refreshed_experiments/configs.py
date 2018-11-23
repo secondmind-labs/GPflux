@@ -146,7 +146,19 @@ class BasicCNNConfig(NNConfig):
         self.epochs = 12
 
 
-class BasicCNNLongConfig(NNConfig):
+class CNNShortConfig(NNConfig):
+    def __init__(self):
+        super().__init__()
+        self.epochs = 25
+
+
+class CNNMediumConfig(NNConfig):
+    def __init__(self):
+        super().__init__()
+        self.epochs = 50
+
+
+class CNNLongConfig(NNConfig):
     def __init__(self):
         super().__init__()
         self.epochs = 100
