@@ -24,7 +24,6 @@ def _get_dataset_fixed_examples_per_class(dataset, num_examples):
     (train_features, train_targets), (test_features, test_targets) = dataset
     selected_examples = []
     selected_targets = []
-    print(train_targets.shape)
     classes = set(train_targets.ravel())
     for i in classes:
         indices = train_targets == i

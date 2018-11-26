@@ -110,6 +110,12 @@ class ConvGPConfig(GPConfig):
         return tasks
 
 
+class ConvGPLongConfig(ConvGPConfig):
+    def __init__(self):
+        super().__init__()
+        self.num_epochs = 1000
+
+
 class TickConvGPConfig(ConvGPConfig):
     def __init__(self):
         super().__init__()

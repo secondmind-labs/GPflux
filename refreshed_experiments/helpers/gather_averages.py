@@ -9,6 +9,16 @@ import numpy as np
 
 from refreshed_experiments.analyse import read_results
 
+"""
+Example usage:
+```
+python gather_averages.py -r /tmp/results -s loss error -np experiment-1
+```
+
+This will gather all the results stored in folders with name prefixes experiment-1 and report
+average and standard deviation of loss and error. 
+"""
+
 
 def analyse_average(results_path, name_prefix, stats):
     results_dict, summart_dict = read_results(results_path)
