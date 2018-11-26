@@ -1,3 +1,7 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 import argparse
 from pathlib import Path
 
@@ -6,32 +10,39 @@ from refreshed_experiments.utils import get_from_module
 from refreshed_experiments import configs, model_creators, trainers, datasets
 
 """
-Entrypoint for running experiments.
+Entrypoint for running experiments. Example usage:
+```
+python run.py -mc convgp_creator -d svhn_5percent -c TickConvGPConfig -t ClassificationGPTrainer -p /tmp/results
+```
+This will build the model using `convgp_creator` using `TickConvGPConfig` config and run 
+`ClassificationGPTrainer` on `svhn_5percent` dataset. The results will be stored to `/tmp/results`. 
+Run python run.py --help to see more detailed description. 
 """
 
 
 def get_name(trainer, config, creator, dataset):
     return "experiment-{}-{}-{}-{}".format(trainer.name, config.name, creator.__name__,
-                                dataset.name)
+                                           dataset.name)
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="""Entrypoint for running the experiments. Run with:
-        python main.py -d dataset -mc model_creator -t trainer -c config
+        python run.py -d dataset -mc model_creator -t trainer -c config
         Available are:\n""".format())
 
-    parser.add_argument('--model_creator', '-mc', help='The names of the experiments to run.',
+    parser.add_argument('--model_creator', '-mc',
+                        help='Model creator, one of the classes in model_creators.py',
                         type=str, required=True)
-    parser.add_argument('--config', '-c', help='config.',
+    parser.add_argument('--config', '-c', help='Config, one of classes in configs.py',
                         type=str, required=True)
-    parser.add_argument('--dataset', '-d', help='dataset.',
+    parser.add_argument('--dataset', '-d', help='Dataset, one of classes in datasets.py.',
                         type=str, required=True)
-    parser.add_argument('--trainer', '-t', help='trainer.',
+    parser.add_argument('--trainer', '-t', help='Trainer, one of the trainers in trainers.py.',
                         type=str, required=True)
-    parser.add_argument('--path', '-p', help='The path were results will be stored', type=Path,
+    parser.add_argument('--path', '-p', help='The path were results will be stored.', type=Path,
                         required=True)
-    parser.add_argument('--repetitions', '-r', help='The number of repetitions of the experiment',
+    parser.add_argument('--repetitions', '-r', help='The number of repetitions of an experiment',
                         type=int, default=1)
 
     args = parser.parse_args()

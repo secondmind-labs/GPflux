@@ -1,3 +1,7 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 import uuid
 from pathlib import Path
 
@@ -39,19 +43,3 @@ class ExperimentRunner:
             summary = experiment.run(path / Path(str(experiment)))
             experiment.store(summary, path / Path(str(experiment)))
 
-
-class AverageExperimentRunner:
-
-    def __init__(self, experiment_list):
-        self._experiment_list = experiment_list
-
-    def run(self, path: Path):
-        summaries = []
-        for experiment in self._experiment_list:
-            summary = experiment.run(path / Path(str(experiment)))
-            experiment.store(summary, path / Path(str(experiment)))
-            summaries.append(summary)
-        self._store_collective_summary(summaries, path / Path(str(experiment)))
-
-    def _store_collective_summary(self, summary_list, path):
-        pass

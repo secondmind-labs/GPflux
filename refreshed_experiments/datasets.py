@@ -1,6 +1,10 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 import numpy as np
 
-from refreshed_experiments.utils import rgb2gray, _get_max_normalised, _mix_train_test, load_svhn, \
+from refreshed_experiments.utils import _get_max_normalised, _mix_train_test, load_svhn, \
     load_grey_cifar
 
 

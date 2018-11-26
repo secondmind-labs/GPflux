@@ -1,6 +1,9 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 import os
 import subprocess
-import types
 
 import gpflow
 import keras
@@ -135,16 +138,13 @@ def calc_ece_from_probs(probs, labels, n_bins=10):
     bin_boundaries = np.linspace(0, 1, n_bins + 1)
     bin_lowers = bin_boundaries[:-1]
     bin_uppers = bin_boundaries[1:]
-
     predictions = np.argmax(probs, axis=1).ravel()
     confidences = np.array(
         [probs[i, pred] for i, pred in enumerate(predictions)])
     accuracies = (labels.ravel() == predictions)
-
     _ece = 0
     for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
         in_bin = (bin_lower < confidences) & (confidences <= bin_upper)
-
         prop_in_bin = in_bin.mean()
         if prop_in_bin > 0:
             accuracy_in_bin = accuracies[in_bin].mean()
@@ -152,7 +152,6 @@ def calc_ece_from_probs(probs, labels, n_bins=10):
             _ece += np.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
         else:
             pass
-
     return _ece
 
 
@@ -164,7 +163,6 @@ def calculate_ece_score(model, x, y, batchsize=100):
         p, _ = model.predict_y(xs)
         probs.append(p)
     probs = np.concatenate(probs, axis=0)
-
     return calc_ece_from_probs(probs, y)
 
 
@@ -209,6 +207,7 @@ def load_svhn():
     x_train, x_test = rgb2gray(x_train), rgb2gray(x_test)
     data = (x_train, y_train.ravel()-1), (x_test, y_test.ravel()-1)
     return data
+
 
 def load_grey_cifar():
     from keras.datasets import cifar10
