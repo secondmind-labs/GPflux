@@ -214,4 +214,4 @@ def load_grey_cifar():
     (train_features, train_targets), (test_features, test_targets) = cifar10.load_data()
     train_features = rgb2gray(train_features)
     test_features = rgb2gray(test_features)
-    return (train_features, train_targets), (test_features, test_targets)
+    return (train_features, train_targets.ravel()), (test_features, test_targets.ravel())

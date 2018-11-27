@@ -26,7 +26,7 @@ def _get_dataset_fixed_examples_per_class(dataset, num_examples):
     selected_targets = []
     classes = set(train_targets.ravel())
     for i in classes:
-        indices = train_targets == i
+        indices = (train_targets == i)
         selected_examples.append(train_features[indices][:num_examples])
         selected_targets.append(train_targets[indices][:num_examples])
     selected_examples = np.vstack(selected_examples)
