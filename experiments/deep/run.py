@@ -107,7 +107,7 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
             "kern", base_kern,
             "adam", adam_lr,
             "M", M,
-            "minibatch_size", minibatch_size,
+            "batch_size", batch_size,
             "patch", patch_shape[0],
         ])
     return "_".join(args.astype(str))
@@ -123,7 +123,7 @@ def restore_session(session, restore, basepath):
 
 @gpflow.defer_build()
 @ex.capture
-def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
+def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
                 init_patches, basepath, restore):
 
     H = int(X.shape[1]**.5)
