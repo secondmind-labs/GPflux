@@ -102,3 +102,4 @@ class StochasticInvariant(InvariantBase):
     def mw_full(self):
         denom = (self.orbit.orbit_batch_size - 1) * (1.0 - 1.0 / self.orbit.orbit_size)
         return self.orbit.orbit_batch_size / denom
+        
