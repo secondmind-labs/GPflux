@@ -35,7 +35,7 @@ def rotate_img_angles_stn(Ximgs, angles):
     """
 
     if len(Ximgs.get_shape()) == 3:
-        Ximgs = tf.expand_dims(Ximgs, -1)  # [None, H, W, 1]
+        Ximgs = tf.expand_dims(Ximgs, -1)  # [?, H, W, 1]
 
     Ximgs = tf.cast(Ximgs, tf.float32)
 
@@ -49,9 +49,9 @@ def rotate_img_angles_stn(Ximgs, angles):
 
         return tf.cast(tf.reshape(
             tf.squeeze(stn(Ximgs, theta)), [tf.shape(Ximgs)[0], tf.shape(Ximgs)[1] * tf.shape(Ximgs)[2]]
-        ), settings.float_type)  # [None, H*W]
+        ), settings.float_type)  # [?, H*W]
 
-    return tf.transpose(tf.map_fn(rotate, angles, dtype=settings.float_type), (1, 0, 2))  # [None, P, H*W]
+    return tf.transpose(tf.map_fn(rotate, angles, dtype=settings.float_type), (1, 0, 2))  # [?, P, H*W]
 
 
 def _apply_stn(Ximgs, theta):

@@ -1,11 +1,14 @@
-import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.test_util import session_tf  # pylint: disable=unused-import
 
-from gpflux.invariance import Invariant, StochasticInvariant, FlipInputDims, Rot90, QuantRotation, Rotation, \
-    InvariantInducingPoints, StochasticInvariantInducingPoints, Permutation
+import gpflow
+from gpflow.test_util import session_tf  # pylint: disable=unused-import
+from gpflux.invariance import (FlipInputDims, Invariant,
+                               InvariantInducingPoints, Permutation,
+                               QuantRotation, Rot90, Rotation,
+                               StochasticInvariant,
+                               StochasticInvariantInducingPoints)
 
 print(session_tf)  # Just to prevent unused import for `session_tf`
 
