@@ -40,7 +40,9 @@ class Invariant(InvariantBase):
     @gpflow.params_as_tensors
     def Kdiag(self, X):
         Xp = self.orbit.get_full_orbit(X)
-        return tf.reduce_mean(self.basekern.K(Xp), axis=[-2, -1])
+        K = self.basekern.K(Xp)
+        print(f"Xp={Xp}, K={K}")
+        return tf.reduce_mean(K, axis=[-2, -1])
         # return tf.reduce_sum(tf.map_fn(self.basekern.K, Xp), [1, 2]) / self.num_patches ** 2.0
 
 
@@ -83,7 +85,8 @@ class StochasticInvariant(InvariantBase):
             return edge_sum * self.w_edge + diag_sum * self.w_diag
         elif self.orbit.orbit_batch_size == self.orbit.orbit_size:
             return tf.reduce_mean(K, axis=axis)
-        # return tf.reduce_sum(tf.map_fn(self.basekern.K, Xp), [1, 2]) / self.num_patches ** 2.0
+        else:
+            raise RuntimeError(f"Orbit size ({self.orbit.orbit_size}) must be <= than orbit batch size ({self.orbit.orbit_batch_size}).")
 
     @property
     def w_diag(self):
