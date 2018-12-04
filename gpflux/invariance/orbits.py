@@ -445,3 +445,4 @@ class LocalTransformation(ImageOrbit):
     @property
     def orbit_size(self):
         return np.inf
+        
