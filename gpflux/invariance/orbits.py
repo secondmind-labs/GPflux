@@ -236,13 +236,12 @@ class ParameterisedSTN(ImageOrbit):
     @lru_cache(maxsize=None)
     @gpflow.params_as_tensors
     def get_orbit(self, X):
-        def uniform():
-            return tf.random_uniform([self.orbit_batch_size], 0., 1., dtype=settings.float_type)
-        eps_angle = uniform()
-        eps_scalex = uniform()
-        eps_scaley = uniform()
-        eps_taux = uniform()
-        eps_tauy = uniform()
+        uniform = tf.random_uniform([5, self.orbit_batch_size], 0., 1., dtype=settings.float_type)
+        eps_angle = uniform[0]
+        eps_scalex = uniform[1]
+        eps_scaley = uniform[2]
+        eps_taux = uniform[3]
+        eps_tauy = uniform[4]
         angles = -self.angle + 2. * self.angle * eps_angle
         scalex = self.scalex * eps_scalex
         scaley = self.scaley * eps_scaley
