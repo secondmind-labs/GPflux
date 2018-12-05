@@ -88,18 +88,24 @@ class StochasticInvariant(InvariantBase):
 
     @property
     def w_diag(self):
-        return 1.0 / (self.orbit.orbit_batch_size * self.orbit.orbit_size)
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return 1.0 / (batch_size * size)
 
     @property
     def w_edge(self):
-        denom = self.orbit.orbit_batch_size * (self.orbit.orbit_batch_size - 1)
-        return (1.0 - 1.0 / self.orbit.orbit_size) / denom
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return (1.0 - 1.0 / size) / (batch_size * (batch_size - 1))
 
     @property
     def mw_diag(self):
-        return 1.0 / self.orbit.orbit_size - self.mw_full / self.orbit.orbit_batch_size
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return 1.0 / size - self.mw_full / batch_size
 
     @property
     def mw_full(self):
-        denom = (self.orbit.orbit_batch_size - 1) * (1.0 - 1.0 / self.orbit.orbit_size)
-        return self.orbit.orbit_batch_size / denom
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return batch_size / (batch_size - 1) * (1. - 1. / size)
