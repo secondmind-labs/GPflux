@@ -1,11 +1,14 @@
-import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.test_util import session_tf  # pylint: disable=unused-import
 
-from gpflux.invariance import Invariant, StochasticInvariant, FlipInputDims, Rot90, QuantRotation, Rotation, \
-    InvariantInducingPoints, StochasticInvariantInducingPoints, Permutation
+import gpflow
+from gpflow.test_util import session_tf  # pylint: disable=unused-import
+from gpflux.invariance import (FlipInputDims, Invariant,
+                               InvariantInducingPoints, Permutation,
+                               QuantRotation, Rot90, Rotation,
+                               StochasticInvariant,
+                               StochasticInvariantInducingPoints)
 
 print(session_tf)  # Just to prevent unused import for `session_tf`
 
@@ -119,28 +122,33 @@ def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_sampl
     tf.set_random_seed(203485)
     N = 100
     D = 3
+    M = 400
+    sig = 0.1 ** 2.
+
     X = np.random.randn(N, D)
     Xt = np.random.randn(N, D)
     stoch_orbit_kwargs = {"orbit_batch_size": orbit_batch_size}
 
     # Generate data
-    k = Invariant(X.shape[1], gpflow.kernels.SquaredExponential(X.shape[1]), Permutation())
-    K = k.compute_K_symm(X) + np.eye(len(X)) * 0.1 ** 2.0
+    k = Invariant(X.shape[1], gpflow.kernels.SquaredExponential(D), Permutation())
+    K = k.compute_K_symm(X) + np.eye(len(X)) * sig
     L = np.linalg.cholesky(K)
     Y = L @ np.random.randn(len(X), 1)
 
-    k = Invariant(X.shape[1], gpflow.kernels.SquaredExponential(X.shape[1]), Permutation())
-    f = InvariantInducingPoints(np.random.randn(400, D))
+    k = Invariant(X.shape[1], gpflow.kernels.SquaredExponential(D), Permutation())
+    f = InvariantInducingPoints(np.random.randn(M, D))
     idm = gpflow.models.SGPR(X, Y, k, f)  # inter-domain model
-    idm.likelihood.variance.assign(0.1 ** 2.0)
+    idm.likelihood.variance.assign(sig)
 
-    k = StochasticInvariant(X.shape[1], gpflow.kernels.SquaredExponential(X.shape[1]),
+    k = StochasticInvariant(X.shape[1], gpflow.kernels.SquaredExponential(D),
                             Permutation(**stoch_orbit_kwargs))
     f = StochasticInvariantInducingPoints(idm.feature.Z.value)
     q_mu, q_var = idm.compute_qu()
-    idsm = gpflow.models.SVGP(X, Y, k, gpflow.likelihoods.Gaussian(), f, whiten=False,
-                              q_mu=q_mu, q_sqrt=np.linalg.cholesky(q_var)[None, :, :])  # inter-domain model
-    idsm.likelihood.variance.assign(0.1 ** 2.0)
+    idsm = gpflow.models.SVGP(X, Y, k, gpflow.likelihoods.Gaussian(), f,
+                              whiten=False,
+                              q_mu=q_mu,
+                              q_sqrt=np.linalg.cholesky(q_var)[None, :, :])  # inter-domain model
+    idsm.likelihood.variance.assign(sig)
 
     try:
         from tqdm import tqdm
@@ -151,7 +159,7 @@ def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_sampl
     pred_idsm = np.mean([idsm.predict_f(Xt)[0] for _ in tqdm(range(samples))], 0)
     pred_idm = idm.predict_f(Xt)[0]
     pd = np.max(np.abs(pred_idm - pred_idsm) / pred_idm) * 100
-    print(pd)
+
     assert pd < 0.5
 
     # Next, check that the variational bound is unbiased

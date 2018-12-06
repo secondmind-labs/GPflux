@@ -37,15 +37,11 @@ class Invariant(InvariantBase):
         K = tf.reduce_mean(tf.reshape(bigK, (N, num_orbit_points, -1, num_orbit_points)), [1, 3])
         return K
 
-    @gpflow.decors.params_as_tensors
+    @gpflow.params_as_tensors
     def Kdiag(self, X):
         Xp = self.orbit.get_full_orbit(X)
-
-        def sumbK(Xp):
-            return tf.reduce_mean(self.basekern.K(Xp))
-
-        return tf.map_fn(sumbK, Xp)
-        # return tf.reduce_sum(tf.map_fn(self.basekern.K, Xp), [1, 2]) / self.num_patches ** 2.0
+        K = self.basekern.K(Xp)
+        return tf.reduce_mean(K, axis=[-2, -1])
 
 
 class StochasticInvariant(InvariantBase):
@@ -60,7 +56,8 @@ class StochasticInvariant(InvariantBase):
         Xp2 = tf.reshape(self.orbit.get_orbit(X2), (-1, self.basekern.input_dim)) if X2 is not None else None
 
         bigK = self.basekern.K(Xp, Xp2)
-        bigK = tf.reshape(bigK, (tf.shape(X)[0], self.orbit.orbit_batch_size, -1, self.orbit.orbit_batch_size))
+        bigK_shape = [tf.shape(X)[0], self.orbit.orbit_batch_size, -1, self.orbit.orbit_batch_size]
+        bigK = tf.reshape(bigK, bigK_shape)
 
         if self.orbit.orbit_batch_size < self.orbit.orbit_size:
             bigKt = tf.transpose(bigK, (0, 2, 1, 3))  # N x N2 x M x M
@@ -74,35 +71,41 @@ class StochasticInvariant(InvariantBase):
         elif self.orbit.orbit_batch_size == self.orbit.orbit_size:
             return tf.reduce_mean(bigK, [1, 3])
 
-    @gpflow.decors.params_as_tensors
+    @gpflow.params_as_tensors
     def Kdiag(self, X):
         Xp = self.orbit.get_orbit(X)
 
-        def sumbK(Xp):
-            K = self.basekern.K(Xp)  # C x C
-            if self.orbit.orbit_batch_size < self.orbit.orbit_size:
-                diag_sum = tf.reduce_sum(tf.diag_part(K))
-                edge_sum = tf.reduce_sum(K) - diag_sum
-
-                return edge_sum * self.w_edge + diag_sum * self.w_diag
-            elif self.orbit.orbit_batch_size == self.orbit.orbit_size:
-                return tf.reduce_mean(K)
-
-        return tf.map_fn(sumbK, Xp)
-        # return tf.reduce_sum(tf.map_fn(self.basekern.K, Xp), [1, 2]) / self.num_patches ** 2.0
+        K = self.basekern.K(Xp)  # [..., C, C]
+        axis = [-2, -1]
+        if self.orbit.orbit_batch_size < self.orbit.orbit_size:
+            diag_sum = tf.reduce_sum(tf.matrix_diag_part(K), axis=-1)
+            edge_sum = tf.reduce_sum(K, axis=axis) - diag_sum
+            return edge_sum * self.w_edge + diag_sum * self.w_diag
+        elif self.orbit.orbit_batch_size == self.orbit.orbit_size:
+            return tf.reduce_mean(K, axis=axis)
+        raise RuntimeError(f"Orbit size ({self.orbit.orbit_size}) must be <= "
+                            "than orbit batch size ({self.orbit.orbit_batch_size}).")
 
     @property
     def w_diag(self):
-        return 1.0 / (self.orbit.orbit_batch_size * self.orbit.orbit_size)
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return 1.0 / (batch_size * size)
 
     @property
     def w_edge(self):
-        return (1.0 - 1.0 / self.orbit.orbit_size) / (self.orbit.orbit_batch_size * (self.orbit.orbit_batch_size - 1))
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return (1.0 - 1.0 / size) / (batch_size * (batch_size - 1))
 
     @property
     def mw_diag(self):
-        return 1.0 / self.orbit.orbit_size - self.mw_full / self.orbit.orbit_batch_size
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return 1.0 / size - self.mw_full / batch_size
 
     @property
     def mw_full(self):
-        return self.orbit.orbit_batch_size / (self.orbit.orbit_batch_size - 1) * (1.0 - 1.0 / self.orbit.orbit_size)
+        size = self.orbit.orbit_size
+        batch_size = self.orbit.orbit_batch_size
+        return batch_size / (batch_size - 1) * (1. - 1. / size)

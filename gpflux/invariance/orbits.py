@@ -9,9 +9,6 @@ import tensorflow as tf
 from gpflow import settings
 from gpflow import transforms
 
-from .kernels import StochasticInvariant
-# from .local_trafos import apply_deformation_fields, random_deformation_fields
-# from .misc import rotate_img_angles, rotate_img_angles_stn, apply_stn_batch, _stn_theta_vec
 from .transformations import rotate_img_angles, rotate_img_angles_stn, apply_stn_batch
 
 logger = settings.logger()
@@ -188,7 +185,7 @@ class Rotation(ImageOrbit):
         return np.inf
 
 
-class StochasticSTNInvariant_parameterised(StochasticInvariant):
+class ParameterisedSTN(ImageOrbit):
     """
     Kernel invariant to to transformations using Spatial Transformer Networks (STNs); this corresponds to six-parameter
     affine transformations.
@@ -198,9 +195,8 @@ class StochasticSTNInvariant_parameterised(StochasticInvariant):
         - shear (in x and y)
     """
 
-    def __init__(self, basekern, orbit_batch_size, angle, scalex=1., scaley=1., taux=0., tauy=0.):
+    def __init__(self, angle, scalex=1., scaley=1., taux=0., tauy=0., orbit_batch_size=None):
         """
-        :param basekern:
         :param orbit_batch_size:
         :param angle: angle in degrees; identity = 0
         :param scalex: scale in x; sample from [0, scalex]; identity = 1
@@ -208,8 +204,7 @@ class StochasticSTNInvariant_parameterised(StochasticInvariant):
         :param taux: shear in x; sample from [-taux, taux]; identity = 0
         :param tauy: shear in y; sample from [-tauy, tauy]; identity = 0
         """
-        super().__init__(basekern.input_dim, basekern, np.inf, orbit_batch_size)
-        self.img_size = [int(basekern.input_dim ** 0.5), int(basekern.input_dim ** 0.5)]
+        super().__init__(orbit_batch_size=orbit_batch_size)
         self.angle = gpflow.Param(angle, transform=gpflow.transforms.Logistic(0., 180.))  # constrained to [0, 180]
         self.scalex = gpflow.Param(scalex)  # negative scale = reflection + scale
         self.scaley = gpflow.Param(scaley)
@@ -231,47 +226,56 @@ class StochasticSTNInvariant_parameterised(StochasticInvariant):
         s = tf.sin(angle_rad)
         c = tf.cos(angle_rad)
 
-        return [sx * c - ty * sx * s, tx * sy * c - sy * s, 0., sx * s + ty * sx * c, tx * sy * s + sy * c, 0.]
+        return [sx * c - ty * sx * s,
+                tx * sy * c - sy * s,
+                tf.zeros_like(s),
+                sx * s + ty * sx * c,
+                tx * sy * s + sy * c,
+                tf.zeros_like(s)]
 
     @lru_cache(maxsize=None)
     @gpflow.params_as_tensors
     def get_orbit(self, X):
-        eps_angle = tf.random_uniform([self.orbit_batch_size], 0., 1.)
-        eps_scalex = tf.random_uniform([self.orbit_batch_size], 0., 1.)
-        eps_scaley = tf.random_uniform([self.orbit_batch_size], 0., 1.)
-        eps_taux = tf.random_uniform([self.orbit_batch_size], 0., 1.)
-        eps_tauy = tf.random_uniform([self.orbit_batch_size], 0., 1.)
+        uniform = tf.random_uniform([5, self.orbit_batch_size], 0., 1., dtype=settings.float_type)
+        eps_angle = uniform[0]
+        eps_scalex = uniform[1]
+        eps_scaley = uniform[2]
+        eps_taux = uniform[3]
+        eps_tauy = uniform[4]
         angles = -self.angle + 2. * self.angle * eps_angle
         scalex = self.scalex * eps_scalex
         scaley = self.scaley * eps_scaley
         taux = -self.taux + 2 * self.taux * eps_taux
         tauy = -self.tauy + 2 * self.tauy * eps_tauy
-        thetas = tf.map_fn(lambda x: self._stn_theta_vec(x[0], x[1], x[2], x[3], x[4]),
-                           (angles, scalex, scaley, taux, tauy),
-                           dtype=[tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
-        Ximgs = tf.reshape(X, [-1] + self.img_size)
 
+        thetas = self._stn_theta_vec(angles, scalex, scaley, taux, tauy)
+        Ximgs = tf.reshape(X, [-1] + self.img_size)
         return apply_stn_batch(Ximgs, thetas)
 
+    @property
+    def orbit_size(self):
+        return np.inf
 
-class StochasticSTNInvariant_general(StochasticInvariant):
+
+
+class GeneralSTN(ImageOrbit):
     """
     Kernel invariant to to transformations using Spatial Transformer Networks (STNs); this correponds to six-parameter
     affine transformations.
     This version of the kernel is parameterised by the six independent parameters directly (thus "_general")
     """
 
-    def __init__(self, basekern, orbit_batch_size, theta_min=np.array([1., 0., 0., 0., 1., 0.]),
-                 theta_max=np.array([1., 0., 0., 0., 1., 0.]), constrain=False):
+    def __init__(self, orbit_batch_size=None,
+                 theta_min=np.array([1., 0., 0., 0., 1., 0.]),
+                 theta_max=np.array([1., 0., 0., 0., 1., 0.]),
+                 constrain=False):
         """
-        :param basekern:
         :param orbit_batch_size:
         :param theta_min: one end of the range; identity = [1, 0, 0, 0, 1, 0]
         :param theta_max: other end of the range; identity = [1, 0, 0, 0, 1, 0]
         :param constrain: whether theta_min is always below the identity and theta_max always above
         """
-        super().__init__(basekern.input_dim, basekern, np.inf, orbit_batch_size)
-        self.img_size = [int(basekern.input_dim ** 0.5), int(basekern.input_dim ** 0.5)]
+        super().__init__(orbit_batch_size=orbit_batch_size)
         self.constrain = constrain
 
         def param(value):
@@ -321,8 +325,12 @@ class StochasticSTNInvariant_general(StochasticInvariant):
 
         return apply_stn_batch(Ximgs, thetas)
 
+    @property
+    def orbit_size(self):
+        return np.inf
 
-class StochasticLocalTrafoInvariant(StochasticInvariant):
+
+class LocalTransformation(ImageOrbit):
     """
     Kernel invariant to to transformations of local transformations as defined in Loosli2007, Section 3.2.4
     For an "orbit" the images are created using the following update rule:
@@ -343,11 +351,17 @@ class StochasticLocalTrafoInvariant(StochasticInvariant):
 
     """
 
-    def __init__(self, basekern, orbit_batch_size, alphax, alphay, beta=0, sigmat=0.9, sigmad=5.,
-                 alpha_rot=None, alpha_scale=None, interpret_as_ranges=False, gauss_or_sobel='gauss',
-                 squash_fn=None):
-        super().__init__(basekern.input_dim, basekern, np.inf, orbit_batch_size)
-        self.img_size = [int(basekern.input_dim ** 0.5), int(basekern.input_dim ** 0.5)]
+    def __init__(self, alphax, alphay,
+                 beta=0,
+                 sigmat=0.9,
+                 sigmad=5.,
+                 alpha_rot=None,
+                 alpha_scale=None,
+                 interpret_as_ranges=False,
+                 gauss_or_sobel='gauss',
+                 squash_fn=None,
+                 orbit_batch_size=None):
+        super().__init__(orbit_batch_size=orbit_batch_size)
         self.alphax = gpflow.Param(alphax)
         self.alphay = gpflow.Param(alphay)
         if alpha_rot is not None:
@@ -365,7 +379,6 @@ class StochasticLocalTrafoInvariant(StochasticInvariant):
         self.gauss_or_sobel = gauss_or_sobel
         self.squash_fn = squash_fn
         """
-        :param basekern:
         :param orbit_batch_size:
         :param alphax: scale of x-deformations
         :param alphay: scale of y-deformations
@@ -427,3 +440,8 @@ class StochasticLocalTrafoInvariant(StochasticInvariant):
         Ximgs = tf.reshape(X, [-1] + self.img_size)  # [?, H, W]
 
         return tf.map_fn(get_orbit_singleim, Ximgs, dtype=settings.float_type)  # [?, P, H*W]
+
+    @property
+    def orbit_size(self):
+        return np.inf
+        
