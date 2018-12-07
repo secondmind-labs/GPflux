@@ -14,6 +14,7 @@ import tqdm
 import tensorflow as tf
 from gpflow.session_manager import _DefaultSessionKeeper
 from gpflow.training import monitor as mon
+from gpflow import misc
 from sklearn.model_selection import train_test_split
 
 from refreshed_experiments.configs import NNConfig, GPConfig, _Configuration
@@ -118,14 +119,21 @@ class GPClassificator(Trainer):
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        # config.gpu_options.visible_device_list = str(0)
-        session = tf.Session()
+        config.gpu_options.visible_device_list = str(0)
+        session = tf.Session(config=config)
         _DefaultSessionKeeper.session = session
         step = mon.create_global_step(session)
         model = self._model_creator(dataset, self.config)
         model.compile()
-        optimizer = self.config.get_optimiser(step)
-        opt = optimizer.make_optimize_tensor(model, session=session)
+        optimizer = tf.train.AdamOptimizer()
+        all_vars = list(set(model.trainable_tensors))
+        all_vars = sorted(all_vars, key=lambda x: x.name)
+        # Create optimizer variables before initialization.
+        with session.as_default():
+            opt = optimizer.minimize(model.objective, var_list=all_vars, )
+            model.initialize(session=session)
+            misc.initialize_variables(all_vars, session=session, force=False)
+        session.run(tf.variables_initializer(optimizer.variables()))
 
         train_errors_list, test_errors_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
