@@ -51,7 +51,7 @@ class RBFGPConfig(GPConfig):
     def __init__(self):
         super().__init__()
         self.batch_size = 128
-        self.num_epochs = 550
+        self.num_epochs = 400
         self.num_inducing_points = 1000
         self.lr = 0.01
 
@@ -65,7 +65,7 @@ class ConvGPConfig(GPConfig):
         super().__init__()
         self.batch_size = 110
         self.patch_shape = [5, 5]
-        self.num_epochs = 550
+        self.num_epochs = 400
         self.num_inducing_points = 1000
         self.base_kern = "RBF"
         self.with_weights = True

@@ -16,7 +16,7 @@ class Experiment:
         self._name = name
         self.trainer = trainer
         self._dataset = dataset
-        self._uuid = str(uuid.uuid4())
+        self._uuid = str(uuid.uuid4())[:9] # reduce to 8 characters and - to have shorter names
 
     def run(self, path: Path) -> TrainingSummary:
         training_summary = self.trainer.fit(self._dataset, path)

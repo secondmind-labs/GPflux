@@ -21,7 +21,7 @@ Run python run.py --help to see more detailed description.
 
 
 def get_name(trainer, config, creator, dataset):
-    return "experiment-{}-{}-{}-{}".format(trainer.name, config.name, creator.__name__,
+    return "exp-{}-{}-{}-{}".format(trainer.name, config.name, creator.__name__,
                                            dataset.name)
 
 

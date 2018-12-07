@@ -11,6 +11,8 @@ from typing import cast, Callable, Any
 import numpy as np
 import gpflow
 import tqdm
+import tensorflow as tf
+from gpflow.session_manager import _DefaultSessionKeeper
 from gpflow.training import monitor as mon
 from sklearn.model_selection import train_test_split
 
@@ -44,7 +46,7 @@ class Trainer(abc.ABC):
         return self.__class__.__name__
 
 
-class KerasClassificationTrainer(Trainer):
+class KerasClassificator(Trainer):
 
     @property
     def config(self) -> NNConfig:
@@ -56,7 +58,6 @@ class KerasClassificationTrainer(Trainer):
         x, y = dataset.train_features, dataset.train_targets
         x_train, x_valid, y_train, y_valid = \
             train_test_split(x, y, test_size=self.config.validation_proportion)
-
         summary = model.fit(x_train, y_train,
                             validation_data=(x_valid, y_valid),
                             batch_size=self.config.batch_size,
@@ -103,7 +104,7 @@ class KerasClassificationTrainer(Trainer):
             pickle.dump(training_summary.learning_history, f_handle)
 
 
-class ClassificationGPTrainer(Trainer):
+class GPClassificator(Trainer):
 
     @property
     def config(self) -> GPConfig:
@@ -115,12 +116,16 @@ class ClassificationGPTrainer(Trainer):
                            labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
         x_test, y_test = reshape_to_2d(dataset.test_features), \
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
-        session = gpflow.get_default_session()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        # config.gpu_options.visible_device_list = str(0)
+        session = tf.Session()
+        _DefaultSessionKeeper.session = session
         step = mon.create_global_step(session)
         model = self._model_creator(dataset, self.config)
         model.compile()
         optimizer = self.config.get_optimiser(step)
-        opt = optimizer.make_optimize_action(model, session=session, global_step=step)
+        opt = optimizer.make_optimize_tensor(model, session=session)
 
         train_errors_list, test_errors_list, train_avg_nll_list, test_avg_nll_list = [], [], [], []
         num_epochs = self.config.num_epochs
@@ -138,8 +143,8 @@ class ClassificationGPTrainer(Trainer):
                                                        y_test[:stats_fraction, :])
                     train_avg_nll = calc_avg_nll(model, x_train[:stats_fraction, :],
                                                  y_train[:stats_fraction, :])
-                    test_avg_nll = calc_avg_nll(model, x_train[:stats_fraction, :],
-                                                y_train[:stats_fraction, :])
+                    test_avg_nll = calc_avg_nll(model, x_test[:stats_fraction, :],
+                                                y_test[:stats_fraction, :])
                     print('Epochs {} train error {} '
                           'test error {} train loss {} test loss {}.'.format(epoch,
                                                                              train_error,
@@ -147,7 +152,7 @@ class ClassificationGPTrainer(Trainer):
                                                                              train_avg_nll,
                                                                              test_avg_nll))
                     for _ in tqdm.tqdm(range(num_batches), desc='Epoch {}'.format(epoch)):
-                        opt()
+                        session.run(opt)
                         monitor(step)
 
                     train_errors_list.append(train_error)
