@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from gpflow import settings
-from invgp.transformer import spatial_transformer_network as stn
+from .transformer import spatial_transformer_network as stn
 
 
 def rotate_img_angles(Ximgs, angles, interpolation_method):
