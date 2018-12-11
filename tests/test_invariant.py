@@ -159,7 +159,6 @@ def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_sampl
     pred_idsm = np.mean([idsm.predict_f(Xt)[0] for _ in tqdm(range(samples))], 0)
     pred_idm = idm.predict_f(Xt)[0]
     pd = np.max(np.abs(pred_idm - pred_idsm) / pred_idm) * 100
-
     assert pd < 0.5
 
     # Next, check that the variational bound is unbiased
@@ -167,5 +166,4 @@ def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_sampl
     lml_idm = idm.compute_log_likelihood()
     lml_idsm = np.mean([idsm.compute_log_likelihood() for _ in tqdm(range(lml_samples))])
     pd = np.max(np.abs(lml_idm - lml_idsm) / lml_idm) * 100
-    print(pd)
     assert pd < 0.5
