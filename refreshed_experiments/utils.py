@@ -4,6 +4,7 @@
 
 import os
 import subprocess
+from collections import namedtuple
 
 import gpflow
 import keras
@@ -205,7 +206,7 @@ def load_svhn():
     x_test, y_test = test_data['X'], test_data['y']
     x_train, x_test = np.transpose(x_train, [3, 0, 1, 2]), np.transpose(x_test, [3, 0, 1, 2])
     x_train, x_test = rgb2gray(x_train), rgb2gray(x_test)
-    data = (x_train, y_train.ravel()-1), (x_test, y_test.ravel()-1)
+    data = (x_train, y_train.ravel() - 1), (x_test, y_test.ravel() - 1)
     return data
 
 
@@ -215,3 +216,7 @@ def load_grey_cifar():
     train_features = rgb2gray(train_features)
     test_features = rgb2gray(test_features)
     return (train_features, train_targets.ravel()), (test_features, test_targets.ravel())
+
+
+Arguments = namedtuple('Arguments',
+                       'creator dataset config trainer path repetitions')
