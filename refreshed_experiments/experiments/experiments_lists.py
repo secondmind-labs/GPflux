@@ -13,6 +13,30 @@ def cnn_all_datasets(path):
     ]
 
 
+def tickconvgp_all_datasets(path):
+    return [
+        Arguments(creator='convgp_creator',
+                  dataset=dataset,
+                  config='TickConvGPConfig',
+                  trainer='GPClassificator',
+                  path=path,
+                  repetitions='1') for dataset in
+        ['mnist', 'fashion_mnist', 'grey_cifar10', 'svhn']
+    ]
+
+
+def convgp_all_datasets(path):
+    return [
+        Arguments(creator='convgp_creator',
+                  dataset=dataset,
+                  config='ConvGPConfig',
+                  trainer='GPClassificator',
+                  path=path,
+                  repetitions='1') for dataset in
+        ['mnist', 'fashion_mnist', 'grey_cifar10', 'svhn']
+    ]
+
+
 def _create_fractions(dataset):
     def f(path):
         return [
