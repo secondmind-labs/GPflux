@@ -6,7 +6,11 @@ import keras
 import numpy as np
 
 
-class Dataset:
+class Data:
+    pass
+
+
+class Dataset(Data):
     def __init__(self, name: str,
                  train_features: np.ndarray,
                  train_targets: np.ndarray,
@@ -33,7 +37,7 @@ class Dataset:
         return cls(name, train_features, train_targets, test_features, test_targets)
 
     @classmethod
-    def from_keras_format(cls,keras_dataset):
+    def from_keras_format(cls, keras_dataset):
         (train_features, train_targets), (test_features, test_targets) = keras_dataset.load_data()
         name = keras_dataset.__name__.split('.')[-1]
         return cls(name, train_features, train_targets, test_features, test_targets)

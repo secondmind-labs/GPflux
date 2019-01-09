@@ -2,9 +2,10 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
+import uuid
+from pathlib import Path
 import os
 import subprocess
-from collections import namedtuple
 
 import gpflow
 import keras
@@ -13,8 +14,61 @@ from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
 
 from gpflux.convolution import PatchHandler, ImagePatchConfig
-from refreshed_experiments.data_infrastructure import ImageClassificationDataset, \
+from refreshed_experiments.refactored.data_infrastructure import ImageClassificationDataset, \
     MaxNormalisingPreprocessor
+
+
+def get_from_module(name, module):
+    if hasattr(module, name):
+        return getattr(module, name)
+    else:
+        available = ' '.join([item for item in dir(module) if
+                              not item.startswith('_')])
+        raise ValueError('{} not found. Available are {}'.format(name, available))
+
+
+class Configuration:
+
+    def summary(self):
+        summary_str = ['Configuration parameters in {}:'.format(self.name)]
+        for name, value in self.__dict__.items():
+            if name.startswith('_'):
+                # discard protected and private members
+                continue
+            if hasattr(value, '__call__'):
+                summary_str.append('{} {}'.format(name, value.__name__))
+            else:
+                summary_str.append('{} {}'.format(name, str(value)))
+        return '\n'.join(summary_str)
+
+    @property
+    def name(self):
+        return self.__class__.__name__
+
+
+def short_uuid():
+    return str(uuid.uuid4())[:8]
+
+
+def get_text_summary(summary):
+    txt = ''
+    for scalar in summary.scalars:
+        txt += '{} {}\n'.format(scalar.name, scalar.value)
+    return txt
+
+
+def plot_summaries(summary, save_path: Path, name):
+    import matplotlib.pyplot as plt
+    import seaborn
+    for sequence in summary.scalar_sequences:
+        plt.figure()
+        plt.plot(sequence.values)
+        plt.title(sequence.name)
+        plt.xlabel(sequence.x_axis_name)
+        plt.ylabel(sequence.y_axis_name)
+        (save_path / Path(name)).mkdir(exist_ok=True, parents=True)
+        plt.savefig(str(save_path / Path(name) / Path(sequence.name)))
+        plt.close()
 
 
 def top1_error(y_true, y_pred):
@@ -27,15 +81,6 @@ def top2_error(y_true, y_pred):
 
 def top3_error(y_true, y_pred):
     return (1 - keras.metrics.top_k_categorical_accuracy(y_true, y_pred, k=3)) * 100
-
-
-def get_from_module(name, module):
-    if hasattr(module, name):
-        return getattr(module, name)
-    else:
-        available = ' '.join([item for item in dir(module) if
-                              not item.startswith('_')])
-        raise ValueError('{} not found. Available are {}'.format(name, available))
 
 
 def rgb2gray(rgb):
@@ -128,12 +173,6 @@ def get_avg_nll_missclassified(model, x, y, batchsize=100):
     return -ll
 
 
-def name_to_summary(name):
-    _, trainer, config, creator, dataset, *_ = name.split('-')
-    return 'Trainer: {}\nConfig: {}\nCreator: {}\nDataset: {}\n'.format(trainer, config, creator,
-                                                                        dataset)
-
-
 def calc_ece_from_probs(probs, labels, n_bins=10):
     # labels are in int representation
     bin_boundaries = np.linspace(0, 1, n_bins + 1)
@@ -217,6 +256,3 @@ def load_grey_cifar():
     test_features = rgb2gray(test_features)
     return (train_features, train_targets.ravel()), (test_features, test_targets.ravel())
 
-
-Arguments = namedtuple('Arguments',
-                       'creator dataset config trainer path repetitions')
