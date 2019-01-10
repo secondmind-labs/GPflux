@@ -403,10 +403,11 @@ class ConvKernel(Mok):
 
         if self.with_indexing:
             if full_output_cov:
-                W = self.spatio_indices_kernel.K(self.spatio_indices)  # [P, P]
+                Pij self.spatio_indices_kernel.K(self.spatio_indices)  # [P, P]
+                K = K * Pij[None, :, :]
             else:
-                W = self.spatio_indices_kernel.Kdiag(self.spatio_indices)  # [P]
-            K = K * W[None, ...]
+                Pij = self.spatio_indices_kernel.Kdiag(self.spatio_indices)  # [P]
+                K = K * Pij[None, :]
 
         if cfg.pooling > 1:
             if not full_output_cov:
