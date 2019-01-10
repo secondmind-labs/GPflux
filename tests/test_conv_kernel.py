@@ -21,12 +21,12 @@ def input_dim():
 
 
 @pytest.fixture
-def conv_kernel():
+def conv_kernel(session_tf):
     base_kern = gpflow.kernels.RBF(input_dim(), variance=1.2, lengthscales=2.1)
     return ConvKernel(base_kern, image_shape=[Data.W, Data.H], patch_shape=[Data.w, Data.h])
 
 
-def test_num_outputs(conv_kernel):
+def test_num_outputs(session_tf, conv_kernel):
     desired = 1 * (Data.W - Data.w + 1) * (Data.H - Data.h + 1)
     config = conv_kernel.patch_handler.config
     actual_1 = config.num_patches

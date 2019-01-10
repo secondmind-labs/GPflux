@@ -107,7 +107,7 @@ def experiment_name(adam_lr, M, minibatch_size, dataset,
             "kern", base_kern,
             "adam", adam_lr,
             "M", M,
-            "minibatch_size", minibatch_size,
+            "batch_size", batch_size,
             "patch", patch_shape[0],
         ])
     return "_".join(args.astype(str))
@@ -123,7 +123,7 @@ def restore_session(session, restore, basepath):
 
 @gpflow.defer_build()
 @ex.capture
-def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
+def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
                 init_patches, basepath, restore):
 
     H = int(X.shape[1]**.5)
@@ -140,7 +140,7 @@ def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
                                             patch_shape=[5, 5],
                                             pooling=2,
                                             with_indexing=True)
-    kernel0.index_kernel.variance=30.0
+    kernel0.spatio_indices_kernel.variance=30.0
     layer0 = gpflux.layers.GPLayer(kernel0, feature0, num_latents=1)
 
 
@@ -155,7 +155,7 @@ def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
                                             patch_shape=[3, 3],
                                             pooling=2,
                                             with_indexing=True)
-    kernel1.index_kernel.variance=10.0
+    kernel1.spatio_indices_kernel.variance=10.0
     layer1 = gpflux.layers.GPLayer(kernel1, feature1, num_latents=1)
 
     layer1.q_sqrt = layer1.q_sqrt.read_value() * 0.1
@@ -168,7 +168,7 @@ def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
     #                                  with_indexing=True)
     # layer0.q_sqrt = layer0.q_sqrt.read_value() * 0.1
     # layer0.q_mu = np.random.randn(*(layer0.q_mu.read_value().shape))
-    # layer0.kern.index_kernel.variance = 30.0
+    # layer0.kern.spatio_indices_kernel.variance = 30.0
     # layer0.kern.basekern.variance = 30.0
     # layer0.kern.basekern.lengthscales = 1.5
 
@@ -179,7 +179,7 @@ def setup_model(X, Y, minibatch_size, patch_shape, M, dataset, base_kern,
     #                                  with_indexing=True)
     # layer1.q_sqrt = layer1.q_sqrt.read_value() * 0.1
     # layer1.q_mu = np.random.randn(*(layer1.q_mu.read_value().shape))
-    # layer1.kern.index_kernel.variance = 30.0
+    # layer1.kern.spatio_indices_kernel.variance = 30.0
     # layer1.kern.basekern.variance = 30.0
     # layer1.kern.basekern.lengthscales = 1.5
 

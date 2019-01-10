@@ -9,6 +9,7 @@ from . import init
 from . import encoders
 
 from . import convolution
+from . import invariance
 from . import layers
 
 

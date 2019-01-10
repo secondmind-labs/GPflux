@@ -5,7 +5,7 @@ from setuptools import setup
 
 requirements = [
     'numpy==1.15.1',
-    'tensorflow==1.12.0rc2',
+    'tensorflow==1.12.0',
     'scipy==0.19.0',
     'scikit-learn==0.20.0',
     'pytest-cov==2.5.1',
