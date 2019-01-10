@@ -13,10 +13,9 @@ from refreshed_experiments.refactored.utils import get_from_module
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="""Entrypoint for running the experiments. Run with:
-        python run.py -d dataset -mc model_creator -t trainer -c config
-        Available are:\n""".format())
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--name', '-n', help='Name of the experiment')
 
     parser.add_argument('--model_creator', '-m',
                         help='Model creator, one of the classes in model_creators.py',
@@ -43,7 +42,7 @@ def main():
     for _ in range(args.repetitions):
         data_source = StaticDataSource(dataset=dataset)
         trainer = Trainer(model_creator, learner_class)
-        experiment = Experiment('test_experiment',
+        experiment = Experiment(name=args.name,
                                 data_source=data_source,
                                 trainer=trainer,
                                 config=config)

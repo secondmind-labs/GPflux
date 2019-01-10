@@ -8,7 +8,7 @@ from refreshed_experiments.refactored.results_managing import DatasetReport
 
 
 def read():
-    path = 'test/test_experiment'
+    path = 'test/my_experiment'
     report_creator = DatasetReport(Path(path))
     report = report_creator.create_txt_report()
     report_creator.plot_summaries(Path('test_plots'))

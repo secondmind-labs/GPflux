@@ -4,21 +4,20 @@
 
 """
 Entrypoint for running experiments.
+
+Example usage:
+```
+python run_experiments.py --gpus 0 1 --path test
+```
 """
 
 import argparse
 
-from refreshed_experiments.refactored.datasets import grey_cifar10_100epc
+from refreshed_experiments.refactored.datasets import grey_cifar10_100epc, mnist
 from refreshed_experiments.refactored.configs import TickConvGPConfig
 from refreshed_experiments.refactored.creators import ShallowConvGP
 from refreshed_experiments.refactored.learners import GPClassificator
 from refreshed_experiments.refactored.run_multiple import ExperimentSpecification, run_multiple
-
-
-class TestConfig(TickConvGPConfig):
-    def __init__(self):
-        super().__init__()
-        self.num_epochs = 20
 
 
 def main():
@@ -40,11 +39,20 @@ def main():
 
     # specify the list of experiments to run.
     experiments_lists = [
-                            ExperimentSpecification(creator=ShallowConvGP,
-                                                    dataset=grey_cifar10_100epc,
-                                                    config=TickConvGPConfig,
-                                                    learner=GPClassificator),
-                        ] * 20
+        ExperimentSpecification(
+            name='my_experiment',
+            creator=ShallowConvGP,
+            dataset=grey_cifar10_100epc,
+            config=TickConvGPConfig,
+            learner=GPClassificator),
+        ExperimentSpecification(
+            name='my_experiment',
+            creator=ShallowConvGP,
+            dataset=mnist,
+            config=TickConvGPConfig,
+            learner=GPClassificator),
+
+    ]
     run_multiple(experiments_lists, gpus=args.gpus, path=args.path)
 
 

@@ -81,7 +81,7 @@ class ConvGPConfig(GPConfig):
         tasks += [
             mon.ScalarFuncToTensorBoardTask(fw, error_func, "error")
                 .with_name('error')
-                .with_condition(mon.PeriodicIterationCondition(2))
+                .with_condition(mon.PeriodicIterationCondition(self.store_frequency))
                 .with_exit_condition(True)
                 .with_flush_immediately(True)]
         return tasks

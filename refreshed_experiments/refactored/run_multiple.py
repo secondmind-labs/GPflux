@@ -11,7 +11,8 @@ import time
 from typing import NamedTuple, Any
 
 ExperimentSpecification = NamedTuple('ExperimentSpecification',
-                                     [('creator', Any),
+                                     [('name', Any),
+                                      ('creator', Any),
                                       ('dataset', Any),
                                       ('config', Any),
                                       ('learner', Any)
@@ -25,6 +26,7 @@ def run_experiment(experiment: ExperimentSpecification, available_gpus, path):
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
     location = os.path.abspath(os.path.dirname(sys.modules[__name__].__file__))
     subprocess.call(['python', os.path.join(location, 'run.py'),
+                     '-n', experiment.name,
                      '-m', experiment.creator.__name__,
                      '-d', experiment.dataset.__name__,
                      '-c', experiment.config.__name__,
