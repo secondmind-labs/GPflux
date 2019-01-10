@@ -94,9 +94,9 @@ class KernelStructureMixingMatrixInitializer(Initializer):
         """
         #TODO(vincent): why is this image *width*? not width * height?
         im_width, num_latent = shape  # P x L
-        IJ = np.vstack([x.flatten() for x in np.meshgrid(np.arange(im_width), np.arange(im_width))]).T
-        K_IJ = self.kern.compute_K_symm(IJ) + np.eye(im_width ** 2) * 1E-6
-        u, s, v = np.linalg.svd(K_IJ)
+        spatio_indices = np.vstack([x.flatten() for x in np.meshgrid(np.arange(im_width), np.arange(im_width))]).T
+        K_spatio_indices = self.kern.compute_K_symm(spatio_indices) + np.eye(im_width ** 2) * 1E-6
+        u, s, v = np.linalg.svd(K_spatio_indices)
         P = (u[:, :num_latent] * s[None, :num_latent] ** 0.5)  # P x L
         return P
 

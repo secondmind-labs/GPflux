@@ -42,7 +42,7 @@ def Kuf(feat, kern, Xnew):
             raise ValueError("When kern is configured with `with_indexing` "
                              "a IndexedInducingPatch should be used")
 
-        Pmn = kern.index_kernel.K(feat.indices, kern.IJ)  # [M, P]
+        Pmn = kern.spatio_indices_kernel.K(feat.indices, kern.spatio_indices)  # [M, P]
         Kmn = Kmn * Pmn[:, None, :]  # [M, N, P]
 
     if kern.pooling > 1:
@@ -60,7 +60,7 @@ def Kuu(feat, kern, *, jitter=0.0):
     jittermat = jitter * tf.eye(len(feat), dtype=Kmm.dtype)  # [M, M]
 
     if kern.with_indexing:
-        Pmm = kern.index_kernel.K(feat.indices)  # [M, M]
+        Pmm = kern.spatio_indices_kernel.K(feat.indices)  # [M, M]
         Kmm = Kmm * Pmm
 
     return (Kmm + jittermat)[None, :, :]  # [L|1, M, M]  TODO: add L
