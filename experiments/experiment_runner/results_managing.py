@@ -9,7 +9,7 @@ from typing import NamedTuple, List, cast
 
 import numpy as np
 
-from refreshed_experiments.refactored.utils import get_text_summary, plot_summaries
+from experiments.experiment_runner.utils import get_text_summary, plot_summaries
 
 ScalarSequence = NamedTuple('ScalarSequence', [('values', np.ndarray),
                                                ('name', str),

@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from refreshed_experiments.refactored.utils import _get_max_normalised, _mix_train_test, load_svhn, \
+from experiments.experiment_runner.utils import _get_max_normalised, _mix_train_test, load_svhn, \
     load_grey_cifar
 
 

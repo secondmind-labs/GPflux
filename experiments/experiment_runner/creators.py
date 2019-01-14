@@ -9,7 +9,7 @@ from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 
 import gpflux
-from refreshed_experiments.refactored.utils import reshape_to_2d, labels_onehot_to_int
+from experiments.experiment_runner.utils import reshape_to_2d, labels_onehot_to_int
 
 
 class ModelCreator(abc.ABC):

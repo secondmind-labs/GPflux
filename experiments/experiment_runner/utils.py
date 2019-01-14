@@ -14,7 +14,7 @@ from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
 
 from gpflux.convolution import PatchHandler, ImagePatchConfig
-from refreshed_experiments.refactored.data_infrastructure import ImageClassificationDataset, \
+from experiments.experiment_runner.data_infrastructure import ImageClassificationDataset, \
     MaxNormalisingPreprocessor
 
 
@@ -59,7 +59,6 @@ def get_text_summary(summary):
 
 def plot_summaries(summary, save_path: Path, name):
     import matplotlib.pyplot as plt
-    import seaborn
     for sequence in summary.scalar_sequences:
         plt.figure()
         plt.plot(sequence.values)

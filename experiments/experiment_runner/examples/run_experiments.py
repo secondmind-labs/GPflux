@@ -9,15 +9,21 @@ Example usage:
 ```
 python run_experiments.py --gpus 0 1 --path test
 ```
+
+Note on setting up the experiments:
+creator should be implemented in ../creators.py
+config should be implemented in ../configs.py
+dataset should be implemented in ../data.py
+learner should be implemented in ../learners.py
 """
 
 import argparse
 
-from refreshed_experiments.refactored.datasets import grey_cifar10_100epc, mnist
-from refreshed_experiments.refactored.configs import TickConvGPConfig
-from refreshed_experiments.refactored.creators import ShallowConvGP
-from refreshed_experiments.refactored.learners import GPClassificator
-from refreshed_experiments.refactored.run_multiple import ExperimentSpecification, run_multiple
+from experiments.experiment_runner.datasets import grey_cifar10_100epc, mnist
+from experiments.experiment_runner.configs import TickConvGPConfig
+from experiments.experiment_runner.creators import ShallowConvGP
+from experiments.experiment_runner.learners import GPClassificator
+from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
 
 
 def main():
@@ -38,21 +44,22 @@ def main():
     args = parser.parse_args()
 
     # specify the list of experiments to run.
+    experiment_name = 'my_experiment'
     experiments_lists = [
         ExperimentSpecification(
-            name='my_experiment',
+            name=experiment_name,
             creator=ShallowConvGP,
             dataset=grey_cifar10_100epc,
             config=TickConvGPConfig,
             learner=GPClassificator),
         ExperimentSpecification(
-            name='my_experiment',
+            name=experiment_name,
             creator=ShallowConvGP,
             dataset=mnist,
             config=TickConvGPConfig,
             learner=GPClassificator),
-
     ]
+
     run_multiple(experiments_lists, gpus=args.gpus, path=args.path)
 
 

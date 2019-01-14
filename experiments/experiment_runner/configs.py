@@ -7,8 +7,8 @@ import keras
 from gpflow.training import monitor as mon
 
 import gpflux
-from refreshed_experiments.refactored.utils import Configuration
-from refreshed_experiments.refactored.utils import calc_multiclass_error
+from experiments.experiment_runner.utils import Configuration
+from experiments.experiment_runner.utils import calc_multiclass_error
 
 
 class KerasClassificationConfig(Configuration):

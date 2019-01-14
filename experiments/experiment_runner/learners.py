@@ -13,12 +13,11 @@ import tqdm
 from gpflow.training import monitor as mon
 from sklearn.model_selection import train_test_split
 
-from refreshed_experiments.refactored.core import Learner, LearnerOutcome
-from refreshed_experiments.refactored.results_managing import ScalarSequence, Scalar, Summary
-from refreshed_experiments.refactored.data import StaticDataSource
-from refreshed_experiments.refactored.utils import get_text_summary
-from refreshed_experiments.refactored.utils import reshape_to_2d, labels_onehot_to_int, calc_multiclass_error, \
-    calc_avg_nll, save_gpflow_model
+from experiments.experiment_runner.core import Learner, LearnerOutcome
+from experiments.experiment_runner.results_managing import ScalarSequence, Scalar, Summary
+from experiments.experiment_runner.data import StaticDataSource
+from experiments.experiment_runner.utils import get_text_summary, reshape_to_2d, \
+    labels_onehot_to_int, calc_multiclass_error, calc_avg_nll, save_gpflow_model
 
 
 class KerasLearner(Learner):

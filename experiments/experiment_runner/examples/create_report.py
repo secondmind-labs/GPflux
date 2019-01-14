@@ -4,11 +4,12 @@
 
 from pathlib import Path
 
-from refreshed_experiments.refactored.results_managing import DatasetReport
+from experiments.experiment_runner.results_managing import DatasetReport
+
+PATH_TO_RESULTS = 'test/my_experiment'
 
 
-def read():
-    path = 'test/my_experiment'
+def read(path):
     report_creator = DatasetReport(Path(path))
     report = report_creator.create_txt_report()
     report_creator.plot_summaries(Path('test_plots'))
@@ -16,4 +17,4 @@ def read():
 
 
 if __name__ == '__main__':
-    read()
+    read(PATH_TO_RESULTS)

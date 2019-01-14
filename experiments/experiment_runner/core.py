@@ -6,8 +6,8 @@ import abc
 from pathlib import Path
 from typing import NamedTuple, Any
 
-from refreshed_experiments.refactored.data import DataSource
-from refreshed_experiments.refactored.utils import short_uuid
+from experiments.experiment_runner.data import DataSource
+from experiments.experiment_runner.utils import short_uuid
 
 
 class Learner(abc.ABC):
