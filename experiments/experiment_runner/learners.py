@@ -42,22 +42,22 @@ class KerasLearner(Learner):
 
     def get_summary(self, outcome, data_source: StaticDataSource):
         dataset = data_source.get_data()
-        outcome.model.evaluate(dataset.test_features, dataset.test_targets)
+        test_loss = outcome.model.evaluate(dataset.test_features, dataset.test_targets)
         history = outcome.history
         scalars = [
-            Scalar(history['loss'][-1], name='training_loss'),
-            Scalar(history['val_loss'][-1], name='validation_loss')
+            Scalar(history['loss'][-1], name='training loss'),
+            Scalar(test_loss, name='test loss')
         ]
         x_axis_name = 'optimisation steps'
         scalar_sequences = [
             ScalarSequence(history['loss'],
-                           name='training_loss',
+                           name='training loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='training_loss'),
+                           y_axis_name='training loss'),
             ScalarSequence(history['val_loss'],
-                           name='test_loss',
+                           name='validation loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='test_loss'),
+                           y_axis_name='validation loss'),
         ]
         return Summary(scalars=scalars,
                        scalar_sequences=scalar_sequences)
@@ -149,29 +149,29 @@ class GPClassificator(Learner):
         train_error_rate = calc_multiclass_error(self._model, x_train, y_train)
         train_loss = calc_avg_nll(outcome.model, x_train, y_train)
         scalars = [
-            Scalar(test_loss, name='test_loss'),
-            Scalar(train_loss, name='train_loss'),
-            Scalar(test_error_rate, name='test_error_rate'),
-            Scalar(train_error_rate, name='train_error_rate'),
+            Scalar(test_loss, name='test loss'),
+            Scalar(train_loss, name='train loss'),
+            Scalar(test_error_rate, name='test error rate'),
+            Scalar(train_error_rate, name='train error rate'),
         ]
         x_axis_name = 'optimisation steps'
         scalar_sequences = [
             ScalarSequence(outcome.history.train_avg_nll_list,
                            name='training loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='training_loss'),
+                           y_axis_name='training loss'),
             ScalarSequence(outcome.history.test_avg_nll_list,
                            name='test loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='test_loss'),
+                           y_axis_name='test loss'),
             ScalarSequence(outcome.history.train_errors_list,
                            name='train error rate',
                            x_axis_name=x_axis_name,
-                           y_axis_name='train_error_rate'),
+                           y_axis_name='train error rate'),
             ScalarSequence(outcome.history.test_errors_list,
                            name='test error rate',
                            x_axis_name=x_axis_name,
-                           y_axis_name='test_error_rate_list'),
+                           y_axis_name='test error rate'),
         ]
         return Summary(scalars=scalars,
                        scalar_sequences=scalar_sequences)

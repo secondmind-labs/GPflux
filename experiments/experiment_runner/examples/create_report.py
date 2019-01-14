@@ -2,6 +2,11 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
+"""
+Reads the results from the PATH_TO_RESULTS and prints a summary of them.
+"""
+
+
 from pathlib import Path
 
 from experiments.experiment_runner.results_managing import DatasetReport
