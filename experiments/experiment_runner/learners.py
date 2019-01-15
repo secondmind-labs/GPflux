@@ -17,7 +17,8 @@ from experiments.experiment_runner.core import Learner, LearnerOutcome
 from experiments.experiment_runner.results_managing import ScalarSequence, Scalar, Summary
 from experiments.experiment_runner.data import StaticDataSource
 from experiments.experiment_runner.utils import get_text_summary, reshape_to_2d, \
-    labels_onehot_to_int, calc_multiclass_error, calc_avg_nll, save_gpflow_model
+    labels_onehot_to_int, calc_multiclass_error, calc_avg_nll, save_gpflow_model, \
+    calculate_ece_score, top1_error, top2_error, top3_error, calc_ece_from_probs
 
 
 class KerasLearner(Learner):
@@ -43,10 +44,23 @@ class KerasLearner(Learner):
     def get_summary(self, outcome, data_source: StaticDataSource):
         dataset = data_source.get_data()
         test_loss = outcome.model.evaluate(dataset.test_features, dataset.test_targets)
+        predicted_y_test = outcome.model.predict(dataset.test_features)
+        predicted_y_train = outcome.model.predict(dataset.test_features)
+        test_error_rate = top1_error(dataset.test_targets, predicted_y_test)
+        train_error_rate = top1_error(dataset.train_targets, predicted_y_train)
+        top2_error_rate = top2_error(dataset.test_targets, predicted_y_test)
+        top3_error_rate = top3_error(dataset.test_targets, predicted_y_test)
+        test_ece_score = calc_ece_from_probs(predicted_y_test, dataset.test_targets)
+
         history = outcome.history
         scalars = [
             Scalar(history['loss'][-1], name='training loss'),
-            Scalar(test_loss, name='test loss')
+            Scalar(test_loss, name='test loss'),
+            Scalar(test_error_rate, name='test error rate'),
+            Scalar(train_error_rate, name='train error rate'),
+            Scalar(top2_error_rate, name='test error rate top2'),
+            Scalar(top3_error_rate, name='test error rate top3'),
+            Scalar(test_ece_score, name='test ece score')
         ]
         x_axis_name = 'optimisation steps'
         scalar_sequences = [
@@ -144,15 +158,21 @@ class GPClassificator(Learner):
                            labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
         x_test, y_test = reshape_to_2d(dataset.test_features), \
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
-        test_error_rate = calc_multiclass_error(self._model, x_test, y_test)
+        test_error_rate_top2 = calc_multiclass_error(self._model, 2, x_test, y_test)
+        test_error_rate_top3 = calc_multiclass_error(self._model, 3, x_test, y_test)
+        ece_score = calculate_ece_score(self._model, x_test, y_test)
+        train_loss = calc_avg_nll(outcome.model, x_train, y_train)
         test_loss = calc_avg_nll(outcome.model, x_test, y_test)
         train_error_rate = calc_multiclass_error(self._model, x_train, y_train)
-        train_loss = calc_avg_nll(outcome.model, x_train, y_train)
+        test_error_rate = calc_multiclass_error(self._model, x_test, y_test)
         scalars = [
             Scalar(test_loss, name='test loss'),
             Scalar(train_loss, name='train loss'),
             Scalar(test_error_rate, name='test error rate'),
             Scalar(train_error_rate, name='train error rate'),
+            Scalar(test_error_rate_top2, name='train error rate top2'),
+            Scalar(test_error_rate_top3, name='train error rate top3'),
+            Scalar(ece_score, name='test ece score'),
         ]
         x_axis_name = 'optimisation steps'
         scalar_sequences = [
