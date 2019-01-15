@@ -11,7 +11,6 @@ import gpflow
 import keras
 import tqdm
 from gpflow.training import monitor as mon
-from sklearn.model_selection import train_test_split
 
 from experiments.experiment_runner.core import Learner, LearnerOutcome
 from experiments.experiment_runner.results_managing import ScalarSequence, Scalar, Summary

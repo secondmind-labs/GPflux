@@ -40,7 +40,6 @@ class BasicCNN(ModelCreator):
         model.add(Dropout(0.5))
         model.add(Dense(dataset.num_classes, activation='softmax'))
 
-        model
         return model
 
 
