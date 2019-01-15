@@ -15,9 +15,14 @@ ScalarSequence = NamedTuple('ScalarSequence', [('values', np.ndarray),
                                                ('name', str),
                                                ('x_axis_name', str),
                                                ('y_axis_name', str)])
-Scalar = NamedTuple('Scalar',
-                    [('value', float),
-                     ('name', str)])
+
+
+class Scalar:
+    def __init__(self, value, name, rounding=3):
+        self.value = format(float(value), '.3f')
+        self.name = name
+
+
 Summary = NamedTuple('Summary',
                      [('scalars', List[Scalar]),
                       ('scalar_sequences', List[ScalarSequence])])
@@ -69,4 +74,3 @@ class DatasetReport:
             for experiment_dir in dataset_dir.iterdir():
                 summary = ReportCreator.get_summary(experiment_dir)
                 plot_summaries(summary, path, experiment_dir.stem)
-

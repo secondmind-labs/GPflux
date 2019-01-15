@@ -18,43 +18,43 @@ from experiments.experiment_runner.results_managing import ScalarSequence, Scala
 from experiments.experiment_runner.data import StaticDataSource
 from experiments.experiment_runner.utils import get_text_summary, reshape_to_2d, \
     labels_onehot_to_int, calc_multiclass_error, calc_avg_nll, save_gpflow_model, \
-    calculate_ece_score, top1_error, top2_error, top3_error, calc_ece_from_probs
+    calculate_ece_score, top1_error, top2_error, top3_error, calc_ece_from_probs, get_top_n_error
 
 
-class KerasLearner(Learner):
+class KerasClassificationLearner(Learner):
 
     def __init__(self, model: keras.models.Model):
         self._model = model
 
     def learn(self, data_source: StaticDataSource, config, path):
+        self._model.compile(loss='categorical_crossentropy',
+                            optimizer=config.optimiser,
+                            metrics=[top1_error, top2_error, top3_error])
         dataset = data_source.get_data()
         x, y = dataset.train_features, dataset.train_targets
-        x_train, x_valid, y_train, y_valid = \
-            train_test_split(x, y, test_size=config.validation_proportion)
+        x_train, y_train = x, y
         time_init = time.time()
         summary = self._model.fit(x_train, y_train,
-                                  validation_data=(x_valid, y_valid),
                                   batch_size=config.batch_size,
                                   epochs=config.epochs,
                                   callbacks=config.callbacks +
-                                            [keras.callbacks.TensorBoard(log_dir=path)])
+                                            [keras.callbacks.TensorBoard(log_dir=path)],
+                                  validation_data=(dataset.test_features, dataset.test_targets))
         time_done = time.time()
         return LearnerOutcome(self._model, config, summary.history, time_done - time_init)
 
     def get_summary(self, outcome, data_source: StaticDataSource):
         dataset = data_source.get_data()
-        test_loss = outcome.model.evaluate(dataset.test_features, dataset.test_targets)
+        test_loss, test_error_rate, top2_error_rate, top3_error_rate \
+            = outcome.model.evaluate(dataset.test_features, dataset.test_targets)
+        train_loss, train_error_rate, *_ = \
+            outcome.model.evaluate(dataset.train_features, dataset.train_targets)
         predicted_y_test = outcome.model.predict(dataset.test_features)
-        predicted_y_train = outcome.model.predict(dataset.test_features)
-        test_error_rate = top1_error(dataset.test_targets, predicted_y_test)
-        train_error_rate = top1_error(dataset.train_targets, predicted_y_train)
-        top2_error_rate = top2_error(dataset.test_targets, predicted_y_test)
-        top3_error_rate = top3_error(dataset.test_targets, predicted_y_test)
-        test_ece_score = calc_ece_from_probs(predicted_y_test, dataset.test_targets)
+        test_ece_score = calc_ece_from_probs(predicted_y_test, dataset.test_targets.argmax(axis=-1))
 
         history = outcome.history
         scalars = [
-            Scalar(history['loss'][-1], name='training loss'),
+            Scalar(train_loss, name='train loss'),
             Scalar(test_loss, name='test loss'),
             Scalar(test_error_rate, name='test error rate'),
             Scalar(train_error_rate, name='train error rate'),
@@ -65,14 +65,23 @@ class KerasLearner(Learner):
         x_axis_name = 'optimisation steps'
         scalar_sequences = [
             ScalarSequence(history['loss'],
-                           name='training loss',
+                           name='train loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='training loss'),
+                           y_axis_name='train loss'),
             ScalarSequence(history['val_loss'],
-                           name='validation loss',
+                           name='test loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='validation loss'),
+                           y_axis_name='test loss'),
+            ScalarSequence(history['val_top1_error'],
+                           name='test error rate',
+                           x_axis_name=x_axis_name,
+                           y_axis_name='test error rate'),
+            ScalarSequence(history['top1_error'],
+                           name='train error rate',
+                           x_axis_name=x_axis_name,
+                           y_axis_name='train error rate'),
         ]
+
         return Summary(scalars=scalars,
                        scalar_sequences=scalar_sequences)
 
@@ -158,28 +167,28 @@ class GPClassificator(Learner):
                            labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
         x_test, y_test = reshape_to_2d(dataset.test_features), \
                          labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
-        test_error_rate_top2 = calc_multiclass_error(self._model, 2, x_test, y_test)
-        test_error_rate_top3 = calc_multiclass_error(self._model, 3, x_test, y_test)
+        test_error_rate_top2 = get_top_n_error(self._model, x_test, y_test, 2)
+        test_error_rate_top3 = get_top_n_error(self._model, x_test, y_test, 3)
         ece_score = calculate_ece_score(self._model, x_test, y_test)
         train_loss = calc_avg_nll(outcome.model, x_train, y_train)
         test_loss = calc_avg_nll(outcome.model, x_test, y_test)
         train_error_rate = calc_multiclass_error(self._model, x_train, y_train)
         test_error_rate = calc_multiclass_error(self._model, x_test, y_test)
+        x_axis_name = 'optimisation steps'
         scalars = [
             Scalar(test_loss, name='test loss'),
             Scalar(train_loss, name='train loss'),
-            Scalar(test_error_rate, name='test error rate'),
             Scalar(train_error_rate, name='train error rate'),
-            Scalar(test_error_rate_top2, name='train error rate top2'),
-            Scalar(test_error_rate_top3, name='train error rate top3'),
+            Scalar(test_error_rate, name='test error rate'),
+            Scalar(test_error_rate_top2, name='test error rate top2'),
+            Scalar(test_error_rate_top3, name='test error rate top3'),
             Scalar(ece_score, name='test ece score'),
         ]
-        x_axis_name = 'optimisation steps'
         scalar_sequences = [
             ScalarSequence(outcome.history.train_avg_nll_list,
-                           name='training loss',
+                           name='train loss',
                            x_axis_name=x_axis_name,
-                           y_axis_name='training loss'),
+                           y_axis_name='train loss'),
             ScalarSequence(outcome.history.test_avg_nll_list,
                            name='test loss',
                            x_axis_name=x_axis_name,

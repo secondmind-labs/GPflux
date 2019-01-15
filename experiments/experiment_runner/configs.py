@@ -11,15 +11,13 @@ from experiments.experiment_runner.utils import Configuration
 from experiments.experiment_runner.utils import calc_multiclass_error
 
 
-class KerasClassificationConfig(Configuration):
+class KerasConfig(Configuration):
 
     def __init__(self):
         self.batch_size = 128
         self.optimiser = keras.optimizers.Adam()
-        self.validation_proportion = 0.05
         self.callbacks = []
-        self.early_stopping = False
-        self.epochs = 5
+        self.epochs = 12
 
 
 class GPConfig(Configuration):
@@ -43,7 +41,7 @@ class ConvGPConfig(GPConfig):
         super().__init__()
         self.batch_size = 110
         self.patch_shape = [5, 5]
-        self.num_epochs = 5
+        self.num_epochs = 3
         self.num_inducing_points = 1000
         self.base_kern = "RBF"
         self.with_weights = True

@@ -2,25 +2,10 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-"""
-Entrypoint for running experiments.
-
-Example usage:
-```
-python run_experiments.py --gpus 0 1 --path test
-```
-
-Note on setting up the experiments:
-creator should be implemented in ../creators.py
-config should be implemented in ../configs.py
-dataset should be implemented in ../data.py
-learner should be implemented in ../learners.py
-"""
-
 import argparse
 
-from experiments.experiment_runner.datasets import mnist_5percent, random_mnist_10percent, \
-    mnist_10percent, mnist_25percent, mixed_mnist1, mixed_mnist2
+from experiments.experiment_runner.datasets import random_mnist_10percent, random_mnist_100epc, \
+    random_mnist_25percent, random_mnist_5percent
 from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificationLearner
@@ -46,27 +31,23 @@ def main():
                         required=True)
 
     args = parser.parse_args()
-    experiment_name = 'example_experiment'
-    experiments_lists = [
-        ExperimentSpecification(
-            name=experiment_name,
-            creator=BasicCNN,
-            dataset=random_mnist_10percent,
-            config=KerasConfig,
-            learner=KerasClassificationLearner),
-        ExperimentSpecification(
-            name=experiment_name,
-            creator=ShallowConvGP,
-            dataset=mnist_5percent,
-            config=TickConvGPConfig,
-            learner=GPClassificator),
+    experiment_name = 'mnist_fractions_experiment'
+    experiments_lists = []
+    for dataset in [random_mnist_100epc, random_mnist_5percent, random_mnist_10percent,
+                    random_mnist_25percent]:
+        experiments_lists.append(
+            ExperimentSpecification(
+                name=experiment_name,
+                creator=BasicCNN,
+                dataset=random_mnist_10percent,
+                config=KerasConfig,
+                learner=KerasClassificationLearner)),
         ExperimentSpecification(
             name=experiment_name,
             creator=ShallowConvGP,
-            dataset=mnist_10percent,
+            dataset=dataset,
             config=TickConvGPConfig,
             learner=GPClassificator),
-    ]
 
     run_multiple(experiments_lists * args.repetitions, gpus=args.gpus, path=args.path)
 

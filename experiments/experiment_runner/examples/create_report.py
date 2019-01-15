@@ -11,7 +11,7 @@ from pathlib import Path
 
 from experiments.experiment_runner.results_managing import DatasetReport
 
-PATH_TO_RESULTS = 'test/my_experiment'
+PATH_TO_RESULTS = 'test/example_experiment'
 
 
 def read(path):

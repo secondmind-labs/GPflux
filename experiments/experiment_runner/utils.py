@@ -152,7 +152,7 @@ def get_top_n_error(model, x, y, n, batchsize=100):
     for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
         p, _ = model.predict_y(xs)
         hits += (ys == p.argsort(-1)[:, -n:]).sum()
-    return 1 - hits / num_examples
+    return (1 - hits / num_examples) * 100
 
 
 def get_avg_nll_missclassified(model, x, y, batchsize=100):
@@ -218,7 +218,7 @@ def _get_max_normalised(data, name):
 
 def _mix_train_test(data, random_state):
     (train_features, train_targets), (test_features, test_targets) = data
-    ratio = len(train_targets) / (len(train_targets) + len(train_features))
+    ratio = len(test_targets) / (len(train_targets) + len(test_targets))
     features = np.concatenate((train_features, test_features), axis=0)
     targets = np.concatenate((train_targets, test_targets), axis=0)
     train_features, test_features, train_targets, test_targets = \
@@ -255,3 +255,15 @@ def load_grey_cifar():
     test_features = rgb2gray(test_features)
     return (train_features, train_targets.ravel()), (test_features, test_targets.ravel())
 
+
+def numpy_fixed_seed(seed):
+    def decorator(f):
+        state = np.random.get_state()
+        np.random.seed(seed)
+
+        def decorated_f(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        np.random.set_state(state)
+        return decorated_f
+    return decorator

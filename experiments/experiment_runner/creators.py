@@ -40,8 +40,7 @@ class BasicCNN(ModelCreator):
         model.add(Dropout(0.5))
         model.add(Dense(dataset.num_classes, activation='softmax'))
 
-        model.compile(loss='categorical_crossentropy',
-                      optimizer=config.optimiser)
+        model
         return model
 
 
@@ -71,8 +70,8 @@ class ShallowConvGP(ModelCreator):
         layer0.kern.basekern.lengthscales = 1.2
 
         if config.with_indexing:
-            layer0.kern.spatio_indices_kernel.variance = 25.0
-            layer0.kern.spatio_indices_kernel.lengthscales = 3.0
+            layer0.kern.index_kernel.variance = 25.0
+            layer0.kern.index_kernel.lengthscales = 3.0
 
         # break symmetry in variational parameters
         layer0.q_sqrt = layer0.q_sqrt.read_value()
