@@ -39,7 +39,7 @@ def main():
             ExperimentSpecification(
                 name=experiment_name,
                 creator=BasicCNN,
-                dataset=random_mnist_10percent,
+                dataset=dataset,
                 config=KerasConfig,
                 learner=KerasClassificationLearner))
         experiments_lists.append(
