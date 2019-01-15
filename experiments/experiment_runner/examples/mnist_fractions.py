@@ -41,13 +41,14 @@ def main():
                 creator=BasicCNN,
                 dataset=random_mnist_10percent,
                 config=KerasConfig,
-                learner=KerasClassificationLearner)),
-        ExperimentSpecification(
-            name=experiment_name,
-            creator=ShallowConvGP,
-            dataset=dataset,
-            config=TickConvGPConfig,
-            learner=GPClassificator),
+                learner=KerasClassificationLearner))
+        experiments_lists.append(
+            ExperimentSpecification(
+                name=experiment_name,
+                creator=ShallowConvGP,
+                dataset=dataset,
+                config=TickConvGPConfig,
+                learner=GPClassificator))
 
     run_multiple(experiments_lists * args.repetitions, gpus=args.gpus, path=args.path)
 
