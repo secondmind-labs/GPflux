@@ -35,27 +35,27 @@ def main():
     experiment_name = 'mnist_fractions_experiment'
     experiments_lists = []
 
-    # experiments_lists.append(
-    #     ExperimentSpecification(
-    #         name=experiment_name,
-    #         creator=BasicCNN,
-    #         dataset=random_mnist_5percent,
-    #         config=Fixed12EpochKerasConfig,
-    #         learner=KerasClassificationLearner))
-    # experiments_lists.append(
-    #     ExperimentSpecification(
-    #         name=experiment_name,
-    #         creator=BasicCNN,
-    #         dataset=random_mnist_10percent,
-    #         config=Fixed12EpochKerasConfig,
-    #         learner=KerasClassificationLearner))
-    # experiments_lists.append(
-    #     ExperimentSpecification(
-    #         name=experiment_name,
-    #         creator=BasicCNN,
-    #         dataset=random_mnist_25percent,
-    #         config=Fixed12EpochKerasConfig,
-    #         learner=KerasClassificationLearner))
+    experiments_lists.append(
+        ExperimentSpecification(
+            name=experiment_name,
+            creator=BasicCNN,
+            dataset=random_mnist_5percent,
+            config=Fixed12EpochKerasConfig,
+            learner=KerasClassificationLearner))
+    experiments_lists.append(
+        ExperimentSpecification(
+            name=experiment_name,
+            creator=BasicCNN,
+            dataset=random_mnist_10percent,
+            config=Fixed12EpochKerasConfig,
+            learner=KerasClassificationLearner))
+    experiments_lists.append(
+        ExperimentSpecification(
+            name=experiment_name,
+            creator=BasicCNN,
+            dataset=random_mnist_25percent,
+            config=Fixed12EpochKerasConfig,
+            learner=KerasClassificationLearner))
 
     experiments_lists.append(
         ExperimentSpecification(
