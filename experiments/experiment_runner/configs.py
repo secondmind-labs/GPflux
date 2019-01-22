@@ -41,6 +41,16 @@ class Fixed12EpochKerasConfig(Configuration):
         self.steps_per_epoch = None
 
 
+class KerasConvGPLikeConfig(Configuration):
+
+    def __init__(self):
+        self.batch_size = 64
+        self.optimiser = keras.optimizers.Adam()
+        self.callbacks = []
+        self.epochs = 2000
+        self.steps_per_epoch = 10
+
+
 class GPConfig(Configuration):
 
     def __init__(self):
@@ -130,8 +140,8 @@ class SmallTickConvGPConfig(TickConvGPConfig):
     def __init__(self):
         super().__init__()
         self.with_indexing = True
-        self.num_epochs = 40
-        self.steps_per_epoch = 250
+        self.num_epochs = 200
+        self.steps_per_epoch = 100
 
 
 class RBFGPConfig(GPConfig):

@@ -7,7 +7,7 @@ import argparse
 from experiments.experiment_runner.datasets import random_mnist_10epc, random_mnist_1epc, \
     random_mnist_20epc
 from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, LongKerasConfig, \
-    SmallTickConvGPConfig
+    SmallTickConvGPConfig, KerasConvGPLikeConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificationLearner
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
@@ -32,7 +32,7 @@ def main():
                         required=True)
 
     args = parser.parse_args()
-    experiment_name = 'mnist_fractions_experiment'
+    experiment_name = 'mnist_fractions_experiment2'
     experiments_lists = []
 
     experiments_lists.append(
@@ -40,21 +40,21 @@ def main():
             name=experiment_name,
             creator=BasicCNN,
             dataset=random_mnist_1epc,
-            config=KerasConfig,
+            config=KerasConvGPLikeConfig,
             learner=KerasClassificationLearner))
     experiments_lists.append(
         ExperimentSpecification(
             name=experiment_name,
             creator=BasicCNN,
             dataset=random_mnist_10epc,
-            config=KerasConfig,
+            config=KerasConvGPLikeConfig,
             learner=KerasClassificationLearner))
     experiments_lists.append(
         ExperimentSpecification(
             name=experiment_name,
             creator=BasicCNN,
             dataset=random_mnist_20epc,
-            config=LongKerasConfig,
+            config=KerasConvGPLikeConfig,
             learner=KerasClassificationLearner))
 
     experiments_lists.append(

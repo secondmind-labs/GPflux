@@ -18,7 +18,7 @@ PATH_TO_RESULTS = 'test_nnvs_cgp/mnist_fractions_experiment'
 def read(path):
     report_creator = DatasetReport(Path(path))
     report = report_creator.create_txt_report()
-    report_creator.plot_summaries(Path('test_plots'))
+    # report_creator.plot_summaries(Path('test_plots'))
     report_creator.plot_common_summary(Path('test_plots'))
     print(report)
 
