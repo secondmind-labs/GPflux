@@ -85,7 +85,7 @@ class DatasetReport:
         """
         STEPS_PER_X_UNIT = 250
         num_datasets = len(list(self._path.iterdir()))
-        g, ax = plt.subplots(num_datasets, 2, sharex=True)
+        g, ax = plt.subplots(num_datasets, 2, sharex=True, dpi=250)
         for n, dataset_dir in enumerate(self._path.iterdir()):
             train_loss_averages = defaultdict(list)
             test_loss_averages = defaultdict(list)
@@ -155,6 +155,8 @@ class DatasetReport:
                     ax[n][i].set_xticks([])
                 else:
                     ax[n][i].set_xlabel('$optimisation\ steps$')
+                text = {0:'$N=10$', 1:'$N=100$', 2:'$N=200$'}[n]
+                ax[n][0].annotate(text, xy=(0.075,0.85),xycoords='axes fraction', size=8)
                 ax[0][i].set_title(name.split('_')[1])
             ax[-1][-1].legend(prop={'size':6})
             g.tight_layout()
