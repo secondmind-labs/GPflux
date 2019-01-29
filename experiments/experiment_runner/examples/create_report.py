@@ -8,11 +8,12 @@ Reads the results from the PATH_TO_RESULTS and prints a summary of them.
 
 
 from pathlib import Path
-import seaborn
 
 from experiments.experiment_runner.results_managing import DatasetReport
 
-PATH_TO_RESULTS = 'test_nnvs_cgp/mnist_fractions_experiment'
+import seaborn
+
+PATH_TO_RESULTS = 'fractions_long/mnist_fractions_experiment2'
 
 
 def read(path):

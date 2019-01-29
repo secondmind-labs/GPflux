@@ -49,5 +49,16 @@ def main():
         experiment.run(path)
 
 
+def parametrised_main(config, model_creator, learner_class, dataset, repetitions, path, name):
+    for _ in range(repetitions):
+        data_source = StaticDataSource(dataset=dataset)
+        trainer = Trainer(model_creator, learner_class)
+        experiment = Experiment(name=name,
+                                data_source=data_source,
+                                trainer=trainer,
+                                config=config)
+        experiment.run(path)
+
+
 if __name__ == '__main__':
     main()

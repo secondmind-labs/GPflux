@@ -12,6 +12,7 @@ from gpflow.conditionals import conditional, sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
 
+import tensorflow as tf
 
 class BaseLayer(Parameterized):
 

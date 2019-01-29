@@ -9,7 +9,7 @@ from experiments.experiment_runner.datasets import mnist, grey_cifar10, svhn, fa
     mnist_25percent
 from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
-from experiments.experiment_runner.learners import GPClassificator, KerasClassificationLearner
+from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
 
 
@@ -45,7 +45,7 @@ def main():
                 creator=BasicCNN,
                 dataset=dataset,
                 config=KerasConfig,
-                learner=KerasClassificationLearner))
+                learner=KerasClassificator))
 
     experiments_lists.append(
         ExperimentSpecification(

@@ -6,10 +6,9 @@ import argparse
 
 from experiments.experiment_runner.datasets import random_mnist_10percent, random_mnist_25percent, \
     random_mnist_5percent
-from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, LongKerasConfig, \
-    Fixed12EpochKerasConfig
+from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
-from experiments.experiment_runner.learners import GPClassificator, KerasClassificationLearner
+from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
 
 
@@ -41,21 +40,21 @@ def main():
             creator=BasicCNN,
             dataset=random_mnist_5percent,
             config=Fixed12EpochKerasConfig,
-            learner=KerasClassificationLearner))
+            learner=KerasClassificator))
     experiments_lists.append(
         ExperimentSpecification(
             name=experiment_name,
             creator=BasicCNN,
             dataset=random_mnist_10percent,
             config=Fixed12EpochKerasConfig,
-            learner=KerasClassificationLearner))
+            learner=KerasClassificator))
     experiments_lists.append(
         ExperimentSpecification(
             name=experiment_name,
             creator=BasicCNN,
             dataset=random_mnist_25percent,
             config=Fixed12EpochKerasConfig,
-            learner=KerasClassificationLearner))
+            learner=KerasClassificator))
 
     experiments_lists.append(
         ExperimentSpecification(

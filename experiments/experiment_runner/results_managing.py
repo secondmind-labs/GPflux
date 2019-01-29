@@ -83,7 +83,7 @@ class DatasetReport:
         Creates a figure depicting train and test averages of loss and error rates. Uses log
         scale on x axis
         """
-        STEPS_PER_X_UNIT = 250
+        STEPS_PER_X_UNIT = 100
         num_datasets = len(list(self._path.iterdir()))
         g, ax = plt.subplots(num_datasets, 2, sharex=True, dpi=250)
         for n, dataset_dir in enumerate(self._path.iterdir()):
@@ -162,4 +162,4 @@ class DatasetReport:
             g.tight_layout()
             plt.close(g)
         (save_path / Path('averages')).mkdir(exist_ok=True, parents=True)
-        g.savefig(str(save_path / Path('averages')) + '/common.pdf')
+        g.savefig(str(save_path / Path('averages')) + '/common.png')
