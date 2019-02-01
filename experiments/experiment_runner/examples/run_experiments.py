@@ -2,24 +2,9 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-"""
-Entrypoint for running experiments.
-
-Example usage:
-```
-python run_experiments.py --gpus 0 1 --path test
-```
-
-Note on setting up the experiments:
-creator should be implemented in ../creators.py
-config should be implemented in ../configs.py
-dataset should be implemented in ../data.py
-learner should be implemented in ../learners.py
-"""
 
 import argparse
 import pickle
-from functools import reduce
 from pathlib import Path
 from typing import NamedTuple, Any
 
@@ -35,7 +20,6 @@ from experiments.experiment_runner.run_multiple import ExperimentSpecification, 
 from experiments.experiment_runner.utils import calc_nll_and_error_rate
 
 import numpy as np
-import tensorflow as tf
 
 _parser = argparse.ArgumentParser(
     description="""Entrypoint for running multiple experiments.""")
@@ -68,7 +52,6 @@ CustomHistory = NamedTuple('CustomHistory', [
     ('test_avg_nll_list', Any),
     ('train_error_rate_list', Any),
     ('train_avg_nll_list', Any),
-    # ('weights', Any),
     ('test_predictions', Any),
     ('variances', Any),
     ('lenghtscales', Any),
@@ -97,7 +80,6 @@ class StatsGatheringGPClassificator(GPClassificator):
 
     def _gather_statistics(self, dataset, config, epoch):
 
-        # p = self._model.layers[0].feature.patches.read_value(gpflow.get_default_session())
         if config.with_weights:
             w = self._model.layers[0].kern.weights.read_value(gpflow.get_default_session())
         else:
@@ -116,17 +98,6 @@ class StatsGatheringGPClassificator(GPClassificator):
         self._variance.append(v)
         self._train_variance_f.append(train_var_f)
         self._test_variance_f.append(test_var_f)
-
-        # num_x, num_y = 10, 10
-        # print(w)
-        # f, ax = plt.subplots(num_x,num_y, figsize=(10,10))
-        # for i in range(num_x):
-        #     for j in range(num_y):
-        #         ax[i][j].imshow(p[num_x*j+i].reshape(5,5))
-        #         ax[i][j].set_xticks([])
-        #         ax[i][j].set_yticks([])
-        # plt.tight_layout()
-        # plt.show()
 
         x_train, y_train, x_test, y_test = dataset.train_features, \
                                            dataset.train_targets, \
@@ -160,7 +131,6 @@ class StatsGatheringGPClassificator(GPClassificator):
             test_error_rate_list=self._test_error_rate_list,
             test_avg_nll_list=self._test_avg_nll_list,
             test_predictions=self._test_predictions,
-            # weights=self._weights,
             variances=self._variance,
             lenghtscales=self._lengthscale,
             test_variance_f=self._test_variance_f,
@@ -193,6 +163,10 @@ class StatsGatheringKerasClassificationLearner(KerasClassificator):
                                            dataset.test_targets
         p_test = self._model.predict(dataset.test_features)
         p_train = self._model.predict(dataset.train_features)
+        p_test += 1e-12
+        p_train += 1e-12
+        p_test = p_test / p_test.sum(-1, keepdims=True)
+        # p_train = p_train / p_train.sum(-1, keepdims=True)
         if self._test_features is None:
             self._test_features = x_test
             self._test_labels = y_test
@@ -204,7 +178,6 @@ class StatsGatheringKerasClassificationLearner(KerasClassificator):
                                                                           test_avg_nll, ))
         self._test_avg_nll_list.append(test_avg_nll)
         self._test_error_rate_list.append(test_error_rate)
-        print((p_test * y_test).sum(-1).min())
         self._predictions.append((p_test * y_test).sum(-1))
 
     def _create_history(self):
@@ -238,9 +211,9 @@ class TickConvGPRegularisedConfig(TickConvGPConfig):
 def simple(dataset_list):
     NUM_GP_EPOCHS = 500
     STEPS_PER_EPOCH = 100
-    STATS_NUM = 5000
+    STATS_NUM = 10000
     STORE_FREQ = 100000
-    NUM_INDUCING_POINTS = 500
+    NUM_INDUCING_POINTS = 1000
     keras_config = KerasConfig(epochs=STEPS_PER_EPOCH * NUM_GP_EPOCHS // 10, steps_per_epoch=10)
 
     gp_config_no_weights = TickConvGPNoWeightsConfig(steps_per_epoch=STEPS_PER_EPOCH,
