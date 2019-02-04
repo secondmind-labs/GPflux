@@ -10,10 +10,10 @@ from typing import NamedTuple, Any
 
 import gpflow
 
-from experiments.experiment_runner.datasets import mnist, random_mnist_10epc, random_mnist_1epc, \
+from experiments.experiment_runner.datasets import random_mnist_10epc, random_mnist_1epc, \
     random_mnist_100epc
-from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, ConvGPConfig
-from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN, RegularisedShallowConvGP
+from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
+from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.results_managing import Summary
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
@@ -25,7 +25,7 @@ _parser = argparse.ArgumentParser(
     description="""Entrypoint for running multiple experiments.""")
 
 _parser.add_argument('--path', '-p',
-                     help='Path to store the results.',
+                     help='Path to store the saved_results.',
                      type=str,
                      required=True)
 _parser.add_argument('--repetitions', '-r',
@@ -33,7 +33,7 @@ _parser.add_argument('--repetitions', '-r',
                      type=int,
                      default=1)
 _parser.add_argument('--gpus',
-                     help='Path to store the results.',
+                     help='Path to store the saved_results.',
                      nargs='+',
                      type=str,
                      required=True)
@@ -79,7 +79,7 @@ class StatsGatheringGPClassificator(GPClassificator):
         self._test_labels = None
 
     def _gather_statistics(self, dataset, config, epoch):
-
+        NUM_F_POINTS = 10
         if config.with_weights:
             w = self._model.layers[0].kern.weights.read_value(gpflow.get_default_session())
         else:
@@ -87,8 +87,6 @@ class StatsGatheringGPClassificator(GPClassificator):
         l = self._model.layers[0].kern.basekern.lengthscales.read_value(
             gpflow.get_default_session())
         v = self._model.layers[0].kern.basekern.variance.read_value(gpflow.get_default_session())
-
-        NUM_F_POINTS = 10
 
         _, train_var_f = self._model.predict_f(dataset.train_features[:NUM_F_POINTS])
         _, test_var_f = self._model.predict_f(dataset.test_features[:NUM_F_POINTS])
@@ -166,7 +164,6 @@ class StatsGatheringKerasClassificationLearner(KerasClassificator):
         p_test += 1e-12
         p_train += 1e-12
         p_test = p_test / p_test.sum(-1, keepdims=True)
-        # p_train = p_train / p_train.sum(-1, keepdims=True)
         if self._test_features is None:
             self._test_features = x_test
             self._test_labels = y_test
@@ -263,8 +260,4 @@ def simple(dataset_list):
 
 if __name__ == '__main__':
     dataset_list = [random_mnist_1epc, random_mnist_10epc, random_mnist_100epc]
-    # _basic_datasets = [mnist, grey_cifar10, svhn, fashion_mnist,
-    #                    mixed_mnist1, mixed_mnist2, mixed_mnist3, mixed_mnist4,
-    #                    mnist_5percent, mnist_10percent, mnist_25percent]
-
     simple(dataset_list)

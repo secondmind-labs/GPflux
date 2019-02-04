@@ -18,7 +18,7 @@ def main():
         description="""Entrypoint for running multiple experiments.""")
 
     parser.add_argument('--path', '-p',
-                        help='Path to store the results.',
+                        help='Path to store the saved_results.',
                         type=str,
                         required=True)
     parser.add_argument('--repetitions', '-r',
@@ -26,7 +26,7 @@ def main():
                         type=int,
                         default=1)
     parser.add_argument('--gpus',
-                        help='Path to store the results.',
+                        help='Path to store the saved_results.',
                         nargs='+',
                         type=str,
                         required=True)
@@ -36,24 +36,23 @@ def main():
                  mnist_5percent, mnist_10percent, mnist_25percent]
 
     args = parser.parse_args()
-    experiment_name = 'mnist_fractions_experiment'
+    experiment_name = 'all_experiments'
     experiments_lists = []
     for dataset in basic_set:
         experiments_lists.append(
             ExperimentSpecification(
                 name=experiment_name,
                 creator=BasicCNN,
-                dataset=dataset,
+                dataset=dataset.load_data(),
                 config=KerasConfig,
                 learner=KerasClassificator))
-
-    experiments_lists.append(
-        ExperimentSpecification(
-            name=experiment_name,
-            creator=ShallowConvGP,
-            dataset=dataset,
-            config=TickConvGPConfig,
-            learner=GPClassificator))
+        experiments_lists.append(
+            ExperimentSpecification(
+                name=experiment_name,
+                creator=ShallowConvGP,
+                dataset=dataset.load_data(),
+                config=TickConvGPConfig,
+                learner=GPClassificator))
 
     run_multiple(experiments_lists * args.repetitions, gpus=args.gpus, path=args.path)
 

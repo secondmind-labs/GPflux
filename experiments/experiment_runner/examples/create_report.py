@@ -3,7 +3,7 @@
 # Proprietary and confidential
 
 """
-Reads the results from the PATH_TO_RESULTS and prints a summary of them.
+Reads the saved_results from the PATH_TO_RESULTS and prints a summary of them.
 """
 
 
@@ -11,7 +11,6 @@ from pathlib import Path
 
 from experiments.experiment_runner.results_managing import DatasetReport
 
-import seaborn
 
 PATH_TO_RESULTS = 'fractions_long/mnist_fractions_experiment2'
 

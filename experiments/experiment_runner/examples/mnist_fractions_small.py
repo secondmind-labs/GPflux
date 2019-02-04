@@ -8,18 +8,16 @@ import keras
 
 from experiments.experiment_runner.datasets import random_mnist_10epc, random_mnist_1epc, \
     random_mnist_20epc
-from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, LongKerasConfig, \
-    SmallTickConvGPConfig
+from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
-from experiments.experiment_runner.utils import Configuration, calc_nll_and_error_rate
 
 parser = argparse.ArgumentParser(
     description="""Entrypoint for running multiple experiments.""")
 
 parser.add_argument('--path', '-p',
-                    help='Path to store the results.',
+                    help='Path to store the saved_results.',
                     type=str,
                     required=True)
 parser.add_argument('--repetitions', '-r',
@@ -27,7 +25,7 @@ parser.add_argument('--repetitions', '-r',
                     type=int,
                     default=1)
 parser.add_argument('--gpus',
-                    help='Path to store the results.',
+                    help='Path to store the saved_results.',
                     nargs='+',
                     type=str,
                     required=True)
@@ -35,14 +33,19 @@ parser.add_argument('--gpus',
 args = parser.parse_args()
 
 
-class KerasConvGPLikeConfig(Configuration):
+class KerasConvGPLikeConfig(KerasConfig):
 
     def __init__(self):
+        super().__init__()
         self.batch_size = 64
         self.optimiser = keras.optimizers.Adam
         self.callbacks = []
         self.epochs = 2000
         self.steps_per_epoch = 10
+
+
+class SmallTickConvGPConfig(TickConvGPConfig):
+    pass
 
 
 def main():
