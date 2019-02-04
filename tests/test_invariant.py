@@ -114,7 +114,7 @@ def test_invariant_predictions(session_tf, orbit, stoch_orbit_kwargs):
 @pytest.mark.parametrize("orbit_batch_size,samples,lml_samples", [
     (6, 1, 1),
     (5, 200, 200),
-    (3, 200, 1000),
+    #(3, 200, 1000),
     # (2, 300, 10000000)
 ])
 def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_samples):

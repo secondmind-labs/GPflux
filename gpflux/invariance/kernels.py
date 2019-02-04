@@ -83,8 +83,8 @@ class StochasticInvariant(InvariantBase):
             return edge_sum * self.w_edge + diag_sum * self.w_diag
         elif self.orbit.orbit_batch_size == self.orbit.orbit_size:
             return tf.reduce_mean(K, axis=axis)
-        raise RuntimeError(f"Orbit size ({self.orbit.orbit_size}) must be <= "
-                            "than orbit batch size ({self.orbit.orbit_batch_size}).")
+        raise RuntimeError("Orbit size ({}) must be <= than orbit batch size ({})."
+                           .format(self.orbit.orbit_size, self.orbit.orbit_batch_size))
 
     @property
     def w_diag(self):
