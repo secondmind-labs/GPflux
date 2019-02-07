@@ -259,5 +259,5 @@ def simple(dataset_list):
 
 
 if __name__ == '__main__':
-    dataset_list = [random_mnist_1epc, random_mnist_10epc, random_mnist_100epc]
+    dataset_list = [random_mnist_10epc]
     simple(dataset_list)
