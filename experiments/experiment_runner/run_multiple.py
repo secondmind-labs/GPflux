@@ -25,7 +25,7 @@ def run_experiment(experiment: ExperimentSpecification, available_gpus, path):
         time.sleep(0.01)
     gpu_num = available_gpus.get()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
-    parametrised_main(experiment.config, experiment.creator, experiment.learner, experiment.dataset,
+    parametrised_main(experiment.config, experiment.creator, experiment.learner, experiment.dataset.load_data(),
                       1, path, 'test')
     available_gpus.put(gpu_num)
 

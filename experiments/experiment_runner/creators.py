@@ -57,8 +57,8 @@ def create_convgp_layer(input_size, num_ind_points, patch_shape, num_classes, wi
     layer0.kern.basekern.lengthscales = 1.2
 
     if with_indexing:
-        layer0.kern.index_kernel.variance = 25.0
-        layer0.kern.index_kernel.lengthscales = 3.0
+        layer0.kern.spatio_indices_kernel.variance = 25.0
+        layer0.kern.spatio_indices_kernel.lengthscales = 3.0
 
     # break symmetry in variational parameters
     layer0.q_sqrt = layer0.q_sqrt.read_value()

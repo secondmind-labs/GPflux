@@ -31,7 +31,7 @@ def main():
                         type=str,
                         required=True)
 
-    basic_set = [mnist, grey_cifar10, svhn, fashion_mnist,
+    basic_set = [mnist, grey_cifar10, fashion_mnist,
                  mixed_mnist1, mixed_mnist2, mixed_mnist3, mixed_mnist4,
                  mnist_5percent, mnist_10percent, mnist_25percent]
 
@@ -43,23 +43,23 @@ def main():
             ExperimentSpecification(
                 name=experiment_name,
                 creator=BasicCNN,
-                dataset=dataset.load_data(),
-                config=KerasConfig,
+                dataset=dataset,
+                config=KerasConfig(),
                 learner=KerasClassificator))
         experiments_lists.append(
             ExperimentSpecification(
                 name=experiment_name,
                 creator=ShallowConvGP,
-                dataset=dataset.load_data(),
-                config=TickConvGPConfig,
+                dataset=dataset,
+                config=TickConvGPConfig(),
                 learner=GPClassificator),
         )
         experiments_lists.append(
             ExperimentSpecification(
                 name=experiment_name,
                 creator=ShallowConvGP,
-                dataset=dataset.load_data(),
-                config=ConvGPConfig,
+                dataset=dataset,
+                config=ConvGPConfig(),
                 learner=GPClassificator),
         )
 

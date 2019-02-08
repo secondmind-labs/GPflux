@@ -18,8 +18,7 @@ PATH_TO_RESULTS = 'fractions_long/mnist_fractions_experiment2'
 def read(path):
     report_creator = DatasetReport(Path(path))
     report = report_creator.create_txt_report()
-    # report_creator.plot_summaries(Path('test_plots'))
-    report_creator.plot_common_summary(Path('test_plots'))
+    report_creator.plot_summaries(Path('test_plots'))
     print(report)
 
 

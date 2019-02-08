@@ -209,8 +209,7 @@ def simple(dataset_list):
                                             patch_shape=[5, 5],
                                             store_frequency=STORE_FREQ,
                                             num_inducing_points=NUM_INDUCING_POINTS,
-                                            with_weights=False,
-                                            with_indexing=False)
+                                            with_weights=False)
 
     gp_config_weights = TickConvGPConfig(steps_per_epoch=STEPS_PER_EPOCH,
                                          num_epochs=NUM_GP_EPOCHS,
@@ -228,19 +227,19 @@ def simple(dataset_list):
             ExperimentSpecification(
                 name=experiment_name,
                 creator=BasicCNN,
-                dataset=dataset.load_data(),
+                dataset=dataset,
                 config=keras_config,
                 learner=StatsGatheringKerasClassificationLearner),
             ExperimentSpecification(
                 name=experiment_name,
                 creator=ShallowConvGP,
-                dataset=dataset.load_data(),
+                dataset=dataset,
                 config=gp_config_weights,
                 learner=StatsGatheringGPClassificator),
             ExperimentSpecification(
                 name=experiment_name,
                 creator=ShallowConvGP,
-                dataset=dataset.load_data(),
+                dataset=dataset,
                 config=gp_config_no_weights,
                 learner=StatsGatheringGPClassificator),
         ])
@@ -249,5 +248,5 @@ def simple(dataset_list):
 
 
 if __name__ == '__main__':
-    dataset_list = [random_mnist_10epc]
+    dataset_list = [random_mnist_1epc, random_mnist_10epc, random_mnist_100epc]
     simple(dataset_list)

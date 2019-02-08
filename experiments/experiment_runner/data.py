@@ -7,7 +7,7 @@ from experiments.experiment_runner.data_infrastructure import Dataset
 
 
 class DataSource:
-    def get_data(self) -> Data:
+    def get_data(self):
         pass
 
 

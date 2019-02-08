@@ -2,24 +2,9 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-"""
-Entrypoint for running experiments.
-
-Example usage:
-```
-python run_experiments.py --gpus 0 1 --path test
-```
-
-Note on setting up the experiments:
-creator should be implemented in ../creators.py
-config should be implemented in ../configs.py
-dataset should be implemented in ../data.py
-learner should be implemented in ../learners.py
-"""
-
 import argparse
 
-from experiments.experiment_runner.datasets import random_mnist_10percent
+from experiments.experiment_runner.datasets import mnist
 from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
@@ -50,20 +35,14 @@ def main():
         ExperimentSpecification(
             name=experiment_name,
             creator=BasicCNN,
-            dataset=random_mnist_10percent,
-            config=KerasConfig,
+            dataset=mnist,
+            config=KerasConfig(),
             learner=KerasClassificator),
         ExperimentSpecification(
             name=experiment_name,
             creator=ShallowConvGP,
-            dataset=random_mnist_10percent,
-            config=TickConvGPConfig,
-            learner=GPClassificator),
-        ExperimentSpecification(
-            name=experiment_name,
-            creator=ShallowConvGP,
-            dataset=random_mnist_10percent,
-            config=TickConvGPConfig,
+            dataset=mnist,
+            config=TickConvGPConfig(),
             learner=GPClassificator),
     ]
 

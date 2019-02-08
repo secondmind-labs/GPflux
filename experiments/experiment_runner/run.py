@@ -26,8 +26,8 @@ def main():
                         type=str, required=True)
     parser.add_argument('--learner', '-l', help='Learner class.',
                         type=str, required=True)
-    parser.add_argument('--path', '-p', help='The path were saved_results will be stored.', type=Path,
-                        required=True)
+    parser.add_argument('--path', '-p', help='The path were saved_results will be stored.',
+                        type=Path, required=True)
     parser.add_argument('--repetitions', '-r', help='The number of repetitions of an experiment',
                         type=int, default=1)
 
