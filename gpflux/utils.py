@@ -53,13 +53,9 @@ def get_image_patches(imgs, image_shape, patch_shape, channels_in_patch=True):
     :return: Tensor of [N, P, h*w*C] or [N, P*C, h*w] shape.
     """
     with tf.name_scope('image_patches'):
-        H, W, C = image_shape
+        _, _, C = image_shape
         h, w = patch_shape
         N = tf.shape(imgs)[0]
         ones = [1] * 4
-        patches = tf.extract_image_patches(imgs, [1, h, w, 1], ones, ones, 'VALID')  # [N, Pw, Ph, h*w*C]
-        if channels_in_patch or C == 1:
-            return tf.reshape(patches, [N, -1, h * w * C])  # [N, P, h*w*C]
-        reshaped_patches = tf.reshape(patches, [N, -1, h * w, C])
-        transposed_patches = tf.matrix_transpose(reshaped_patches)  # [N, P, C, h*w]
-        return tf.reshape(transposed_patches, [N, -1, h*w])  # [N, P*C, h * w]
+        patches = tf.extract_image_patches(imgs, [1, h, w, 1], ones, ones, 'VALID')
+        return tf.reshape(patches, [N, -1, h*w*C])
