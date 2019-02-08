@@ -26,7 +26,6 @@ from nbconvert.preprocessors.execute import CellExecutionError
 
 NOTEBOOK_FILES = [
     "deep_gp_samples.ipynb",
-    "latent_variables_mnist.ipynb",
 ]
 
 BLACKLISTED_NOTEBOOKS = [

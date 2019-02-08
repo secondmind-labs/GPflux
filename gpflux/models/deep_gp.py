@@ -161,5 +161,3 @@ class DeepGP(Model):
         desc += "\n".join(l.describe() for l in self.layers)
         desc += "\nlikelihood: " + self.likelihood.__class__.__name__
         return desc
-
-

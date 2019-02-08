@@ -41,13 +41,21 @@ def xavier_weights(input_dim: int, output_dim: int) -> np.ndarray:
     return np.random.randn(input_dim, output_dim) * xavier_std
 
 
-def get_image_patches(img, image_shape, patch_shape):
+def get_image_patches(imgs, image_shape, patch_shape, channels_in_patch=True):
+    """
+    Extracts patches with valid padding. Output color channel can be either included
+    in patch dimension [N, P, h*w*C] or grid dimension [N, P*C, h*w]
+    :param imgs: Images tensor [N, H, W, C].
+    :param image_shape: Image shape tuple.
+    :param patch_shape: Patch shape tuple.
+    :param channels_in_patch: Boolean keyword argument for choosing where channels
+        dimension will be placed. True - patch dimension, False - grid dimension.
+    :return: Tensor of [N, P, h*w*C] or [N, P*C, h*w] shape.
+    """
     with tf.name_scope('image_patches'):
-        H, W, C = image_shape
+        _, _, C = image_shape
         h, w = patch_shape
-        N = tf.shape(img)[0]
-        img = tf.transpose(tf.reshape(img, tf.stack([N, -1, C])), [0, 2, 1])
-        img = tf.reshape(img, [-1, H, W, 1])
-        patches = tf.extract_image_patches(img, [1, h, w, 1], [1, 1, 1, 1], [1, 1, 1, 1], 'VALID')
-        shp = tf.shape(patches)  # img x out_rows x out_cols
-        return tf.reshape(patches, [N, C * shp[1] * shp[2], shp[3]])  # [N, P, w * h]
+        N = tf.shape(imgs)[0]
+        ones = [1] * 4
+        patches = tf.extract_image_patches(imgs, [1, h, w, 1], ones, ones, 'VALID')
+        return tf.reshape(patches, [N, -1, h*w*C])

@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from gpflow import settings
 from gpflow.dispatch import conditional, dispatch, sample_conditional
-from gpflow.multioutput.conditionals import independent_interdomain_conditional
+from gpflow.multioutput.conditionals import independent_interdomain_conditional, fully_correlated_conditional_repeat
 from gpflow.conditionals import base_conditional, _sample_mvn
 from gpflow.multioutput.features import debug_kuf, debug_kuu
 
@@ -42,14 +42,14 @@ def Kuf(feat, kern, Xnew):
             raise ValueError("When kern is configured with `with_indexing` "
                              "a IndexedInducingPatch should be used")
 
-        Pmn = kern.index_kernel.K(feat.indices, kern.IJ)  # [M, P]
+        Pmn = kern.spatio_indices_kernel.K(feat.indices, kern.spatio_indices)  # [M, P]
         Kmn = Kmn * Pmn[:, None, :]  # [M, N, P]
 
     if kern.pooling > 1:
         Kmn = tf.reshape(Kmn, [M, N, kern.Hout, kern.pooling, kern.Wout, kern.pooling])
         Kmn = tf.reduce_sum(Kmn, axis=[3, 5])  # [M, N, P']
 
-    return tf.reshape(Kmn, [M, 1, N, kern.patch_handler.config.num_patches])  # [M, L|1, N, P]  TODO: add L
+    return tf.reshape(Kmn, [M, 1, N, kern.patch_handler.config.num_patches])  # [M, 1, N, P]
 
 
 @dispatch(InducingPatch, ConvKernel)
@@ -60,7 +60,7 @@ def Kuu(feat, kern, *, jitter=0.0):
     jittermat = jitter * tf.eye(len(feat), dtype=Kmm.dtype)  # [M, M]
 
     if kern.with_indexing:
-        Pmm = kern.index_kernel.K(feat.indices)  # [M, M]
+        Pmm = kern.spatio_indices_kernel.K(feat.indices)  # [M, M]
         Kmm = Kmm * Pmm
 
     return (Kmm + jittermat)[None, :, :]  # [L|1, M, M]  TODO: add L
@@ -77,6 +77,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param white:
     :return:
     """
+    assert (not full_cov) and (not full_output_cov)
+
     settings.logger().debug("conditional: InducingPatch -- ConvKernel")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # LxMxM
     Kmn = Kuf(feat, kern, Xnew)  # MxLxNxP
@@ -85,18 +87,35 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     else:
         Knn = kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # NxP (x P)
 
-    return independent_interdomain_conditional(Kmn, Kmm, Knn, f,
+    Kmm = Kmm[0]  # [M, M]
+    Kmn = Kmn[:, 0, ...]  # [M, N, P]
+    m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f,
                                                full_cov=full_cov,
                                                full_output_cov=full_output_cov,
-                                               q_sqrt=q_sqrt, white=white)
+                                               q_sqrt=q_sqrt,
+                                               white=white)  # [C, N, P], [C, N, P]
+    N = tf.shape(m)[1]
+    m = tf.reshape(tf.transpose(m, [1, 2, 0]), [N, -1])  # [N, P*C]
+    v = tf.reshape(tf.transpose(v, [1, 2, 0]), [N, -1])  # [N, P*C]
+
+    return m, v
 
 
 @sample_conditional.register(object, InducingPatch, ConvKernel, object)
 @gpflow.name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, q_sqrt=None, white=False, **kwargs):
     settings.logger().debug("sample conditional: InducingPatch, ConvKernel")
-    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=True, q_sqrt=q_sqrt, white=white)  # NxP, NxPxP
-    sample = _sample_mvn(mean, var, cov_structure="full")
+    mean, var = conditional(
+        Xnew,
+        feat,
+        kern,
+        f,
+        full_cov=False,
+        full_output_cov=False,
+        q_sqrt=q_sqrt,
+        white=white
+    )  # NxP, NxP
+    sample = _sample_mvn(mean, var, cov_structure="diag")
     return sample
 
 # -------------------------------------------------
@@ -143,4 +162,3 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
                                    q_sqrt=q_sqrt, white=white)  # NxR,  RxNxN or NxR
     return fmean, fvar
-

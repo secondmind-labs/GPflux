@@ -75,7 +75,7 @@ class ImagePatchConfig:
         self.image_shape = image_shape
         self.patch_shape = patch_shape
         self.Cin = Cin
-        self.num_patches = Hout * Wout * Cin
+        self.num_patches = Hout * Wout
 
 
 class PatchHandler(ABC):
@@ -149,7 +149,6 @@ class ExtractPatchHandler(PatchHandler):
         :param X: Tensor containing image data [N, H*W*C]
         :return: Tensor [N, P*C]
         """
-        cfg = self.config
         Xp = self.get_image_patches(X)
         XpXpt = tf.reduce_sum(Xp ** 2, axis=-1)
         return tf.reshape(XpXpt, (tf.shape(X)[0], -1))  # [N, P*C]
@@ -376,18 +375,16 @@ class ConvKernel(Mok):
 
         super().__init__(basekern.input_dim)
 
-        config = ImagePatchConfig(image_shape, patch_shape, pooling=pooling)
-        assert config.Cin == 1
+        self.config = ImagePatchConfig(image_shape, patch_shape, pooling=pooling)
 
         is_handler = isinstance(patch_handler, PatchHandler)
-        self.patch_handler = ExtractPatchHandler(config) if not is_handler else patch_handler
+        self.patch_handler = ExtractPatchHandler(self.config) if not is_handler else patch_handler
 
         self.basekern = basekern
         self.with_indexing = with_indexing
         if self.with_indexing:
-            self._setup_indices()
-            # TODO(@awav): pass index kernel via arguments
-            self.index_kernel = kernels.Matern52(2, lengthscales=3.0)
+            self._setup_spatio_indices()
+            self.spatio_indices_kernel = kernels.Matern52(2, lengthscales=.1)
 
     @gpflow.name_scope("convolutional_K")
     @gpflow.params_as_tensors
@@ -405,38 +402,33 @@ class ConvKernel(Mok):
         cfg = self.patch_handler.config
         K = K_image_symm(self.basekern, self.patch_handler, X, full_output_cov=full_output_cov)
 
-        if full_output_cov:
-            # K is [N, P, P]
+        if self.with_indexing:
+            if full_output_cov:
+                Pij = self.spatio_indices_kernel.K(self.spatio_indices)  # [P, P]
+                K = K * Pij[None, :, :]
+            else:
+                Pij = self.spatio_indices_kernel.Kdiag(self.spatio_indices)  # [P]
+                K = K * Pij[None, :]
 
-            if self.with_indexing:
-                Pij = self.index_kernel.K(self.IJ)  # [P, P]
-                K = K * Pij[None, :, :]  # [N, P, P]
-
-            if cfg.pooling > 1:
-                HpWp = cfg.Hout, cfg.pooling, cfg.Wout, cfg.pooling
-                K = tf.reshape(K, [-1, *HpWp, *HpWp])
-                K = tf.reduce_sum(K, axis=[2, 4, 6, 8])
-                HW = cfg.Hout * cfg.Wout
-                K = tf.reshape(K, [-1, HW, HW])
-            return K  # [N, P', P']
-        else:
-            # K is [N, P]
-            if cfg.pooling > 1:
+        if cfg.pooling > 1:
+            if not full_output_cov:
                 msg = "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False."
                 raise NotImplementedError(msg)
+            HpWp = cfg.Hout, cfg.pooling, cfg.Wout, cfg.pooling
+            K = tf.reshape(K, [-1, *HpWp, *HpWp])
+            K = tf.reduce_sum(K, axis=[2, 4, 6, 8])
+            HW = cfg.Hout * cfg.Wout
+            K = tf.reshape(K, [-1, HW, HW])  # K is [N, P, P]
 
-            if self.with_indexing:
-                Pij = self.index_kernel.Kdiag(self.IJ)  # P
-                K = K * Pij[None, :]  # [N, P]
+        return K
 
-            return K
-
-    def _setup_indices(self):
-        # IJ: Nx2, cartesian product of output indices
+    def _setup_spatio_indices(self):
         cfg = self.patch_handler.config
-        grid = np.meshgrid(np.arange(cfg.Hout), np.arange(cfg.Wout))
-        IJ = np.vstack([x.flatten() for x in grid]).T  # Px2
-        self.IJ = IJ.astype(settings.float_type)  # (H_out * W_out)x2 = Px2
+        Hout = np.arange(cfg.Hout, dtype=settings.float_type)
+        Wout = np.arange(cfg.Wout, dtype=settings.float_type)
+        grid = np.meshgrid(Hout, Wout)
+        spatio_indices = np.vstack([x.flatten() for x in grid]).T  # [P, 2]
+        self.spatio_indices = spatio_indices
 
     @property
     def pooling(self):

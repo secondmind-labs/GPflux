@@ -5,6 +5,8 @@ import gpflux
 from gpflow.models import SVGP
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
+from gpflow.test_util import session_tf
+
 
 def _create_q_sqrt(M, L):
     return np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])
@@ -24,7 +26,7 @@ class Data:
     LSCs = np.random.randn(D_in) ** 2
 
 
-def test_svgp_comparison():
+def test_svgp_comparison(session_tf):
     # set up SVGP
     kern = RBF(Data.D_in, lengthscales=Data.LSCs, ARD=True)
     flow_model = SVGP(Data.X, Data.Y, kern, Gaussian(), Z=Data.Z)
