@@ -428,7 +428,7 @@ class ConvKernel(Mok):
         Wout = np.arange(cfg.Wout, dtype=settings.float_type)
         grid = np.meshgrid(Hout, Wout)
         spatio_indices = np.vstack([x.flatten() for x in grid]).T  # [P, 2]
-        self.spatio_indices = tf.convert_to_tensor(spatio_indices)
+        self.spatio_indices = spatio_indices
 
     @property
     def pooling(self):
