@@ -8,3 +8,4 @@ from .convolution_kernel import (ConvKernel, K_image_inducing_patches,
                                  ImagePatchConfig, PatchHandler,
                                  ConvPatchHandler, ExtractPatchHandler)
 from .inducing_patch import IndexedInducingPatch, InducingPatch
+from .mean_functions import IdentityConvMean

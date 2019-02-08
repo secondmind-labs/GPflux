@@ -61,16 +61,15 @@ def image_patch_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: Filte
 def diag_conv_square_dist(A: tf.Tensor, filter_shape: FilterShape,
                           **map_kwargs) -> tf.Tensor:
     """
-    Convolutional squared distances for diagonal case. Extracts filters from the input image
-    applies them to the same image using depthwise convolution operation along batch
-    dimention N.
+    Convolutional squared distances for diagonal case. Extracts filters from input image,
+    applies them to the same image using depthwise convolution operation.
 
     Args:
         A: Tensor of shape [N, H, W, C]
         B: Tensor of shape [N, H, W, C]
         filter_shape: Two element tuple with height and width sizes of filter respectively.
     Returns:
-        Tensor of shape [N, P, P, C].
+        Tensor of shape [N, P, C, P, C].
     """
     asserts = _input_tensor_asserts(A)
     with tf.control_dependencies(asserts):

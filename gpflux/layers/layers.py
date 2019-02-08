@@ -12,7 +12,6 @@ from gpflow.conditionals import conditional, sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
 
-
 class BaseLayer(Parameterized):
 
     def propagate(self, X, sampling=True, **kwargs):
@@ -101,7 +100,6 @@ class GPLayer(BaseLayer):
         :return: KL divergence from N(q_mu, q_sqrt) to N(0, I), independently for each GP
         """
         return gauss_kl(self.q_mu, self.q_sqrt)
-
 
     def describe(self):
         """ returns a string with the key properties of a GPlayer """
