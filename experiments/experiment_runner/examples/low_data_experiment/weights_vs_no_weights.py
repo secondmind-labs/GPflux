@@ -21,25 +21,6 @@ from experiments.experiment_runner.utils import calc_nll_and_error_rate
 
 import numpy as np
 
-_parser = argparse.ArgumentParser(
-    description="""Entrypoint for running multiple experiments.""")
-
-_parser.add_argument('--path', '-p',
-                     help='Path to store the saved_results.',
-                     type=str,
-                     required=True)
-_parser.add_argument('--repetitions', '-r',
-                     help='Number of repetitions of the experiments.',
-                     type=int,
-                     default=1)
-_parser.add_argument('--gpus',
-                     help='Path to store the saved_results.',
-                     nargs='+',
-                     type=str,
-                     required=True)
-
-_args = _parser.parse_args()
-
 SmallCustomHistory = NamedTuple('CustomHistory',
                                 [
                                     ('test_error_rate_list', Any),
@@ -161,8 +142,8 @@ class StatsGatheringKerasClassificationLearner(KerasClassificator):
                                            dataset.test_targets
         p_test = self._model.predict(dataset.test_features)
         p_train = self._model.predict(dataset.train_features)
-        p_test += 1e-12
-        p_train += 1e-12
+        p_test += 1e-16
+        p_train += 1e-16
         p_test = p_test / p_test.sum(-1, keepdims=True)
         if self._test_features is None:
             self._test_features = x_test
@@ -193,34 +174,43 @@ class StatsGatheringKerasClassificationLearner(KerasClassificator):
             pickle.dump(outcome.history, f_handle)
 
 
-class TickConvGPNoWeightsConfig(TickConvGPConfig):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.with_weights = False
-
-
-class TickConvGPRegularisedConfig(TickConvGPConfig):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.with_weights = False
-
-
 def simple(dataset_list):
+    _parser = argparse.ArgumentParser(
+        description="""Entrypoint for running multiple experiments.""")
+
+    _parser.add_argument('--path', '-p',
+                         help='Path to store the saved_results.',
+                         type=str,
+                         required=True)
+    _parser.add_argument('--repetitions', '-r',
+                         help='Number of repetitions of the experiments.',
+                         type=int,
+                         default=1)
+    _parser.add_argument('--gpus',
+                         help='Path to store the saved_results.',
+                         nargs='+',
+                         type=str,
+                         required=True)
+
+    _args = _parser.parse_args()
+
     NUM_GP_EPOCHS = 500
     STEPS_PER_EPOCH = 100
     STATS_NUM = 10000
     STORE_FREQ = 100000
     NUM_INDUCING_POINTS = 1000
+
     keras_config = KerasConfig(epochs=STEPS_PER_EPOCH * NUM_GP_EPOCHS // 10, steps_per_epoch=10)
 
-    gp_config_no_weights = TickConvGPNoWeightsConfig(steps_per_epoch=STEPS_PER_EPOCH,
-                                                     num_epochs=NUM_GP_EPOCHS,
-                                                     init_patches='patches-unique',
-                                                     monitor_stats_num=STATS_NUM,
-                                                     patch_shape=[5, 5],
-                                                     store_frequency=STORE_FREQ,
-                                                     num_inducing_points=NUM_INDUCING_POINTS,
-                                                     with_weights=False)
+    gp_config_no_weights = TickConvGPConfig(steps_per_epoch=STEPS_PER_EPOCH,
+                                            num_epochs=NUM_GP_EPOCHS,
+                                            init_patches='patches-unique',
+                                            monitor_stats_num=STATS_NUM,
+                                            patch_shape=[5, 5],
+                                            store_frequency=STORE_FREQ,
+                                            num_inducing_points=NUM_INDUCING_POINTS,
+                                            with_weights=False,
+                                            with_indexing=False)
 
     gp_config_weights = TickConvGPConfig(steps_per_epoch=STEPS_PER_EPOCH,
                                          num_epochs=NUM_GP_EPOCHS,
@@ -231,7 +221,7 @@ def simple(dataset_list):
                                          num_inducing_points=NUM_INDUCING_POINTS,
                                          with_weights=True)
 
-    experiment_name = 'example_experiment'
+    experiment_name = 'low_data_experiment'
     experiments_lists = []
     for dataset in dataset_list:
         experiments_lists.extend([

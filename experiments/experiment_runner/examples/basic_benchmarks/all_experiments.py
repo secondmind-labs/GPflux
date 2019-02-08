@@ -7,7 +7,7 @@ import argparse
 from experiments.experiment_runner.datasets import mnist, grey_cifar10, svhn, fashion_mnist, \
     mixed_mnist1, mixed_mnist2, mixed_mnist3, mixed_mnist4, mnist_5percent, mnist_10percent, \
     mnist_25percent
-from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
+from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, ConvGPConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
@@ -52,7 +52,16 @@ def main():
                 creator=ShallowConvGP,
                 dataset=dataset.load_data(),
                 config=TickConvGPConfig,
-                learner=GPClassificator))
+                learner=GPClassificator),
+        )
+        experiments_lists.append(
+            ExperimentSpecification(
+                name=experiment_name,
+                creator=ShallowConvGP,
+                dataset=dataset.load_data(),
+                config=ConvGPConfig,
+                learner=GPClassificator),
+        )
 
     run_multiple(experiments_lists * args.repetitions, gpus=args.gpus, path=args.path)
 

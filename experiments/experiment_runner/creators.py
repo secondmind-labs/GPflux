@@ -4,17 +4,12 @@
 
 import abc
 import gpflow
-from gpflow.kullback_leiblers import gauss_kl
-from gpflow import params_as_tensors
 import numpy as np
 from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 
 import gpflux
 from experiments.experiment_runner.utils import reshape_to_2d, labels_onehot_to_int
-from gpflux.layers import ConvLayer, WeightedSumConvLayer
-
-import tensorflow as tf
 
 
 class ModelCreator(abc.ABC):
@@ -45,7 +40,6 @@ class BasicCNN(ModelCreator):
         model.add(Dropout(0.5))
         model.add(Dense(dataset.num_classes, activation='softmax'))
         return model
-
 
 
 def create_convgp_layer(input_size, num_ind_points, patch_shape, num_classes, with_indexing,

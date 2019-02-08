@@ -19,11 +19,10 @@ learner should be implemented in ../learners.py
 
 import argparse
 
-from experiments.experiment_runner.datasets import mnist_5percent, random_mnist_10percent, \
-    mnist_10percent, mnist_25percent, mixed_mnist1, mixed_mnist2
+from experiments.experiment_runner.datasets import random_mnist_10percent
 from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
-from experiments.experiment_runner.learners import GPClassificator, KerasClassificationLearner
+from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
 
 
@@ -53,17 +52,17 @@ def main():
             creator=BasicCNN,
             dataset=random_mnist_10percent,
             config=KerasConfig,
-            learner=KerasClassificationLearner),
+            learner=KerasClassificator),
         ExperimentSpecification(
             name=experiment_name,
             creator=ShallowConvGP,
-            dataset=mnist_5percent,
+            dataset=random_mnist_10percent,
             config=TickConvGPConfig,
             learner=GPClassificator),
         ExperimentSpecification(
             name=experiment_name,
             creator=ShallowConvGP,
-            dataset=mnist_10percent,
+            dataset=random_mnist_10percent,
             config=TickConvGPConfig,
             learner=GPClassificator),
     ]

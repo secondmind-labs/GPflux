@@ -6,11 +6,7 @@ import keras
 import numpy as np
 
 
-class Data:
-    pass
-
-
-class Dataset(Data):
+class Dataset:
     def __init__(self, name: str,
                  train_features: np.ndarray,
                  train_targets: np.ndarray,

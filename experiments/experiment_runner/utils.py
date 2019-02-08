@@ -298,8 +298,3 @@ def numpy_fixed_seed(seed):
         return decorated_f
 
     return decorator
-
-
-def import_from(path, root):
-    module = '.'.join(path.split('.')[:-1])
-    cls = ...

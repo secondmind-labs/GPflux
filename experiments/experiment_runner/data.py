@@ -3,7 +3,7 @@
 # Proprietary and confidential
 
 
-from experiments.experiment_runner.data_infrastructure import Data, Dataset
+from experiments.experiment_runner.data_infrastructure import Dataset
 
 
 class DataSource:

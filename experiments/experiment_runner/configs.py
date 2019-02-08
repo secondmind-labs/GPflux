@@ -32,7 +32,6 @@ class GPConfig(Configuration):
                  store_frequency=5000,
                  lr=0.01,
                  optimiser=gpflow.train.AdamOptimizer):
-
         super().__init__()
         self.batch_size = batch_size
         self.monitor_stats_num = monitor_stats_num
@@ -138,6 +137,6 @@ class ConvGPConfig(GPConfig):
 
 
 class TickConvGPConfig(ConvGPConfig):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, with_indexing=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.with_indexing = True
+        self.with_indexing = with_indexing
