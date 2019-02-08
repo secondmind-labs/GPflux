@@ -41,7 +41,7 @@ class IndexedInducingPatch(InducingPatch):
 
     def __init__(self, patches, indices):
         super().__init__(patches)
-        self.indices = Param(indices)
+        self.indices = Param(indices / indices.max(axis=0))
 
     @property
     def patches(self):

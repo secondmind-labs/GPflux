@@ -26,7 +26,7 @@ def main():
                         type=str, required=True)
     parser.add_argument('--learner', '-l', help='Learner class.',
                         type=str, required=True)
-    parser.add_argument('--path', '-p', help='The path were results will be stored.', type=Path,
+    parser.add_argument('--path', '-p', help='The path were saved_results will be stored.', type=Path,
                         required=True)
     parser.add_argument('--repetitions', '-r', help='The number of repetitions of an experiment',
                         type=int, default=1)
@@ -43,6 +43,17 @@ def main():
         data_source = StaticDataSource(dataset=dataset)
         trainer = Trainer(model_creator, learner_class)
         experiment = Experiment(name=args.name,
+                                data_source=data_source,
+                                trainer=trainer,
+                                config=config)
+        experiment.run(path)
+
+
+def parametrised_main(config, model_creator, learner_class, dataset, repetitions, path, name):
+    for _ in range(repetitions):
+        data_source = StaticDataSource(dataset=dataset)
+        trainer = Trainer(model_creator, learner_class)
+        experiment = Experiment(name=name,
                                 data_source=data_source,
                                 trainer=trainer,
                                 config=config)

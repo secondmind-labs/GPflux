@@ -8,15 +8,19 @@ import subprocess
 import multiprocessing as mp
 import sys
 import time
-from typing import NamedTuple, Any
 
-ExperimentSpecification = NamedTuple('ExperimentSpecification',
-                                     [('name', Any),
-                                      ('creator', Any),
-                                      ('dataset', Any),
-                                      ('config', Any),
-                                      ('learner', Any)
-                                      ])
+from experiments.experiment_runner.run import parametrised_main
+
+
+class ExperimentSpecification:
+
+    def __init__(self, name, creator, dataset, config, learner):
+        self.name = name
+        self.creator = creator
+        self.dataset = dataset
+        self.config = config
+        self.learner = learner
+        self.file = __file__
 
 
 def run_experiment(experiment: ExperimentSpecification, available_gpus, path):
@@ -25,13 +29,15 @@ def run_experiment(experiment: ExperimentSpecification, available_gpus, path):
     gpu_num = available_gpus.get()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
     location = os.path.abspath(os.path.dirname(sys.modules[__name__].__file__))
-    subprocess.call(['python', os.path.join(location, 'run.py'),
-                     '-n', experiment.name,
-                     '-m', experiment.creator.__name__,
-                     '-d', experiment.dataset.__name__,
-                     '-c', experiment.config.__name__,
-                     '-l', experiment.learner.__name__,
-                     '-p', path])
+    # subprocess.call(['python', os.path.join(location, 'run.py'),
+    #                  '-n', experiment.name,
+    #                  '-m', experiment.creator.__name__,
+    #                  '-d', experiment.dataset.__name__,
+    #                  '-c', experiment.config.__name__,
+    #                  '-l', experiment.learner.__name__,
+    #                  '-p', path])
+    parametrised_main(experiment.config, experiment.creator, experiment.learner, experiment.dataset,
+                      1, path, 'test')
     available_gpus.put(gpu_num)
 
 

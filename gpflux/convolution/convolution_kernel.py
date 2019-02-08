@@ -375,15 +375,16 @@ class ConvKernel(Mok):
 
         super().__init__(basekern.input_dim)
 
-        config = ImagePatchConfig(image_shape, patch_shape, pooling=pooling)
+        self.config = ImagePatchConfig(image_shape, patch_shape, pooling=pooling)
+
         is_handler = isinstance(patch_handler, PatchHandler)
-        self.patch_handler = ExtractPatchHandler(config) if not is_handler else patch_handler
+        self.patch_handler = ExtractPatchHandler(self.config) if not is_handler else patch_handler
 
         self.basekern = basekern
         self.with_indexing = with_indexing
         if self.with_indexing:
             self._setup_spatio_indices()
-            self.spatio_indices_kernel = kernels.Matern52(2, lengthscales=3.0)
+            self.spatio_indices_kernel = kernels.Matern52(2, lengthscales=.1)
 
     @gpflow.name_scope("convolutional_K")
     @gpflow.params_as_tensors
@@ -403,7 +404,7 @@ class ConvKernel(Mok):
 
         if self.with_indexing:
             if full_output_cov:
-                Pij self.spatio_indices_kernel.K(self.spatio_indices)  # [P, P]
+                Pij = self.spatio_indices_kernel.K(self.spatio_indices)  # [P, P]
                 K = K * Pij[None, :, :]
             else:
                 Pij = self.spatio_indices_kernel.Kdiag(self.spatio_indices)  # [P]
@@ -427,7 +428,7 @@ class ConvKernel(Mok):
         Wout = np.arange(cfg.Wout, dtype=settings.float_type)
         grid = np.meshgrid(Hout, Wout)
         spatio_indices = np.vstack([x.flatten() for x in grid]).T  # [P, 2]
-        self.spatio_indices = tf.convert_to_tensor(spatio_indices)
+        self.spatio_indices = spatio_indices
 
     @property
     def pooling(self):
@@ -455,7 +456,7 @@ class WeightedSumConvKernel(ConvKernel):
                          pooling=pooling, with_indexing=with_indexing)
 
         self.with_weights = with_weights
-        weights = np.ones([self.num_outputs], dtype=settings.float_type)  # P
+        weights = np.ones([self.num_outputs], dtype=settings.float_type)   # P
         self.weights = gpflow.Param(weights) if with_weights else weights
 
     @gpflow.params_as_tensors

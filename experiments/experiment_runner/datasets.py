@@ -10,11 +10,11 @@ from experiments.experiment_runner.utils import _get_max_normalised, _mix_train_
 
 def _get_dataset_fraction(dataset, fraction):
     (train_features, train_targets), (test_features, test_targets) = dataset
-    seed = np.random.get_state()
+    random_state = np.random.get_state()
     train_ind = np.random.permutation(range(train_features.shape[0]))[
                 :int(train_features.shape[0] * fraction)]
     train_features, train_targets = train_features[train_ind], train_targets[train_ind]
-    np.random.set_state(seed)
+    np.random.set_state(random_state)
     return (train_features, train_targets), (test_features, test_targets)
 
 
@@ -153,6 +153,40 @@ class random_mnist_100epc:
     def load_data(cls):
         from keras.datasets import mnist
         data_fraction = _get_dataset_fixed_examples_per_class(mnist.load_data(), 100)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+class random_mnist_50epc:
+
+    @classmethod
+    def load_data(cls):
+        from keras.datasets import mnist
+        data_fraction = _get_dataset_fixed_examples_per_class(mnist.load_data(), 50)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+class random_mnist_20epc:
+
+    @classmethod
+    def load_data(cls):
+        from keras.datasets import mnist
+        data_fraction = _get_dataset_fixed_examples_per_class(mnist.load_data(), 20)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class random_mnist_10epc:
+
+    @classmethod
+    def load_data(cls):
+        from keras.datasets import mnist
+        data_fraction = _get_dataset_fixed_examples_per_class(mnist.load_data(), 10)
+        return _get_max_normalised(data_fraction, cls.__name__)
+
+
+class random_mnist_1epc:
+
+    @classmethod
+    def load_data(cls):
+        from keras.datasets import mnist
+        data_fraction = _get_dataset_fixed_examples_per_class(mnist.load_data(), 1)
         return _get_max_normalised(data_fraction, cls.__name__)
 
 

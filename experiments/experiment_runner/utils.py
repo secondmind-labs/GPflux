@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 from gpflux.convolution import PatchHandler, ImagePatchConfig
 from experiments.experiment_runner.data_infrastructure import ImageClassificationDataset, \
-    MaxNormalisingPreprocessor
+    MaxNormalisingPreprocessor, Dataset
 
 
 def get_from_module(name, module):
@@ -99,9 +99,21 @@ def reshape_to_2d(x):
     return x.reshape(x.shape[0], -1)
 
 
+def reshape_dataset_to2d(dataset):
+    x_train, y_train = reshape_to_2d(dataset.train_features), \
+                       labels_onehot_to_int(reshape_to_2d(dataset.train_targets))
+    x_test, y_test = reshape_to_2d(dataset.test_features), \
+                     labels_onehot_to_int(reshape_to_2d(dataset.test_targets))
+    reshaped_dataset = Dataset.from_train_test_split(name=dataset.name,
+                                                     train_features=x_train,
+                                                     train_targets=y_train,
+                                                     test_features=x_test,
+                                                     test_targets=y_test)
+    return reshaped_dataset
+
+
 def calc_multiclass_error(model, x, y, batchsize=100):
-    Ns = len(x)
-    splits = Ns // batchsize
+    splits = max(len(x) // batchsize, 1)
     hits = []
     for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
         logits, _ = model.predict_y(xs)
@@ -113,7 +125,7 @@ def calc_multiclass_error(model, x, y, batchsize=100):
 
 def calc_avg_nll(model, x, y, batchsize=100):
     num_examples = x.shape[0]
-    splits = num_examples // batchsize
+    splits = max(num_examples // batchsize, 1)
     ll = 0
     for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
         p, _ = model.predict_y(xs)
@@ -121,6 +133,23 @@ def calc_avg_nll(model, x, y, batchsize=100):
         ll += np.log(p).sum()
     ll /= num_examples
     return -ll
+
+
+def calc_nll_and_error_rate(model, x, y, batch_size=100):
+    splits = max(len(x) // batch_size, 1)
+    ll = 0
+    hits = []
+    preds = []
+    for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
+        p, _ = model.predict_y(xs)
+        ll += np.log(((ys == np.arange(10)[None, :]) * p).sum(-1) + 1e-16).sum()
+        current_hits = p.argmax(1) == ys[:, 0]
+        hits.append(current_hits)
+        preds.append(p)
+    ll /= len(x)
+    error = 1 - np.concatenate(hits, 0)
+    error_rate = np.sum(error) * 100.0 / len(error)
+    return -ll, error_rate, np.concatenate(preds, 0)
 
 
 class ImagePatchConfigCoder(gpflow.saver.coders.ObjectCoder):
@@ -145,14 +174,15 @@ def load_gpflow_model(filename, model) -> None:
     return gpflow.Saver().load(filename, context=context)
 
 
-def get_top_n_error(model, x, y, n, batchsize=100):
+def get_top_n_error(model, x, y, n_list, batchsize=100):
     num_examples = x.shape[0]
     splits = num_examples // batchsize
-    hits = 0
+    hits = {n: 0 for n in n_list}
     for xs, ys in zip(np.array_split(x, splits), np.array_split(y, splits)):
         p, _ = model.predict_y(xs)
-        hits += (ys == p.argsort(-1)[:, -n:]).sum()
-    return (1 - hits / num_examples) * 100
+        for n in n_list:
+            hits[n] += (ys == p.argsort(-1)[:, -n:]).sum()
+    return [(1 - hits[n] / num_examples) * 100 for n in n_list]
 
 
 def get_avg_nll_missclassified(model, x, y, batchsize=100):
@@ -266,4 +296,10 @@ def numpy_fixed_seed(seed):
 
         np.random.set_state(state)
         return decorated_f
+
     return decorator
+
+
+def import_from(path, root):
+    module = '.'.join(path.split('.')[:-1])
+    cls = ...

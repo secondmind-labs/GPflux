@@ -57,7 +57,7 @@ def sub_conditional(Kmn, Kmm, fKnn, f, *, full_cov=False, q_sqrt=None, white=Fal
             sA_tiled, dA_tiled = [tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1])) for A in [sA, dA]]
             sLTA, dLTA = [tf.matmul(L, A_tiled, transpose_a=True) for A_tiled in [sA_tiled, dA_tiled]]  # [R, M, N]
         else:  # pragma: no cover
-            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.get_shape().ndims}")
+            raise ValueError("Bad dimension for q_sqrt: {}".format(q_sqrt.get_shape().ndims))
         sfvar, dfvar = [fvar + tf.reduce_sum(tf.square(LTA), 1)
                         for fvar, LTA in zip([sfvar, dfvar], [sLTA, dLTA])]  # [R, N]
 
