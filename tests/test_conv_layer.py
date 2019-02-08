@@ -8,7 +8,8 @@ from gpflux.layers import ConvLayer
 import tensorflow as tf
 
 
-def test_conv_layer_uses_same_graph():
+def test_conv_layer_defer_applies_to_all_tf_nodes():
+    gpflow.reset_default_graph_and_session()
     # check if defer build applies to all tensors/variables created by the ConvLayer
     graph = tf.get_default_graph()
     with gpflow.defer_build():
