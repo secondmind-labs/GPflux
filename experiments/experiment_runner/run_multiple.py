@@ -6,18 +6,12 @@ import multiprocessing
 import os
 import multiprocessing as mp
 import time
+from collections import namedtuple
 
 from experiments.experiment_runner.run import parametrised_main
 
-
-class ExperimentSpecification:
-
-    def __init__(self, name, creator, dataset, config, learner):
-        self.name = name
-        self.creator = creator
-        self.dataset = dataset
-        self.config = config
-        self.learner = learner
+ExperimentSpecification = namedtuple('ExperimentSpecification',
+                                     'name, creator, dataset, config, learner')
 
 
 def run_experiment(experiment: ExperimentSpecification, available_gpus, path):
@@ -25,8 +19,9 @@ def run_experiment(experiment: ExperimentSpecification, available_gpus, path):
         time.sleep(0.01)
     gpu_num = available_gpus.get()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
-    parametrised_main(experiment.config, experiment.creator, experiment.learner, experiment.dataset.load_data(),
-                      1, path, 'test')
+    parametrised_main(experiment.config, experiment.creator, experiment.learner,
+                      experiment.dataset.load_data(),
+                      1, path, experiment.name)
     available_gpus.put(gpu_num)
 
 

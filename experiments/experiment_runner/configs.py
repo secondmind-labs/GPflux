@@ -14,11 +14,11 @@ from experiments.experiment_runner.utils import calc_multiclass_error
 class KerasConfig(Configuration):
 
     def __init__(self, batch_size=64, optimiser=keras.optimizers.Adam,
-                 callbacks=(), epochs=10, steps_per_epoch=500):
+                 callbacks=(), num_epochs=10, steps_per_epoch=500):
         self.batch_size = batch_size
         self.optimiser = optimiser
         self.callbacks = callbacks
-        self.epochs = epochs
+        self.epochs = num_epochs
         self.steps_per_epoch = steps_per_epoch
 
 

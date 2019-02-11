@@ -200,7 +200,7 @@ def simple(dataset_list):
     STORE_FREQ = 100000
     NUM_INDUCING_POINTS = 1000
 
-    keras_config = KerasConfig(epochs=STEPS_PER_EPOCH * NUM_GP_EPOCHS // 10, steps_per_epoch=10)
+    keras_config = KerasConfig(num_epochs=STEPS_PER_EPOCH * NUM_GP_EPOCHS // 10, steps_per_epoch=10)
 
     gp_config_no_weights = TickConvGPConfig(steps_per_epoch=STEPS_PER_EPOCH,
                                             num_epochs=NUM_GP_EPOCHS,

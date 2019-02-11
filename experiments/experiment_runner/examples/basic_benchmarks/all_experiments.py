@@ -4,9 +4,7 @@
 
 import argparse
 
-from experiments.experiment_runner.datasets import mnist, grey_cifar10, svhn, fashion_mnist, \
-    mixed_mnist1, mixed_mnist2, mixed_mnist3, mixed_mnist4, mnist_5percent, mnist_10percent, \
-    mnist_25percent
+from experiments.experiment_runner.datasets import mnist, grey_cifar10, svhn, fashion_mnist
 from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, ConvGPConfig
 from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
@@ -31,9 +29,9 @@ def main():
                         type=str,
                         required=True)
 
-    basic_set = [mnist, grey_cifar10, fashion_mnist,
-                 mixed_mnist1, mixed_mnist2, mixed_mnist3, mixed_mnist4,
-                 mnist_5percent, mnist_10percent, mnist_25percent]
+    basic_set = [mnist, grey_cifar10, fashion_mnist, svhn]
+
+    NN_EPOCH_DICT = {mnist: 12, grey_cifar10: 30, fashion_mnist: 15, svhn: 30}
 
     args = parser.parse_args()
     experiment_name = 'all_experiments'
@@ -44,8 +42,9 @@ def main():
                 name=experiment_name,
                 creator=BasicCNN,
                 dataset=dataset,
-                config=KerasConfig(),
+                config=KerasConfig(num_epochs=NN_EPOCH_DICT[dataset]),
                 learner=KerasClassificator))
+
         experiments_lists.append(
             ExperimentSpecification(
                 name=experiment_name,
