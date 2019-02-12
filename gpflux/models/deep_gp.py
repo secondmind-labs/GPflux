@@ -32,6 +32,7 @@ class DeepGP(Model):
         year={2017}
     }
     """
+
     def __init__(self,
                  X: np.ndarray,
                  Y: np.ndarray,
@@ -67,55 +68,66 @@ class DeepGP(Model):
             self.scale = 1.0
 
     def _get_Ws_iter(self, latent_var_mode: LatentVarMode, Ws=None) -> iter:
-        i = 0
+        """
+        Returns slices from Ws for each of the Latent Variable Layers when
+        LatentVarMode equals LatentVarMode.GIVEN, else returns None.
+        """
+        begin_index = 0
         for layer in self.layers:
-            if latent_var_mode == LatentVarMode.GIVEN and isinstance(layer, LatentVariableLayer):
-
-                # passing some fixed Ws, which are packed to a single tensor for ease of use with autoflow
-                assert isinstance(Ws, tf.Tensor)
-                d = layer.latent_dim
-                yield Ws[:, i:(i+d)]
-                i += d
+            if latent_var_mode is not LatentVarMode.GIVEN:
+                yield None  # we only return Ws when they are given
+            elif not isinstance(layer, LatentVariableLayer):
+                yield None  # we only return Ws for latent variable layers
             else:
-                yield None
+                # select the right columns out of W
+                end_index = begin_index + layer.latent_dim
+                yield Ws[:, begin_index:end_index]
+                # update indices
+                begin_index = end_index
 
     @params_as_tensors
-    def _build_decoder(self, Z, full_cov=False, full_output_cov=False,
-                       Ws=None, latent_var_mode=LatentVarMode.POSTERIOR):
+    def _build_decoder(self,
+                       Z,
+                       full_cov=False,
+                       full_output_cov=False,
+                       Ws=None,
+                       latent_var_mode=LatentVarMode.POSTERIOR):
         """
         :param Z: N x W
         """
         Z = tf.cast(Z, dtype=settings.float_type)
 
-        Ws_iter = self._get_Ws_iter(latent_var_mode, Ws)  # iter, returning either None or slices from Ws
+        Ws_iter = self._get_Ws_iter(latent_var_mode, Ws)
 
-        for layer, W in zip(self.layers[:-1], Ws_iter):
-            Z = layer.propagate(Z,
-                                sampling=True,
-                                W=W,
-                                latent_var_mode=latent_var_mode,
-                                full_output_cov=full_output_cov,
-                                full_cov=full_cov)
-
-        return self.layers[-1].propagate(Z,
-                                         sampling=False,
-                                         W=next(Ws_iter),
-                                         latent_var_mode=latent_var_mode,
-                                         full_output_cov=full_output_cov,
-                                         full_cov=full_cov)  #f_mean, f_var
+        for layer, W in zip(self.layers, Ws_iter):
+            Z, mean, cov = layer.propagate(
+                Z,
+                W=W,
+                latent_var_mode=latent_var_mode,
+                full_output_cov=full_output_cov,
+                full_cov=full_cov
+            )
+        return mean, cov
 
     @params_as_tensors
     def _build_likelihood(self):
-        f_mean, f_var = self._build_decoder(self.X)  # N x P, N x P
-        self.E_log_prob = tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y))
+        f_mean, f_var = self._build_decoder(self.X)  # [N, P], [N, P]
+        self.E_log_prob = tf.reduce_sum(
+            self.likelihood.variational_expectations(f_mean, f_var, self.Y)
+        )  # []
 
-        self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))
+        self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))  # []
 
-        ELBO = self.E_log_prob * self.scale - self.KL_U_layers
-        return tf.cast(ELBO, settings.float_type)
+        return tf.cast(
+            self.E_log_prob * self.scale - self.KL_U_layers,
+            settings.float_type
+        )  # []
 
     def _predict_f(self, X):
-        mean, variance = self._build_decoder(X, latent_var_mode=LatentVarMode.PRIOR)  # N x P, N x P
+        mean, variance = self._build_decoder(
+            X,
+            latent_var_mode=LatentVarMode.PRIOR
+        )  # [N, P], [N, P]
         return mean, variance
 
     @params_as_tensors
@@ -128,17 +140,34 @@ class DeepGP(Model):
     def predict_f(self, X):
         return self._predict_f(X)
 
-    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
+    @autoflow([settings.float_type, [None, None]],
+              [settings.float_type, [None, None]])
     def predict_f_with_Ws(self, X, Ws):
-        return self._build_decoder(X, Ws=Ws, latent_var_mode=LatentVarMode.GIVEN)
+        return self._build_decoder(
+            X,
+            Ws=Ws,
+            latent_var_mode=LatentVarMode.GIVEN
+        )
 
-    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
+    @autoflow([settings.float_type, [None, None]],
+              [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_output_cov(self, X, Ws):
-        return self._build_decoder(X, Ws=Ws, full_output_cov=True, latent_var_mode=LatentVarMode.GIVEN)
+        return self._build_decoder(
+            X,
+            Ws=Ws,
+            full_output_cov=True,
+            latent_var_mode=LatentVarMode.GIVEN
+        )
 
-    @autoflow([settings.float_type, [None, None]], [settings.float_type, [None, None]])
+    @autoflow([settings.float_type, [None, None]],
+              [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_cov(self, X, Ws):
-        return self._build_decoder(X, Ws=Ws, full_cov=True, latent_var_mode=LatentVarMode.GIVEN)
+        return self._build_decoder(
+            X,
+            Ws=Ws,
+            full_cov=True,
+            latent_var_mode=LatentVarMode.GIVEN
+        )
 
     @autoflow()
     def compute_KL_U(self):

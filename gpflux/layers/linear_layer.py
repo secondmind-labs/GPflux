@@ -38,23 +38,21 @@ class LinearLayer(BaseLayer):
         if bias is None:
             bias = np.zeros((output_dim, ))
         if bias.shape != (output_dim,):
-            raise ValueError("bias must have length equal to output_dim={}"
-                             .format(output_dim))
+            raise ValueError("bias must have length equal to output_dim={}".format(output_dim))
 
         self.weight = Param(weight)
         self.bias = Param(bias)
 
     @params_as_tensors
-    def propagate(self, X, sampling=True, **kwargs):
-        if not sampling:
-            raise ValueError("We can only sample from a single "
-                             "layer multi-perceptron.")
-        else:
-            return tf.matmul(X, self.weight) + self.bias
+    def propagate(self, X, **kwargs):
+        mean = tf.matmul(X, self.weight) + self.bias
+        return mean, mean, None
 
     def KL(self):
         return tf.cast(0.0, settings.float_type)
 
     def describe(self):
-        return "LinearLayer: input_dim {}, output_dim {}".\
-                format(self.input_dim, self.output_dim)
+        return "LinearLayer: input_dim {}, output_dim {}".format(
+            self.input_dim,
+            self.output_dim
+        )
