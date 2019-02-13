@@ -173,7 +173,7 @@ class DeepGP(Model):
 
     @autoflow()
     def compute_data_fit(self):
-        # check this works correctly with minibatching
+        # TODO: check this works correctly with minibatching
         return self.E_log_prob * self.scale
 
     def log_pdf(self, X, Y):
