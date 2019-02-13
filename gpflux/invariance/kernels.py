@@ -57,7 +57,8 @@ class StochasticInvariant(InvariantBase):
     def K(self, X, X2=None):
         Xp = self.orbit.get_orbit(X)
         Xp = tf.reshape(Xp, (-1, self.basekern.input_dim))
-        Xp2 = tf.reshape(self.orbit.get_orbit(X2), (-1, self.basekern.input_dim)) if X2 is not None else None
+        Xp2 = tf.reshape(self.orbit.get_orbit(X2),
+                         (-1, self.basekern.input_dim)) if X2 is not None else None
 
         bigK = self.basekern.K(Xp, Xp2)
         bigK_shape = [tf.shape(X)[0], self.orbit.orbit_batch_size, -1, self.orbit.orbit_batch_size]

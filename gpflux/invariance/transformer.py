@@ -53,7 +53,7 @@ def spatial_transformer_network(input_fmap, theta, out_dims=None, **kwargs):
     B = tf.shape(input_fmap)[0]
     H = tf.shape(input_fmap)[1]
     W = tf.shape(input_fmap)[2]
-    C = tf.shape(input_fmap)[3]
+    # C = tf.shape(input_fmap)[3]
 
     # reshape theta to (B, 2, 3)
     theta = tf.reshape(theta, [B, 2, 3])
@@ -179,10 +179,10 @@ def bilinear_sampler(img, x, y):
     - interpolated images according to grids. Same size as grid.
     """
     # prepare useful params
-    B = tf.shape(img)[0]
+    # B = tf.shape(img)[0]
     H = tf.shape(img)[1]
     W = tf.shape(img)[2]
-    C = tf.shape(img)[3]
+    # C = tf.shape(img)[3]
 
     max_y = tf.cast(H - 1, 'int32')
     max_x = tf.cast(W - 1, 'int32')
