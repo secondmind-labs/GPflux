@@ -9,14 +9,10 @@ import tensorflow as tf
 from tqdm import tqdm
 
 import gpflow
-from gpflow.test_util import session_tf  # pylint: disable=unused-import
-from gpflux.invariance import (FlipInputDims, Invariant,
-                               InvariantInducingPoints, Permutation,
-                               QuantRotation, Rot90, Rotation,
-                               StochasticInvariant,
-                               StochasticInvariantInducingPoints)
 
-print(session_tf)  # Just to prevent unused import for `session_tf`
+from gpflux.invariance.features import InvariantInducingPoints, StochasticInvariantInducingPoints
+from gpflux.invariance.kernels import Invariant, StochasticInvariant
+from gpflux.invariance.orbits import FlipInputDims, Rot90, QuantRotation, Permutation, Rotation
 
 
 @pytest.mark.parametrize("orbit,orbit_kwargs", [(FlipInputDims, {}),

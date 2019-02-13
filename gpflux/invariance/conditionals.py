@@ -101,7 +101,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     # [NC, R]
     # [N, R], 𝔼[est[μ]] = μ -- predictive mean
 
-    N, C = tf.shape(Kuf)[1:3]
+    N, C = tf.shape(Kuf)[1], tf.shape(Kuf)[2]
     diag_fvar_mean = tf.reduce_mean(tf.reshape(fvar, (N, C, -1)), 1)  # [N, R]
     est_fvar = full_fvar_mean * kern.mw_full + diag_fvar_mean * kern.mw_diag
     # [N, R], 𝔼[est[σ²]] = σ² -- predictive variance
