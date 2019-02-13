@@ -2,19 +2,8 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-
-import pytest
 import tensorflow as tf
 import warnings
 
 tf.logging.set_verbosity(tf.logging.FATAL)
 warnings.filterwarnings('ignore')
-
-
-@pytest.fixture
-def session_tf():
-    gpu_opts = tf.GPUOptions(allow_growth=True)
-    config = tf.ConfigProto(gpu_options=gpu_opts)
-    with tf.Graph().as_default() as graph:
-        with tf.Session(graph=graph, config=config).as_default() as session:
-            yield session

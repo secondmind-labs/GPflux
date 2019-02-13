@@ -115,7 +115,7 @@ class ExtractPatchHandler(PatchHandler):
     strides = (1, 1, 1, 1)  # Static variable, used by convolutional operations.
 
     @lru_cache(maxsize=10)
-    def get_image_patches(self, X):
+    def get_image_patches(self, X: tf.Tensor):
         """
         Extract image patches method with LRU cache.
 
