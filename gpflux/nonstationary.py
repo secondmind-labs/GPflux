@@ -3,6 +3,7 @@
 # Proprietary and confidential
 
 import tensorflow as tf
+
 import gpflow
 from gpflow import params_as_tensors, Param
 
@@ -41,7 +42,7 @@ class NonstationaryKernel(gpflow.kernels.Kernel):
         self.scaling_offset = Param(scaling_offset)
         if positivity is tf.exp:
             self.scaling_offset.trainable = False
-        self._positivity = positivity  #XXX use softplus / log(1+exp)?
+        self._positivity = positivity  # XXX use softplus / log(1+exp)?
 
     @params_as_tensors
     def _split_scale(self, X):
@@ -69,7 +70,7 @@ class NonstationaryKernel(gpflow.kernels.Kernel):
         # axis=0 and axis=-3 are equivalent, and axis=1 and axis=-2 are equivalent
         lengthscales1 = tf.expand_dims(lengthscales1, axis=-2)  # [N, 1, d]
         lengthscales2 = tf.expand_dims(lengthscales2, axis=-3)  # [1, M, d]
-        squared_lengthscales_sum = (lengthscales1**2 + lengthscales2**2)  # [N, M, d]
+        squared_lengthscales_sum = (lengthscales1 ** 2 + lengthscales2 ** 2)  # [N, M, d]
 
         q = tf.reduce_prod(tf.sqrt(2 * lengthscales1 * lengthscales2 / squared_lengthscales_sum),
                            axis=-1)  # [N, M]
@@ -92,7 +93,7 @@ class NonstationaryKernel(gpflow.kernels.Kernel):
             x1 = tf.expand_dims(x1, axis=-2)  # [N, 1, D]
             x2 = tf.expand_dims(x2, axis=-3)  # [1, M, D]
 
-            r2 = tf.reduce_sum(2 * (x1 - x2)**2 / squared_lengthscales_sum, axis=-1)  # [N, M]
+            r2 = tf.reduce_sum(2 * (x1 - x2) ** 2 / squared_lengthscales_sum, axis=-1)  # [N, M]
 
         else:
             assert False, "lengthscales_dim must be 1 or same as data_dim"
@@ -102,4 +103,3 @@ class NonstationaryKernel(gpflow.kernels.Kernel):
     @params_as_tensors
     def Kdiag(self, X):
         return self.basekernel.Kdiag(X)
-
