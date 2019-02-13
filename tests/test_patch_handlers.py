@@ -1,13 +1,16 @@
-import gpflow
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
+
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.test_util import session_tf
+
 from numpy.testing import assert_allclose
 
-import gpflux
-from gpflux.convolution import ExtractPatchHandler, ConvPatchHandler
-from gpflux.convolution import ImagePatchConfig
+from gpflux.convolution.convolution_kernel import ImagePatchConfig, ExtractPatchHandler, \
+    ConvPatchHandler
 
 
 class DT:

@@ -6,8 +6,7 @@
 import numpy as np
 import tensorflow as tf
 
-import gpflow
-from gpflow import autoflow, settings, Param
+from gpflow import autoflow, settings
 from gpflow.decors import params_as_tensors
 from gpflow.mean_functions import MeanFunction
 
@@ -19,7 +18,7 @@ class IdentityConvMean(MeanFunction):
             # image_shape only contains [H, W],
             # so we assume a one-dimensional color channel
             image_shape += [1]
-        
+
         self.image_shape = image_shape
         self.filter_shape = filter_shape if len(filter_shape) == 1 else filter_shape[0]
         self.feature_maps_in = image_shape[-1]
@@ -55,10 +54,10 @@ class IdentityConvMean(MeanFunction):
         identity_filter = np.zeros(filter_shape, dtype=settings.float_type)
         identity_filter[self.filter_shape // 2, self.filter_shape // 2, :, :] = 1.0
         return identity_filter
-    
+
     @autoflow((settings.float_type, [None, None]))
     def compute(self, X):
         return self.__call__(X)
-    
+
     def compute_default_graph(self, X):
         return tf.Session().run(self.__call__(tf.convert_to_tensor(X)))

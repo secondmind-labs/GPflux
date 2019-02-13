@@ -1,6 +1,12 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 import numpy as np
 import pytest
 import tensorflow as tf
+
+from tqdm import tqdm
 
 import gpflow
 from gpflow.test_util import session_tf  # pylint: disable=unused-import
@@ -43,10 +49,13 @@ def test_kernel_diagonals(session_tf, orbit):
     (Rot90, 7000, {"orbit_batch_size": 2}, None, {}),
     (QuantRotation, 1, {"orbit_batch_size": 8}, None, {}),  # Test the full batch size
     (QuantRotation, 12000, {"orbit_batch_size": 5}, None, {}),
-    (Rotation, 3500, {"orbit_batch_size": 30, "use_stn": False}, QuantRotation, {"rotation_quantisation": 0.0625}),
-    # (Rotation, 2000, {"orbit_batch_size": 30, "use_stn": True}, QuantRotation, {"rotation_quantisation": 0.125})
+    (Rotation, 3500, {"orbit_batch_size": 30, "use_stn": False}, QuantRotation,
+     {"rotation_quantisation": 0.0625}),
+    # (Rotation, 2000, {"orbit_batch_size": 30, "use_stn": True},
+    # QuantRotation, {"rotation_quantisation": 0.125})
 ])
-def test_stochastic_kernel_convergence(session_tf, orbit, full_orbit, samples, orbit_kwargs, full_orbit_kwargs):
+def test_stochastic_kernel_convergence(session_tf, orbit, full_orbit, samples, orbit_kwargs,
+                                       full_orbit_kwargs):
     """
     Test whether the stochastic invariant kernel does actually return the
     correct unbiased estimates for both K and Kdiag.
@@ -58,7 +67,8 @@ def test_stochastic_kernel_convergence(session_tf, orbit, full_orbit, samples, o
     X = np.random.randn(3, 2 ** 2)
     k = Invariant(X.shape[1], gpflow.kernels.SquaredExponential(X.shape[1]),
                   orbit(**orbit_kwargs) if full_orbit is None else full_orbit(**full_orbit_kwargs))
-    sk = StochasticInvariant(X.shape[1], gpflow.kernels.SquaredExponential(X.shape[1]), orbit(**orbit_kwargs))
+    sk = StochasticInvariant(X.shape[1], gpflow.kernels.SquaredExponential(X.shape[1]),
+                             orbit(**orbit_kwargs))
 
     K = k.compute_K_symm(X, X)
     sK = sum([sk.compute_K_symm(X, X) for _ in range(samples)]) / samples
@@ -114,7 +124,7 @@ def test_invariant_predictions(session_tf, orbit, stoch_orbit_kwargs):
 @pytest.mark.parametrize("orbit_batch_size,samples,lml_samples", [
     (6, 1, 1),
     (5, 200, 200),
-    #(3, 200, 1000),
+    # (3, 200, 1000),
     # (2, 300, 10000000)
 ])
 def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_samples):
@@ -149,11 +159,6 @@ def test_stochastic_predictions(session_tf, orbit_batch_size, samples, lml_sampl
                               q_mu=q_mu,
                               q_sqrt=np.linalg.cholesky(q_var)[None, :, :])  # inter-domain model
     idsm.likelihood.variance.assign(sig)
-
-    try:
-        from tqdm import tqdm
-    except ImportError:
-        tqdm = lambda x: x
 
     # First check that the means are ok
     pred_idsm = np.mean([idsm.predict_f(Xt)[0] for _ in tqdm(range(samples))], 0)

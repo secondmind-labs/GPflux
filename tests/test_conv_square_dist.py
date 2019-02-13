@@ -1,14 +1,13 @@
-import gpflow
-import numpy as np
-import pytest
-import tensorflow as tf
-from gpflow.kernels import RBF
-from gpflow.likelihoods import Gaussian
-from gpflow.models import SVGP
-from gpflow.test_util import session_tf
-from numpy.testing import assert_allclose
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
 
-import gpflux
+
+import numpy as np
+from numpy.testing import assert_allclose
+import tensorflow as tf
+
+from gpflow.kernels import RBF
 from gpflux.conv_square_dists import (diag_conv_square_dist,
                                       full_conv_square_dist,
                                       image_patch_conv_square_dist,
@@ -46,10 +45,7 @@ def create_conv_kernel(image_shape=None, filter_size=None, colour_channels=1):
 
 def test_diag_conv_square_dist(session_tf):
     img = tf.convert_to_tensor(DT.img1)
-    image_shape = DT.H * DT.W
-    patch_shape = DT.filter_size
 
-    dtype = img.dtype
     rbf = create_rbf()
     Xp = get_image_patches(img, DT.image_shape, DT.filter_shape)
 
@@ -74,7 +70,6 @@ def test_diag_conv_square_dist(session_tf):
 def test_full_conv_square_dist(session_tf):
     rbf = create_rbf()
     N = DT.N
-    H, W, C = DT.image_shape
     P = DT.P
     img1 = tf.convert_to_tensor(DT.img1)
     img2 = tf.convert_to_tensor(DT.img2)
@@ -98,8 +93,6 @@ def test_full_conv_square_dist(session_tf):
 
 def test_pairwise_conv_square_dist(session_tf):
     rbf = create_rbf()
-    H, W, C = DT.image_shape
-    P = DT.P
     img1 = tf.convert_to_tensor(DT.img1)
     img2 = tf.convert_to_tensor(DT.img2)
     dtype = img1.dtype
@@ -132,11 +125,9 @@ def test_pairwise_conv_square_dist(session_tf):
 def test_image_patch_conv_square_dist(session_tf):
     rbf = create_rbf()
     N = DT.N
-    H, W, C = DT.image_shape
     M, P = DT.M, DT.P
     X = tf.convert_to_tensor(DT.img1)
     Z = tf.convert_to_tensor(DT.feat)
-    dtype = X.dtype
 
     dist = image_patch_conv_square_dist(X, Z, DT.filter_shape)  # [N, M, P]
     dist /= rbf.lengthscales.constrained_tensor ** 2

@@ -3,22 +3,21 @@
 # Proprietary and confidential
 
 
-import gpflow
-import numpy as np
-import tensorflow as tf
-
-from scipy.stats import norm
+from typing import Optional, List, Iterator
 from functools import reduce
 
-from typing import Optional, List
+import numpy as np
+import tensorflow as tf
+from scipy.stats import norm
 
+import gpflow
 from gpflow import settings
 from gpflow.decors import params_as_tensors, autoflow
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
 from gpflow.params.dataholders import Minibatch, DataHolder
 
-from ..layers.latent_variable_layer import LatentVariableLayer, LatentVarMode
+from gpflux.layers.latent_variable_layer import LatentVariableLayer, LatentVarMode
 
 
 class DeepGP(Model):
@@ -67,7 +66,7 @@ class DeepGP(Model):
             self.Y = DataHolder(Y)
             self.scale = 1.0
 
-    def _get_Ws_iter(self, latent_var_mode: LatentVarMode, Ws=None) -> iter:
+    def _get_Ws_iter(self, latent_var_mode: LatentVarMode, Ws=None) -> Iterator:
         """
         Returns slices from Ws for each of the Latent Variable Layers when
         LatentVarMode equals LatentVarMode.GIVEN, else returns None.
@@ -179,8 +178,8 @@ class DeepGP(Model):
 
     def log_pdf(self, X, Y):
         m, v = self.predict_y(X)
-        l = norm.logpdf(Y, loc=m, scale=v**0.5)
-        return np.average(l)
+        ll = norm.logpdf(Y, loc=m, scale=v ** 0.5)
+        return np.average(ll)
 
     def describe(self):
         """ High-level description of the model """

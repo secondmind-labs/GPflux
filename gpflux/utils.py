@@ -3,11 +3,10 @@
 # Proprietary and confidential
 
 
-from typing import Tuple, Optional, Union
+from typing import Union
 
 import numpy as np
 import tensorflow as tf
-
 
 Int = Union[tf.Tensor, int]
 
@@ -37,7 +36,7 @@ def xavier_weights(input_dim: int, output_dim: int) -> np.ndarray:
        International Conference on Artificial Intelligence and Statistics.
     """
 
-    xavier_std = (2./(input_dim + output_dim)) ** 0.5
+    xavier_std = (2. / (input_dim + output_dim)) ** 0.5
     return np.random.randn(input_dim, output_dim) * xavier_std
 
 
@@ -58,4 +57,4 @@ def get_image_patches(imgs, image_shape, patch_shape, channels_in_patch=True):
         N = tf.shape(imgs)[0]
         ones = [1] * 4
         patches = tf.extract_image_patches(imgs, [1, h, w, 1], ones, ones, 'VALID')
-        return tf.reshape(patches, [N, -1, h*w*C])
+        return tf.reshape(patches, [N, -1, h * w * C])

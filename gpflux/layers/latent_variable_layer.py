@@ -3,16 +3,14 @@
 # Proprietary and confidential
 
 
-import numpy as np
-import tensorflow as tf
-
 from enum import Enum
+
+import tensorflow as tf
 
 from gpflow import params_as_tensors
 from gpflow.kullback_leiblers import gauss_kl
-
-from .layers import BaseLayer
-from ..encoders import RecognitionNetwork
+from gpflux.layers.layers import BaseLayer
+from gpflux.encoders import RecognitionNetwork
 
 
 class LatentVarMode(Enum):
@@ -45,6 +43,7 @@ class LatentVariableLayer(BaseLayer):
     1) We're doing inference, so we use the variational distribution
     2) We're looking at test points, so we use the prior
     """
+
     # TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
 
     def __init__(self, latent_dim, XY_dim=None, encoder=None):
@@ -84,6 +83,7 @@ class LatentVariableConcatLayer(LatentVariableLayer):
     """
     A latent variable layer where the latents are concatenated with the input
     """
+
     @params_as_tensors
     def propagate(self,
                   X,

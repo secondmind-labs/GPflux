@@ -1,24 +1,25 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
+
 import numpy as np
 import pytest
 
 import gpflow
 import gpflux
-from gpflow.features import InducingPoints
-from gpflow.kernels import RBF
-from gpflow.likelihoods import Gaussian
-from gpflow.models import SVGP
-from gpflow.test_util import session_tf
 from gpflow.training import AdamOptimizer
 
 
 class Data:
     M = 100
-    N, D = 1000, 28**2
-    X = np.random.randn(N , D)
+    N, D = 1000, 28 ** 2
+    X = np.random.randn(N, D)
     LATENT_DIM = 2
-    OUTPUT_DIMS = [50, 30**2, D]
+    OUTPUT_DIMS = [50, 30 ** 2, D]
     PATCH_SIZE = [3, 3]
     BATCH_SIZE = 50
+
 
 @pytest.mark.skip(reason="MUST BE FIXED")
 def test_deep_deconv_gp_setup_and_minimization(session_tf):
@@ -31,7 +32,7 @@ def test_deep_deconv_gp_setup_and_minimization(session_tf):
     enc = gpflux.encoders.RecognitionNetwork(Data.LATENT_DIM, Data.D, [256, 256])
     latent_layer = gpflux.layers.LatentVariableConcatLayer(Data.LATENT_DIM, encoder=enc)
 
-    ### Decoder
+    # Decoder
     Z1 = np.random.randn(Data.M, Data.LATENT_DIM)
     feat1 = gpflow.features.InducingPoints(Z1)
     kern1 = gpflow.kernels.RBF(Data.LATENT_DIM, lengthscales=float(Data.LATENT_DIM) ** 0.5)
@@ -44,7 +45,6 @@ def test_deep_deconv_gp_setup_and_minimization(session_tf):
     patch_init = gpflux.init.PatchSamplerInitializer(Data.X[:10], 28, 28)
     layer3 = gpflux.layers.ConvLayer([30, 30], [28, 28], Data.M, [3, 3],
                                      patches_initializer=patch_init)
-
 
     model = gpflux.DeepGP(np.empty((Data.N, 0)),
                           Data.X,

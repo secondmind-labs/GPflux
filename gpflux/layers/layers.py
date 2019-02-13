@@ -7,8 +7,8 @@ from typing import Optional
 
 import gpflow
 import numpy as np
-from gpflow import Param, Parameterized, features, params_as_tensors, settings
-from gpflow.conditionals import conditional, sample_conditional
+from gpflow import Param, Parameterized, params_as_tensors, settings
+from gpflow.conditionals import sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
 
