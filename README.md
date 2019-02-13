@@ -40,7 +40,7 @@ model = gpflux.DeepGP(X, Y, [layer1, layer2])
 
 ## Install and build
 
-This project is assuming you are using `python3.6`.
+This project is assuming you are using `python3`.
 
 To install:
 ```bash
