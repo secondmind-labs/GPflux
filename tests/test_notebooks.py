@@ -19,7 +19,7 @@ import os
 
 import pytest
 import nbformat
-
+import gpflow
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
@@ -36,6 +36,7 @@ BLACKLISTED_NOTEBOOKS = [
 
 @pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
 def test_notebook(notebook_file):
+    gpflow.reset_default_graph_and_session()
     _exec_notebook_ts(notebook_file)
 
 

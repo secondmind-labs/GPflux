@@ -5,22 +5,26 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
+
 import gpflow
-from gpflow.test_util import session_tf
+
+from gpflux.models.deep_gp import DeepGP
 from gpflux.nonstationary import NonstationaryKernel
 import gpflux
+
 
 def test_positive_definite(session_tf):
     D = 2
     kern = NonstationaryKernel(gpflow.kernels.RBF(D), D)
 
-    XL = np.random.rand(3, 2*D)
+    XL = np.random.rand(3, 2 * D)
     K1 = kern.compute_K_symm(XL)
     K2 = kern.compute_K(XL, XL)
 
     assert_allclose(K1, K2)
 
     np.linalg.cholesky(K1)
+
 
 @pytest.mark.parametrize("lengthscales_dim", [1, 2])
 def test_shapes(session_tf, lengthscales_dim):
@@ -40,13 +44,14 @@ def test_shapes(session_tf, lengthscales_dim):
     K = kern.compute_K(XL1, XL2)
     assert baseK.shape == K.shape
 
+
 def test_1D_equivalence(session_tf):
     D = 2
     kern = NonstationaryKernel(gpflow.kernels.RBF(D), D)
     kern_1D = NonstationaryKernel(gpflow.kernels.RBF(D), 1)
 
-    XL1D = np.random.randn(3, D+1)
-    XL = np.concatenate([XL1D, np.tile(XL1D[:, -1, None], [1, D-1])], 1)
+    XL1D = np.random.randn(3, D + 1)
+    XL = np.concatenate([XL1D, np.tile(XL1D[:, -1, None], [1, D - 1])], 1)
 
     K = kern.compute_K_symm(XL)
     K_1D = kern_1D.compute_K_symm(XL1D)
@@ -83,8 +88,8 @@ def test_nonstationary_gp_1d(session_tf):
     kern3 = NonstationaryKernel(gpflow.kernels.RBF(D2), D1, scaling_offset=-0.1,
                                 positivity=gpflow.transforms.positive.forward_tensor)
     layer3 = gpflux.layers.NonstationaryGPLayer(kern3, feat3, D_out)
-    
-    model = gpflux.DeepGP(X, Y, [layer1, layer2, layer3])
+
+    model = DeepGP(X, Y, [layer1, layer2, layer3])
 
     # minimize
     likelihood_before_opt = model.compute_log_likelihood()

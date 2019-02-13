@@ -5,13 +5,13 @@
 
 from typing import List, Optional, Union
 
-import gpflow
 import numpy as np
 
-from .. import init
-from ..convolution import (ConvKernel, IndexedInducingPatch, InducingPatch,
-                           WeightedSumConvKernel)
-from .layers import GPLayer
+import gpflow
+from gpflux import init
+from gpflux.convolution.convolution_kernel import ConvKernel, WeightedSumConvKernel
+from gpflux.convolution.inducing_patch import IndexedInducingPatch, InducingPatch
+from gpflux.layers.layers import GPLayer
 
 
 def _correct_input_output_shape(input_shape, output_shape, patch_shape, pooling):
@@ -29,7 +29,6 @@ def _correct_input_output_shape(input_shape, output_shape, patch_shape, pooling)
     return True
 
 
-
 def _from_patches_initializer_to_patches(initializer, shape):
     """
     If initializer is an instance of init.Initializer it will create
@@ -44,6 +43,7 @@ def _from_patches_initializer_to_patches(initializer, shape):
     else:
         raise ValueError
 
+
 def _from_indices_initializer_to_indices(initializer, shape):
     """
     If initializer is an instance of init.Initializer it will create
@@ -57,6 +57,7 @@ def _from_indices_initializer_to_indices(initializer, shape):
         return initializer  # M x w x h
     else:
         raise ValueError
+
 
 class ConvLayer(GPLayer):
 

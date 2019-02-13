@@ -1,19 +1,19 @@
-# Copyright (C) PROWLER.io 2018, 2019 - All Rights Reserved
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import gpflow
+
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.test_util import session_tf
 from sklearn.feature_extraction.image import extract_patches_2d
 
-import gpflux
-from gpflux.convolution import K_image_inducing_patches, K_image_symm, ConvKernel
+import gpflow
+from gpflux.convolution.convolution_kernel import ConvKernel, K_image_symm, K_image_inducing_patches
 
 padding = 'VALID'
 strides = (1, 1, 1, 1)
+
 
 def _J(order, theta):
     if order == 0:
@@ -21,23 +21,24 @@ def _J(order, theta):
     elif order == 1:
         return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
     elif order == 2:
-        return (3.0 * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1.0 + 2.0 * tf.cos(theta)**2))
+        return (3.0 * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (
+                1.0 + 2.0 * tf.cos(theta) ** 2))
     else:
         raise NotImplementedError
 
 
 def _image_to_patches(X, patch_shape):
-    N = X.shape[0]
     patches = np.array([extract_patches_2d(im, patch_shape) for im in X])
     patches = np.reshape(patches, [-1, np.prod(patch_shape)])  # N*P x h*w
     return patches
+
 
 class Data:
     N, H, W, C = image_shape = 20, 28, 28, 1
     M = 10
     w, h = patch_shape = [5, 5]
     X = np.random.randn(*image_shape)
-    X_2d = np.reshape(X, [N, H*W*C])
+    X_2d = np.reshape(X, [N, H * W * C])
     X_patches = _image_to_patches(X, patch_shape)
     Z = np.random.randn(M, np.prod(patch_shape))
 
@@ -62,7 +63,7 @@ def test_Kdiag(session_tf, order, weight_variance, bias_variance, variance):
 
     def conv():
         # X_patches_squared_norm = tf.matrix_diag_part(
-                # gpflux.conv_square_dists.diag_conv_inner_prod(Data.X, Data.patch_shape)[..., 0])  # N x P
+        # gpflux.conv_square_dists.diag_conv_inner_prod(Data.X, Data.patch_shape)[..., 0])  # N x P
         ones = tf.ones((*Data.patch_shape, Data.C, 1), dtype=gpflow.settings.float_type)
         XpXpt = tf.nn.conv2d(Data.X ** 2, ones, strides, padding)
         X_patches_squared_norm = tf.reshape(XpXpt, (tf.shape(Data.X)[0], -1))  # N x P
@@ -91,8 +92,8 @@ def test_Kuf(session_tf, order, weight_variance, bias_variance, variance):
         return kern.compute_K(Data.Z, patches).reshape(Data.M, Data.N, -1)
 
     def conv():
-
-        Z_filter = tf.transpose(tf.reshape(Data.Z, (Data.M, Data.h, Data.w, Data.C)), [1, 2, 3, 0])  # [h, w, C, M]
+        Z_filter = tf.transpose(tf.reshape(Data.Z, (Data.M, Data.h, Data.w, Data.C)),
+                                [1, 2, 3, 0])  # [h, w, C, M]
         XpZ = tf.nn.conv2d(Data.X, Z_filter, strides, padding)  # [N, Ph, Pw, M]
         ZXp = tf.reshape(tf.transpose(XpZ, [3, 0, 1, 2]), (Data.M, Data.N, -1))
         ZXp = weight_variance * ZXp + bias_variance  # [M, N, P]
@@ -112,6 +113,7 @@ def test_Kuf(session_tf, order, weight_variance, bias_variance, variance):
         return session_tf.run(variance * (1. / np.pi) * _J(order, theta) *
                               ZZt[:, None, None] ** order *
                               XpXpt[None, :, :] ** order)
+
     expected = naive()  # [M, N, P]
     value = conv()  # [M, N, P]
     np.testing.assert_allclose(value, expected)
@@ -122,12 +124,11 @@ def test_Kuf(session_tf, order, weight_variance, bias_variance, variance):
 @pytest.mark.parametrize("bias_variance", np.random.rand(1))
 @pytest.mark.parametrize("variance", np.random.rand(1))
 def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance, variance):
-
     patches = Data.X_patches
     base_kern = gpflow.kernels.ArcCosine(input_dim(),
-                    order=order, variance=variance,
-                    weight_variances=weight_variance,
-                    bias_variance=bias_variance, ARD=False)
+                                         order=order, variance=variance,
+                                         weight_variances=weight_variance,
+                                         bias_variance=bias_variance, ARD=False)
 
     kern = ConvKernel(base_kern, image_shape=Data.image_shape[1:], patch_shape=Data.patch_shape)
 
@@ -158,13 +159,12 @@ def test_ArcCosineImageKernel(session_tf, order, weight_variance, bias_variance,
     np.testing.assert_allclose(value, expected)
 
 
-
 @pytest.mark.parametrize("lengthscales", np.random.rand(2))
 @pytest.mark.parametrize("variance", np.random.rand(2))
 def test_RBFImageKernel(session_tf, lengthscales, variance):
-
     patches = Data.X_patches
-    base_kern = gpflow.kernels.RBF(input_dim(), variance=variance, lengthscales=lengthscales, ARD=False)
+    base_kern = gpflow.kernels.RBF(input_dim(), variance=variance, lengthscales=lengthscales,
+                                   ARD=False)
     kern = ConvKernel(base_kern, image_shape=[28, 28, 1], patch_shape=[5, 5])
 
     def compute_K_image_symm(X, full_output_cov=False):

@@ -4,8 +4,9 @@
 
 import gpflow
 
-from gpflux.layers import ConvLayer
 import tensorflow as tf
+
+from gpflux.layers.convolution_layer import ConvLayer
 
 
 def test_conv_layer_defer_applies_to_all_tf_nodes():

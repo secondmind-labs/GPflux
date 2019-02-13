@@ -1,27 +1,14 @@
-# Copyright (C) PROWLER.io 2018, 2019 - All Rights Reserved
+# Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import gpflow
+
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.test_util import session_tf
-from numpy.testing import assert_allclose
 
-import gpflux
-from gpflux.convolution import ExtractPatchHandler, ConvPatchHandler
-from gpflux.convolution import ImagePatchConfig
-
-
-
-@pytest.fixture
-def session_tf():
-    gpu_opts = tf.GPUOptions(allow_growth=True)
-    config = tf.ConfigProto(gpu_options=gpu_opts)
-    with tf.Graph().as_default() as graph:
-        with tf.Session(graph=graph, config=config).as_default() as session:
-            yield session
+from gpflux.convolution.convolution_kernel import ExtractPatchHandler, ConvPatchHandler, \
+    ImagePatchConfig
 
 
 class DT:
@@ -49,6 +36,7 @@ def config():
 def run_benchmark(bench, session, op):
     def run_op():
         session.run(op)
+
     bench.pedantic(run_op, warmup_rounds=2, rounds=100, iterations=100)
 
 

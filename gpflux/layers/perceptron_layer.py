@@ -5,7 +5,8 @@
 
 from gpflow import params_as_tensors
 
-from .linear_layer import LinearLayer
+from gpflux.layers.linear_layer import LinearLayer
+
 
 class PerceptronLayer(LinearLayer):
     """

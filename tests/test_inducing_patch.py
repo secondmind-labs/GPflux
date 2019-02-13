@@ -5,8 +5,7 @@
 import numpy as np
 import pytest
 
-from gpflow.test_util import session_tf
-from gpflux.convolution import InducingPatch
+from gpflux.convolution.inducing_patch import InducingPatch
 
 
 class Data:
@@ -21,7 +20,7 @@ def inducing_patch(session_tf):
 
 def test_patch_shape(session_tf, inducing_patch):
     actual_shape = inducing_patch.Z.read_value().shape
-    desired_shape = (Data.N , Data.w * Data.h)
+    desired_shape = (Data.N, Data.w * Data.h)
     assert actual_shape == desired_shape
 
 

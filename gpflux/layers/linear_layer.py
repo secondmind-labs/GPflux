@@ -2,16 +2,14 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
+from typing import Optional
 
 import tensorflow as tf
 import numpy as np
 
-from typing import Optional
-
 from gpflow import params_as_tensors, Param, settings
-
-from ..utils import xavier_weights
-from .layers import BaseLayer
+from gpflux.utils import xavier_weights
+from gpflux.layers.layers import BaseLayer
 
 
 class LinearLayer(BaseLayer):
@@ -36,7 +34,7 @@ class LinearLayer(BaseLayer):
                              .format(input_dim, output_dim))
 
         if bias is None:
-            bias = np.zeros((output_dim, ))
+            bias = np.zeros((output_dim,))
         if bias.shape != (output_dim,):
             raise ValueError("bias must have length equal to output_dim={}".format(output_dim))
 
