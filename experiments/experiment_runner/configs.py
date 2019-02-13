@@ -6,9 +6,9 @@ import gpflow
 import keras
 from gpflow.training import monitor as mon
 
-import gpflux
 from experiments.experiment_runner.utils import Configuration
 from experiments.experiment_runner.utils import calc_multiclass_error
+from gpflux.init import NormalInitializer, PatchSamplerInitializer
 
 
 class KerasConfig(Configuration):
@@ -70,9 +70,9 @@ class ConvGPConfig(GPConfig):
     @staticmethod
     def patch_initializer(x, h, w, init_patches):
         if init_patches == "random":
-            return gpflux.init.NormalInitializer()
+            return NormalInitializer()
         unique = init_patches == "patches-unique"
-        return gpflux.init.PatchSamplerInitializer(x, width=w, height=h, unique=unique)
+        return PatchSamplerInitializer(x, width=w, height=h, unique=unique)
 
     def get_tasks(self, x, y, model, path, optimizer):
         stats_fraction = self.monitor_stats_num

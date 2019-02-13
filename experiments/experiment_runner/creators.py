@@ -8,8 +8,9 @@ import numpy as np
 from keras import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 
-import gpflux
 from experiments.experiment_runner.utils import reshape_to_2d, labels_onehot_to_int
+from gpflux.layers.convolution_layer import WeightedSumConvLayer
+from gpflux.models.deep_gp import DeepGP
 
 
 class ModelCreator(abc.ABC):
@@ -45,7 +46,7 @@ class BasicCNN(ModelCreator):
 def create_convgp_layer(input_size, num_ind_points, patch_shape, num_classes, with_indexing,
                         with_weights,
                         patches):
-    layer0 = gpflux.layers.WeightedSumConvLayer(
+    layer0 = WeightedSumConvLayer(
         input_size,
         num_ind_points,
         patch_shape,
@@ -87,9 +88,9 @@ class ShallowConvGP(ModelCreator):
             config.with_weights,
             patches)
 
-        model = gpflux.DeepGP(x_train, y_train,
-                              layers=[layer0],
-                              likelihood=likelihood,
-                              batch_size=config.batch_size,
-                              name="conv_gp")
+        model = DeepGP(x_train, y_train,
+                       layers=[layer0],
+                       likelihood=likelihood,
+                       batch_size=config.batch_size,
+                       name="conv_gp")
         return model
