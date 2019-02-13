@@ -69,7 +69,7 @@ class LatentVariableLayer(BaseLayer):
         self.encode_once()
         return gauss_kl(self.q_mu, self.q_sqrt)
 
-    def propagate(self, X, W=None, **kwargs):
+    def propagate(self, H, W=None, **kwargs):
         raise NotImplementedError()
 
     def describe(self):
@@ -86,7 +86,7 @@ class LatentVariableConcatLayer(LatentVariableLayer):
 
     @params_as_tensors
     def propagate(self,
-                  X,
+                  H,
                   *,
                   W=None,
                   full_cov=False,
@@ -96,19 +96,19 @@ class LatentVariableConcatLayer(LatentVariableLayer):
         self.encode_once()
 
         if latent_var_mode == LatentVarMode.POSTERIOR:
-            eps = tf.random_normal(tf.shape(self.q_mu), dtype=X.dtype)  # [N, L]
+            eps = tf.random_normal(tf.shape(self.q_mu), dtype=H.dtype)  # [N, L]
             W = self.q_mu + eps * self.q_sqrt  # [N, L]
 
-            XW_mean = tf.concat([X, self.q_mu], 1)  # [N, D + L]
-            XW_var = tf.concat([tf.zeros_like(X), self.q_sqrt ** 2], 1)  # [N, D + L]
+            HW_mean = tf.concat([H, self.q_mu], 1)  # [N, D + L]
+            HW_var = tf.concat([tf.zeros_like(H), self.q_sqrt ** 2], 1)  # [N, D + L]
 
         elif latent_var_mode == LatentVarMode.PRIOR:
-            W = tf.random_normal([tf.shape(X)[0], self.latent_dim], dtype=X.dtype)
+            W = tf.random_normal([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
 
-            zeros = tf.zeros([tf.shape(X)[0], self.latent_dim], dtype=X.dtype)
-            ones = tf.ones([tf.shape(X)[0], self.latent_dim], dtype=X.dtype)
-            XW_mean = tf.concat([X, zeros], 1)  # [N, D + L]
-            XW_var = tf.concat([tf.zeros_like(X), ones], 1)  # [N, D + L]
+            zeros = tf.zeros([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
+            ones = tf.ones([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
+            HW_mean = tf.concat([H, zeros], 1)  # [N, D + L]
+            HW_var = tf.concat([tf.zeros_like(H), ones], 1)  # [N, D + L]
 
         elif latent_var_mode == LatentVarMode.GIVEN:
             assert isinstance(W, tf.Tensor)
@@ -116,10 +116,10 @@ class LatentVariableConcatLayer(LatentVariableLayer):
         else:
             raise NotImplementedError
 
-        sample = tf.concat([X, W], 1)
+        sample = tf.concat([H, W], 1)
 
         if latent_var_mode == LatentVarMode.GIVEN:
-            XW_mean = sample
-            XW_var = None
+            HW_mean = sample
+            HW_var = None
 
-        return sample, XW_mean, XW_var
+        return sample, HW_mean, HW_var

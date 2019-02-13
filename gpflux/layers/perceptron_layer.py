@@ -22,8 +22,8 @@ class PerceptronLayer(LinearLayer):
         self.activation = activation
 
     @params_as_tensors
-    def propagate(self, X, **kwargs):
-        sample, mean, cov = super().propagate(X)  # linear_transformation
+    def propagate(self, H, **kwargs):
+        sample, mean, cov = super().propagate(H)  # linear_transformation
 
         if self.activation is not None:
             sample = self.activation(sample)
