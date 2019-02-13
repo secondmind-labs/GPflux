@@ -4,27 +4,24 @@
 
 from abc import ABC, abstractmethod
 from functools import partial, lru_cache
-from typing import List, Tuple, Type, Union
+from typing import List, Tuple, Union
+from multipledispatch import dispatch
 
 import numpy as np
 import tensorflow as tf
-from multipledispatch import dispatch
 
 import gpflow
-from gpflow import kernels, params_as_tensors, params_as_tensors_for, settings
+from gpflow import kernels, settings
 from gpflow.multioutput.kernels import Mok
-from .. import utils
+from gpflux import utils
 
-from ..conv_square_dists import (diag_conv_inner_prod, diag_conv_square_dist,
-                                 full_conv_square_dist,
-                                 patchwise_conv_square_dist)
+from gpflux.conv_square_dists import diag_conv_inner_prod
 
 Any = object
 PatchShape = Union[List[int], Tuple[int, int]]
 ImageShape = Union[PatchShape, Tuple[int, int, int]]
 
-
-gpflux_image_kernel = dict()
+gpflux_image_kernel = dict()  # type: ignore
 dispatch = partial(dispatch, namespace=gpflux_image_kernel)
 
 
@@ -36,9 +33,11 @@ class ImagePatchConfig:
 
     def __init__(self, image_shape: ImageShape, patch_shape: PatchShape, pooling: int = 1):
         """
-        :param image_shape: Image shape. It can be either 2 element tuple [H, W] or 3 element tuple [H, W, C],
-            where H - height, W - width, C - channel. [H, W] is equivalent to [H, W, 1]
-        :param patch_shape: Patch or filter shape. It must be 2 element tuple [h, w], where h <= H and w <= W.
+        :param image_shape: Image shape. It can be either 2 element tuple [H, W] or 3 element
+        tuple [H, W, C],  where H - height, W - width, C - channel. [H, W] is equivalent to
+        [H, W, 1]
+        :param patch_shape: Patch or filter shape. It must be 2 element tuple [h, w], where
+        h <= H and w <= W.
         :param pooling: Reducing resolution factor.
         """
 
@@ -121,7 +120,8 @@ class ExtractPatchHandler(PatchHandler):
         Extract image patches method with LRU cache.
 
         :param X: input tensor.
-        :return: Extracted image patches. When the same object tensor passed to the function, cached value is returned back. Output tensor shape - [N, P*C, wh].
+        :return: Extracted image patches. When the same object tensor passed to the function,
+        cached value is returned back. Output tensor shape - [N, P*C, wh].
         """
         X = self.reshape_to_image(X)
         image_shape = self.config.image_shape
@@ -194,10 +194,11 @@ class ConvPatchHandler(PatchHandler):
         :return: Tensor [N, P*C, P]
         """
         X = self.reshape_to_image(X)
-        inner_prod = diag_conv_inner_prod(X, self.config.patch_shape, **map_fn_kwargs)  # [N, P, C, P, C]
+        inner_prod = diag_conv_inner_prod(X, self.config.patch_shape,
+                                          **map_fn_kwargs)  # [N, P, C, P, C]
         inner_prod_shape = tf.shape(inner_prod)
         P, C = inner_prod_shape[-2], inner_prod_shape[-1]
-        return tf.reshape(inner_prod, [-1, P*C, P*C])  # [N, P*C, P*C]
+        return tf.reshape(inner_prod, [-1, P * C, P * C])  # [N, P*C, P*C]
 
     def image_patches_squared_norm(self, X):
         """
@@ -232,7 +233,7 @@ class ConvPatchHandler(PatchHandler):
         :param Z: Tensor containing inducing patches [M, h*w]
         :return: Tensor [N, P*C, M]
         """
-        X = self.reshape_to_image(X) # [N, H, W, C]
+        X = self.reshape_to_image(X)  # [N, H, W, C]
         cfg = self.config
 
         Xshape = tf.shape(X)
@@ -242,7 +243,7 @@ class ConvPatchHandler(PatchHandler):
         Z_filter = tf.transpose(Z, [1, 2, 3, 0])  # [h, w, 1, M]
 
         X = tf.transpose(X, [0, 3, 1, 2])  # [N, C, H, W]
-        X = tf.reshape(X, [N*C, H, W, 1])
+        X = tf.reshape(X, [N * C, H, W, 1])
         XpZ = tf.nn.depthwise_conv2d(X, Z_filter, self.strides, self.padding)  # [N*C, Ph, Pw, M]
         XpZ = tf.reshape(XpZ, [N, C, -1, M])
         XpZ = tf.transpose(XpZ, [0, 2, 1, 3])
@@ -251,7 +252,7 @@ class ConvPatchHandler(PatchHandler):
 
 @dispatch(kernels.Stationary, PatchHandler, Any, Any)
 @gpflow.name_scope()
-def K_image_inducing_patches(kernel, patch_handler, X, Z) -> tf.Tensor:
+def K_image_inducing_patches(kernel, patch_handler, X, Z):
     """ returns [N, P, M] """
 
     def image_patches_inducing_patches_square_dist():
@@ -274,8 +275,8 @@ def K_image_inducing_patches(kernel, patch_handler, X, Z) -> tf.Tensor:
     with gpflow.params_as_tensors_for(kernel):
         dist = image_patches_inducing_patches_square_dist()  # [N, P, M]
         dist /= kernel.lengthscales ** 2  # Dividing after computing distances
-                                          # helps to avoid unnecessary backpropagation.
-                                          # But it will not work with ARD case.
+        # helps to avoid unnecessary backpropagation.
+        # But it will not work with ARD case.
         return kernel.K_r2(dist)  # [N, P, M]
 
 
@@ -325,7 +326,7 @@ def K_image_symm(kernel, patch_handler, X, full_output_cov=False):
         if full_output_cov:
             dist = image_patches_square_dist(X)  # [N, P, P]
             dist /= kernel.lengthscales ** 2  # Dividing after computing distances
-                                              # helps to avoid unnecessary backpropagation.
+            # helps to avoid unnecessary backpropagation.
             return kernel.K_r2(dist)  # [N, P, P]
         else:
             P = patch_handler.config.num_patches
@@ -350,7 +351,8 @@ def K_image_symm(kernel, patch_handler, X, full_output_cov=False):
             return kernel.variance * (1. / np.pi) * kernel._J(theta) * Xp_squared_o1 * Xp_squared_o2
         else:
             X_patches_squared_norm = patch_handler.image_patches_squared_norm(X)
-            X_patches_squared_norm = kernel.weight_variances * X_patches_squared_norm + kernel.bias_variance
+            X_patches_squared_norm = \
+                kernel.weight_variances * X_patches_squared_norm + kernel.bias_variance
             theta = tf.cast(0, gpflow.settings.float_type)
             X_patches_squared_norm_o = X_patches_squared_norm ** kernel.order
             return kernel.variance * (1. / np.pi) * kernel._J(theta) * X_patches_squared_norm_o
@@ -412,7 +414,8 @@ class ConvKernel(Mok):
 
         if cfg.pooling > 1:
             if not full_output_cov:
-                msg = "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False."
+                msg = "Pooling is not implemented in ConvKernel.Kdiag() for " \
+                      "`full_output_cov` False."
                 raise NotImplementedError(msg)
             HpWp = cfg.Hout, cfg.pooling, cfg.Wout, cfg.pooling
             K = tf.reshape(K, [-1, *HpWp, *HpWp])
@@ -451,7 +454,6 @@ class WeightedSumConvKernel(ConvKernel):
                  pooling: int = 1,
                  with_indexing: bool = False,
                  with_weights: bool = False):
-
         super().__init__(basekern, image_shape, patch_shape,
                          pooling=pooling, with_indexing=with_indexing)
 
@@ -478,5 +480,5 @@ class WeightedSumConvKernel(ConvKernel):
         WtW = self.weights[:, None] * self.weights[None, :]  # PxP
         K = K * WtW[None, :, :]  # NxPxP
         K = tf.reduce_sum(K, axis=[1, 2], keepdims=False)  # N
-        K = K / self.num_outputs  ** 2 # N
+        K = K / self.num_outputs ** 2  # N
         return K

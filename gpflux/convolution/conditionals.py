@@ -9,13 +9,13 @@ import tensorflow as tf
 
 from gpflow import settings
 from gpflow.dispatch import conditional, dispatch, sample_conditional
-from gpflow.multioutput.conditionals import independent_interdomain_conditional, fully_correlated_conditional_repeat
+from gpflow.multioutput.conditionals import fully_correlated_conditional_repeat
 from gpflow.conditionals import base_conditional, _sample_mvn
 from gpflow.multioutput.features import debug_kuf, debug_kuu
 
-from .convolution_kernel import K_image_inducing_patches, ConvKernel, WeightedSumConvKernel
-from .inducing_patch import InducingPatch, IndexedInducingPatch
-from ..conv_square_dists import image_patch_conv_square_dist
+from gpflux.convolution.convolution_kernel import K_image_inducing_patches, ConvKernel, \
+    WeightedSumConvKernel
+from gpflux.convolution.inducing_patch import InducingPatch, IndexedInducingPatch
 
 
 # -------------------------------------
@@ -67,12 +67,13 @@ def Kuu(feat, kern, *, jitter=0.0):
 
 
 @conditional.register(object, InducingPatch, ConvKernel, object)
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     :param Xnew: NxD
     :param f: MxL
     :param full_cov:
-    :param full_cov_output:
+    :param full_output_cov:
     :param q_sqrt: LxM  or LxMxM
     :param white:
     :return:
@@ -83,9 +84,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # LxMxM
     Kmn = Kuf(feat, kern, Xnew)  # MxLxNxP
     if full_cov:
-        Knn = kern.K(Xnew, full_output_cov=full_output_cov)  # [N, P, N, P]  or  PxNxN
+        Knn = kern.K(Xnew, full_output_cov=full_output_cov)  # [N, P, N, P]  or  [P, N, N]
     else:
-        Knn = kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # NxP (x P)
+        Knn = kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # [N, P, P] or [N, P]
 
     Kmm = Kmm[0]  # [M, M]
     Kmn = Kmn[:, 0, ...]  # [M, N, P]
@@ -103,20 +104,22 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 @sample_conditional.register(object, InducingPatch, ConvKernel, object)
 @gpflow.name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, q_sqrt=None, white=False, **kwargs):
+def _sample_conditional(Xnew, feat, kern, f, *, q_sqrt=None, white=False, num_samples=None,
+                        full_cov=False, full_output_cov=True, **kwargs):
     settings.logger().debug("sample conditional: InducingPatch, ConvKernel")
     mean, var = conditional(
         Xnew,
         feat,
         kern,
         f,
-        full_cov=False,
+        full_cov=full_cov,
         full_output_cov=False,
         q_sqrt=q_sqrt,
         white=white
-    )  # NxP, NxP
+    )  # [N, P], [N, P]
     sample = _sample_mvn(mean, var, cov_structure="diag")
-    return sample
+    return sample, mean, var  # [N, P], [N, P], [N, P]
+
 
 # -------------------------------------------------
 # (Indexed)InducingPatch and WeightedSumConvKernel
@@ -131,7 +134,7 @@ def Kuf(feat, kern, Xnew):
     weights = kern.weights
     weights = tf.convert_to_tensor(weights) if isinstance(weights, np.ndarray) else weights
     Kmn = tf.einsum("mnp,p->mn", Kmn, weights)
-    return Kmn / kern.patch_handler.config.num_patches # [M, N]
+    return Kmn / kern.patch_handler.config.num_patches  # [M, N]
 
 
 @dispatch(InducingPatch, WeightedSumConvKernel)
@@ -144,12 +147,13 @@ def Kuu(feat, kern, *, jitter=0.0):
 
 
 @conditional.register(object, InducingPatch, WeightedSumConvKernel, object)
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     :param Xnew: NxD
     :param f: MxL
     :param full_cov:
-    :param full_cov_output:
+    :param full_output_cov:
     :param q_sqrt: LxM  or LxMxM
     :param white:
     :return:

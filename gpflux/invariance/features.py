@@ -1,3 +1,7 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 import gpflow
 import tensorflow as tf
 from gpflow.dispatch import dispatch
@@ -34,7 +38,8 @@ def Kuf(feat, kern, Xnew):
     with gpflow.params_as_tensors_for(feat):
         N, M = tf.shape(Xnew)[0], tf.shape(feat.Z)[0]
         Xorbit = kern.orbit.get_full_orbit(Xnew)  # N x orbit_size x D
-        bigKzx = kern.basekern.K(feat.Z, tf.reshape(Xorbit, (N * kern.orbit.orbit_size, -1)))  # M x N * orbit_size
+        bigKzx = kern.basekern.K(feat.Z, tf.reshape(Xorbit, (
+            N * kern.orbit.orbit_size, -1)))  # M x N * orbit_size
         Kzx = tf.reduce_mean(tf.reshape(bigKzx, (M, N, kern.orbit.orbit_size)), [2])
     return Kzx
 
@@ -47,5 +52,6 @@ def Kuf(feat, kern, Xnew):
     with gpflow.params_as_tensors_for(feat):
         N, M = tf.shape(Xnew)[0], tf.shape(feat.Z)[0]
         Xorbit = kern.orbit.get_orbit(Xnew)  # N x orbit_size x D
-        Kzx = kern.basekern.K(feat.Z, tf.reshape(Xorbit, (N * kern.orbit.orbit_batch_size, -1)))  # M x N * orbit_size
+        Kzx = kern.basekern.K(feat.Z, tf.reshape(Xorbit, (
+            N * kern.orbit.orbit_batch_size, -1)))  # M x N * orbit_size
     return tf.reshape(Kzx, (M, N, kern.orbit.orbit_batch_size))

@@ -3,14 +3,13 @@
 # Proprietary and confidential
 
 
-from typing import Callable, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import tensorflow as tf
-from gpflow import (Param, Parameterized, ParamList, params_as_tensors,
-                    settings, transforms)
 
-from .utils import xavier_weights
+from gpflow import (Param, Parameterized, ParamList, params_as_tensors, transforms)
+from gpflux.utils import xavier_weights
 
 
 class Encoder(Parameterized):
@@ -37,7 +36,8 @@ class Encoder(Parameterized):
         For this Encoder the function f is a NN.
         :return: N x latent_dim, N x latent_dim
         """
-        #TODO(vincent) doc string not appropriate for abstract base class - move to RecognitionNetwork?
+        # TODO(vincent) doc string not appropriate for abstract base class -
+        #  move to RecognitionNetwork?
         raise NotImplementedError()
 
 
@@ -46,7 +46,7 @@ class RecognitionNetwork(Encoder):
                  latent_dim: int,
                  input_dim: int,
                  network_dims: List[int],
-                 activation_func = None,
+                 activation_func=None,
                  name: Optional[str] = None):
         """
         Encoder that uses GPflow params to encode the features.
@@ -75,7 +75,7 @@ class RecognitionNetwork(Encoder):
         self.Ws, self.bs = ParamList(Ws), ParamList(bs)
 
     @params_as_tensors
-    def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
+    def __call__(self, Z: tf.Tensor):
         for i, (W, b) in enumerate(zip(self.Ws, self.bs)):
             Z = tf.matmul(Z, W) + b
             if i < len(self.bs) - 1:
@@ -111,5 +111,5 @@ class DirectlyParameterized(Encoder):
                          transform=transforms.positive)
 
     @params_as_tensors
-    def __call__(self, Z: tf.Tensor) -> [tf.Tensor, tf.Tensor]:
+    def __call__(self, Z: tf.Tensor):
         return self.mean, self.std

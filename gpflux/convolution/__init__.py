@@ -2,10 +2,4 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from . import conditionals
-from .convolution_kernel import (ConvKernel, K_image_inducing_patches,
-                                 K_image_symm, WeightedSumConvKernel,
-                                 ImagePatchConfig, PatchHandler,
-                                 ConvPatchHandler, ExtractPatchHandler)
-from .inducing_patch import IndexedInducingPatch, InducingPatch
-from .mean_functions import IdentityConvMean
+from .conditionals import Kuf, Kuu  # noqa: F401

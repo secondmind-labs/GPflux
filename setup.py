@@ -8,6 +8,9 @@ requirements = [
     'tensorflow==1.12.0',
     'scipy==0.19.0',
     'scikit-learn==0.20.0',
+    'flake8==3.6.0',
+    'mypy==0.670',
+    'tqdm',
     # for tests:
     'pytest-cov==2.5.1',
     'nbformat',

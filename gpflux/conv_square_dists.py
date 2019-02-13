@@ -1,15 +1,16 @@
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+# Copyright (C) PROWLER.io 2019 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
 
-import numpy as np
+from typing import Callable, List, Optional, Tuple, Union
+
 import tensorflow as tf
-import gpflow
 
+import gpflow
 
 __all__ = [
     'diag_conv_square_dist',
     'full_conv_square_dist',
-    'pathwise_conv_square_dist',
-    'image_patch_conv_square_dist'
     'diag_conv_inner_prod',
     'full_conv_inner_prod',
     'patchwise_conv_inner_prod',
@@ -20,13 +21,13 @@ Int = Union[tf.Tensor, int]
 FilterShape = Tuple[Int, Int]  # [h, w]
 ImageShape = Tuple[Int, Int, Int, Int]  # [N, H, W, C]
 
-
 padding = 'VALID'
 strides = (1, 1, 1, 1)
 
 
 @gpflow.name_scope()
-def image_patch_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape) -> tf.Tensor:
+def image_patch_conv_square_dist(A: tf.Tensor, B: tf.Tensor,
+                                 filter_shape: FilterShape) -> tf.Tensor:
     """
     Square distance between image and patch using convolution operations.
 
@@ -71,9 +72,6 @@ def diag_conv_square_dist(A: tf.Tensor, filter_shape: FilterShape,
     Returns:
         Tensor of shape [N, P, C, P, C].
     """
-    asserts = _input_tensor_asserts(A)
-    with tf.control_dependencies(asserts):
-        image_shape = _image_shape(A)
 
     AtA, _ = self_inner_prod(A, None, filter_shape)
     AAt = diag_conv_inner_prod(A, filter_shape, **map_kwargs)
@@ -95,9 +93,6 @@ def full_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterShape,
     Returns:
         Tensor of shape [N, P, N, P, C].
     """
-    asserts = _input_tensor_asserts(A, B)
-    with tf.control_dependencies(asserts):
-        image_shape = _image_shape(A)
 
     AtA, BtB = self_inner_prod(A, B, filter_shape)  # [N, P, C], [N, P, C]
     ABt = full_conv_inner_prod(A, B, filter_shape, **map_kwargs)  # [N, P, N, P, C]
@@ -121,9 +116,6 @@ def patchwise_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterS
     Returns:
         Tensor of shape [P, N, N, C]
     """
-    asserts = _input_tensor_asserts(A, B)
-    with tf.control_dependencies(asserts):
-        image_shape = _image_shape(A)
 
     AtA, BtB = self_inner_prod(A, B, filter_shape)
     AtA = tf.transpose(AtA, [1, 0, 2])  # [P, N, C]
@@ -132,7 +124,7 @@ def patchwise_conv_square_dist(A: tf.Tensor, B: tf.Tensor, filter_shape: FilterS
     return -2 * ABt + AtA[:, :, None, :] + BtB[:, None, :, :]
 
 
-### Inner products
+# Inner products
 
 
 def diag_conv_inner_prod(A: tf.Tensor, filter_shape: FilterShape, **map_kwargs) -> tf.Tensor:
@@ -162,6 +154,7 @@ def diag_conv_inner_prod(A: tf.Tensor, filter_shape: FilterShape, **map_kwargs) 
     result = _map_indices(fn, P, dtype=A.dtype, **map_kwargs)  # [P, C, Ph, Pw, N*C]
     result = tf.reshape(result, [P, C, P, N, C])
     return tf.transpose(result, [3, 0, 1, 2, 4])  # [N, P, C, P, C]
+
 
 def full_conv_inner_prod(A: tf.Tensor,
                          B: tf.Tensor,
@@ -224,11 +217,13 @@ def patchwise_conv_inner_prod(A: tf.Tensor,
     return tf.transpose(result, [0, 1, 3, 2])  # [P, N, N, C]
 
 
-def self_inner_prod(A: tf.Tensor, B: tf.Tensor, filter_shape: ImageShape) -> Tuple[tf.Tensor, tf.Tensor]:
+def self_inner_prod(A: tf.Tensor, B: Optional[tf.Tensor], filter_shape: FilterShape) \
+        -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Inner product of input matrices with itself respectively.
     Computes `AᵀA` and `BᵀB` square parts of `|A - B|² = AᵀA - 2*ABᵀ + BᵀB`.
-    When second input is None or the same object as the first one, then it avoids double computation.
+    When second input is None or the same object as the first one, then it avoids double
+    computation.
 
     Args:
         A: Input tensor of shape [N, H, W, C].
@@ -266,8 +261,7 @@ def _map_indices(fn: Callable, stop: Int, **map_fn_kwargs) -> tf.Tensor:
 
 
 def _image_shape(A: tf.Tensor) -> Tuple[Int, Int, Int, Int]:
-    shape = tf.shape(A)
-    return [shape[i] for i in range(4)]
+    return tuple(A.shape.as_list()[:4])
 
 
 def _input_tensor_asserts(A: tf.Tensor, B: Optional[tf.Tensor] = None) -> List[tf.Tensor]:
@@ -277,7 +271,8 @@ def _input_tensor_asserts(A: tf.Tensor, B: Optional[tf.Tensor] = None) -> List[t
         A_shape = tf.shape(A)
         B_shape = tf.shape(B)
         asserts.append(tf.assert_rank(B, 4, message="Tensor with [N, H, W, C] shape expected"))
-        asserts.append(tf.assert_equal(A_shape, B_shape, message="Input matrices must have same shapes"))
+        asserts.append(
+            tf.assert_equal(A_shape, B_shape, message="Input matrices must have same shapes"))
     return asserts
 
 
@@ -294,7 +289,7 @@ def _extract_kernel(A: tf.Tensor,
 
 def _grid_patch_shape(H: Int, W: Int, filter_shape: FilterShape) -> Tuple[Int, Int]:
     h, w = filter_shape
-    return H-h+1, W-w+1
+    return H - h + 1, W - w + 1
 
 
 def _grid_patch_size(H: Int, W: Int, filter_shape: FilterShape) -> Int:

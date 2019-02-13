@@ -14,6 +14,7 @@ class InducingPatch(Mof):
     Inducing features which are typically used in combination with
     convolutional kernels.
     """
+
     def __init__(self, Z):
         """
         :param Z: np.array

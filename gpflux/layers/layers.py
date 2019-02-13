@@ -7,23 +7,23 @@ from typing import Optional
 
 import gpflow
 import numpy as np
-from gpflow import Param, Parameterized, features, params_as_tensors, settings
-from gpflow.conditionals import conditional, sample_conditional
+from gpflow import Param, Parameterized, params_as_tensors, settings
+from gpflow.conditionals import sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
+from ..nonstationary import NonstationaryKernel
+import tensorflow as tf
+
 
 class BaseLayer(Parameterized):
 
-    def propagate(self, X, sampling=True, **kwargs):
+    def propagate(self, H, **kwargs):
         """
-        :param X: tf.Tensor
+        :param H: tf.Tensor
             N x D
-        :param sampling: bool
-           If `True` returns a sample from the predictive distribution
-           If `False` returns the mean and variance of the predictive distribution
-        :return: If `sampling` is True, then the function returns a tf.Tensor
-            of shape N x P, else N x P for the mean and N x P for the variance
-            where P is of size W x H x C (in the case of images)
+        :return: a sample from, mean, and covariance of the predictive
+           distribution, all of shape N x P
+           where P is of size W x H x C (in the case of images)
         """
         raise NotImplementedError()  # pragma: no cover
 
@@ -78,20 +78,23 @@ class GPLayer(BaseLayer):
         self.q_sqrt = Param(q_sqrt, dtype=settings.float_type)
 
     @params_as_tensors
-    def propagate(self, X, *, sampling=True, full_output_cov=False, full_cov=False, **kwargs):
+    def propagate(self, H, *, full_output_cov=False, full_cov=False, num_samples=None, **kwargs):
         """
-        :param X: N x P
+        :param H: input to this layer [N, P]
         """
-        if sampling:
-            sample = sample_conditional(X, self.feature, self.kern,
-                                        self.q_mu, q_sqrt=self.q_sqrt,
-                                        full_output_cov=full_output_cov, white=True)
-            return sample + self.mean_function(X)  # N x P
-        else:
-            mean, var = conditional(X, self.feature, self.kern, self.q_mu,
-                                    q_sqrt=self.q_sqrt, full_cov=full_cov,
-                                    full_output_cov=full_output_cov, white=True)
-            return mean + self.mean_function(X), var  # N x P, variance depends on args
+        mean_function = self.mean_function(H)
+        sample, mean, cov = sample_conditional(
+            H,
+            self.feature,
+            self.kern,
+            self.q_mu,
+            q_sqrt=self.q_sqrt,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov,
+            white=True,
+            num_samples=num_samples
+        )
+        return sample + mean_function, mean + mean_function, cov
 
     @params_as_tensors
     def KL(self):
@@ -103,8 +106,30 @@ class GPLayer(BaseLayer):
 
     def describe(self):
         """ returns a string with the key properties of a GPlayer """
-        return "GPLayer: kern {}, features {}, mean {}, L {}".\
-                format(self.kern.__class__.__name__,
-                       self.feature.__class__.__name__,
-                       self.mean_function.__class__.__name__,
-                       self.num_latents)
+        return "GPLayer: kern {}, features {}, mean {}, L {}".format(
+            self.kern.__class__.__name__,
+            self.feature.__class__.__name__,
+            self.mean_function.__class__.__name__,
+            self.num_latents
+        )
+
+
+class NonstationaryGPLayer(GPLayer):
+    def __init__(self,
+                 kernel: NonstationaryKernel,
+                 *args, **kwargs):
+        assert isinstance(kernel, NonstationaryKernel)
+        super().__init__(kernel, *args, **kwargs)
+
+    @params_as_tensors
+    def propagate(self, H, *, X=None, **kwargs):
+        """
+        Concatenates original input X with output H of the previous layer
+        for the non-stationary kernel: the latter will be interpreted as
+        lengthscales.
+
+        :param H: input to this layer [N, P]
+        :param X: original input [N, D]
+        """
+        XH = tf.concat([X, H], axis=1)
+        return super().propagate(XH, **kwargs)

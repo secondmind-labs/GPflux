@@ -3,12 +3,10 @@
 # Proprietary and confidential
 
 
-import gpflow
 import numpy as np
+from sklearn.feature_extraction.image import extract_patches_2d
 
 from gpflow.kernels import RBF
-
-from sklearn.feature_extraction.image import extract_patches_2d
 
 
 class Initializer:
@@ -17,6 +15,7 @@ class Initializer:
     It should be subclassed when implementing new types.
     Can be used for weights of a neural network, inducing patches, points, etc.
     """
+
     def __call__(self, shape):
         return self.sample(shape)
 
@@ -70,6 +69,7 @@ class NormalInitializer(Initializer):
     :param mean: float
         Mean of initial parameters.
     """
+
     def __init__(self, std=1.0, mean=0.0):
         self.std = std
         self.mean = mean
@@ -92,12 +92,11 @@ class KernelStructureMixingMatrixInitializer(Initializer):
         :param shape: tuple, P x L.
         Note that P is both used for the dimension and the matrix.
         """
-        #TODO(vincent): why is this image *width*? not width * height?
+        # TODO(vincent): why is this image *width*? not width * height?
         im_width, num_latent = shape  # P x L
-        spatio_indices = np.vstack([x.flatten() for x in np.meshgrid(np.arange(im_width), np.arange(im_width))]).T
+        spatio_indices = np.vstack(
+            [x.flatten() for x in np.meshgrid(np.arange(im_width), np.arange(im_width))]).T
         K_spatio_indices = self.kern.compute_K_symm(spatio_indices) + np.eye(im_width ** 2) * 1E-6
         u, s, v = np.linalg.svd(K_spatio_indices)
         P = (u[:, :num_latent] * s[None, :num_latent] ** 0.5)  # P x L
         return P
-
-

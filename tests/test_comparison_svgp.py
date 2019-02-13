@@ -1,11 +1,17 @@
-import numpy as np
-import gpflow
-import gpflux
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
 
+
+import numpy as np
+
+import gpflow
 from gpflow.models import SVGP
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
-from gpflow.test_util import session_tf
+
+from gpflux.layers.layers import GPLayer
+from gpflux.models.deep_gp import DeepGP
 
 
 def _create_q_sqrt(M, L):
@@ -36,10 +42,10 @@ def test_svgp_comparison(session_tf):
     # set up GPflux
     feat = gpflow.features.InducingPoints(Data.Z)
     kern = RBF(Data.D_in, lengthscales=Data.LSCs, ARD=True)
-    layer = gpflux.layers.GPLayer(kern, feat, Data.D_out)
+    layer = GPLayer(kern, feat, Data.D_out)
     layer.q_mu = Data.Q_MU
     layer.q_sqrt = Data.Q_SQRT
-    flux_model = gpflux.DeepGP(Data.X, Data.Y, [layer])
+    flux_model = DeepGP(Data.X, Data.Y, [layer])
 
     # test elbo
     np.testing.assert_almost_equal(flux_model.compute_log_likelihood(),

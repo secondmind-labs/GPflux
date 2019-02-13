@@ -3,16 +3,14 @@
 # Proprietary and confidential
 
 
-import numpy as np
-import tensorflow as tf
-
 from enum import Enum
 
-from gpflow import settings, params_as_tensors
-from gpflow.kullback_leiblers import gauss_kl
+import tensorflow as tf
 
-from .layers import BaseLayer
-from ..encoders import RecognitionNetwork
+from gpflow import params_as_tensors
+from gpflow.kullback_leiblers import gauss_kl
+from gpflux.layers.layers import BaseLayer
+from gpflux.encoders import RecognitionNetwork
 
 
 class LatentVarMode(Enum):
@@ -45,7 +43,8 @@ class LatentVariableLayer(BaseLayer):
     1) We're doing inference, so we use the variational distribution
     2) We're looking at test points, so we use the prior
     """
-    #TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
+
+    # TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
 
     def __init__(self, latent_dim, XY_dim=None, encoder=None):
         BaseLayer.__init__(self)
@@ -64,82 +63,63 @@ class LatentVariableLayer(BaseLayer):
             q_mu, log_q_sqrt = self.encoder(XY)
             self.q_mu = q_mu
             self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
-            #TODO(vincent) document this hard-coded feature ^^^
             self.is_encoded = True
 
     def KL(self):
         self.encode_once()
         return gauss_kl(self.q_mu, self.q_sqrt)
 
-    def propagate(self, X, sampling=True, W=None, **kwargs):
-        raise NotImplementedError
+    def propagate(self, H, W=None, **kwargs):
+        raise NotImplementedError()
 
     def describe(self):
-        return "{} with latent dim {}"\
-                    .format(self.__class__.__name__,
-                            self.latent_dim)
+        return "{} with latent dim {}".format(
+            self.__class__.__name__,
+            self.latent_dim
+        )
 
 
 class LatentVariableConcatLayer(LatentVariableLayer):
     """
     A latent variable layer where the latents are concatenated with the input
     """
+
     @params_as_tensors
     def propagate(self,
-                  X,
+                  H,
                   *,
-                  sampling=True,
-                  latent_var_mode=LatentVarMode.POSTERIOR,
                   W=None,
                   full_cov=False,
-                  full_output_cov=False):
+                  full_output_cov=False,
+                  latent_var_mode=LatentVarMode.POSTERIOR):
 
         self.encode_once()
-        if sampling:
-            if latent_var_mode == LatentVarMode.POSTERIOR:
-                z= tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
-                W = self.q_mu + z * self.q_sqrt
 
-            elif latent_var_mode == LatentVarMode.PRIOR:
-                W = tf.random_normal([tf.shape(X)[0], self.latent_dim],
-                                     dtype=settings.float_type)
+        if latent_var_mode == LatentVarMode.POSTERIOR:
+            eps = tf.random_normal(tf.shape(self.q_mu), dtype=H.dtype)  # [N, L]
+            W = self.q_mu + eps * self.q_sqrt  # [N, L]
 
-            elif latent_var_mode == LatentVarMode.GIVEN:
-                assert isinstance(W, tf.Tensor)
+            HW_mean = tf.concat([H, self.q_mu], 1)  # [N, D + L]
+            HW_var = tf.concat([tf.zeros_like(H), self.q_sqrt ** 2], 1)  # [N, D + L]
 
+        elif latent_var_mode == LatentVarMode.PRIOR:
+            W = tf.random_normal([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
 
-            return tf.concat([X, W], 1)
+            zeros = tf.zeros([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
+            ones = tf.ones([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
+            HW_mean = tf.concat([H, zeros], 1)  # [N, D + L]
+            HW_var = tf.concat([tf.zeros_like(H), ones], 1)  # [N, D + L]
+
+        elif latent_var_mode == LatentVarMode.GIVEN:
+            assert isinstance(W, tf.Tensor)
 
         else:
+            raise NotImplementedError
 
-            if latent_var_mode == LatentVarMode.POSTERIOR:
-                XW_mean = tf.concat([X, self.q_mu], 1)
-                XW_var = tf.concat([tf.zeros_like(X), self.q_sqrt ** 2])
-                return XW_mean, XW_var
+        sample = tf.concat([H, W], 1)
 
-            elif latent_var_mode == LatentVarMode.PRIOR:
-                z = tf.zeros([tf.shape(X)[0], self.latent_dim], dtype=settings.float_type)
-                o = tf.ones([tf.shape(X)[0], self.latent_dim], dtype=settings.float_type)
-                XW_mean = tf.concat([X, z], 1)
-                XW_var = tf.concat([tf.zeros_like(X), o])
-                return XW_mean, XW_var
+        if latent_var_mode == LatentVarMode.GIVEN:
+            HW_mean = sample
+            HW_var = None
 
-            else:
-                raise NotImplementedError
-
-
-# class LatentVariableAdditiveLayer(LatentVariableLayer):
-#     """
-#     A latent variable layer where the latents are added to the input
-#     """
-#     @params_as_tensors
-#     def propagate(self, X, sampling=True, W=None, **kwargs):
-#         self.encode_once()
-#         if sampling:
-#             if W is None:
-#                 z = tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
-#                 W = self.q_mu + z * self.q_sqrt
-#             return X + W
-#
-#         else:
-#             return X + self.q_mu, self.q_sqrt**2
+        return sample, HW_mean, HW_var

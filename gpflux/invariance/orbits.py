@@ -1,3 +1,7 @@
+# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import permutations
@@ -27,7 +31,9 @@ class Orbit(gpflow.Parameterized, ABC):
         if self.orbit_batch_size is None:
             return self.get_full_orbit(X)
 
-        logger.debug("`get_orbit()` called by `%s` is the default. Probably not the most efficient. " % str(type(self)))
+        logger.debug(
+            "`get_orbit()` called by `%s` is the default. Probably not the most efficient. " % str(
+                type(self)))
         return tf.transpose(
             tf.random_shuffle(
                 tf.transpose(self.get_full_orbit(X), [1, 0, 2])
@@ -73,7 +79,8 @@ class FlipInputDims(Orbit):
 
 class Permutation(Orbit):
     def get_full_orbit(self, X):
-        perms = tf.constant(np.array(list(permutations(range(self._parent.input_dim)))).flatten()[:, None])
+        perms = tf.constant(
+            np.array(list(permutations(range(self._parent.input_dim)))).flatten()[:, None])
         return tf.reshape(tf.transpose(tf.gather_nd(tf.transpose(X), perms)),
                           (-1, self.orbit_size, self._parent.input_dim))
 
@@ -119,13 +126,15 @@ class QuantRotation(ImageOrbit):
     Kernel invariant to any quantised rotations of the input image.
     """
 
-    def __init__(self, orbit_batch_size=None, rotation_quantisation=45, interpolation_method="NEAREST",
+    def __init__(self, orbit_batch_size=None, rotation_quantisation=45,
+                 interpolation_method="NEAREST",
                  same_minibatch=True, **kwargs):
         super().__init__(orbit_batch_size=orbit_batch_size, **kwargs)
 
         self.rotation_quantisation = rotation_quantisation
         self.interpolation_method = interpolation_method
-        assert 360 % rotation_quantisation == 0, "Orbit must complete in 360 degrees."  # Not strictly necessary
+        assert 360 % rotation_quantisation == 0, "Orbit must complete in 360 degrees."
+        # Not strictly necessary
         self.angles = np.arange(0, 360, rotation_quantisation)
         self.same_minibatch = same_minibatch
 
@@ -143,7 +152,8 @@ class QuantRotation(ImageOrbit):
         if self.orbit_batch_size is None:
             return self.get_full_orbit(X)
 
-        # We need to explicitly memoize the _tensor_ output here. We need to use the same orbit minibatch for all
+        # We need to explicitly memoize the _tensor_ output here. We need to use the
+        # same orbit minibatch for all
         # computations.
         if not self.same_minibatch:
             angles = tf.random_shuffle(self.angles)[:self.orbit_batch_size]
@@ -158,13 +168,16 @@ class QuantRotation(ImageOrbit):
 
 
 class Rotation(ImageOrbit):
-    def __init__(self, orbit_batch_size=None, angle=179.99, interpolation_method="NEAREST", same_minibatch=True,
+    def __init__(self, orbit_batch_size=None, angle=179.99, interpolation_method="NEAREST",
+                 same_minibatch=True,
                  use_stn=False, **kwargs):
         assert orbit_batch_size is not None
         assert same_minibatch
         super().__init__(orbit_batch_size=orbit_batch_size, **kwargs)
         self.interpolation_method = interpolation_method
-        self.angle = gpflow.Param(angle, transform=gpflow.transforms.Logistic(0., 180.))  # constrained to [0, 180]
+        self.angle = gpflow.Param(angle, transform=gpflow.transforms.Logistic(0.,
+                                                                              180.))
+        # constrained to [0, 180]
         self.use_stn = use_stn
 
     @lru_cache(maxsize=None)
@@ -187,8 +200,8 @@ class Rotation(ImageOrbit):
 
 class ParameterisedSTN(ImageOrbit):
     """
-    Kernel invariant to to transformations using Spatial Transformer Networks (STNs); this corresponds to six-parameter
-    affine transformations.
+    Kernel invariant to to transformations using Spatial Transformer Networks (STNs);
+    this corresponds to six-parameter affine transformations.
     This version of the kernel uses interpretable parameters:
         - rotation angle
         - scale (in x and y)
@@ -205,7 +218,8 @@ class ParameterisedSTN(ImageOrbit):
         :param tauy: shear in y; sample from [-tauy, tauy]; identity = 0
         """
         super().__init__(orbit_batch_size=orbit_batch_size)
-        self.angle = gpflow.Param(angle, transform=gpflow.transforms.Logistic(0., 180.))  # constrained to [0, 180]
+        self.angle = gpflow.Param(angle, transform=gpflow.transforms.Logistic(0., 180.))
+        # constrained to [0, 180]
         self.scalex = gpflow.Param(scalex)  # negative scale = reflection + scale
         self.scaley = gpflow.Param(scaley)
         self.taux = gpflow.Param(taux, transform=transforms.positive)
@@ -257,12 +271,12 @@ class ParameterisedSTN(ImageOrbit):
         return np.inf
 
 
-
 class GeneralSTN(ImageOrbit):
     """
-    Kernel invariant to to transformations using Spatial Transformer Networks (STNs); this correponds to six-parameter
-    affine transformations.
-    This version of the kernel is parameterised by the six independent parameters directly (thus "_general")
+    Kernel invariant to to transformations using Spatial Transformer Networks (STNs); this
+    correponds to six-parameter affine transformations.
+    This version of the kernel is parameterised by the six independent parameters directly
+    (thus "_general")
     """
 
     def __init__(self, orbit_batch_size=None,
@@ -296,7 +310,8 @@ class GeneralSTN(ImageOrbit):
             self.theta_max_3 = param(theta_min[3])
             self.theta_max_4 = gpflow.Param(theta_min[4], dtype=settings.float_type,
                                             transform=transforms.Log1pe(lower=1.))
-            self.theta_max_5 = gpflow.Param(theta_min[5], dtype=settings.float_type, transform=transforms.positive)
+            self.theta_max_5 = gpflow.Param(theta_min[5], dtype=settings.float_type,
+                                            transform=transforms.positive)
         else:
             self.theta_min = gpflow.Param(theta_min, dtype=settings.float_type)
             self.theta_max = gpflow.Param(theta_max, dtype=settings.float_type)
@@ -312,8 +327,9 @@ class GeneralSTN(ImageOrbit):
                                   -self.theta_min_3,
                                   1. - self.theta_min_4,
                                   -self.theta_min_5])
-            theta_max = tf.stack([self.theta_max_0, self.theta_max_1, self.theta_max_2, self.theta_max_3,
-                                  self.theta_max_4, self.theta_max_5])
+            theta_max = tf.stack(
+                [self.theta_max_0, self.theta_max_1, self.theta_max_2, self.theta_max_3,
+                 self.theta_max_4, self.theta_max_5])
             theta_min = tf.reshape(theta_min, [1, -1])
             theta_max = tf.reshape(theta_max, [1, -1])
         else:
@@ -332,20 +348,23 @@ class GeneralSTN(ImageOrbit):
 
 class LocalTransformation(ImageOrbit):
     """
-    Kernel invariant to to transformations of local transformations as defined in Loosli2007, Section 3.2.4
+    Kernel invariant to to transformations of local transformations as defined in Loosli2007,
+    Section 3.2.4
+
     For an "orbit" the images are created using the following update rule:
 
-        x_new = squash_fn( x_old + alpha_x * fx * tx + alpha_y * fy * ty + beta * sqrt(tx**2 + ty**2) )
+        x_new = squash_fn( x_old + alpha_x * fx * tx + alpha_y * fy * ty + beta
+        * sqrt(tx**2 + ty**2) )
 
-    where tx/ty are tangent vectors (computed either by convolution with a sobel filter or derivative of a Gaussian) and
-    fx/fy denote the local deformations fields. alpha_x/alpha_y correspond to the scales and the beta-term corresponds
-    to a thickening/thinning operation.
+    where tx/ty are tangent vectors (computed either by convolution with a sobel filter or
+    derivative of a Gaussian) and fx/fy denote the local deformations fields. alpha_x/alpha_y
+    correspond to the scales and the beta-term corresponds to a thickening/thinning operation.
 
-    Deformation fields are drawn at random at each pixel value and local correlation is introduced by convolving with a
-    Gaussian filter of width sigma_d
+    Deformation fields are drawn at random at each pixel value and local correlation is introduced
+    by convolving with a Gaussian filter of width sigma_d
 
-    Moreover, if alpha_rot/alpha_scale are not None, explicit deformation fields for linearised rotations/scalings
-    are included.
+    Moreover, if alpha_rot/alpha_scale are not None, explicit deformation fields for linearised
+    rotations/scalings are included.
 
     The quash_fn ensures that the image values are in the original range [0, 1]
 
@@ -385,63 +404,68 @@ class LocalTransformation(ImageOrbit):
         :param alpha_rot: scale of rotations
         :param alpha_scale: scale of scaling operations
         :param beta: scale of thickening/thinning deformations
-        :param sigmat: width of the Gaussian used to filter the image (to compute tx/ty) [only used if gauss_or_sobel=='gauss')
+        :param sigmat: width of the Gaussian used to filter the image (to compute tx/ty) [only used
+        if gauss_or_sobel=='gauss')
         :param sigmad: correlation length of the deformation field.
-        :param interpret_as_ranges: whether to interpret alpha/beta as values are ranges to sample from
+        :param interpret_as_ranges: whether to interpret alpha/beta as values are ranges to sample
+        from
         :param gauss_or_sobel: how to compute tx/ty
-        :param squash_fn: which squashing function to use (e.g. lambda x: tf.clip_by_value(x, 0., 1.))
+        :param squash_fn: which squashing function to use(e.g. lambda x:tf.clip_by_value(x, 0., 1.))
         """
 
-    @lru_cache(maxsize=None)
-    @gpflow.params_as_tensors
-    def get_orbit(self, X):
-        """
-        Compute orbit of a batch of images X; for each image a different orbit is sampled
-        :param X: batch of images [?, H*W]
-        :return: orbits for the entire batch [?, orbit_size, H*W]
-        """
-
-        def get_orbit_singleim(im):
-            """
-            Compute orbit of a single image
-            :param im: single image [H, W]
-            :return: orbit of the single image [P, H*W]
-            """
-            if self.interpret_as_ranges:
-                # draw independent parameters for each image in the orbit
-                alphax = tf.random_uniform([self.orbit_batch_size, 1, 1]) * self.alphax
-                alphay = tf.random_uniform([self.orbit_batch_size, 1, 1]) * self.alphay
-                beta = -self.beta + tf.random_uniform([self.orbit_batch_size, 1, 1]) * 2 * self.beta
-                if self.alpha_rot is not None:
-                    alpha_rot = -self.alpha_rot + tf.random_uniform([self.orbit_batch_size, 1, 1]) * 2 * self.alpha_rot
-                else:
-                    alpha_rot = None
-                if self.alpha_scale is not None:
-                    alpha_scale = -self.alpha_scale + \
-                                  tf.random_uniform([self.orbit_batch_size, 1, 1]) * 2 * self.alpha_scale
-                else:
-                    alpha_scale = None
-            else:
-                # use same parameter for each orbit
-                alphax = self.alphax
-                alphay = self.alphay
-                beta = self.beta
-                alpha_rot = self.alpha_rot
-                alpha_scale = self.alpha_scale
-            im = tf.tile(tf.expand_dims(im, 0), [self.orbit_batch_size, 1, 1])
-            fx, fy = random_deformation_fields(bs=self.orbit_batch_size, sigma=self.sigmad)
-            im_filtered = apply_deformation_fields(im, fx, fy, alphax, alphay, beta, self.sigmat,
-                                                   alpha_rot=alpha_rot, alpha_scale=alpha_scale,
-                                                   clip_fn=self.squash_fn,
-                                                   return_only_filtered=True, gauss_or_sobel=self.gauss_or_sobel)
-            im_filtered = tf.reshape(im_filtered, [self.orbit_batch_size, -1])  # [P, H*W]
-            return im_filtered
-
-        Ximgs = tf.reshape(X, [-1] + self.img_size)  # [?, H, W]
-
-        return tf.map_fn(get_orbit_singleim, Ximgs, dtype=settings.float_type)  # [?, P, H*W]
-
-    @property
-    def orbit_size(self):
-        return np.inf
-        
+    # @lru_cache(maxsize=None)
+    # @gpflow.params_as_tensors
+    # def get_orbit(self, X):
+    #     """
+    #     Compute orbit of a batch of images X; for each image a different orbit is sampled
+    #     :param X: batch of images [?, H*W]
+    #     :return: orbits for the entire batch [?, orbit_size, H*W]
+    #     """
+    #
+    #     def get_orbit_singleim(im):
+    #         """
+    #         Compute orbit of a single image
+    #         :param im: single image [H, W]
+    #         :return: orbit of the single image [P, H*W]
+    #         """
+    #         if self.interpret_as_ranges:
+    #             # draw independent parameters for each image in the orbit
+    #             alphax = tf.random_uniform([self.orbit_batch_size, 1, 1]) * self.alphax
+    #             alphay = tf.random_uniform([self.orbit_batch_size, 1, 1]) * self.alphay
+    #             beta = -self.beta + tf.random_uniform([self.orbit_batch_size, 1, 1]) * 2
+    #             * self.beta
+    #             if self.alpha_rot is not None:
+    #                 alpha_rot = -self.alpha_rot + tf.random_uniform(
+    #                     [self.orbit_batch_size, 1, 1]) * 2 * self.alpha_rot
+    #             else:
+    #                 alpha_rot = None
+    #             if self.alpha_scale is not None:
+    #                 alpha_scale = \
+    #                     -self.alpha_scale + tf.random_uniform([self.orbit_batch_size, 1, 1]) \
+    #                     * 2 * self.alpha_scale
+    #             else:
+    #                 alpha_scale = None
+    #         else:
+    #             # use same parameter for each orbit
+    #             alphax = self.alphax
+    #             alphay = self.alphay
+    #             beta = self.beta
+    #             alpha_rot = self.alpha_rot
+    #             alpha_scale = self.alpha_scale
+    #         im = tf.tile(tf.expand_dims(im, 0), [self.orbit_batch_size, 1, 1])
+    #         fx, fy = random_deformation_fields(bs=self.orbit_batch_size, sigma=self.sigmad)
+    #         im_filtered = apply_deformation_fields(im, fx, fy, alphax, alphay, beta, self.sigmat,
+    #                                                alpha_rot=alpha_rot, alpha_scale=alpha_scale,
+    #                                                clip_fn=self.squash_fn,
+    #                                                return_only_filtered=True,
+    #                                                gauss_or_sobel=self.gauss_or_sobel)
+    #         im_filtered = tf.reshape(im_filtered, [self.orbit_batch_size, -1])  # [P, H*W]
+    #         return im_filtered
+    #
+    #     Ximgs = tf.reshape(X, [-1] + self.img_size)  # [?, H, W]
+    #
+    #     return tf.map_fn(get_orbit_singleim, Ximgs, dtype=settings.float_type)  # [?, P, H*W]
+    #
+    # @property
+    # def orbit_size(self):
+    #     return np.inf
