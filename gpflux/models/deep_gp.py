@@ -86,26 +86,24 @@ class DeepGP(Model):
                 begin_index = end_index
 
     @params_as_tensors
-    def _build_decoder(self,
-                       Z,
-                       full_cov=False,
-                       full_output_cov=False,
-                       Ws=None,
-                       latent_var_mode=LatentVarMode.POSTERIOR):
+    def _build_decoder(self, X, full_cov=False, full_output_cov=False,
+                       Ws=None, latent_var_mode=LatentVarMode.POSTERIOR):
         """
-        :param Z: N x W
+        :param X: N x W
         """
-        Z = tf.cast(Z, dtype=settings.float_type)
+        X = tf.cast(X, dtype=settings.float_type)
+        H = X
 
         Ws_iter = self._get_Ws_iter(latent_var_mode, Ws)
 
         for layer, W in zip(self.layers, Ws_iter):
-            Z, mean, cov = layer.propagate(
-                Z,
+            H, mean, cov = layer.propagate(
+                H,
                 W=W,
-                latent_var_mode=latent_var_mode,
+                X=X,
+                full_cov=full_cov,
                 full_output_cov=full_output_cov,
-                full_cov=full_cov
+                latent_var_mode=latent_var_mode,
             )
         return mean, cov
 
@@ -116,10 +114,11 @@ class DeepGP(Model):
             self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         )  # []
 
-        self.KL_U_layers = reduce(tf.add, (l.KL() for l in self.layers))  # []
+        # used for plotting in tensorboards:
+        self.KL_U_sum = reduce(tf.add, (l.KL() for l in self.layers))  # []
 
         return tf.cast(
-            self.E_log_prob * self.scale - self.KL_U_layers,
+            self.E_log_prob * self.scale - self.KL_U_sum,
             settings.float_type
         )  # []
 
@@ -170,16 +169,18 @@ class DeepGP(Model):
         )
 
     @autoflow()
-    def compute_KL_U(self):
-        return self.KL_U_layers
+    def compute_KL_U_sum(self):
+        return self.KL_U_sum
 
     @autoflow()
     def compute_data_fit(self):
+        #XXX check this works correctly with minibatching
         return self.E_log_prob * self.scale
 
     def log_pdf(self, X, Y):
         m, v = self.predict_y(X)
         l = norm.logpdf(Y, loc=m, scale=v**0.5)
+        #XXX this assumes a Gaussian likelihood ?...
         return np.average(l)
 
     def describe(self):

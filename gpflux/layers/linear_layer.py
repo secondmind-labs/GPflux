@@ -44,8 +44,8 @@ class LinearLayer(BaseLayer):
         self.bias = Param(bias)
 
     @params_as_tensors
-    def propagate(self, X, **kwargs):
-        mean = tf.matmul(X, self.weight) + self.bias
+    def propagate(self, H, **kwargs):
+        mean = tf.matmul(H, self.weight) + self.bias
         return mean, mean, None
 
     def KL(self):

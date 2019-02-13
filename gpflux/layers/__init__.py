@@ -3,7 +3,7 @@
 # Proprietary and confidential
 
 
-from .layers import GPLayer
+from .layers import GPLayer, NonstationaryGPLayer
 from .convolution_layer import ConvLayer, WeightedSumConvLayer
 from .perceptron_layer import PerceptronLayer
 from .linear_layer import LinearLayer

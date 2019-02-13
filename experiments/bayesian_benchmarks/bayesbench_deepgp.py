@@ -133,7 +133,7 @@ class BayesBench_DeepGP():
               .with_condition(mon.PeriodicIterationCondition(hz))\
               .with_exit_condition(True)
 
-        kl_u_func = lambda *args, **kwargs: self.model.compute_KL_U()
+        kl_u_func = lambda *args, **kwargs: self.model.compute_KL_U_sum()
         kl_u_task = mon.ScalarFuncToTensorBoardTask(file_writer, kl_u_func, "KL_U")\
               .with_name('kl_u')\
               .with_condition(mon.PeriodicIterationCondition(hz))\

@@ -11,13 +11,15 @@ from gpflow import Param, Parameterized, features, params_as_tensors, settings
 from gpflow.conditionals import conditional, sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
+from ..nonstationary import NonstationaryKernel
+import tensorflow as tf
 
 
 class BaseLayer(Parameterized):
 
-    def propagate(self, X, **kwargs):
+    def propagate(self, H, **kwargs):
         """
-        :param X: tf.Tensor
+        :param H: tf.Tensor
             N x D
         :return: a sample from, mean, and covariance of the predictive
            distribution, all of shape N x P
@@ -76,13 +78,13 @@ class GPLayer(BaseLayer):
         self.q_sqrt = Param(q_sqrt, dtype=settings.float_type)
 
     @params_as_tensors
-    def propagate(self, X, *, full_output_cov=False, full_cov=False, num_samples=None, **kwargs):
+    def propagate(self, H, *, full_output_cov=False, full_cov=False, num_samples=None, **kwargs):
         """
-        :param X: N x P
+        :param H: input to this layer [N, P]
         """
-        mean_function = self.mean_function(X)
+        mean_function = self.mean_function(H)
         sample, mean, cov = sample_conditional(
-            X,
+            H,
             self.feature,
             self.kern,
             self.q_mu,
@@ -110,3 +112,24 @@ class GPLayer(BaseLayer):
             self.mean_function.__class__.__name__,
             self.num_latents
         )
+
+
+class NonstationaryGPLayer(GPLayer):
+    def __init__(self,
+                 kernel: NonstationaryKernel,
+                 *args, **kwargs):
+        assert isinstance(kernel, NonstationaryKernel)
+        super().__init__(kernel, *args, **kwargs)
+
+    @params_as_tensors
+    def propagate(self, H, *, X=None, **kwargs):
+        """
+        Concatenates original input X with output H of the previous layer
+        for the non-stationary kernel: the latter will be interpreted as
+        lengthscales.
+
+        :param H: input to this layer [N, P]
+        :param X: original input [N, D]
+        """
+        XH = tf.concat([X, H], axis=1)
+        return super().propagate(XH, **kwargs)
