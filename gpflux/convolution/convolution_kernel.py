@@ -458,7 +458,7 @@ class WeightedSumConvKernel(ConvKernel):
                          pooling=pooling, with_indexing=with_indexing)
 
         self.with_weights = with_weights
-        weights = np.ones([self.num_outputs], dtype=settings.float_type)  # P
+        weights = np.ones([self.num_outputs], dtype=settings.float_type)   # P
         self.weights = gpflow.Param(weights) if with_weights else weights
 
     @gpflow.params_as_tensors
