@@ -19,17 +19,17 @@ from gpflux.layers.convolution_layer import WeightedSumConvLayer
 from gpflux.models.deep_gp import DeepGP
 from gpflux.layers.layers import GPLayer
 
-SEED = 0
+SEED = 0  # used seed to ensure that there's no variance in timing coming from randomness
 
 
-def get_mnist():
-    (x_train, y_train), (_, _) = keras.datasets.mnist.load_data()
+def _get_mnist():
+    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train = x_train / x_train.max()
     y_train = np.diag(np.ones(10))[y_train]
-    return x_train, y_train
+    return x_train, y_train, x_test, y_test
 
 
-def get_timing_for_fixed_op(num_optimisation_updates, session, op):
+def _get_timing_for_fixed_op(num_optimisation_updates, session, op):
     def profile():
         t0 = time.time()
         for _ in range(num_optimisation_updates):
@@ -40,15 +40,13 @@ def get_timing_for_fixed_op(num_optimisation_updates, session, op):
     return profile
 
 
-def get_conv():
+def _get_convgp_profile_method(with_indexing, num_optimisation_updates=20):
     gpflow.reset_default_graph_and_session()
     np.random.seed(SEED)
     tf.set_random_seed(SEED)
-    num_optimisation_updates = 20
     batch_size = 32
-    x, y = get_mnist()
-    with_indexing = True
     with_weights = True
+    x, y, *_ = _get_mnist()
     num_inducing_points = 200
     patch_shape = [5, 5]
     h = int(x.shape[1] ** .5)
@@ -67,16 +65,14 @@ def get_conv():
     layer.kern.basekern.variance = 25.0
     layer.kern.basekern.lengthscales = 1.2
 
-    # init kernel
     if with_indexing:
         layer.kern.spatio_indices_kernel.variance = 25.0
         layer.kern.spatio_indices_kernel.lengthscales = 3.0
 
-    # break symmetry in variational parameters
     layer.q_sqrt = layer.q_sqrt.read_value()
     layer.q_mu = np.random.randn(*(layer.q_mu.read_value().shape))
 
-    x = x.reshape(x.shape[0], -1)
+    x = x.reshape(x.shape[0], -1)  # DeepGP class expects two dimensional data
 
     model = DeepGP(x, y,
                    layers=[layer],
@@ -87,15 +83,14 @@ def get_conv():
     optimizer = gpflow.train.AdamOptimizer()
     op = optimizer.make_optimize_tensor(model)
     session = gpflow.get_default_session()
-    return get_timing_for_fixed_op(num_optimisation_updates, session, op)
+    return _get_timing_for_fixed_op(num_optimisation_updates, session, op)
 
 
-def get_profile_method():
+def _get_svgp_rbf_profile_method(num_optimisation_updates=20):
     gpflow.reset_default_graph_and_session()
-    batch_size = 32
-    num_optimisation_updates = 20
     np.random.seed(SEED)
     tf.set_random_seed(SEED)
+    batch_size = 32
     x, y = np.random.random((1000, 10)), np.random.random((1000, 10))
     inducing_feature = InducingPoints(np.random.random((5, 10)))
     kernel = RBF(input_dim=x.shape[1])
@@ -109,15 +104,16 @@ def get_profile_method():
     optimizer = gpflow.train.AdamOptimizer()
     op = optimizer.make_optimize_tensor(model)
     session = gpflow.get_default_session()
-    return get_timing_for_fixed_op(num_optimisation_updates, session, op)
+    return _get_timing_for_fixed_op(num_optimisation_updates, session, op)
 
 
 class TimingTask:
-    def __init__(self, name, creator, iterations=30, num_warm_up=10):
+    def __init__(self, name, creator, iterations=30, num_warm_up=10, creator_args=None):
         self.iterations = iterations
         self.num_warm_up = num_warm_up
         self.name = name
         self.creator = creator
+        self.creator_args = {} if creator_args is None else creator_args
         assert self.iterations > self.num_warm_up, \
             'Number of iterations has to be greater than the number of warm up repetitions'
 
@@ -131,7 +127,7 @@ class Timer:
         for task in self._task_list:
             times = []
             for i in tqdm(range(task.iterations), desc='Running task {}'.format(task.name)):
-                profiled_method = task.creator()
+                profiled_method = task.creator(**task.creator_args)
                 t = profiled_method()
                 if i < task.num_warm_up:
                     continue
@@ -151,12 +147,30 @@ class Timer:
                 f_handle.write_text(report_str)
 
 
-def run_timings():
+def get_timing_tasks(num_optimisation_updates):
+    timing_tasks = \
+        [
+            TimingTask(name='profile SVGP RBF',
+                       creator=_get_svgp_rbf_profile_method),
+            TimingTask(name='profile CONV GP',
+                       creator=_get_convgp_profile_method,
+                       creator_args=dict(with_indexing=False,
+                                         num_optimisation_updates=num_optimisation_updates)),
+            TimingTask(name='profile CONV GP TICK',
+                       creator=_get_convgp_profile_method,
+                       creator_args=dict(with_indexing=True,
+                                         num_optimisation_updates=num_optimisation_updates))
+        ]
+    return timing_tasks
+
+
+def _run_timings():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    # timing_task = TimingTask(name='profile SVGP RBF', creator=get_profile_method)
-    timing_task = TimingTask(name='profile CONV GP', creator=get_conv)
-    timer = Timer(task_list=[timing_task])
+    num_optimisation_updates = 20
+    timing_tasks = get_timing_tasks(num_optimisation_updates)
+    timer = Timer(task_list=timing_tasks)
     timer.time()
 
 
-run_timings()
+if __name__ == '__main__':
+    _run_timings()

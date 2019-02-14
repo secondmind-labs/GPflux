@@ -10,6 +10,7 @@ requirements = [
     'scikit-learn==0.20.0',
     'flake8==3.6.0',
     'mypy==0.670',
+    'keras==2.2.4',
     'tqdm',
     # for tests:
     'pytest-cov==2.5.1',
