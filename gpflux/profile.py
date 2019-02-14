@@ -4,6 +4,7 @@
 
 import time
 import os
+from typing import Tuple, Callable, Dict, Optional, List
 
 from tqdm import tqdm
 import numpy as np
@@ -22,14 +23,23 @@ from gpflux.layers.layers import GPLayer
 SEED = 0  # used seed to ensure that there's no variance in timing coming from randomness
 
 
-def _get_mnist():
+def _get_mnist() -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Utility method to obtain MNIST data.
+    """
     (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
     x_train = x_train / x_train.max()
     y_train = np.diag(np.ones(10))[y_train]
     return x_train, y_train, x_test, y_test
 
 
-def _get_timing_for_fixed_op(num_optimisation_updates, session, op):
+def _get_timing_for_fixed_op(num_optimisation_updates: int, session: tf.Session, op: tf.Operation) \
+        -> Callable[[], float]:
+    """
+    Returns a method that runs op using session for num_optimisation_updates. The returned
+    method will return its execution time.
+    """
+
     def profile():
         t0 = time.time()
         for _ in range(num_optimisation_updates):
@@ -40,7 +50,11 @@ def _get_timing_for_fixed_op(num_optimisation_updates, session, op):
     return profile
 
 
-def _get_convgp_profile_method(with_indexing, num_optimisation_updates=20):
+def _get_convgp_profile_method(with_indexing: bool, num_optimisation_updates: int = 20) \
+        -> Callable[[], float]:
+    """
+    Returns a method that performs num_optimisation_updates on Conv GP.
+    """
     gpflow.reset_default_graph_and_session()
     np.random.seed(SEED)
     tf.set_random_seed(SEED)
@@ -70,7 +84,7 @@ def _get_convgp_profile_method(with_indexing, num_optimisation_updates=20):
         layer.kern.spatio_indices_kernel.lengthscales = 3.0
 
     layer.q_sqrt = layer.q_sqrt.read_value()
-    layer.q_mu = np.random.randn(*(layer.q_mu.read_value().shape))
+    layer.q_mu = np.random.randn(*layer.q_mu.read_value().shape)
 
     x = x.reshape(x.shape[0], -1)  # DeepGP class expects two dimensional data
 
@@ -86,7 +100,10 @@ def _get_convgp_profile_method(with_indexing, num_optimisation_updates=20):
     return _get_timing_for_fixed_op(num_optimisation_updates, session, op)
 
 
-def _get_svgp_rbf_profile_method(num_optimisation_updates=20):
+def _get_svgp_rbf_profile_method(num_optimisation_updates: int = 20) -> Callable[[], float]:
+    """
+    Returns a method that performs num_optimisation_updates on SVGP.
+    """
     gpflow.reset_default_graph_and_session()
     np.random.seed(SEED)
     tf.set_random_seed(SEED)
@@ -108,7 +125,21 @@ def _get_svgp_rbf_profile_method(num_optimisation_updates=20):
 
 
 class TimingTask:
-    def __init__(self, name, creator, num_iterations, num_warm_up, creator_args=None):
+    """
+    Class representing a task to be timed.
+    """
+
+    def __init__(self, name: str, creator: Callable, num_iterations: int,
+                 num_warm_up: int, creator_args: Optional[Dict] = None) -> None:
+        """
+        Create a timed task.
+        :param name: the name of the task
+        :param creator: this callable should return a method to be timed; this method should return
+        its execution time
+        :param num_iterations: the number of repetitions to calculate average running time
+        :param num_warm_up: the number of initial iterations that will be ignored
+        :param creator_args: dictionary of additional arguments passed to creator as **kwargs
+        """
         self.num_iterations = num_iterations
         self.num_warm_up = num_warm_up
         self.name = name
@@ -119,10 +150,20 @@ class TimingTask:
 
 
 class Timer:
-    def __init__(self, task_list):
+    """
+    Timer runs a passed list of timing tasks.
+    """
+
+    def __init__(self, task_list) -> None:
+        """
+        Initialize the Timer by passing a list of tasks to time.
+        """
         self._task_list = task_list
 
-    def time(self):
+    def run(self) -> str:
+        """
+        Runs tasks on a task_list and returns the report string containing execution times of tasks.
+        """
         report_str = 'Timings:'
         for task in self._task_list:
             times = []
@@ -139,7 +180,11 @@ class Timer:
         return report_str
 
 
-def get_timing_tasks(num_optimisation_updates, num_iterations, num_warm_up):
+def get_timing_tasks(num_optimisation_updates: int, num_iterations: int, num_warm_up: int) \
+        -> List[TimingTask]:
+    """
+    This method defines tasks that we want to profile.
+    """
     timing_tasks = \
         [
             TimingTask(name='profile SVGP RBF',
@@ -162,11 +207,16 @@ def get_timing_tasks(num_optimisation_updates, num_iterations, num_warm_up):
     return timing_tasks
 
 
-def _run_timings():
+def _run_timings() -> None:
+    """
+    Entrypoint for profiling. This is run by Makefile.
+    """
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    timing_tasks = get_timing_tasks(num_optimisation_updates=20, num_iterations=30, num_warm_up=10)
+    timing_tasks = get_timing_tasks(num_optimisation_updates=20,
+                                    num_iterations=30,
+                                    num_warm_up=10)
     timer = Timer(task_list=timing_tasks)
-    print(timer.time())
+    print(timer.run())
 
 
 if __name__ == '__main__':

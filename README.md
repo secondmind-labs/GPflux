@@ -58,6 +58,10 @@ To build (runs make install, full_test and lint in tox environment):
 ```bash
 make build
 ```
+To profile running time of learning:
+```bash
+make profile
+```
 
 Refer to Makefile for more commands.
 
