@@ -1,9 +1,9 @@
-# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
 import time
 import os
-from pathlib import Path
 
 from tqdm import tqdm
 import numpy as np
@@ -108,13 +108,13 @@ def _get_svgp_rbf_profile_method(num_optimisation_updates=20):
 
 
 class TimingTask:
-    def __init__(self, name, creator, iterations=30, num_warm_up=10, creator_args=None):
-        self.iterations = iterations
+    def __init__(self, name, creator, num_iterations, num_warm_up, creator_args=None):
+        self.num_iterations = num_iterations
         self.num_warm_up = num_warm_up
         self.name = name
         self.creator = creator
         self.creator_args = {} if creator_args is None else creator_args
-        assert self.iterations > self.num_warm_up, \
+        assert self.num_iterations > self.num_warm_up, \
             'Number of iterations has to be greater than the number of warm up repetitions'
 
 
@@ -122,11 +122,11 @@ class Timer:
     def __init__(self, task_list):
         self._task_list = task_list
 
-    def _time(self):
+    def time(self):
         report_str = 'Timings:'
         for task in self._task_list:
             times = []
-            for i in tqdm(range(task.iterations), desc='Running task {}'.format(task.name)):
+            for i in tqdm(range(task.num_iterations), desc='Running task {}'.format(task.name)):
                 profiled_method = task.creator(**task.creator_args)
                 t = profiled_method()
                 if i < task.num_warm_up:
@@ -138,38 +138,35 @@ class Timer:
                                                                                 np.std(times))
         return report_str
 
-    def time(self, report_name=None):
-        if report_name is None:
-            print(self._time())
-        else:
-            report_str = self._time()
-            with Path('./{}'.format(report_name)) as f_handle:
-                f_handle.write_text(report_str)
 
-
-def get_timing_tasks(num_optimisation_updates):
+def get_timing_tasks(num_optimisation_updates, num_iterations, num_warm_up):
     timing_tasks = \
         [
             TimingTask(name='profile SVGP RBF',
-                       creator=_get_svgp_rbf_profile_method),
+                       creator=_get_svgp_rbf_profile_method,
+                       num_iterations=num_iterations,
+                       num_warm_up=num_warm_up),
             TimingTask(name='profile CONV GP',
                        creator=_get_convgp_profile_method,
                        creator_args=dict(with_indexing=False,
-                                         num_optimisation_updates=num_optimisation_updates)),
+                                         num_optimisation_updates=num_optimisation_updates),
+                       num_iterations=num_iterations,
+                       num_warm_up=num_warm_up),
             TimingTask(name='profile CONV GP TICK',
                        creator=_get_convgp_profile_method,
                        creator_args=dict(with_indexing=True,
-                                         num_optimisation_updates=num_optimisation_updates))
+                                         num_optimisation_updates=num_optimisation_updates),
+                       num_iterations=num_iterations,
+                       num_warm_up=num_warm_up)
         ]
     return timing_tasks
 
 
 def _run_timings():
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    num_optimisation_updates = 20
-    timing_tasks = get_timing_tasks(num_optimisation_updates)
+    timing_tasks = get_timing_tasks(num_optimisation_updates=20, num_iterations=30, num_warm_up=10)
     timer = Timer(task_list=timing_tasks)
-    timer.time()
+    print(timer.time())
 
 
 if __name__ == '__main__':
