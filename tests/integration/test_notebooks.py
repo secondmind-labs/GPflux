@@ -23,7 +23,6 @@ import gpflow
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-
 NOTEBOOK_FILES = [
     "deep_gp_samples.ipynb",
     "deep_nonstationary_gp_samples.ipynb",
@@ -49,7 +48,7 @@ def test_no_notebook_missing():
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../notebooks/')
+    return os.path.join(this_dir, '../../notebooks/')
 
 
 def _preproc():
