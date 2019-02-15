@@ -15,7 +15,7 @@ import gpflow
 from gpflow.features import InducingPoints
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
-from gpflux.init import PatchSamplerInitializer
+from gpflux.init import NormalInitializer
 from gpflux.layers.convolution_layer import WeightedSumConvLayer
 from gpflux.models.deep_gp import DeepGP
 from gpflux.layers.layers import GPLayer
@@ -63,10 +63,9 @@ def _get_convgp_profile_method(with_indexing: bool, num_optimisation_updates: in
     x, y, *_ = _get_mnist()
     num_inducing_points = 200
     patch_shape = [5, 5]
-    h = int(x.shape[1] ** .5)
     likelihood = gpflow.likelihoods.SoftMax(y.shape[1])
 
-    patches = PatchSamplerInitializer(x[:num_inducing_points], height=h, width=h, unique=True)
+    patches = NormalInitializer()
     layer = WeightedSumConvLayer(
         x.shape[1:3],
         num_inducing_points,
@@ -75,13 +74,6 @@ def _get_convgp_profile_method(with_indexing: bool, num_optimisation_updates: in
         with_indexing=with_indexing,
         with_weights=with_weights,
         patches_initializer=patches)
-
-    layer.kern.basekern.variance = 25.0
-    layer.kern.basekern.lengthscales = 1.2
-
-    if with_indexing:
-        layer.kern.spatio_indices_kernel.variance = 25.0
-        layer.kern.spatio_indices_kernel.lengthscales = 3.0
 
     layer.q_sqrt = layer.q_sqrt.read_value()
     layer.q_mu = np.random.randn(*layer.q_mu.read_value().shape)
@@ -96,7 +88,7 @@ def _get_convgp_profile_method(with_indexing: bool, num_optimisation_updates: in
     model.compile()
     optimizer = gpflow.train.AdamOptimizer()
     op = optimizer.make_optimize_tensor(model)
-    session = gpflow.get_default_session()
+    session = model.enquire_session()
     return _get_timing_for_fixed_op(num_optimisation_updates, session, op)
 
 
@@ -120,7 +112,7 @@ def _get_svgp_rbf_profile_method(num_optimisation_updates: int = 20) -> Callable
     model.compile()
     optimizer = gpflow.train.AdamOptimizer()
     op = optimizer.make_optimize_tensor(model)
-    session = gpflow.get_default_session()
+    session = model.enquire_session()
     return _get_timing_for_fixed_op(num_optimisation_updates, session, op)
 
 
@@ -167,7 +159,8 @@ class Timer:
         report_str = 'Timings:'
         for task in self._task_list:
             times = []
-            for i in tqdm(range(task.num_iterations), desc='Running task {}'.format(task.name)):
+            for i in tqdm(range(task.num_iterations), desc='Running task {}'.format(task.name),
+                          ncols=80):
                 profiled_method = task.creator(**task.creator_args)
                 t = profiled_method()
                 if i < task.num_warm_up:
