@@ -26,7 +26,7 @@ def config():
     iterations = int(50000)
     # patch size
     patch_shape = [5, 5]
-    # path to save results
+    # path to save saved_results
     basepath = "./"
     # minibatch size
     minibatch_size = 100

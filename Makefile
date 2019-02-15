@@ -5,8 +5,10 @@ lint:
 	flake8 gpflux tests
 types:
 	mypy gpflux
-basic_test:
-	pytest --cov=gpflux tests --ignore=tests/test_invariant.py
+unit_test:
+	pytest --cov=gpflux tests/unit
+integration_test:
+	pytest --cov=gpflux tests/integration
 full_test:
 	pytest --cov=gpflux --cov-report html:cover_html -v --tb=short --junitxml=nosetests.xml --cov-config .coveragerc --cov-report term --cov-report xml tests
 build:
