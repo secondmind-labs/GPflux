@@ -11,6 +11,7 @@ requirements = [
     'flake8==3.6.0',
     'mypy==0.670',
     'tqdm==4.28.1',
+    'keras==2.2.4',
     # for tests:
     'pytest-cov==2.5.1',
     'nbformat==4.4.0',
