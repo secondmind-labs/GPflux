@@ -40,7 +40,7 @@ def test_to_str(session_tf):
     layer2 = gpflux.layers.LinearLayer(Data.OUTPUT_DIMS[0], Data.OUTPUT_DIMS[1])
 
     # Layer 3
-    patch_init = gpflux.init.PatchSamplerInitializer(Data.X[:10], 28, 28)
+    patch_init = gpflux.initializers.PatchSamplerInitializer(Data.X[:10], 28, 28)
     layer3 = gpflux.layers.ConvLayer([30, 30], [28, 28], Data.M, [3, 3],
                                      patches_initializer=patch_init)
 

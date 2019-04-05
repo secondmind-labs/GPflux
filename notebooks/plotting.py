@@ -8,25 +8,22 @@ import gpflow
 from gpflux.models.deep_gp import DeepGP
 
 
-class PlotDeepGP(DeepGP):
-    """ Adds plotting functionality to the model """
+def all_layer_mean_var_samples(model, X):
+    S = 5
+    sample = X
+    means, variances, samples = [], [], []
+    session = model.enquire_session()
+    for l in model.layers:
+        all_samples, m, v = l.propagate(sample, X=X,
+                                        full_output_cov=False, full_cov=True,
+                                        num_samples=S)  # S x N x D, N x D, D x N x N
+        sample = all_samples[0]
 
-    @gpflow.decors.autoflow((gpflow.settings.float_type, [None, None]))
-    def all_layer_mean_var_samples(self, X):
-        S = 5
-        sample = X
-        means, variances, samples = [], [], []
-        for l in self.layers:
-            all_samples, m, v = l.propagate(sample, X=X,
-                                            full_output_cov=False, full_cov=True,
-                                            num_samples=S)  # S x N x D, N x D, D x N x N
-            sample = all_samples[0]
+        means.append(session.run(m))
+        variances.append(session.run(v))
+        samples.append(session.run(all_samples))
 
-            means.append(m)
-            variances.append(v)
-            samples.append(all_samples)
-
-        return means, variances, samples
+    return means, variances, samples
 
 
 def plot_layer(X, m, v, s, idx, axes=None):
@@ -56,7 +53,7 @@ def plot_layer(X, m, v, s, idx, axes=None):
 
 def plot_layers(X, model):
     L = len(model.layers)
-    m, v, s = model.all_layer_mean_var_samples(X)
+    m, v, s = all_layer_mean_var_samples(model, X)
     fig, axes = plt.subplots(3, L, figsize=(L * 3.33, 10))
     for i in range(L):
         plot_layer(X, m, v, s, i, axes[:, i])

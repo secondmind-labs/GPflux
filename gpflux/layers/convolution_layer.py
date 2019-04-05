@@ -8,10 +8,10 @@ from typing import List, Optional, Union
 import numpy as np
 
 import gpflow
-from gpflux import init
+from gpflux.initializers import Initializer, NormalInitializer
 from gpflux.convolution.convolution_kernel import ConvKernel, WeightedSumConvKernel
 from gpflux.convolution.inducing_patch import IndexedInducingPatch, InducingPatch
-from gpflux.layers.layers import GPLayer
+from gpflux.layers import GPLayer
 
 
 def _correct_input_output_shape(input_shape, output_shape, patch_shape, pooling):
@@ -31,32 +31,16 @@ def _correct_input_output_shape(input_shape, output_shape, patch_shape, pooling)
 
 def _from_patches_initializer_to_patches(initializer, shape):
     """
-    If initializer is an instance of init.Initializer it will create
-    the patches by calling the initializer with the given shape.
-    If the initializer is actually a np.ndarray the array gives
-    the patches.
+    If initializer is an instance of gpflux.initializers.Initializer it will
+    create the patches by calling the initializer with the given shape.
+    If the initializer is actually a np.ndarray the array gives the patches.
     """
-    if isinstance(initializer, init.Initializer):
+    if isinstance(initializer, Initializer):
         return initializer(shape)  # M x w x h
     elif isinstance(initializer, np.ndarray):
         return initializer  # M x w x h
     else:
-        raise ValueError
-
-
-def _from_indices_initializer_to_indices(initializer, shape):
-    """
-    If initializer is an instance of init.Initializer it will create
-    the patches by calling the initializer with the given shape.
-    If the initializer is actually a np.ndarray the array gives
-    the patches.
-    """
-    if isinstance(initializer, init.Initializer):
-        return initializer(shape)  # M x w x h
-    elif isinstance(initializer, np.ndarray):
-        return initializer  # M x w x h
-    else:
-        raise ValueError
+        raise TypeError
 
 
 class ConvLayer(GPLayer):
@@ -74,8 +58,8 @@ class ConvLayer(GPLayer):
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
                  base_kernel: Optional[gpflow.kernels.Kern] = None,
-                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None,
-                 indices_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
+                 patches_initializer: Optional[Union[np.ndarray, Initializer]] = None,
+                 indices_initializer: Optional[Union[np.ndarray, Initializer]] = None):
         """
         This layer constructs a ConvKernel GP layer.
         :input_shape: tuple
@@ -95,8 +79,8 @@ class ConvLayer(GPLayer):
             If pooling is 1 no summing of patches is happening
         :param q_mu and q_sqrt: np.ndarrays
             Variatial posterior parameterisation.
-        :param patches_initializer: init.Initializer or np.ndarray (default: NormalInitializer)
-            Instance of the class `init.Initializer` that initializes the inducing patches,
+        :param patches_initializer: Initializer or np.ndarray (default: NormalInitializer)
+            Instance of the class `Initializer` that initializes the inducing patches,
             can also be a np.ndarray, if this is the case the patches_initializer param
             holds the inducing patches M x w x h
         """
@@ -109,7 +93,7 @@ class ConvLayer(GPLayer):
                              .format(input_shape, output_shape, patch_shape))
         # inducing patches
         if patches_initializer is None:
-            patches_initializer = init.NormalInitializer()
+            patches_initializer = NormalInitializer()
         shape = [number_inducing, *patch_shape]  # tuple with values: M x w x h
         patches = _from_patches_initializer_to_patches(patches_initializer, shape)  # M x w x h
 
@@ -167,8 +151,8 @@ class WeightedSumConvLayer(ConvLayer):
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None,
                  base_kernel: Optional[gpflow.kernels.Kern] = None,
-                 patches_initializer: Optional[Union[np.ndarray, init.Initializer]] = None,
-                 indices_initializer: Optional[Union[np.ndarray, init.Initializer]] = None):
+                 patches_initializer: Optional[Union[np.ndarray, Initializer]] = None,
+                 indices_initializer: Optional[Union[np.ndarray, Initializer]] = None):
         """
         See `ConvLayer` for docstrings.
         """

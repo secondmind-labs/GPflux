@@ -10,8 +10,8 @@ from gpflow.models import SVGP
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 
-from gpflux.layers.layers import GPLayer
-from gpflux.models.deep_gp import DeepGP
+from gpflux.layers import GPLayer
+from gpflux.models import DeepGP
 
 
 def _create_q_sqrt(M, L):

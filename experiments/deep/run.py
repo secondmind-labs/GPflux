@@ -129,7 +129,7 @@ def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
     H = int(X.shape[1]**.5)
 
     ## layer 0: indexed conv patch 5x5
-    patches0 = gpflux.init.PatchSamplerInitializer(X[:100], width=H, height=H, unique=True)
+    patches0 = gpflux.initializers.PatchSamplerInitializer(X[:100], width=H, height=H, unique=True)
     patches0 = patches0.sample([M, 5, 5])
     indices0 = np.random.randint(0, 24, size=(M, 2)).astype(np.float64)
     feature0 = gpflux.convolution.IndexedInducingPatch(patches0, indices0)

@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from gpflow import params_as_tensors
 from gpflow.kullback_leiblers import gauss_kl
-from gpflux.layers.layers import BaseLayer
+from gpflux.layers import AbstractLayer
 from gpflux.encoders import RecognitionNetwork
 
 
@@ -32,7 +32,7 @@ class LatentVarMode(Enum):
     GIVEN = 3
 
 
-class LatentVariableLayer(BaseLayer):
+class LatentVariableLayer(AbstractLayer):
     """
     A latent variable layer, with amortized mean-field VI
 
@@ -47,7 +47,7 @@ class LatentVariableLayer(BaseLayer):
     # TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
 
     def __init__(self, latent_dim, XY_dim=None, encoder=None):
-        BaseLayer.__init__(self)
+        AbstractLayer.__init__(self)
         self.latent_dim = latent_dim
 
         if encoder is None:

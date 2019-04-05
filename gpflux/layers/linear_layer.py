@@ -9,10 +9,10 @@ import numpy as np
 
 from gpflow import params_as_tensors, Param, settings
 from gpflux.utils import xavier_weights
-from gpflux.layers.layers import BaseLayer
+from gpflux.layers import AbstractLayer
 
 
-class LinearLayer(BaseLayer):
+class LinearLayer(AbstractLayer):
     """
     Performs a deterministic linear transformation.
     """

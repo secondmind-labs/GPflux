@@ -15,7 +15,7 @@ from ..nonstationary import NonstationaryKernel
 import tensorflow as tf
 
 
-class BaseLayer(Parameterized):
+class AbstractLayer(Parameterized):
 
     def propagate(self, H, **kwargs):
         """
@@ -36,7 +36,7 @@ class BaseLayer(Parameterized):
         raise NotImplementedError()  # pragma: no cover
 
 
-class GPLayer(BaseLayer):
+class GPLayer(AbstractLayer):
     def __init__(self,
                  kern: gpflow.kernels.Kernel,
                  feature: gpflow.features.InducingFeature,
@@ -117,9 +117,12 @@ class GPLayer(BaseLayer):
 class NonstationaryGPLayer(GPLayer):
     def __init__(self,
                  kernel: NonstationaryKernel,
+                 feature: gpflow.features.InducingFeature,
                  *args, **kwargs):
         assert isinstance(kernel, NonstationaryKernel)
-        super().__init__(kernel, *args, **kwargs)
+        if isinstance(feature, gpflow.features.InducingPoints):
+            assert feature.Z.shape[1] == kernel.input_dim
+        super().__init__(kernel, feature, *args, **kwargs)
 
     @params_as_tensors
     def propagate(self, H, *, X=None, **kwargs):

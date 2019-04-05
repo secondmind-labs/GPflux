@@ -17,6 +17,7 @@ from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
 from gpflow.params.dataholders import Minibatch, DataHolder
 
+from gpflux.layers import AbstractLayer
 from gpflux.layers.latent_variable_layer import LatentVariableLayer, LatentVarMode
 
 
@@ -35,7 +36,7 @@ class DeepGP(Model):
     def __init__(self,
                  X: np.ndarray,
                  Y: np.ndarray,
-                 layers: List, *,
+                 layers: List[AbstractLayer], *,
                  likelihood: Optional[gpflow.likelihoods.Likelihood] = None,
                  batch_size: Optional[int] = None,
                  name: Optional[str] = None):
@@ -43,7 +44,7 @@ class DeepGP(Model):
         :param X: np.ndarray, N x Dx
         :param Y: np.ndarray, N x Dy
         :param layers: list
-            List of `layers.BaseLayer` instances, e.g. PerceptronLayer, ConvLayer, GPLayer, ...
+            List of `layers.AbstractLayer` instances, e.g. PerceptronLayer, ConvLayer, GPLayer, ...
         :param likelihood: gpflow.likelihoods.Likelihood object
             Analytic expressions exists for the Gaussian case.
         :param batch_size: int
@@ -107,19 +108,19 @@ class DeepGP(Model):
         return mean, cov
 
     @params_as_tensors
+    def _build_KL(self):
+        # used for plotting in tensorboards:
+        self.KL_U_sum = reduce(tf.add, (l.KL() for l in self.layers))  # []
+        return self.KL_U_sum
+
+    @params_as_tensors
     def _build_likelihood(self):
         f_mean, f_var = self._build_decoder(self.X)  # [N, P], [N, P]
         self.E_log_prob = tf.reduce_sum(
             self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         )  # []
 
-        # used for plotting in tensorboards:
-        self.KL_U_sum = reduce(tf.add, (l.KL() for l in self.layers))  # []
-
-        return tf.cast(
-            self.E_log_prob * self.scale - self.KL_U_sum,
-            settings.float_type
-        )  # []
+        return self.E_log_prob * self.scale - self._build_KL()  # []
 
     def _predict_f(self, X):
         mean, variance = self._build_decoder(

@@ -15,10 +15,10 @@ import gpflow
 from gpflow.features import InducingPoints
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
-from gpflux.init import NormalInitializer
+from gpflux.initializers import NormalInitializer
 from gpflux.layers.convolution_layer import WeightedSumConvLayer
 from gpflux.models.deep_gp import DeepGP
-from gpflux.layers.layers import GPLayer
+from gpflux.layers import GPLayer
 
 SEED = 0  # used seed to ensure that there's no variance in timing coming from randomness
 

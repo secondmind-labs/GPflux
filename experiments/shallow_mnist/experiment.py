@@ -122,7 +122,7 @@ def get_likelihood(dataset):
 @ex.capture
 def patch_initializer(X, H, W, init_patches):
     if init_patches == "random":
-        return gpflux.init.NormalInitializer()
+        return gpflux.initializers.NormalInitializer()
     unique = init_patches == "patches-unique"
     return gpflux.init.PatchSamplerInitializer(X, width=W, height=H, unique=unique)
 

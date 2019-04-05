@@ -8,7 +8,7 @@ from gpflow.training import monitor as mon
 
 from experiments.experiment_runner.utils import Configuration
 from experiments.experiment_runner.utils import calc_multiclass_error
-from gpflux.init import NormalInitializer, PatchSamplerInitializer
+from gpflux.initializers import NormalInitializer, PatchSamplerInitializer
 
 
 class KerasConfig(Configuration):
