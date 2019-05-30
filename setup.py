@@ -5,11 +5,11 @@ from setuptools import setup
 
 requirements = [
     'numpy==1.15.4',
-    'tensorflow==1.12.0',  # conda offers only version 1.12.0 (15.02.2019)
+    'tensorflow>=1.12.0',  # conda offers only version 1.12.0 (15.02.2019)
     'scipy==1.1.0',
     'scikit-learn==0.20.2',
-    'matplotlib==2.2.3',
-    'flake8==3.7.7',
+    'matplotlib==2.2.2',
+    'flake8==3.6.0',
     'mypy==0.670',
     'tqdm==4.28.1',
     'keras==2.2.4',
