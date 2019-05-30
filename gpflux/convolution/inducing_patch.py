@@ -11,24 +11,23 @@ from gpflow.multioutput.features import Mof
 
 class InducingPatch(Mof):
     """
-    Inducing features which are typically used in combination with
-    convolutional kernels.
+    Inducing patches are typically used in combination with convolutional kernels.
     """
 
-    def __init__(self, Z):
+    def __init__(self, patches):
         """
-        :param Z: np.array
+        :param patches: np.array
             shape: M x w x h or M x wh
         """
         super().__init__()
-        if Z.ndim == 3:
-            M, w, h = Z.shape
-            Z = np.reshape(Z, [M, w * h])  # M x wh
+        if patches.ndim == 3:
+            M, w, h = patches.shape
+            patches = np.reshape(patches, [M, w * h])  # M x wh
 
-        self.Z = Param(Z, dtype=settings.float_type)  # M x wh
+        self.patches = Param(patches, dtype=settings.float_type)  # M x wh
 
     def __len__(self):
-        return self.Z.shape[0]
+        return self.patches.shape[0]
 
     @property
     def outputs(self):  # a.k.a. L
@@ -43,7 +42,3 @@ class IndexedInducingPatch(InducingPatch):
     def __init__(self, patches, indices):
         super().__init__(patches)
         self.indices = Param(indices / indices.max(axis=0))
-
-    @property
-    def patches(self):
-        return self.Z

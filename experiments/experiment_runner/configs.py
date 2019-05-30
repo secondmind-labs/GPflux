@@ -87,10 +87,6 @@ class ConvGPConfig(GPConfig):
             sess = model.enquire_session()
             return sess.run(model.E_log_prob)
 
-        def kl(*args, **kwargs):
-            sess = model.enquire_session()
-            return sess.run(model.KL_U_layers)
-
         tasks += [
             mon.ScalarFuncToTensorBoardTask(fw, lr, "lr")
                 .with_name('lr')

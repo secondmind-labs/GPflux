@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from numpy.testing import assert_allclose
 
-from gpflux.convolution.convolution_kernel import ImagePatchConfig, ExtractPatchHandler, \
+from gpflux.convolution.convolution_utils import ImagePatchConfig, ExtractPatchHandler, \
     ConvPatchHandler
 
 

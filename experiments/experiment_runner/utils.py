@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 
 from experiments.experiment_runner.data_infrastructure import ImageClassificationDataset, \
     MaxNormalisingPreprocessor, Dataset
-from gpflux.convolution.convolution_kernel import PatchHandler, ImagePatchConfig
+from gpflux.convolution.convolution_utils import ImagePatchConfig, PatchHandler
 
 
 def get_from_module(name, module):

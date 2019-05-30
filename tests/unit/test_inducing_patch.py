@@ -19,7 +19,7 @@ def inducing_patch(session_tf):
 
 
 def test_patch_shape(session_tf, inducing_patch):
-    actual_shape = inducing_patch.Z.read_value().shape
+    actual_shape = inducing_patch.patches.read_value().shape
     desired_shape = (Data.N, Data.w * Data.h)
     assert actual_shape == desired_shape
 

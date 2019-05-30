@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from gpflux.convolution.convolution_kernel import ExtractPatchHandler, ConvPatchHandler, \
-    ImagePatchConfig
+from gpflux.convolution.convolution_utils import ImagePatchConfig, ExtractPatchHandler, \
+    ConvPatchHandler
 
 
 class DT:

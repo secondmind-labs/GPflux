@@ -8,6 +8,7 @@ requirements = [
     'tensorflow==1.12.0',  # conda offers only version 1.12.0 (15.02.2019)
     'scipy==1.1.0',
     'scikit-learn==0.20.2',
+    'matplotlib==2.2.3',
     'flake8==3.7.7',
     'mypy==0.670',
     'tqdm==4.28.1',
@@ -15,7 +16,7 @@ requirements = [
     # for tests:
     'pytest-cov==2.5.1',
     'nbformat==4.4.0',
-    'nbconvert==5.4.0',
+    'nbconvert==5.4.1',
     'jupyter_client==5.2.4',
     'ipykernel==5.1.0',
     'tornado==5.1.1',  # tornado 6 is broken
@@ -23,7 +24,7 @@ requirements = [
 
 setup(name='gpflux',
       version="alpha",
-      author="Prowler.io",
+      author="PROWLER.io",
       author_email="vincent@prowler.io",
       description="GPFlux: Deep GP library",
       keywords="Deep-Gaussian-processes",

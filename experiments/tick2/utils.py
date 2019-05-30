@@ -7,8 +7,7 @@ import observations as obs
 import pandas as pd
 
 import gpflow
-from gpflux.convolution.convolution_kernel import (ImagePatchConfig,
-                                                   PatchHandler)
+from gpflux.convolution.convolution_utils import ImagePatchConfig, PatchHandler
 
 
 def load_semeion_dataset(cache_dir):
