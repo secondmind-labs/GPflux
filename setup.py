@@ -5,7 +5,7 @@ from setuptools import setup
 
 requirements = [
     'numpy==1.15.4',
-    'tensorflow>=1.12.0',  # conda offers only version 1.12.0 (15.02.2019)
+    'tensorflow==1.13.1',
     'scipy==1.1.0',
     'scikit-learn==0.20.2',
     'matplotlib==2.2.2',
