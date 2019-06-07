@@ -4,17 +4,17 @@
 from setuptools import setup
 
 requirements = [
-    'numpy==1.16.3',
+    'numpy==1.16.4',
     'tensorflow==1.13.1',
-    'scipy==1.2.1',
+    'scipy==1.3.0',
     'scikit-learn==0.20.2',
-    'matplotlib==3.0.3',
+    'matplotlib==3.1.0',
     'flake8==3.7.7',
     'mypy==0.670',
     'tqdm==4.28.1',
     'keras==2.2.4',
     # for tests:
-    'pytest-cov==2.5.1',
+    'pytest-cov==2.7.1',
     'nbformat==4.4.0',
     'nbconvert==5.4.1',
     'jupyter_client==5.2.4',
