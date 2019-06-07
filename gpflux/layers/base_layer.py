@@ -40,7 +40,7 @@ class GPLayer(AbstractLayer):
     def __init__(self,
                  kern: gpflow.kernels.Kernel,
                  feature: gpflow.features.InducingFeature,
-                 num_latents: int,
+                 num_latent: int,
                  q_mu: Optional[np.ndarray] = None,
                  q_sqrt: Optional[np.ndarray] = None,
                  mean_function: Optional[gpflow.mean_functions.MeanFunction] = None):
@@ -54,14 +54,14 @@ class GPLayer(AbstractLayer):
         The variational distribution over the whitened inducing function values is
         q(v) = N(q_mu, q_sqrt q_sqrtᵀ)
 
-        The layer holds num_latents independent GPs, potentially with different kernels or
+        The layer holds num_latent independent GPs, potentially with different kernels or
         different inducing inputs.
 
         :param kern: The kernel for the layer (input_dim = D_in)
         :param feature: inducing features
-        :param num_latents: number of latent GPs in the layer
-        :param q_mu: Variational mean initialization (M x num_latents)
-        :param q_sqrt: Variational Cholesky factor of variance initialization (num_latents x M x M)
+        :param num_latent: number of latent GPs in the layer
+        :param q_mu: Variational mean initialization (M x num_latent)
+        :param q_sqrt: Variational Cholesky factor of variance initialization (num_latent x M x M)
         :param mean_function: The mean function that links inputs to outputs
                 (e.g., linear mean function)
         """
@@ -71,9 +71,9 @@ class GPLayer(AbstractLayer):
         self.mean_function = Zero() if mean_function is None else mean_function
 
         M = len(self.feature)
-        self.num_latents = num_latents
-        q_mu = np.zeros((M, num_latents)) if q_mu is None else q_mu
-        q_sqrt = np.tile(np.eye(M), (num_latents, 1, 1)) if q_sqrt is None else q_sqrt
+        self.num_latent = num_latent
+        q_mu = np.zeros((M, num_latent)) if q_mu is None else q_mu
+        q_sqrt = np.tile(np.eye(M), (num_latent, 1, 1)) if q_sqrt is None else q_sqrt
         self.q_mu = Param(q_mu, dtype=settings.float_type)
         self.q_sqrt = Param(q_sqrt, dtype=settings.float_type)
 
@@ -110,7 +110,7 @@ class GPLayer(AbstractLayer):
             self.kern.__class__.__name__,
             self.feature.__class__.__name__,
             self.mean_function.__class__.__name__,
-            self.num_latents
+            self.num_latent
         )
 
 

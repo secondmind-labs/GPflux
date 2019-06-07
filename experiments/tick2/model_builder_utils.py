@@ -73,7 +73,7 @@ def build_hidden_layer(
     layer = gpflux.layers.GPLayer(
         kern1,
         feat1,
-        num_latents=feature_maps_out,
+        num_latent=feature_maps_out,
         q_mu=q_mu1,
         q_sqrt=q_sqrt1,
         mean_function=mean1,
@@ -112,14 +112,14 @@ def build_final_layer(
         with_weights=weights
     )
 
-    num_latents = 1 if num_classes == 2 else num_classes
-    q_mu2 = np.zeros((num_inducing_points, num_latents))
-    q_sqrt2 = np.tile(np.eye(num_inducing_points)[None, :, :], [num_latents, 1, 1])
+    num_latent = 1 if num_classes == 2 else num_classes
+    q_mu2 = np.zeros((num_inducing_points, num_latent))
+    q_sqrt2 = np.tile(np.eye(num_inducing_points)[None, :, :], [num_latent, 1, 1])
 
     layer = gpflux.layers.GPLayer(
         kern2,
         feat2,
-        num_latents=num_latents,
+        num_latent=num_latent,
         q_mu=q_mu2,
         q_sqrt=q_sqrt2,
         mean_function=None,

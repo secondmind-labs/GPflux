@@ -141,7 +141,7 @@ def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
                                             pooling=2,
                                             with_indexing=True)
     kernel0.spatio_indices_kernel.variance=30.0
-    layer0 = gpflux.layers.GPLayer(kernel0, feature0, num_latents=1)
+    layer0 = gpflux.layers.GPLayer(kernel0, feature0, num_latent=1)
 
 
     ## layer 1: indexed conv patch 3x3
@@ -156,14 +156,14 @@ def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
                                             pooling=2,
                                             with_indexing=True)
     kernel1.spatio_indices_kernel.variance=10.0
-    layer1 = gpflux.layers.GPLayer(kernel1, feature1, num_latents=1)
+    layer1 = gpflux.layers.GPLayer(kernel1, feature1, num_latent=1)
 
     layer1.q_sqrt = layer1.q_sqrt.read_value() * 0.1
     layer1.q_mu = np.random.randn(*(layer1.q_mu.read_value().shape))
 
     ### Equivalent layers in written with ConvLayers
     # layer0 = gpflux.layers.ConvLayer([28, 28], [12, 12], M, [5, 5],
-    #                                  num_latents=1,
+    #                                  num_latent=1,
     #                                  pooling=2,
     #                                  with_indexing=True)
     # layer0.q_sqrt = layer0.q_sqrt.read_value() * 0.1
@@ -174,7 +174,7 @@ def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
 
 
     # layer1 = gpflux.layers.ConvLayer([12, 12], [5, 5], M, [3, 3],
-    #                                  num_latents=1,
+    #                                  num_latent=1,
     #                                  pooling=2,
     #                                  with_indexing=True)
     # layer1.q_sqrt = layer1.q_sqrt.read_value() * 0.1
@@ -187,7 +187,7 @@ def setup_model(X, Y, batch_size, patch_shape, M, dataset, base_kern,
     ## layer 2: fully connected
     feature2 = gpflow.features.InducingPoints(np.random.randn(M, 25))
     kernel2 = gpflow.kernels.RBF(25)
-    layer2 = gpflux.layers.GPLayer(kernel2, feature2, num_latents=10)
+    layer2 = gpflux.layers.GPLayer(kernel2, feature2, num_latent=10)
 
     layer2.q_sqrt = layer2.q_sqrt.read_value() * 0.1
     layer2.q_mu = np.random.randn(*(layer2.q_mu.read_value().shape))

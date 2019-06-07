@@ -137,7 +137,7 @@ def convgp_setup_model(train_data, batch_size,
     H = int(X.shape[1] ** .5)
 
     likelihood = get_likelihood()
-    num_latents = likelihood.num_classes if hasattr(likelihood, 'num_classes') else 1
+    num_latent = likelihood.num_classes if hasattr(likelihood, 'num_classes') else 1
 
     patches = patch_initializer(X[:100], H, H)
 
@@ -145,7 +145,7 @@ def convgp_setup_model(train_data, batch_size,
         [H, H],
         num_inducing_points,
         patch_shape,
-        num_latents=num_latents,
+        num_latent=num_latent,
         with_indexing=with_indexing,
         with_weights=with_weights,
         patches_initializer=patches)

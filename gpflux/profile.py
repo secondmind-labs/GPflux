@@ -70,7 +70,7 @@ def _get_convgp_profile_method(with_indexing: bool, num_optimisation_updates: in
         x.shape[1:3],
         num_inducing_points,
         patch_shape,
-        num_latents=likelihood.num_classes,
+        num_latent=likelihood.num_classes,
         with_indexing=with_indexing,
         with_weights=with_weights,
         patches_initializer=patches)
@@ -103,7 +103,7 @@ def _get_svgp_rbf_profile_method(num_optimisation_updates: int = 20) -> Callable
     x, y = np.random.random((1000, 10)), np.random.random((1000, 10))
     inducing_feature = InducingPoints(np.random.random((5, 10)))
     kernel = RBF(input_dim=x.shape[1])
-    layer = GPLayer(kernel, feature=inducing_feature, num_latents=y.shape[1])
+    layer = GPLayer(kernel, feature=inducing_feature, num_latent=y.shape[1])
     model = DeepGP(x, y,
                    layers=[layer],
                    likelihood=Gaussian(),

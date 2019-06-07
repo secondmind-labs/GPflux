@@ -50,7 +50,7 @@ class ConvLayer(GPLayer):
                  output_shape: List,
                  number_inducing: int,
                  patch_shape: List,
-                 num_latents: int = 1,
+                 num_latent: int = 1,
                  *,
                  with_indexing: bool = False,
                  pooling: int = 1,
@@ -118,7 +118,7 @@ class ConvLayer(GPLayer):
                           image_shape=input_shape, patch_shape=patch_shape,
                           pooling=pooling, with_indexing=with_indexing)
 
-        super().__init__(kern, feat, num_latents=num_latents,
+        super().__init__(kern, feat, num_latent=num_latent,
                          q_mu=q_mu, q_sqrt=q_sqrt,
                          mean_function=mean_function)
 
@@ -142,7 +142,7 @@ class WeightedSumConvLayer(ConvLayer):
                  input_shape: List,
                  number_inducing: int,
                  patch_shape: List,
-                 num_latents: int = 1,
+                 num_latent: int = 1,
                  *,
                  with_indexing: bool = False,
                  with_weights: bool = False,
@@ -164,7 +164,7 @@ class WeightedSumConvLayer(ConvLayer):
                          output_shape,
                          number_inducing,
                          patch_shape,
-                         num_latents,
+                         num_latent,
                          with_indexing=with_indexing,
                          pooling=pooling,
                          q_mu=q_mu,

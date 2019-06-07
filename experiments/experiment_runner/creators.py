@@ -50,7 +50,7 @@ def create_convgp_layer(input_size, num_ind_points, patch_shape, num_classes, wi
         input_size,
         num_ind_points,
         patch_shape,
-        num_latents=num_classes,
+        num_latent=num_classes,
         with_indexing=with_indexing,
         with_weights=with_weights,
         patches_initializer=patches)
