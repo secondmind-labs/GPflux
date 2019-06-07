@@ -4,11 +4,11 @@
 from setuptools import setup
 
 requirements = [
-    'numpy==1.15.4',
+    'numpy==1.16.3',
     'tensorflow==1.13.1',
-    'scipy==1.1.0',
+    'scipy==1.2.1',
     'scikit-learn==0.20.2',
-    'matplotlib==2.2.2',
+    'matplotlib==3.0.3',
     'flake8==3.7.7',
     'mypy==0.670',
     'tqdm==4.28.1',
