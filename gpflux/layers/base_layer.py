@@ -3,16 +3,39 @@
 # Proprietary and confidential
 
 
-from typing import Optional
+from typing import Optional, NamedTuple
+
+import numpy as np
+import tensorflow as tf
 
 import gpflow
-import numpy as np
 from gpflow import Param, Parameterized, params_as_tensors, settings
 from gpflow.conditionals import sample_conditional
 from gpflow.kullback_leiblers import gauss_kl
 from gpflow.mean_functions import Zero
-from ..nonstationary import NonstationaryKernel
-import tensorflow as tf
+
+from gpflux.nonstationary import NonstationaryKernel
+from gpflux.types import TensorLike
+
+
+class LayerOutput(NamedTuple):
+    """
+    Return type of the `propagate()` function of a layer.
+    Contains all the outputs of a layer's propagate.
+
+    Note: the shape of the tensors is given in-line,
+        '...' stands for arbitrary leading dimensions.
+    """
+    mean: TensorLike  # [..., N, D]
+    covariance: TensorLike  # [..., N, D, D]
+    # a sample drawn from N(`mean`, `covariance`)
+    sample: TensorLike  # [..., N, D]
+    # KL for the whole process
+    # Typically the KL between the prior and posterior of u.
+    global_kl: TensorLike  # scalar
+    # per datapoint KL term
+    # Typically a KL that depends on latents for each datapoint.
+    local_kl: TensorLike  # [..., N]
 
 
 class AbstractLayer(Parameterized):
@@ -25,10 +48,6 @@ class AbstractLayer(Parameterized):
            distribution, all of shape N x P
            where P is of size W x H x C (in the case of images)
         """
-        raise NotImplementedError()  # pragma: no cover
-
-    def KL(self):
-        """ returns KL[q(U) || p(U)] """
         raise NotImplementedError()  # pragma: no cover
 
     def describe(self):
@@ -94,10 +113,16 @@ class GPLayer(AbstractLayer):
             white=True,
             num_samples=num_samples
         )
-        return sample + mean_function, mean + mean_function, cov
+        return LayerOutput(
+            mean=mean + mean_function,
+            covariance=cov,
+            sample=sample + mean_function,
+            global_kl=self._KL(),
+            local_kl=tf.cast(0.0, settings.float_type)
+        )
 
     @params_as_tensors
-    def KL(self):
+    def _KL(self):
         """
         The KL divergence from the variational distribution to the prior
         :return: KL divergence from N(q_mu, q_sqrt) to N(0, I), independently for each GP

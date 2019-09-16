@@ -16,11 +16,8 @@ from gpflow.multioutput.features import debug_kuf, debug_kuu
 from gpflux.convolution.convolution_kernel import ConvKernel, WeightedSumConvKernel
 from gpflux.convolution.convolution_utils import K_image_inducing_patches
 from gpflux.convolution.inducing_patch import InducingPatch, IndexedInducingPatch
+from gpflux.types import TensorLike
 
-
-# Ideally this is Union[tf.Variable, tf.Tensor, np.ndarray],
-# but that doesn't play nice with the dispatching
-TensorLike = object
 
 # (Indexed)InducingPatch and ConvKernel
 

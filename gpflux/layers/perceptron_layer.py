@@ -2,10 +2,10 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
+import tensorflow as tf
 
-from gpflow import params_as_tensors
-
-from gpflux.layers.linear_layer import LinearLayer
+from gpflow import params_as_tensors, settings
+from gpflux.layers import LayerOutput, LinearLayer
 
 
 class PerceptronLayer(LinearLayer):
@@ -23,8 +23,16 @@ class PerceptronLayer(LinearLayer):
 
     @params_as_tensors
     def propagate(self, H, **kwargs):
-        sample, mean, cov = super().propagate(H)  # linear_transformation
+        mean = super().propagate(H).mean  # linear_transformation
 
         if self.activation is not None:
-            sample = self.activation(sample)
-        return sample, sample, None
+            mean = self.activation(mean)
+
+        return LayerOutput(
+            mean=mean,
+            sample=mean,
+            covariance=None,
+            global_kl=tf.cast(0.0, settings.float_type),
+            local_kl=tf.cast(0.0, settings.float_type),
+
+        )

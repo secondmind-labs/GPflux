@@ -83,7 +83,7 @@ def _get_convgp_profile_method(with_indexing: bool, num_optimisation_updates: in
     model = DeepGP(x, y,
                    layers=[layer],
                    likelihood=Gaussian(),
-                   batch_size=batch_size,
+                   minibatch_size=batch_size,
                    name="my_deep_gp")
     model.compile()
     optimizer = gpflow.train.AdamOptimizer()
@@ -107,7 +107,7 @@ def _get_svgp_rbf_profile_method(num_optimisation_updates: int = 20) -> Callable
     model = DeepGP(x, y,
                    layers=[layer],
                    likelihood=Gaussian(),
-                   batch_size=batch_size,
+                   minibatch_size=batch_size,
                    name="my_deep_gp")
     model.compile()
     optimizer = gpflow.train.AdamOptimizer()

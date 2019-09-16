@@ -8,7 +8,6 @@ from functools import reduce
 
 import numpy as np
 import tensorflow as tf
-from scipy.stats import norm
 
 import gpflow
 from gpflow import settings
@@ -18,6 +17,7 @@ from gpflow.models.model import Model
 from gpflow.params.dataholders import Minibatch, DataHolder
 
 from gpflux.layers import AbstractLayer
+from gpflux.layers.base_layer import LayerOutput
 from gpflux.layers.latent_variable_layer import LatentVariableLayer, LatentVarMode
 
 
@@ -38,16 +38,17 @@ class DeepGP(Model):
                  Y: np.ndarray,
                  layers: List[AbstractLayer], *,
                  likelihood: Optional[gpflow.likelihoods.Likelihood] = None,
-                 batch_size: Optional[int] = None,
+                 minibatch_size: Optional[int] = None,
                  name: Optional[str] = None):
         """
         :param X: np.ndarray, N x Dx
         :param Y: np.ndarray, N x Dy
         :param layers: list
-            List of `layers.AbstractLayer` instances, e.g. PerceptronLayer, ConvLayer, GPLayer, ...
+            List of `layers.AbstractLayer` instances,
+            e.g. PerceptronLayer, ConvLayer, GPLayer, ...
         :param likelihood: gpflow.likelihoods.Likelihood object
             Analytic expressions exists for the Gaussian case.
-        :param batch_size: int
+        :param minibatch_size: int
         """
         Model.__init__(self, name=name)
 
@@ -58,10 +59,10 @@ class DeepGP(Model):
         self.layers = gpflow.ParamList(layers)
         self.likelihood = Gaussian() if likelihood is None else likelihood
 
-        if (batch_size is not None) and (batch_size > 0) and (batch_size < X.shape[0]):
-            self.X = Minibatch(X, batch_size=batch_size, seed=0)
-            self.Y = Minibatch(Y, batch_size=batch_size, seed=0)
-            self.scale = self.num_data / batch_size
+        if minibatch_size and (minibatch_size > 0) and (minibatch_size < X.shape[0]):
+            self.X = Minibatch(X, batch_size=minibatch_size, seed=0)
+            self.Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
+            self.scale = self.num_data / minibatch_size
         else:
             self.X = DataHolder(X)
             self.Y = DataHolder(Y)
@@ -86,48 +87,63 @@ class DeepGP(Model):
                 begin_index = end_index
 
     @params_as_tensors
-    def _build_decoder(self, X, full_cov=False, full_output_cov=False,
-                       Ws=None, latent_var_mode=LatentVarMode.POSTERIOR):
+    def _build_decoder(
+            self,
+            X,
+            *,
+            Y=None,
+            full_cov=False,
+            full_output_cov=False,
+            Ws=None,
+            latent_var_mode=LatentVarMode.POSTERIOR
+    ) -> List[LayerOutput]:
         """
         :param X: N x W
         """
         X = tf.cast(X, dtype=settings.float_type)
-        H = X
+        if Y is not None:
+            Y = tf.cast(Y, dtype=settings.float_type)
 
+        H = X
+        layer_outputs = []
         Ws_iter = self._get_Ws_iter(latent_var_mode, Ws)
 
         for layer, W in zip(self.layers, Ws_iter):
-            H, mean, cov = layer.propagate(
+            layer_output = layer.propagate(
                 H,
                 W=W,
                 X=X,
+                Y=Y,
                 full_cov=full_cov,
                 full_output_cov=full_output_cov,
                 latent_var_mode=latent_var_mode,
             )
-        return mean, cov
+            H = layer_output.sample
+            layer_outputs.append(layer_output)
 
-    @params_as_tensors
-    def _build_KL(self):
-        # used for plotting in tensorboards:
-        self.KL_U_sum = reduce(tf.add, (l.KL() for l in self.layers))  # []
-        return self.KL_U_sum
+        return layer_outputs
 
     @params_as_tensors
     def _build_likelihood(self):
-        f_mean, f_var = self._build_decoder(self.X)  # [N, P], [N, P]
-        self.E_log_prob = tf.reduce_sum(
-            self.likelihood.variational_expectations(f_mean, f_var, self.Y)
-        )  # []
 
-        return self.E_log_prob * self.scale - self._build_KL()  # []
+        layer_outputs = self._build_decoder(self.X, Y=self.Y)
+        f_mean, f_var = layer_outputs[-1].mean, layer_outputs[-1].covariance  # [N, P], [N, P]
+
+        var_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)  # [N]
+
+        global_kls = reduce(tf.add, [o.global_kl for o in layer_outputs])  # []
+        local_kls = reduce(tf.add, [o.local_kl for o in layer_outputs])  # [N]
+
+        elbo = tf.reduce_sum(var_exp - local_kls) * self.scale - global_kls
+
+        return tf.cast(elbo, settings.float_type)
 
     def _predict_f(self, X):
-        mean, variance = self._build_decoder(
+        layer_outputs = self._build_decoder(
             X,
             latent_var_mode=LatentVarMode.PRIOR
         )  # [N, P], [N, P]
-        return mean, variance
+        return layer_outputs[-1].mean, layer_outputs[-1].covariance
 
     @params_as_tensors
     @autoflow([settings.float_type, [None, None]])
@@ -142,46 +158,34 @@ class DeepGP(Model):
     @autoflow([settings.float_type, [None, None]],
               [settings.float_type, [None, None]])
     def predict_f_with_Ws(self, X, Ws):
-        return self._build_decoder(
+        layer_outputs = self._build_decoder(
             X,
             Ws=Ws,
             latent_var_mode=LatentVarMode.GIVEN
         )
+        return layer_outputs[-1].mean, layer_outputs[-1].covariance
 
     @autoflow([settings.float_type, [None, None]],
               [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_output_cov(self, X, Ws):
-        return self._build_decoder(
+        layer_outputs = self._build_decoder(
             X,
             Ws=Ws,
             full_output_cov=True,
             latent_var_mode=LatentVarMode.GIVEN
         )
+        return layer_outputs[-1].mean, layer_outputs[-1].covariance
 
     @autoflow([settings.float_type, [None, None]],
               [settings.float_type, [None, None]])
     def predict_f_with_Ws_full_cov(self, X, Ws):
-        return self._build_decoder(
+        layer_outputs = self._build_decoder(
             X,
             Ws=Ws,
             full_cov=True,
             latent_var_mode=LatentVarMode.GIVEN
         )
-
-    @autoflow()
-    def compute_KL_U_sum(self):
-        return self.KL_U_sum
-
-    @autoflow()
-    def compute_data_fit(self):
-        # TODO: check this works correctly with minibatching
-        return self.E_log_prob * self.scale
-
-    def log_pdf(self, X, Y):
-        m, v = self.predict_y(X)
-        ll = norm.logpdf(Y, loc=m, scale=v**0.5)
-        # this assumes a Gaussian likelihood ?...
-        return np.average(ll)
+        return layer_outputs[-1].mean, layer_outputs[-1].covariance
 
     def describe(self):
         """ High-level description of the model """

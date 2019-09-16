@@ -6,10 +6,11 @@
 from enum import Enum
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
-from gpflow import params_as_tensors
+from gpflow import params_as_tensors, settings
 from gpflow.kullback_leiblers import gauss_kl
-from gpflux.layers import AbstractLayer
+from gpflux.layers import AbstractLayer, LayerOutput
 from gpflux.encoders import RecognitionNetwork
 
 
@@ -44,8 +45,6 @@ class LatentVariableLayer(AbstractLayer):
     2) We're looking at test points, so we use the prior
     """
 
-    # TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
-
     def __init__(self, latent_dim, XY_dim=None, encoder=None):
         AbstractLayer.__init__(self)
         self.latent_dim = latent_dim
@@ -55,21 +54,8 @@ class LatentVariableLayer(AbstractLayer):
             encoder = RecognitionNetwork(latent_dim, XY_dim, [10, 10])
 
         self.encoder = encoder
-        self.is_encoded = False
 
-    def encode_once(self):
-        if not self.is_encoded:
-            XY = tf.concat([self.root.X, self.root.Y], 1)
-            q_mu, log_q_sqrt = self.encoder(XY)
-            self.q_mu = q_mu
-            self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
-            self.is_encoded = True
-
-    def KL(self):
-        self.encode_once()
-        return gauss_kl(self.q_mu, self.q_sqrt)
-
-    def propagate(self, H, W=None, **kwargs):
+    def propagate(self, H, X=None, Y=None, W=None, **kwargs):
         raise NotImplementedError()
 
     def describe(self):
@@ -85,22 +71,42 @@ class LatentVariableConcatLayer(LatentVariableLayer):
     """
 
     @params_as_tensors
-    def propagate(self,
-                  H,
-                  *,
-                  W=None,
-                  full_cov=False,
-                  full_output_cov=False,
-                  latent_var_mode=LatentVarMode.POSTERIOR):
+    def propagate(
+            self,
+            H,
+            *,
+            X=None,
+            Y=None,
+            W=None,
+            full_cov=False,
+            full_output_cov=False,
+            latent_var_mode=LatentVarMode.POSTERIOR
+    ) -> LayerOutput:
 
-        self.encode_once()
+        local_kl = None  # will be overwritten if layer is in POSTERIOR mode
 
         if latent_var_mode == LatentVarMode.POSTERIOR:
-            eps = tf.random_normal(tf.shape(self.q_mu), dtype=H.dtype)  # [N, L]
-            W = self.q_mu + eps * self.q_sqrt  # [N, L]
+            if (X is None) or (Y is None):
+                raise ValueError("LatentVariableLayer in POSTERIOR mode requires "
+                                 "access to X and Y for use in the recognition network.")
 
-            HW_mean = tf.concat([H, self.q_mu], 1)  # [N, D + L]
-            HW_var = tf.concat([tf.zeros_like(H), self.q_sqrt ** 2], 1)  # [N, D + L]
+            XY = tf.concat([X, Y], axis=-1)  # [..., N, D+Dy]
+            q_mu, q_sqrt = self.encoder(XY)
+
+            eps = tf.random_normal(tf.shape(q_mu), dtype=H.dtype)  # [N, L]
+            W = q_mu + eps * q_sqrt  # [N, L]
+
+            HW_mean = tf.concat([H, q_mu], 1)  # [N, D + L]
+            HW_var = tf.concat([tf.zeros_like(H), q_sqrt ** 2], 1)  # [N, D + L]
+            local_kl = gauss_kl(q_mu, q_sqrt)
+
+            zero, one = [tf.cast(x, dtype=tf.float32) for x in [0, 1]]
+            p = tfp.distributions.Normal(zero, one)
+            q = tfp.distributions.Normal(q_mu, q_sqrt)  # scale, loc
+            # we can't use GPflow's gauss_kl here as we don't
+            # want to sum out the minibatch dimension.
+            local_kl = tf.reduce_sum(
+                tfp.distributions.kl_divergence(q, p), axis=-1)  # [..., N]
 
         elif latent_var_mode == LatentVarMode.PRIOR:
             W = tf.random_normal([tf.shape(H)[0], self.latent_dim], dtype=H.dtype)
@@ -122,4 +128,10 @@ class LatentVariableConcatLayer(LatentVariableLayer):
             HW_mean = sample
             HW_var = None
 
-        return sample, HW_mean, HW_var
+        return LayerOutput(
+            mean=HW_mean,
+            covariance=HW_var,
+            sample=sample,
+            global_kl=tf.cast(0.0, settings.float_type),
+            local_kl=local_kl
+        )

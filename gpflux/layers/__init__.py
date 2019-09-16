@@ -2,7 +2,10 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from .base_layer import AbstractLayer, GPLayer, NonstationaryGPLayer
+# flake8: noqa: F401
+
+
+from .base_layer import AbstractLayer, GPLayer, NonstationaryGPLayer, LayerOutput
 from .convolution_layer import ConvLayer, WeightedSumConvLayer
 from .latent_variable_layer import LatentVariableLayer, LatentVariableConcatLayer
 from .latent_variable_layer import LatentVarMode

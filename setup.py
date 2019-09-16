@@ -5,7 +5,8 @@ from setuptools import setup
 
 requirements = [
     'numpy==1.16.4',
-    'tensorflow==1.13.1',
+    'tensorflow==1.14.0',
+    'tensorflow-probability==0.7.0',
     'scipy==1.3.0',
     'scikit-learn==0.20.2',
     'matplotlib==3.1.0',

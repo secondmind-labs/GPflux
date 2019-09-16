@@ -9,7 +9,7 @@ import numpy as np
 
 from gpflow import params_as_tensors, Param, settings
 from gpflux.utils import xavier_weights
-from gpflux.layers import AbstractLayer
+from gpflux.layers import AbstractLayer, LayerOutput
 
 
 class LinearLayer(AbstractLayer):
@@ -44,10 +44,13 @@ class LinearLayer(AbstractLayer):
     @params_as_tensors
     def propagate(self, H, **kwargs):
         mean = tf.matmul(H, self.weight) + self.bias
-        return mean, mean, None
-
-    def KL(self):
-        return tf.cast(0.0, settings.float_type)
+        return LayerOutput(
+            mean=mean,
+            covariance=None,
+            sample=mean,
+            global_kl=tf.cast(0.0, settings.float_type),
+            local_kl=tf.cast(0.0, settings.float_type),
+        )
 
     def describe(self):
         return "LinearLayer: input_dim {}, output_dim {}".format(
