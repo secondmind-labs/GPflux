@@ -27,33 +27,5 @@ pipeline {
                 ])
             }
         }
-        stage('Upload Development Release'){
-            when {
-                branch 'release/**'
-            }
-            steps {
-                 withCredentials([
-                   string(credentialsId: 'DevpiProwlerioPassword', variable: 'PIO_PASSWORD'),
-                ]) {
-                    sh "devpi use https://devpi.piointernal.prowler.io/prowler-io/dev"
-                    sh "devpi login prowler-io --password=${PIO_PASSWORD}"
-                    sh "devpi upload"
-                }
-            }
-        }
-        stage('Upload Production Release'){
-            when {
-                branch 'master'
-            }
-            steps {
-                 withCredentials([
-                   string(credentialsId: 'DevpiProwlerioPassword', variable: 'PIO_PASSWORD'),
-                ]) {
-                    sh "devpi use https://devpi.piointernal.prowler.io/prowler-io/prod"
-                    sh "devpi login prowler-io --password=${PIO_PASSWORD}"
-                    sh "devpi upload"
-                }
-            }
-        }
     }
 }
