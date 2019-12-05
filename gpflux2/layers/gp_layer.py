@@ -24,7 +24,7 @@ from gpflow.utilities.bijectors import triangular
 from gpflow import default_float, Parameter
 
 from gpflux2.layers import TrackableLayer
-from gpflux2.initializers import ZeroInitializer, Initializer
+from gpflux2.initializers import FeedForwardInitializer, Initializer
 
 
 class GPLayer(TrackableLayer):
@@ -48,7 +48,7 @@ class GPLayer(TrackableLayer):
         :param kernel: The multioutput kernel for the layer
         :param inducing_variable: The inducing features for the layer
         :param initializer: the initializer for the inducing variables and variational
-            parameters. Default: ZeroInitializer
+            parameters. Default: FeedForwardInitializer
         :param mean_function: The mean function applied to the inputs. Default: Identity
 
         :param use_samples: If True, return samples on calling the layer,
@@ -60,7 +60,7 @@ class GPLayer(TrackableLayer):
         super().__init__(dtype=default_float())
 
         if initializer is None:
-            initializer = ZeroInitializer()
+            initializer = FeedForwardInitializer()
         if mean_function is None:
             mean_function = Identity()
 
