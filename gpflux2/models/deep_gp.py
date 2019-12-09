@@ -15,7 +15,8 @@ class DeepGP(tf.keras.Model):
         self.gp_layers = gp_layers
         self.likelihood_layer = likelihood_layer
 
-    def elbo(self, X, Y):
+    def elbo(self, data):
+        X, Y = data
         variational_expectations = self.call(X, targets=Y, training=True)
         variational_expectation = tf.reduce_sum(variational_expectations)
 
