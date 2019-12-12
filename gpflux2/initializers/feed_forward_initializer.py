@@ -46,5 +46,5 @@ class FeedForwardInitializer(Initializer):
         for inducing_var in inducing_variable_list:
             choices = np.random.choice(np.arange(len(data_rows)), len(inducing_var),
                                        replace=False)
-            initialization_data = tf.squeeze(data_rows[..., choices, :])
+            initialization_data = data_rows[..., choices, :]
             inducing_var.Z.assign(initialization_data)
