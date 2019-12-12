@@ -27,6 +27,9 @@ from gpflux2.layers import TrackableLayer
 from gpflux2.initializers import FeedForwardInitializer, Initializer
 
 
+_DEFAULT_INITIALIZER = 'FeedForwardInitializer'
+_DEFAULT_MEAN_FUNCTION = 'Identity'
+
 class GPLayer(TrackableLayer):
     """A sparse variational multioutput GP layer"""
 
@@ -34,8 +37,8 @@ class GPLayer(TrackableLayer):
         self,
         kernel: MultioutputKernel,
         inducing_variable: MultioutputInducingVariables,
-        initializer: Optional[Initializer] = None,
-        mean_function: Optional[MeanFunction] = None,
+        initializer: Optional[Initializer] = _DEFAULT_INITIALIZER,
+        mean_function: Optional[MeanFunction] = _DEFAULT_MEAN_FUNCTION,
         *,
         use_samples: bool = True,
         full_output_cov: bool = False,
@@ -59,9 +62,9 @@ class GPLayer(TrackableLayer):
 
         super().__init__(dtype=default_float())
 
-        if initializer is None:
+        if initializer is _DEFAULT_INITIALIZER:
             initializer = FeedForwardInitializer()
-        if mean_function is None:
+        if mean_function is _DEFAULT_MEAN_FUNCTION:
             mean_function = Identity()
 
         self.kernel = kernel
@@ -129,14 +132,24 @@ class GPLayer(TrackableLayer):
         num_inducing_points = len(inducing_variable) # currently the same for each dim
         return num_inducing_points, kernel_output_dim
 
-    def build(self, input_shape):
-        """Build the variables necessary on first call"""
-        super().build(input_shape)
+    def _init_at_build(self, input_shape):
         self.initializer.init_variational_params(self.q_mu, self.q_sqrt)
 
         if not self.initializer.deferred_init:
             self.initializer.init_inducing_variable(self.inducing_variable)
             self._initialized = True
+
+    def _init_at_predict(self, inputs):
+        if self.initializer.deferred_init and not self._initialized:
+            self.initializer.init_inducing_variable(self.inducing_variable, inputs)
+            self._initialized = True
+
+    def build(self, input_shape):
+        """Build the variables necessary on first call"""
+        super().build(input_shape)
+
+        if self.initializer is not None:
+            self._init_at_build(input_shape)
 
         self.add_loss(self.prior_kl)
 
@@ -164,9 +177,8 @@ class GPLayer(TrackableLayer):
             output dimension Q. Cov shape -> [N, Q]
         :param white:
         """
-        if self.initializer.deferred_init and not self._initialized:
-            self.initializer.init_inducing_variable(self.inducing_variable, inputs)
-            self._initialized = True
+        if self.initializer is not None:
+            self._init_at_predict(inputs)
 
         mean_function = self.mean_function(inputs)
         sample_cond, mean_cond, cov = sample_conditional(
