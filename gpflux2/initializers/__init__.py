@@ -3,4 +3,4 @@
 # Proprietary and confidential
 from gpflux2.initializers.initializer import Initializer
 from gpflux2.initializers.feed_forward_initializer import FeedForwardInitializer
-from gpflux2.initializers.zero_initializer import ZeroInitializer
+from gpflux2.initializers.zero_initializer import ZeroOneInitializer

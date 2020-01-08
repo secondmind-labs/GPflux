@@ -1,6 +1,7 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
 import numpy as np
 import tensorflow as tf
 
@@ -15,9 +16,8 @@ class FeedForwardInitializer(Initializer):
     inputs
     """
 
-    def __init__(self, q_sqrt_variance=1e-2):
-        super().__init__()
-        self.deferred_init = True
+    def __init__(self, q_sqrt_variance: float = 1e-2):
+        super().__init__(init_at_predict=True)
         self.q_sqrt_variance = q_sqrt_variance
 
     def init_variational_params(self, q_mu, q_sqrt) -> None:

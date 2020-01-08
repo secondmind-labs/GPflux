@@ -81,13 +81,13 @@ class GPLayer(TrackableLayer):
         )
 
         self.q_mu = Parameter(
-            np.empty((self.num_inducing, self.output_dims)),
+            np.zeros((self.num_inducing, self.output_dims)),
             dtype=default_float(),
             name="q_mu",
         )  # [num_inducing, output_dim]
 
         self.q_sqrt = Parameter(
-            np.empty((self.output_dims, self.num_inducing, self.num_inducing)),
+            np.zeros((self.output_dims, self.num_inducing, self.num_inducing)),
             transform=triangular(),
             dtype=default_float(),
             name="q_sqrt",
@@ -135,12 +135,12 @@ class GPLayer(TrackableLayer):
     def _init_at_build(self, input_shape):
         self.initializer.init_variational_params(self.q_mu, self.q_sqrt)
 
-        if not self.initializer.deferred_init:
+        if not self.initializer.init_at_predict:
             self.initializer.init_inducing_variable(self.inducing_variable)
             self._initialized = True
 
     def _init_at_predict(self, inputs):
-        if self.initializer.deferred_init and not self._initialized:
+        if self.initializer.init_at_predict and not self._initialized:
             self.initializer.init_inducing_variable(self.inducing_variable, inputs)
             self._initialized = True
 
