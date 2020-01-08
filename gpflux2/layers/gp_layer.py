@@ -129,14 +129,20 @@ class GPLayer(TrackableLayer):
         num_inducing_points = len(inducing_variable) # currently the same for each dim
         return num_inducing_points, kernel_output_dim
 
+    def initialize_inducing_variables(self, **initializer_kwargs):
+        if self._initialized:
+            raise Exception("Initializing twice!")
+
+        self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
+        self._initialized = True
+
     def build(self, input_shape):
         """Build the variables necessary on first call"""
         super().build(input_shape)
         self.initializer.init_variational_params(self.q_mu, self.q_sqrt)
 
         if not self.initializer.init_at_predict:
-            self.initializer.init_inducing_variable(self.inducing_variable)
-            self._initialized = True
+            self.initialize_inducing_variables()
 
         self.add_loss(self.prior_kl)
 
@@ -165,8 +171,7 @@ class GPLayer(TrackableLayer):
         :param white:
         """
         if self.initializer.init_at_predict and not self._initialized:
-            self.initializer.init_inducing_variable(self.inducing_variable, inputs)
-            self._initialized = True
+            self.initialize_inducing_variables(inputs=inputs)
 
         mean_function = self.mean_function(inputs)
         sample_cond, mean_cond, cov = sample_conditional(
