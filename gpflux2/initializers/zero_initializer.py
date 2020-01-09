@@ -31,7 +31,7 @@ class ZeroOneInitializer(Initializer):
         q_mu.assign(q_mu_value)
         q_sqrt.assign(q_sqrt_value)
 
-    def init_inducing_variable(self, inducing_variable, input_data=None) -> None:
+    def init_inducing_variable(self, inducing_variable, inputs=None) -> None:
         if hasattr(inducing_variable, "inducing_variable_list"):
             inducing_variable_list = inducing_variable.inducing_variable_list
         elif hasattr(inducing_variable, "inducing_variable_shared"):

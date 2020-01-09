@@ -32,8 +32,8 @@ class FeedForwardInitializer(Initializer):
         q_mu.assign(q_mu_value)
         q_sqrt.assign(q_sqrt_value)
 
-    def init_inducing_variable(self, inducing_variable, input_data) -> None:
-        data_rows = input_data.numpy().reshape(-1, input_data.shape[-1])  # [B, D]
+    def init_inducing_variable(self, inducing_variable, inputs) -> None:
+        data_rows = inputs.numpy().reshape(-1, inputs.shape[-1])  # [B, D]
 
         # HACK to deal with multioutput inducing variables
         if hasattr(inducing_variable, "inducing_variable_list"):

@@ -14,5 +14,5 @@ class Initializer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def init_inducing_variable(self, inducing_variable, input_data=None) -> None:
+    def init_inducing_variable(self, inducing_variable, inputs=None) -> None:
         raise NotImplementedError
