@@ -9,7 +9,7 @@ from gpflow.inducing_variables import (
 from gpflow.mean_functions import Zero
 
 from gpflux2.layers import GPLayer
-from gpflux2.initializers import ZeroInitializer
+from gpflux2.initializers import ZeroOneInitializer
 from gpflux2.helpers import construct_basic_kernel, construct_basic_inducing_variables
 
 
@@ -22,7 +22,7 @@ def setup_data_and_gplayer(num_inducing: int, **kwargs):
     inducing_vars = construct_basic_inducing_variables(
         num_inducing, input_dim, output_dim
     )
-    initializer = ZeroInitializer()
+    initializer = ZeroOneInitializer()
     mean_function = Zero(output_dim)
 
     gp_layer = GPLayer(
@@ -51,7 +51,6 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
 
 def test_build():
     num_inducing = 30
-    num_data = 300
 
     gp_layer, (X, Y) = setup_data_and_gplayer(num_inducing)
     output_dim = Y.shape[-1]
