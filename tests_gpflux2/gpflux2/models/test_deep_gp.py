@@ -1,6 +1,5 @@
 import numpy as np
-from matplotlib import pyplot as plt
-from mpl_toolkits import mplot3d
+import matplotlib
 
 import tensorflow as tf
 import tqdm
@@ -15,8 +14,9 @@ from gpflux2.models import DeepGP
 from gpflux2.layers import GPLayer, LikelihoodLayer
 from gpflux2.helpers import construct_basic_kernel, construct_basic_inducing_variables
 
-# TODO: This file currently actually only really demos how to build and fit a DeepGP.
-# Tests will be required.
+
+MAXITER = int(80e3)
+PLOTTER_INTERVAL = 60
 
 
 def build_deep_gp(input_dim):
@@ -55,31 +55,23 @@ def build_deep_gp(input_dim):
     return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(Gaussian()))
 
 
-def train_deep_gp():
-    tf.keras.backend.set_floatx("float64")
-    input_dim = 2
-    X, Y = setup_dataset(input_dim, 1000)
-    deep_gp = build_deep_gp(input_dim)
+def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
+    optimizer = tf.optimizers.Adam()
 
-    test = deep_gp(X)
-    fig, plotter = get_live_plotter((X, Y), deep_gp)
+    objective_closure = lambda: - deep_gp.elbo(data[0], data[1])
+    objective_closure = tf.function(objective_closure, autograph=False)
 
-    optimizer = tf.keras.optimizers.Adam()
-
-    adam = tf.optimizers.Adam()
-
-    calculate_objective = lambda: -deep_gp.elbo(X, Y)
-
-    @tf.function(autograph=False)
+    @tf.function
     def step():
-        adam.minimize(calculate_objective, deep_gp.trainable_weights)
+        optimizer.minimize(objective_closure, deep_gp.trainable_weights)
 
-    tq = tqdm.tqdm(range(int(80e3)))
+    tq = tqdm.tqdm(range(maxiter))
     for i in tq:
         step()
-        if i % 60 == 0:
-            tq.set_postfix_str(f"objective: {calculate_objective()}")
-            plotter()
+        if i % plotter_interval == 0:
+            tq.set_postfix_str(f"objective: {objective_closure()}")
+            if callable(plotter):
+                plotter()
 
 
 def setup_dataset(input_dim: int, num_data: int):
@@ -94,12 +86,16 @@ def setup_dataset(input_dim: int, num_data: int):
 
 
 def plot(train_data, mean=None):
+    from matplotlib import pyplot as plt
+    from mpl_toolkits import mplot3d
     fig = plt.figure()
     plt.scatter(*train_data)
     plt.show()
 
 
 def get_live_plotter(train_data, model):
+    from matplotlib import pyplot as plt
+    from mpl_toolkits import mplot3d
     plt.ion()
 
     X, Y = train_data
@@ -136,8 +132,25 @@ def get_live_plotter(train_data, model):
     return fig, plotter
 
 
-if __name__ == "__main__":
-    data = setup_dataset(2, 500)
+def run_demo(maxiter=int(80e3), plotter_interval=60):
+    tf.keras.backend.set_floatx("float64")
+    input_dim = 2
+    data = setup_dataset(input_dim, 1000)
+    deep_gp = build_deep_gp(input_dim)
+    _ = deep_gp(data[0])  # TODO this is needed for initializer to work
+    fig, plotter = get_live_plotter(data, deep_gp)
+    train_deep_gp(deep_gp, data,
+        maxiter=maxiter,
+        plotter=plotter,
+        plotter_interval=plotter_interval)
 
-    train_deep_gp()
+
+def test_smoke():
+    import matplotlib
+    matplotlib.use('PS')  # Agg does not support 3D
+    run_demo(maxiter=2, plotter_interval=1)
+
+
+if __name__ == "__main__":
+    run_demo()
     input()
