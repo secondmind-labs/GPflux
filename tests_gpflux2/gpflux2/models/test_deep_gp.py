@@ -19,8 +19,8 @@ from gpflux2.helpers import construct_basic_kernel, construct_basic_inducing_var
 # Tests will be required.
 
 
-def build_deep_gp(input_dims):
-    layers = [input_dims, 2, 2, 1]
+def build_deep_gp(input_dim):
+    layers = [input_dim, 2, 2, 1]
     # Below are different ways to build layers
 
     # 1. Pass in Lists:
@@ -28,22 +28,22 @@ def build_deep_gp(input_dims):
     num_inducing = [25, 25]
     l1_kernel = construct_basic_kernel(kernels=kernel_list)
     l1_inducing = construct_basic_inducing_variables(
-        num_inducing=num_inducing, input_dims=layers[0]
+        num_inducing=num_inducing, input_dim=layers[0]
     )
 
     # 2. Pass in kernels, specificy output dims (shared hyperparams/variables)
     l2_kernel = construct_basic_kernel(
-        kernels=RBF(), output_dims=layers[2], share_hyperparams=True
+        kernels=RBF(), output_dim=layers[2], share_hyperparams=True
     )
     l2_inducing = construct_basic_inducing_variables(
-        num_inducing=25, input_dims=layers[1], share_variables=True
+        num_inducing=25, input_dim=layers[1], share_variables=True
     )
 
     # 3. Pass in kernels, specificy output dims (independent hyperparams/vars)
     # By default and the constructor will make indep. copies
-    l3_kernel = construct_basic_kernel(kernels=RBF(), output_dims=layers[3])
+    l3_kernel = construct_basic_kernel(kernels=RBF(), output_dim=layers[3])
     l3_inducing = construct_basic_inducing_variables(
-        num_inducing=25, input_dims=layers[2], output_dims=layers[3]
+        num_inducing=25, input_dim=layers[2], output_dim=layers[3]
     )
 
     # Assemble at the end
@@ -57,9 +57,9 @@ def build_deep_gp(input_dims):
 
 def train_deep_gp():
     tf.keras.backend.set_floatx("float64")
-    input_dims = 2
-    X, Y = setup_dataset(input_dims, 1000)
-    deep_gp = build_deep_gp(input_dims)
+    input_dim = 2
+    X, Y = setup_dataset(input_dim, 1000)
+    deep_gp = build_deep_gp(input_dim)
 
     test = deep_gp(X)
     fig, plotter = get_live_plotter((X, Y), deep_gp)
