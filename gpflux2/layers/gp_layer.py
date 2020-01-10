@@ -77,14 +77,22 @@ class GPLayer(TrackableLayer):
             kernel, mean_function, inducing_variable
         )
 
+        # TODO the initial value of q_mu and q_sqrt got changed from empty()
+        # to zeros() due to the new Parameter validation in gpflow2, which
+        # would error on any nan or inf values obtained in the random memory
+        # block obtained by empty(). If we want to indicate that these are
+        # uninitialised variables, we may want to set them to nan using
+        # full(..., np.nan) and/or add a check_validity=False option to
+        # gpflow.Parameter()
+
         self.q_mu = Parameter(
-            np.empty((self.num_inducing, self.output_dims)),
+            np.zeros((self.num_inducing, self.output_dims)),
             dtype=default_float(),
             name="q_mu",
         )  # [num_inducing, output_dim]
 
         self.q_sqrt = Parameter(
-            np.empty((self.output_dims, self.num_inducing, self.num_inducing)),
+            np.zeros((self.output_dims, self.num_inducing, self.num_inducing)),
             transform=triangular(),
             dtype=default_float(),
             name="q_sqrt",
@@ -129,14 +137,20 @@ class GPLayer(TrackableLayer):
         num_inducing_points = len(inducing_variable) # currently the same for each dim
         return num_inducing_points, kernel_output_dim
 
+    def initialize_inducing_variables(self, **initializer_kwargs):
+        if self._initialized:
+            raise Exception("Initializing twice!")
+
+        self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
+        self._initialized = True
+
     def build(self, input_shape):
         """Build the variables necessary on first call"""
         super().build(input_shape)
         self.initializer.init_variational_params(self.q_mu, self.q_sqrt)
 
-        if not self.initializer.deferred_init:
-            self.initializer.init_inducing_variable(self.inducing_variable)
-            self._initialized = True
+        if not self.initializer.init_at_predict:
+            self.initialize_inducing_variables()
 
         self.add_loss(self.prior_kl)
 
@@ -164,9 +178,8 @@ class GPLayer(TrackableLayer):
             output dimension Q. Cov shape -> [N, Q]
         :param white:
         """
-        if self.initializer.deferred_init and not self._initialized:
-            self.initializer.init_inducing_variable(self.inducing_variable, inputs)
-            self._initialized = True
+        if self.initializer.init_at_predict and not self._initialized:
+            self.initialize_inducing_variables(inputs=inputs)
 
         mean_function = self.mean_function(inputs)
         sample_cond, mean_cond, cov = sample_conditional(

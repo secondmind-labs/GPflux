@@ -1,3 +1,0 @@
-# Hack to import develop of gpflow as it doesn't work in setup.py for some reason.
-# Remove once we have access to build tools or are depending on the released version.
-git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow

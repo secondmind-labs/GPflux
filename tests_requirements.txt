@@ -1,0 +1,15 @@
+pytest
+pytest-random-order
+
+flake8
+mypy
+
+tqdm
+pytest-cov
+
+# Notebook tests:
+nbformat
+nbconvert
+jupyter_client
+ipykernel
+tornado

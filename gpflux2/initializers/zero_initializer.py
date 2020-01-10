@@ -1,21 +1,24 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
+from typing import Optional
 import numpy as np
 import tensorflow as tf
 
 from gpflux2.initializers import Initializer
 
 
-class ZeroInitializer(Initializer):
+class ZeroOneInitializer(Initializer):
     """
-    Base object that initialises variational parameters to zero-mean, and inducing
-    variables to 0. This is useful in testing, as starting KL divergences are exactly 0.
+    Base object that initialises variational parameters to zero mean, identity
+    covariance, and inducing points to a given value. This is useful in
+    testing, as starting KL divergences are exactly 0.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.deferred_init = False
+    def __init__(self, Z: Optional[np.ndarray] = None):
+        super().__init__(init_at_predict=False)
+        self.Z = Z
 
     def init_variational_params(self, q_mu, q_sqrt) -> None:
         """Initialise the variational parameter to a zero mean and """
@@ -28,7 +31,7 @@ class ZeroInitializer(Initializer):
         q_mu.assign(q_mu_value)
         q_sqrt.assign(q_sqrt_value)
 
-    def init_inducing_variable(self, inducing_variable, input_data=None) -> None:
+    def init_inducing_variable(self, inducing_variable, inputs=None) -> None:
         if hasattr(inducing_variable, "inducing_variable_list"):
             inducing_variable_list = inducing_variable.inducing_variable_list
         elif hasattr(inducing_variable, "inducing_variable_shared"):
@@ -37,4 +40,5 @@ class ZeroInitializer(Initializer):
             raise Exception
 
         for inducing_var in inducing_variable_list:
-            inducing_var.Z.assign(tf.zeros_like(inducing_var.Z))
+            Z = self.Z if self.Z is not None else tf.zeros_like(inducing_var.Z)
+            inducing_var.Z.assign(Z)
