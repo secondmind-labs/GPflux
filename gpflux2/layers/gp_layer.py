@@ -77,6 +77,14 @@ class GPLayer(TrackableLayer):
             kernel, mean_function, inducing_variable
         )
 
+        # TODO the initial value of q_mu and q_sqrt got changed from empty()
+        # to zeros() due to the new Parameter validation in gpflow2, which
+        # would error on any nan or inf values obtained in the random memory
+        # block obtained by empty(). If we want to indicate that these are
+        # uninitialised variables, we may want to set them to nan using
+        # full(..., np.nan) and/or add a check_validity=False option to
+        # gpflow.Parameter()
+
         self.q_mu = Parameter(
             np.zeros((self.num_inducing, self.output_dims)),
             dtype=default_float(),
