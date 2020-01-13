@@ -1,9 +1,9 @@
-"""
-Vincent Dutordoir
-16/07/2018
+# Copyright (C) PROWLER.io 2020 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
 
-Experiments running bayesian benchmark regression's
-task with Deep GPs.
+"""
+Experiments running bayesian_benchmarks's regression task with Deep GPs.
 """
 
 import tqdm
@@ -21,10 +21,6 @@ import numpy as np
 
 from pprint import pprint
 from scipy.cluster.vq import kmeans2
-
-# from: https://github.com/Prowler-io/bayesian_benchmarks
-from bayesian_benchmarks.tasks.regression import run as run_regression
-from bayesian_benchmarks.tasks.regression import parse_args
 
 
 # TENSORBOARD_NAME = "/mnt/vincent/uci2/bayesbench_tensorboards/"
@@ -244,6 +240,10 @@ class BayesBench_DeepGP:
 
 
 if __name__ == "__main__":
+    # from: https://github.com/Prowler-io/bayesian_benchmarks
+    from bayesian_benchmarks.tasks.regression import run as run_regression
+    from bayesian_benchmarks.tasks.regression import parse_args
+
     run_regression(parse_args(),
                    is_test=True,
                    model=BayesBench_DeepGP(is_test=False))
