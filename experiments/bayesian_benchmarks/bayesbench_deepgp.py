@@ -154,7 +154,13 @@ class BayesBench_DeepGP:
         return m + np.random.randn(*m.shape) * np.sqrt(v)
 
     def log_pdf(self, Xt, Yt):
-        return self.model.log_pdf(Xt, Yt)
+        # TODO: we may want to do something more sensible for predictive log-
+        # density
+        @tf.function(autograph=False)
+        def elbo_sample():
+            return self.model.elbo((Xt, Yt))
+        elbos = [elbo_sample() for _ in range(100)]
+        return np.mean(elbos)
 
     """
     def _create_monitor_tasks(self, file_writer, Config):
