@@ -39,26 +39,26 @@ def build_deep_gp(input_dim, num_inducing):
     def kernel_factory(dim, variance=1.0):
         return SquaredExponential(lengthscale=float(dim)**0.5)
 
-    # Pass in kernels, specificy output dims (shared hyperparams/variables)
+    # Pass in kernels, specificy output dim (shared hyperparams/variables)
     l1_kernel = construct_basic_kernel(
         kernels=kernel_factory(layer_dims[0]),
-        output_dims=layer_dims[1],
+        output_dim=layer_dims[1],
         share_hyperparams=True,
     )
     l1_inducing = construct_basic_inducing_variables(
         num_inducing=num_inducing,
-        input_dims=layer_dims[0],
+        input_dim=layer_dims[0],
         share_variables=True,
     )
 
     l2_kernel = construct_basic_kernel(
         kernels=kernel_factory(layer_dims[1]),
-        output_dims=layer_dims[2],
+        output_dim=layer_dims[2],
         share_hyperparams=True,
     )
     l2_inducing = construct_basic_inducing_variables(
         num_inducing=num_inducing,
-        input_dims=layer_dims[1],
+        input_dim=layer_dims[1],
         share_variables=True,
     )
 
