@@ -13,8 +13,10 @@ pipeline {
                 }
             }
             steps {
+                sh "rm -rf GPflow"
+                sh "git clone --depth 1 --branch develop https://github.com/GPflow/GPflow.git"
                 sh "pip install tox==3.2.1"
-                sh "tox"
+                sh "tox -e jenkins"
 
                 publishHTML([
                     allowMissing: true,

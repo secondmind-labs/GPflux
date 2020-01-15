@@ -30,18 +30,18 @@ def construct_basic_inducing_variables(
     if isinstance(num_inducing, list):
         inducing_variables = []
         for num_ind_var in num_inducing:
-            empty_array = np.empty((num_ind_var, input_dim), dtype=dfloat())
+            empty_array = np.zeros((num_ind_var, input_dim), dtype=dfloat())
             inducing_variables.append(InducingPoints(empty_array))
         return SeparateIndependentInducingVariables(inducing_variables)
 
     elif not share_variables:
         inducing_variables = []
         for _ in range(output_dim):
-            empty_array = np.empty((num_inducing, input_dim), dtype=dfloat())
+            empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
             inducing_variables.append(InducingPoints(empty_array))
         return SeparateIndependentInducingVariables(inducing_variables)
 
     else:
-        empty_array = np.empty((num_inducing, input_dim), dtype=dfloat())
+        empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
         shared_ip = InducingPoints(empty_array)
         return SharedIndependentInducingVariables(shared_ip)
