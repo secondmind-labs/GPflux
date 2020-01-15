@@ -58,7 +58,7 @@ def build_deep_gp(input_dim):
 def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
     optimizer = tf.optimizers.Adam()
 
-    objective_closure = lambda: - deep_gp.elbo(data[0], data[1])
+    objective_closure = lambda: - deep_gp.elbo(data)
     objective_closure = tf.function(objective_closure, autograph=False)
 
     @tf.function
