@@ -81,39 +81,47 @@ class BayesBench_DeepGP:
     - predict
     - sample
     """
+    class Config:
+        NATGRAD = True
+        # NATGRAD = False
+        ADAM_LR = 0.01
+        GAMMA = 0.1
+        VAR = 0.01
+        FIX_VAR = False
+        M = 100
+        MAXITER = int(10e3)
+        MINIBATCH = 1000
+        #TB_NAME = TENSORBOARD_NAME +\
+        #          name +\
+        #          "_dgp_var_{}_{}_nat_{}_M_{}".\
+        #            format(VAR, FIX_VAR, NATGRAD, M)
+
     def __init__(self, is_test=False, seed=0):
         self.is_test = is_test
+        if self.is_test:
+            self.Config.M = 5
+            self.Config.MAXITER = 500
 
-    def fit(self, X, Y, Xt=None, Yt=None, name=None):
+    def fit(self, X, Y, Xt=None, Yt=None, name=None, Config=None):
+        if Config is None:
+            Config = self.Config
+
+        num_data = X.shape[0]
+        assert Y.shape[0] == num_data
+        X_dim, Y_dim = X.shape[1], Y.shape[1]
+        assert Y_dim == 1
+
+        if num_data <= Config.MINIBATCH:
+            Config.MINIBATCH = None
+
         self.Xt = Xt
         self.Yt = Yt
-
-        class Config:
-            NATGRAD = True
-            # NATGRAD = False
-            X_dim, Y_dim = X.shape[1], Y.shape[1]
-            D_in = X_dim
-            ADAM_LR = 0.01
-            GAMMA = 0.1
-            VAR = 0.01
-            FIX_VAR = False
-            if self.is_test:
-                M = 5
-                MAXITER = 500
-            else:
-                M = 100
-                MAXITER = int(10e3)
-            MINIBATCH = 1000 if X.shape[0] > 1000 else None
-            #TB_NAME = TENSORBOARD_NAME +\
-            #          name +\
-            #          "_dgp_var_{}_{}_nat_{}_M_{}".\
-            #            format(VAR, FIX_VAR, NATGRAD, M)
 
         print("Configuration")
         pprint(vars(Config))
 
         # build model
-        model = build_deep_gp(Config.D_in, Config.M)
+        model = build_deep_gp(X_dim, Config.M)
 
         Z = init_inducing_points(X, Config.M)
         model.gp_layers[0].inducing_variable.inducing_variable_shared.Z.assign(Z.copy())
