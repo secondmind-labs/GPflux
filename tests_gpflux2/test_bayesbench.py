@@ -3,6 +3,14 @@ import numpy as np
 import importlib.util
 import pytest
 
+def import_module_from_path(path, module_name):
+    if os.path.isdir(path):
+        path = os.path.join(path, f"{module_name}.py")
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 def this_dir():
     return os.path.dirname(__file__)
 
@@ -11,11 +19,7 @@ def get_bayesbench_experiment_directory():
 
 @pytest.fixture
 def bayesbench_deepgp():
-    path = os.path.join(get_bayesbench_experiment_directory(), "bayesbench_deepgp.py")
-    spec = importlib.util.spec_from_file_location("bayesbench_deepgp", path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return import_module_from_path(get_bayesbench_experiment_directory(), "bayesbench_deepgp")
 
 def get_snelson_X_and_Y():
     data = np.load(os.path.join(this_dir(), 'snelson1d.npz'))
