@@ -147,6 +147,9 @@ class BayesBench_DeepGP:
         return self.model(X)
 
     def sample(self, X, num_samples):
+        # TODO: ideally we would support running multiple samples through the
+        # DeepGP in the first place, then we could simply pass num_samples
+        assert num_samples in (1, None), "TODO: enable more samples"
         m, v = self.predict(X)
         return m + np.random.randn(*m.shape) * np.sqrt(v)
 
