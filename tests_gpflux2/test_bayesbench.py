@@ -29,5 +29,5 @@ def test_bayesbench_deepgp_snelson(bayesbench_deepgp):
     bench.Config.MAXITER = 3000
     bench.fit(X, Y)
     elbo = bench.log_pdf(X, Y)
-    expected_elbo = - 55.9
-    assert np.abs(elbo - expected_elbo) < 1.0
+    expected_elbo = - 55.9003  # from log marginal likelihood of GPR with SquaredExponential kernel
+    assert np.allclose(elbo, expected_elbo, rtol=0.001)
