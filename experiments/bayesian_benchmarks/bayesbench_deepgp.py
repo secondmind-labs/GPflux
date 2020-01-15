@@ -132,6 +132,10 @@ class BayesBench_DeepGP:
         self._optimize(X, Y, Config)
 
     def predict(self, X):
+        # The last GP layer has use_samples=False, hence the DeepGP model will
+        # pass a tuple to the likelihood layer, which will in turn call
+        # predict_mean_and_var and return mean and variance.
+        # TODO: it seems like this is too much magic under the hood
         return self.model(X)
 
     def sample(self, X, num_samples):
