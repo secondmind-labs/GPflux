@@ -129,12 +129,14 @@ class DeepGP(Model):
         layer_outputs = self._build_decoder(self.X, Y=self.Y)
         f_mean, f_var = layer_outputs[-1].mean, layer_outputs[-1].covariance  # [N, P], [N, P]
 
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)  # [N]
+        var_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)  # [N, 1]
+        var_exp_sum = tf.reduce_sum(var_exp)
 
         global_kls = reduce(tf.add, [o.global_kl for o in layer_outputs])  # []
         local_kls = reduce(tf.add, [o.local_kl for o in layer_outputs])  # [N]
+        local_kls_sum = tf.reduce_sum(local_kls)
 
-        elbo = tf.reduce_sum(var_exp - local_kls) * self.scale - global_kls
+        elbo = (var_exp_sum - local_kls_sum) * self.scale - global_kls
 
         return tf.cast(elbo, settings.float_type)
 
