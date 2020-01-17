@@ -4,6 +4,7 @@ import importlib.util
 import pytest
 
 def import_module_from_path(path, module_name):
+    """Import a module based on the path as opposed to the module name"""
     if os.path.isdir(path):
         path = os.path.join(path, f"{module_name}.py")
     spec = importlib.util.spec_from_file_location(module_name, path)

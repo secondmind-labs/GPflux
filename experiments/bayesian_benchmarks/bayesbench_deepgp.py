@@ -23,8 +23,6 @@ from pprint import pprint
 from scipy.cluster.vq import kmeans2
 
 
-# TENSORBOARD_NAME = "/mnt/vincent/uci2/bayesbench_tensorboards/"
-# TENSORBOARD_NAME = "test/"
 
 def init_inducing_points(X, num):
     if X.shape[0] > num:
