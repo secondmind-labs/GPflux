@@ -37,8 +37,9 @@ def build_deep_gp(input_dim, Z, likelihood):
     num_inducing = Z.shape[0]
     assert Z.shape == (num_inducing, input_dim)
 
-    def kernel_factory(dim, variance=1.0):
-        return SquaredExponential(lengthscale=float(dim)**0.5)
+    def kernel_factory(dim: int, is_last_layer: bool):
+        variance = 1.0 if is_last_layer else 0.1
+        return SquaredExponential(lengthscale=float(dim)**0.5, variance=variance)
 
     gp_layers = []
 
@@ -55,11 +56,10 @@ def build_deep_gp(input_dim, Z, likelihood):
         )
 
         kernel = construct_basic_kernel(
-            kernels=kernel_factory(D_in),
+            kernels=kernel_factory(D_in, is_last_layer),
             output_dim=D_out,
             share_hyperparams=True,
         )
-        model.gp_layers[0].kernel.kernel.variance.assign(0.1)
 
         if is_first_layer:
             initializer = ZeroOneInitializer(Z)
@@ -67,7 +67,6 @@ def build_deep_gp(input_dim, Z, likelihood):
             initializer = FeedForwardInitializer()
 
         if not is_last_layer:
-            kernel.variance.assign(0.1)
             initializer.q_sqrt_diagonal = 1e-5
         else:
             initializer.q_sqrt_diagonal = 1.0
