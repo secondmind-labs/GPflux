@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from .initializers import VariationalInitializer
+from .initializer import VariationalInitializer
 
 
 class ZeroOneInitializer(VariationalInitializer):
