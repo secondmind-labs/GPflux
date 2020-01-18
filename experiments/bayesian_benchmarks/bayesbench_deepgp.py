@@ -16,6 +16,7 @@ from gpflow.utilities import set_trainable, print_summary
 from gpflux2.models import DeepGP
 from gpflux2.layers import GPLayer, LikelihoodLayer
 from gpflux2.helpers import construct_basic_kernel, construct_basic_inducing_variables
+from gpflux2.initializers import ZeroOneInitializer, FeedForwardInitializer
 
 import numpy as np
 
@@ -31,41 +32,54 @@ def init_inducing_points(X, num):
         return np.concatenate([X, np.random.randn(num - X.shape[0], X.shape[1])], 0)
 
 
-def build_deep_gp(input_dim, num_inducing):
+def build_deep_gp(input_dim, Z, likelihood):
     layer_dims = [input_dim, input_dim, 1]
+    num_inducing = Z.shape[0]
+    assert Z.shape == (num_inducing, input_dim)
 
     def kernel_factory(dim, variance=1.0):
         return SquaredExponential(lengthscale=float(dim)**0.5)
 
-    # Pass in kernels, specificy output dim (shared hyperparams/variables)
-    l1_kernel = construct_basic_kernel(
-        kernels=kernel_factory(layer_dims[0]),
-        output_dim=layer_dims[1],
-        share_hyperparams=True,
-    )
-    l1_inducing = construct_basic_inducing_variables(
-        num_inducing=num_inducing,
-        input_dim=layer_dims[0],
-        share_variables=True,
-    )
+    gp_layers = []
 
-    l2_kernel = construct_basic_kernel(
-        kernels=kernel_factory(layer_dims[1]),
-        output_dim=layer_dims[2],
-        share_hyperparams=True,
-    )
-    l2_inducing = construct_basic_inducing_variables(
-        num_inducing=num_inducing,
-        input_dim=layer_dims[1],
-        share_variables=True,
-    )
+    for i_layer, (D_in, D_out) in enumerate(zip(layer_dims[:-1], layer_dims[1:])):
+        is_first_layer = i_layer == 0
+        is_last_layer = i_layer == len(layer_dims) - 2
 
-    # Assemble at the end
-    gp_layers = [
-        GPLayer(l1_kernel, l1_inducing),
-        GPLayer(l2_kernel, l2_inducing, mean_function=Zero(), use_samples=False),
-    ]
-    return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(Gaussian()))
+        # Pass in kernels, specify output dim (shared hyperparams/variables)
+
+        inducing_var = construct_basic_inducing_variables(
+            num_inducing=num_inducing,
+            input_dim=D_in,
+            share_variables=True,
+        )
+
+        kernel = construct_basic_kernel(
+            kernels=kernel_factory(D_in),
+            output_dim=D_out,
+            share_hyperparams=True,
+        )
+        model.gp_layers[0].kernel.kernel.variance.assign(0.1)
+
+        if is_first_layer:
+            initializer = ZeroOneInitializer(Z)
+        else:
+            initializer = FeedForwardInitializer()
+
+        if not is_last_layer:
+            kernel.variance.assign(0.1)
+            initializer.q_sqrt_diagonal = 1e-5
+        else:
+            initializer.q_sqrt_diagonal = 1.0
+
+        extra_args = {}
+        if is_last_layer:
+            extra_args.update(dict(mean_function=Zero(), use_samples=False))
+
+        layer = GPLayer(kernel, inducing_var, initializer, **extra_args)
+        gp_layers.append(layer)
+
+    return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(likelihood))
 
 
 tf.keras.backend.set_floatx("float64")
@@ -119,15 +133,11 @@ class BayesBench_DeepGP:
         pprint(vars(Config))
 
         # build model
-        model = build_deep_gp(X_dim, Config.M)
-
         Z = init_inducing_points(X, Config.M)
-        model.gp_layers[0].inducing_variable.inducing_variable_shared.Z.assign(Z.copy())
-        model.gp_layers[0].kernel.kernel.variance.assign(0.1)
-        model.gp_layers[0].q_sqrt.assign(1e-5 * model.gp_layers[0].q_sqrt.read_value())
-        model.gp_layers[1].inducing_variable.inducing_variable_shared.Z.assign(Z.copy())
-        model.likelihood_layer.likelihood.variance.assign(Config.VAR)
-        set_trainable(model.likelihood_layer.likelihood, not Config.FIX_VAR)
+        likelihood = Gaussian(variance=Config.VAR)
+        set_trainable(likelihood, not Config.FIX_VAR)
+
+        model = build_deep_gp(X_dim, Z, likelihood)
 
         print_summary(model)
 
