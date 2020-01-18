@@ -5,7 +5,7 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflux2.initializers import VariationalInitializer
+from .initializers import VariationalInitializer
 
 
 class FeedForwardInitializer(VariationalInitializer):
