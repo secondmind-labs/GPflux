@@ -67,7 +67,7 @@ def build_deep_gp(input_dim, Z, likelihood):
             initializer = FeedForwardInitializer()
 
         if not is_last_layer:
-            initializer.q_sqrt_diagonal = 1e-5
+            initializer.q_sqrt_diagonal = 1e-2
         else:
             initializer.q_sqrt_diagonal = 1.0
 
