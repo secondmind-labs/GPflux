@@ -22,7 +22,7 @@ from gpflux2.layers import GPLayer
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from plotting import plot_layers
+from gpflux2.experiment_support.plotting import plot_layers
 
 tf.random.set_seed(42)
 
