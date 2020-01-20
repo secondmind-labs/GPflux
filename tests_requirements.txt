@@ -8,6 +8,7 @@ tqdm
 pytest-cov
 
 # Notebook tests:
+jupytext
 nbformat
 nbconvert
 jupyter_client
