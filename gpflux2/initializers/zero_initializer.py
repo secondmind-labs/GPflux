@@ -9,7 +9,7 @@ import tensorflow as tf
 from .initializer import VariationalInitializer
 
 
-class ZeroOneInitializer(VariationalInitializer):
+class GivenZInitializer(VariationalInitializer):
     """
     Base object that initialises variational parameters to zero mean, identity
     covariance, and inducing points to a given value. This is useful in
@@ -32,3 +32,8 @@ class ZeroOneInitializer(VariationalInitializer):
         for inducing_var in inducing_variable_list:
             Z = self.Z if self.Z is not None else tf.zeros_like(inducing_var.Z)
             inducing_var.Z.assign(Z)
+
+
+class ZeroOneInitializer(GivenZInitializer):
+    def __init__(self, Z: Optional[np.ndarray] = None):
+        super().__init__(Z=Z, q_sqrt_diagonal=1.0)

@@ -16,7 +16,7 @@ from gpflow.utilities import set_trainable, print_summary
 from gpflux2.models import DeepGP
 from gpflux2.layers import GPLayer, LikelihoodLayer
 from gpflux2.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux2.initializers import ZeroOneInitializer, FeedForwardInitializer
+from gpflux2.initializers import GivenZInitializer, FeedForwardInitializer
 
 import numpy as np
 
@@ -62,7 +62,7 @@ def build_deep_gp(input_dim, Z, likelihood):
         )
 
         if is_first_layer:
-            initializer = ZeroOneInitializer(Z)
+            initializer = GivenZInitializer(Z)
         else:
             initializer = FeedForwardInitializer()
 
