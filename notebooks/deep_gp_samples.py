@@ -24,6 +24,8 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from plotting import plot_layers
 
+tf.random.set_seed(42)
+
 # %%
 Ns = 1000
 D = 1
