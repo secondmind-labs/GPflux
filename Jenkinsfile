@@ -28,6 +28,11 @@ pipeline {
                     reportTitles: 'Coverage Report'
                 ])
             }
+            post {
+                always {
+                    junit '**/reports/*.xml'
+                }
+            }
         }
     }
 }

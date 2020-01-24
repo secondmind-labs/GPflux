@@ -12,7 +12,7 @@ types:
 #integration_test:
 #	pytest --cov=gpflux tests/integration
 full_test:
-	pytest --cov=gpflux2 --cov-report html:cover_html -v --tb=short --junitxml=nosetests.xml --cov-config .coveragerc --cov-report term --cov-report xml tests_gpflux2
+	pytest --cov=gpflux2 --cov-report html:cover_html -v --tb=short --junitxml=reports/junit.xml --cov-config .coveragerc --cov-report term --cov-report xml tests_gpflux2
 build:
 	tox
 #profile:
