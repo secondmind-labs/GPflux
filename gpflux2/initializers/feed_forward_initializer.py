@@ -5,32 +5,18 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflux2.initializers import Initializer
+from .initializer import VariationalInitializer
 
 
-class FeedForwardInitializer(Initializer):
+class FeedForwardInitializer(VariationalInitializer):
     """
-    Base object that initialises variational parameters to zero-mean, pointlike
-    distributions, and defers the initialistion of the until data is available. When
-    data is avaiable, it initialises the variables to be a random selection of the
-    inputs
+    This initializer defers the initialization of the inducing variable until
+    data is available. When data is avaiable, it initializes the variables to be
+    a random selection of the inputs.
     """
 
-    def __init__(self, q_sqrt_variance: float = 1e-2):
-        super().__init__(init_at_predict=True)
-        self.q_sqrt_variance = q_sqrt_variance
-
-    def init_variational_params(self, q_mu, q_sqrt) -> None:
-        """Initialise the variational parameter to a zero mean and """
-        num_inducing_vars, num_output_dims = q_mu.shape
-        q_mu_value = np.zeros((num_inducing_vars, num_output_dims))
-        q_sqrt_value = (
-            np.tile(np.eye(num_inducing_vars), (num_output_dims, 1, 1))
-            * self.q_sqrt_variance
-        )
-
-        q_mu.assign(q_mu_value)
-        q_sqrt.assign(q_sqrt_value)
+    def __init__(self, q_sqrt_diagonal: float = 1e-2):
+        super().__init__(init_at_predict=True, q_sqrt_diagonal=q_sqrt_diagonal)
 
     def init_inducing_variable(self, inducing_variable, inputs) -> None:
         data_rows = inputs.numpy().reshape(-1, inputs.shape[-1])  # [B, D]
