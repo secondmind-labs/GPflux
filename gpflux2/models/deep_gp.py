@@ -18,6 +18,11 @@ class DeepGP(tf.keras.Model):
     def elbo(self, data):
         X, Y = data
         variational_expectations = self.call(X, targets=Y, training=True)
+        tf.debugging.assert_shapes([
+            (X, ['N', 'D']),
+            (Y, ['N', 'P']),
+            (variational_expectations, ['N', '1']),
+        ])
         variational_expectation = tf.reduce_sum(variational_expectations)
 
         kl_divergence = np.sum(self.losses)

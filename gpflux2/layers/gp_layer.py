@@ -6,6 +6,7 @@
 from typing import Optional
 
 import numpy as np
+import tensorflow as tf
 
 from gpflow.kernels import (
     MultioutputKernel,
@@ -194,8 +195,19 @@ class GPLayer(TrackableLayer):
             num_samples=num_samples,
         )
 
-        samples = sample_cond + mean_function  # [S, N, Q] if S not None else [N, Q]
-        mean = mean_cond + mean_function  # [N, Q]
+        if num_samples is None:
+            tf.debugging.assert_shapes([
+                (sample_cond, ['N', 'Q']),
+                (mean_cond, ['N', 'Q']),
+            ])
+        else:
+            tf.debugging.assert_shapes([
+                (sample_cond, [num_samples, 'N', 'Q']),
+                (mean_cond, ['N', 'Q']),
+            ])
+
+        samples = sample_cond + mean_function
+        mean = mean_cond + mean_function
 
         return samples, mean, cov
 
