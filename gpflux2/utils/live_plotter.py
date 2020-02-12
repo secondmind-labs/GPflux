@@ -11,13 +11,31 @@ from typing import Callable, Optional, TypeVar, Any, Dict
 from matplotlib import pyplot as plt
 from matplotlib.animation import FFMpegFileWriter
 
+__all__ = [
+    "live_plot",
+    "InvalidPlotFunctionException",
+]
+
 
 class InvalidPlotFunctionException(Exception):
     pass
 
 
-class LivePlotter:
+def live_plot(*args, **kwargs):
+    """This is a decorator to turn function that operates on figures (and/or axes) into
+    a live plotting function.
 
+    It is a thin wrapper around the LivePlotter class (which is also a decorator), and
+    has been used because it allows the decorator to be called both with and without
+    arguments.
+    """
+    if len(args) == 1 and callable(args[0]) and kwargs == {}:
+        return LivePlotter()(*args, **kwargs)  # usage: @live_plot
+    else:
+        return LivePlotter(*args, **kwargs)  # usage: @live_plot(do_animation=True)
+
+
+class LivePlotter:
     """Class decorator a function that operates on figures (and/or axes) into a live plotting
     function.
     """
@@ -31,10 +49,10 @@ class LivePlotter:
         animation_kwargs: Optional[Dict] = None,
     ):
         """
-        :params fig_kwargs: Keywords to passed to figure constructor
+        :params fig_kwargs: Keywords to be passed to figure constructor
         :params subplots_kwargs: Keywords to be passed to subplots constructor
         :params do_animation: Whether to record the liveplot as an animation
-        :params animation_dir: Directory to save animation
+        :params animation_dir: Directory to save animation (relative to user)
         :params animation_kwargs: Keywords to be passed to the animation file writer constructor
         """
         self.fig_kwargs = fig_kwargs if fig_kwargs else {}
@@ -130,7 +148,3 @@ class LivePlotter:
 
         setattr(decorated, "save", movie_writer.finish)
         return decorated
-
-
-live_plot = LivePlotter()
-custom_live_plot = LivePlotter

@@ -7,7 +7,6 @@ import matplotlib
 
 from gpflux2.utils.live_plotter import (
     live_plot,
-    custom_live_plot,
     InvalidPlotFunctionException,
 )
 
@@ -20,15 +19,13 @@ def default_plotter(x_data, y_data, fig=None, axes=None):
     axes[0].scatter(x_data, y_data)
 
 
-@custom_live_plot(
-    fig_kwargs={"figsize": (10, 5)}, subplots_kwargs={"nrows": 1, "ncols": 2}
-)
+@live_plot(fig_kwargs={"figsize": (10, 5)}, subplots_kwargs={"nrows": 1, "ncols": 2})
 def custom_plotter(x_data, y_data, fig=None, axes=None):
     axes[0].scatter(x_data, y_data)
     axes[1].scatter(y_data, x_data)
 
 
-@custom_live_plot(do_animation=True, animation_dir="animation_testing")
+@live_plot(do_animation=True, animation_dir="animation_testing")
 def animation_live_plotter(x_data, y_data, fig=None, axes=None):
     axes[0].scatter(x_data, y_data)
 
@@ -40,6 +37,25 @@ def test_live_plotter(plotter_func):
         y_data = np.random.randn(50)
 
         plotter_func(x_data, y_data)
+        time.sleep(0.3)
+
+
+def test_live_plotter_user_controlled_fig():
+    @live_plot
+    def plot_two(x_data, y_data, title, fig=None, axes=None):
+        axes[0].scatter(x_data, y_data)
+        axes[1].scatter(y_data, x_data)
+        fig.suptitle(title, fontsize=16)
+
+    fig = matplotlib.pyplot.figure()
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+    axes = [ax1, ax2]
+    for _ in range(5):
+        x_data = np.random.randn(50)
+        y_data = np.random.randn(50)
+
+        plot_two(x_data, y_data, "A nice plot!", fig=fig, axes=axes)
         time.sleep(0.3)
 
 
@@ -71,16 +87,19 @@ def test_animation():
 
 def test_bad_wrapped_function():
     with pytest.raises(InvalidPlotFunctionException):
+
         @live_plot
         def invalid_plotting_function(*args):
             pass
 
     with pytest.raises(InvalidPlotFunctionException):
+
         @live_plot
         def invalid_plotting_function(*args, fig=None):
             pass
 
     with pytest.raises(InvalidPlotFunctionException):
+
         @live_plot
         def invalid_plotting_function(*args, axes=None):
             pass
@@ -92,4 +111,5 @@ if __name__ == "__main__":
     test_live_plotter(default_plotter)
     test_live_plotter(custom_plotter)
     test_animation()
+    test_live_plotter_user_controlled_fig()
     test_bad_wrapped_function()
