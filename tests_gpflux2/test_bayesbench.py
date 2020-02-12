@@ -34,6 +34,8 @@ def compute_gpr_lml(X, Y):
     return - neg_log_marginal_likelihood()
 
 def test_bayesbench_deepgp_snelson(bayesbench_deepgp):
+    tf.random.set_seed(0)
+    np.random.seed(0)
     X, Y = get_snelson_X_and_Y()
 
     # log marginal likelihood of GPR with SquaredExponential kernel
