@@ -7,9 +7,10 @@ pipeline {
     stages {
         stage('Test'){
             agent {
-                docker {
-                    image 'python:3.7-stretch'
-                    args '-v /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt --user root'
+                dockerfile {
+                    filename 'Dockerfile'
+                    registryUrl 'https://eu.gcr.io/prowlerio-docker'
+                    registryCredentialsId 'gcr:prowlerio-docker'
                 }
             }
             steps {
