@@ -1,20 +1,18 @@
-FROM python:3.7-stretch
+FROM eu.gcr.io/prowlerio-docker/ubuntu-18.04/python-3.7:latest
 
-RUN apt-get update && apt-get install git ca-certificates
-#RUN apk add --no-cache git ca-certificates
+USER root
 
-# Configure pip to use the Prowler.io root certificate
-ENV PIP_CERT=/usr/local/share/ca-certificates/prowlerio_ca.crt
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       build-essential \
+       ffmpeg\
+       git \
+       tk-dev
 
-# Install PROWLER.io's CA certificate so that pip can use devpi.piointernal.prowler.io
-ADD https://downloads.piointernal.prowler.io/prowlerio/ca-certificates/prowlerio_ca.crt $PIP_CERT
-RUN update-ca-certificates
-
-# Configure pip to use devpi.piointernal.prowler.io
-ENV PIP_INDEX_URL=https://devpi.piointernal.prowler.io/prowler-io/prod/+simple/
-
-RUN  pip install tox==3.2.1
+RUN python -m pip install tox==3.2.1
 
 ADD . /src
 
 WORKDIR /src
+
+USER ubuntu
