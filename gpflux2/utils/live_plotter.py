@@ -2,6 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 from functools import wraps
+import inspect
 from contextlib import contextmanager
 from pathlib import Path
 from time import time
@@ -9,6 +10,10 @@ from typing import Callable, Optional, TypeVar, Any, Dict
 
 from matplotlib import pyplot as plt
 from matplotlib.animation import FFMpegFileWriter
+
+
+class InvalidPlotFunctionException(Exception):
+    pass
 
 
 class LivePlotter:
@@ -22,7 +27,7 @@ class LivePlotter:
         fig_kwargs: Optional[Dict] = None,
         subplots_kwargs: Optional[Dict] = None,
         do_animation: bool = False,
-        animation_dir: Optional[str] = 'animations',
+        animation_dir: Optional[str] = "animations",
         animation_kwargs: Optional[Dict] = None,
     ):
         """
@@ -41,6 +46,11 @@ class LivePlotter:
         self.tmp_path = f"{self.animations_dir}/tmp/"
 
     def __call__(self, func):
+        sig = inspect.signature(func)
+        if "fig" not in sig.parameters or "axes" not in sig.parameters:
+            raise InvalidPlotFunctionException(
+                "Wrapped plotting function must take 'fig' and 'axes' as arguments."
+            )
         if self.do_animation:
             return self.live_plot(self.animate(func))
         else:
