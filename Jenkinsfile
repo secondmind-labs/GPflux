@@ -14,7 +14,6 @@ pipeline {
                 }
             }
             steps {
-                sh "rm -rf GPflow"
                 sh "git clone --depth 1 --branch develop https://github.com/GPflow/GPflow.git"
                 sh "pip install tox==3.2.1"
                 sh "tox -e jenkins"
@@ -32,6 +31,7 @@ pipeline {
             post {
                 always {
                     junit '**/reports/*.xml'
+                    cleanWs notFailBuild: true
                 }
             }
         }
