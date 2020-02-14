@@ -125,20 +125,17 @@ class GPLayer(TrackableLayer):
             raise TypeError("`kernel` must be a `MultioutputKernel`")
 
         if isinstance(inducing_variable, FallbackSeparateIndependentInducingVariables):
-            inducing_output_dim = len(inducing_variable.inducing_variable_list)
+            inducing_dim = len(inducing_variable.inducing_variable_list)
         else:
-            inducing_output_dim = None
+            inducing_dim = None
 
-        if isinstance(kernel, SharedIndependent):
-            kernel_output_dim = kernel.P
-        if isinstance(kernel, (SeparateIndependent, LinearCoregionalization)):
-            kernel_output_dim = len(kernel.kernels)
+        num_latent_gps = kernel.num_latents
 
-        if inducing_output_dim is not None:
-            assert kernel_output_dim == inducing_output_dim
+        if inducing_dim is not None:
+            assert inducing_dim == num_latent_gps
 
         num_inducing_points = len(inducing_variable) # currently the same for each dim
-        return num_inducing_points, kernel_output_dim
+        return num_inducing_points, num_latent_gps
 
     def initialize_inducing_variables(self, **initializer_kwargs):
         if self._initialized:
