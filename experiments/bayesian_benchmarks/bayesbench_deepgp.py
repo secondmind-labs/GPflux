@@ -32,7 +32,7 @@ def init_inducing_points(X, num):
         return np.concatenate([X, np.random.randn(num - X.shape[0], X.shape[1])], 0)
 
 
-def build_deep_gp(input_dim, Z, likelihood):
+def build_deep_gp(input_dim, Z, likelihood, num_data):
     layer_dims = [input_dim, input_dim, 1]
     num_inducing = Z.shape[0]
     assert Z.shape == (num_inducing, input_dim)
@@ -75,7 +75,7 @@ def build_deep_gp(input_dim, Z, likelihood):
         if is_last_layer:
             extra_args.update(dict(mean_function=Zero(), use_samples=False))
 
-        layer = GPLayer(kernel, inducing_var, initializer, **extra_args)
+        layer = GPLayer(kernel, inducing_var, num_data, initializer, **extra_args)
         gp_layers.append(layer)
 
     return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(likelihood))
@@ -136,7 +136,7 @@ class BayesBench_DeepGP:
         likelihood = Gaussian(variance=Config.VAR)
         set_trainable(likelihood, not Config.FIX_VAR)
 
-        model = build_deep_gp(X_dim, Z, likelihood)
+        model = build_deep_gp(X_dim, Z, likelihood, num_data)
 
         print_summary(model)
 

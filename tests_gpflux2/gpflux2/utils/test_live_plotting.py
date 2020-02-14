@@ -5,10 +5,8 @@ import time
 import numpy as np
 import matplotlib
 
-from gpflux2.utils.live_plotter import (
-    live_plot,
-    InvalidPlotFunctionException,
-)
+from gpflux2.utils.live_plotter import live_plot
+from gpflux2.exceptions import InvalidPlotFunctionError
 
 # No GUI for testing
 matplotlib.use("agg")
@@ -86,19 +84,19 @@ def test_animation():
 
 
 def test_bad_wrapped_function():
-    with pytest.raises(InvalidPlotFunctionException):
+    with pytest.raises(InvalidPlotFunctionError):
 
         @live_plot
         def invalid_plotting_function(*args):
             pass
 
-    with pytest.raises(InvalidPlotFunctionException):
+    with pytest.raises(InvalidPlotFunctionError):
 
         @live_plot
         def invalid_plotting_function(*args, fig=None):
             pass
 
-    with pytest.raises(InvalidPlotFunctionException):
+    with pytest.raises(InvalidPlotFunctionError):
 
         @live_plot
         def invalid_plotting_function(*args, axes=None):

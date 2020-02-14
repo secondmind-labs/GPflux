@@ -11,14 +11,11 @@ from typing import Callable, Optional, TypeVar, Any, Dict
 from matplotlib import pyplot as plt
 from matplotlib.animation import FFMpegFileWriter
 
+from gpflux2.exceptions import InvalidPlotFunctionError
+
 __all__ = [
     "live_plot",
-    "InvalidPlotFunctionException",
 ]
-
-
-class InvalidPlotFunctionException(Exception):
-    pass
 
 
 def live_plot(*args, **kwargs):
@@ -66,7 +63,7 @@ class LivePlotter:
     def __call__(self, func):
         sig = inspect.signature(func)
         if "fig" not in sig.parameters or "axes" not in sig.parameters:
-            raise InvalidPlotFunctionException(
+            raise InvalidPlotFunctionError(
                 "Wrapped plotting function must take 'fig' and 'axes' as arguments."
             )
         if self.do_animation:

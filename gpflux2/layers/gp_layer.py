@@ -26,7 +26,7 @@ from gpflow import default_float, Parameter
 
 from gpflux2.layers import TrackableLayer
 from gpflux2.initializers import FeedForwardInitializer, Initializer
-
+from gpflux2.exceptions import GPInitializationError
 
 class GPLayer(TrackableLayer):
     """A sparse variational multioutput GP layer"""
@@ -35,6 +35,7 @@ class GPLayer(TrackableLayer):
         self,
         kernel: MultioutputKernel,
         inducing_variable: MultioutputInducingVariables,
+        num_data: int,
         initializer: Optional[Initializer] = None,
         mean_function: Optional[MeanFunction] = None,
         *,
@@ -73,6 +74,7 @@ class GPLayer(TrackableLayer):
         self.use_samples = use_samples
         self.full_output_cov = full_output_cov
         self.full_cov = full_cov
+        self.num_data = num_data
 
         self.num_inducing, self.output_dims = self.verify_dims(
             kernel, mean_function, inducing_variable
@@ -140,7 +142,7 @@ class GPLayer(TrackableLayer):
 
     def initialize_inducing_variables(self, **initializer_kwargs):
         if self._initialized:
-            raise Exception("Initializing twice!")
+            raise GPInitializationError("Initializing twice!")
 
         self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
         self._initialized = True
@@ -152,8 +154,6 @@ class GPLayer(TrackableLayer):
 
         if not self.initializer.init_at_predict:
             self.initialize_inducing_variables()
-
-        self.add_loss(self.prior_kl)
 
     def predict(
         self,
@@ -211,7 +211,7 @@ class GPLayer(TrackableLayer):
 
         return samples, mean, cov
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs, training=False, *args, **kwargs):
         """The default behaviour upon calling the GPLayer()(X)"""
         samples, mean, cov = self.predict(
             inputs,
@@ -219,6 +219,13 @@ class GPLayer(TrackableLayer):
             full_output_cov=self.full_output_cov,
             full_cov=self.full_cov,
         )
+
+        # TF quirk: add_loss must add a tensor to compile
+        loss = self.prior_kl() if training else tf.constant(0., dtype=default_float())
+        loss_per_datapoint = loss / self.num_data
+
+        self.add_loss(loss_per_datapoint)
+
         if self.use_samples:
             return samples
         return mean, cov

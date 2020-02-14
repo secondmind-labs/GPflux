@@ -19,7 +19,7 @@ class FeedForwardInitializer(VariationalInitializer):
         super().__init__(init_at_predict=True, q_sqrt_diagonal=q_sqrt_diagonal)
 
     def init_inducing_variable(self, inducing_variable, inputs) -> None:
-        data_rows = inputs.numpy().reshape(-1, inputs.shape[-1])  # [B, D]
+        data_rows = tf.reshape(inputs, (-1, inputs.shape[-1]))  # [N, D]
 
         # HACK to deal with multioutput inducing variables
         if hasattr(inducing_variable, "inducing_variable_list"):
@@ -30,7 +30,6 @@ class FeedForwardInitializer(VariationalInitializer):
             raise Exception
 
         for inducing_var in inducing_variable_list:
-            choices = np.random.choice(np.arange(len(data_rows)), len(inducing_var),
-                                       replace=False)
-            initialization_data = data_rows[..., choices, :]
+            # TF quirk: tf.random.shuffle is not in-place
+            initialization_data = tf.random.shuffle(inputs)[: len(inducing_var)]
             inducing_var.Z.assign(initialization_data)

@@ -22,23 +22,50 @@ class LikelihoodLayer(TrackableLayer):
         super().__init__(dtype=default_float())
         self.likelihood = likelihood
 
-    def call(self, inputs, training=None, targets=None, **kwargs):
-        """TO DO: Note that this function returns a lot of different things. This func
-        returns at different times, an expectation, a log probability, a mean and
-        variance, and just the input!  This function needs some thought.
+    def call(self, inputs, training=False, targets=None, **kwargs):
+        """Note that this function can operate both on tuples of (mean, variance), and also simply
+        samples.
         """
-        if training is None:
-            training = learning_phase()
 
-        if training:
-            if isinstance(inputs, tuple):
-                F_mu, F_var = inputs
-                return self.likelihood.variational_expectations(F_mu, F_var, targets)
+        use_mean_and_cov = isinstance(inputs, tuple)
+        if use_mean_and_cov:
+            F_mu, F_var = inputs
+
+            # TF quirk: add_loss must add a tensor to compile
+            if training:
+                losses = -self.variational_expectations(F_mu, F_var, targets)
             else:
-                return self.likelihood.log_prob(inputs, targets)
+                losses = tf.zeros((1, 1), dtype=default_float())
+
+            # Scale by batch size, and sum over output dimensions
+            loss_per_datapoint = tf.reduce_sum(tf.reduce_mean(losses, axis=0))
+            self.add_loss(loss_per_datapoint)
+
+            return self.predict_mean_and_var(F_mu, F_var)
         else:
-            if isinstance(inputs, tuple):
-                F_mu, F_var = inputs
-                return self.likelihood.predict_mean_and_var(F_mu, F_var)
+            samples = inputs
+
+            # TF quirk: add_loss must add a tensor to compile
+            if training:
+                losses = -self.log_prob(samples, targets)
             else:
-                return tf.identity(inputs) # TO DO: should not be identity!
+                losses = tf.zeros((1, 1), dtype=default_float())
+
+            # Scale by batch size, and sum over output dimensions
+            loss_per_datapoint = tf.reduce_sum(tf.reduce_mean(losses, axis=0))
+            self.add_loss(loss_per_datapoint)
+
+            # TO DO: should not be identity - we should sample through the likelihood
+            return tf.identity(inputs)
+
+    def log_prob(self, samples, targets):
+        """A wrapper around the gpflow.Likelihood method"""
+        return self.likelihood.log_prob(samples, targets)
+
+    def variational_expectations(self, F_mu, F_var, targets):
+        """A wrapper around the gpflow.Likelihood method"""
+        return self.likelihood.variational_expectations(F_mu, F_var, targets)
+
+    def predict_mean_and_var(self, F_mu, F_var):
+        """A wrapper around the gpflow.Likelihood method"""
+        return self.likelihood.predict_mean_and_var(F_mu, F_var)
