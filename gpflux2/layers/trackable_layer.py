@@ -12,9 +12,10 @@ import tensorflow as tf
 
 def extend_with_method(method):
     """"
-    This decorator calls a decorated method, and extends the result with another method
-    on the same class. This method is called after the decorated function, with the same
-    arguments as the decorated function.
+    This decorator calls a decorated method which returns a list, and extends
+    the result with the return value of another method on the same class. This
+    method is called after the decorated function, with the same arguments as
+    the decorated function.
     """
 
     def decorator(f):
@@ -31,14 +32,15 @@ def extend_with_method(method):
 
 class TrackableLayer(tf.keras.layers.Layer):
     """
-    A tf.Layer that implements tracking of tf.Variables on the class's attributes that
-    are tf.Modules.
+    A tf.Layer that implements tracking of tf.Variables on the class's
+    attributes that are tf.Modules.
 
-    Currently tf.Modules track the tf.Variables of their attributes that are tf.Modules.
-    Similarly tf.Layers track the tf.Variables of their attributes that tf.Layers.
-    However, despite the fact that tf.Layers inherit from tf.Module, they cannot track
-    the tf.Variables of their attributes that are generic tf.Modules. This seems to be
-    an issue that TF authors seem to want to fix in future.
+    Currently, tf.Modules track the tf.Variables of their attributes that are
+    also tf.Modules.  Similarly, tf.Layers track the tf.Variables of their
+    attributes that are also tf.Layers.  However, despite the fact that
+    tf.Layer inherits from tf.Module, they cannot track the tf.Variables of
+    their attributes that are generic tf.Modules. This seems to be an issue
+    that the TensorFlow authors seem to want to fix in the future.
     """
 
     @property
