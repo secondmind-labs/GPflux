@@ -76,7 +76,7 @@ class GPLayer(TrackableLayer):
         self.full_cov = full_cov
         self.num_data = num_data
 
-        self.num_inducing, self.output_dims = self.verify_dims(
+        self.num_inducing, self.num_latent_gps = self.verify_dims(
             kernel, mean_function, inducing_variable
         )
 
@@ -89,13 +89,13 @@ class GPLayer(TrackableLayer):
         # gpflow.Parameter()
 
         self.q_mu = Parameter(
-            np.zeros((self.num_inducing, self.output_dims)),
+            np.zeros((self.num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name="q_mu",
         )  # [num_inducing, output_dim]
 
         self.q_sqrt = Parameter(
-            np.zeros((self.output_dims, self.num_inducing, self.num_inducing)),
+            np.zeros((self.num_latent_gps, self.num_inducing, self.num_inducing)),
             transform=triangular(),
             dtype=default_float(),
             name="q_sqrt",

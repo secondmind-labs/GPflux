@@ -3,4 +3,6 @@
 # Proprietary and confidential
 from gpflux2.layers.trackable_layer import TrackableLayer
 from gpflux2.layers.gp_layer import GPLayer
+from gpflux2.layers.latent_variable_layer import LatentVariableLayer
+from gpflux2.layers.latent_variable_augmentation_layer import LatentVariableAugmentationLayer
 from gpflux2.layers.likelihood_layer import LikelihoodLayer

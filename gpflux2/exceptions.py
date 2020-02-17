@@ -7,6 +7,8 @@
 class GPInitializationError(Exception):
     pass
 
+class EncoderInitializationError(Exception):
+    pass
 
 # Plotting Errors
 class InvalidPlotFunctionError(Exception):
