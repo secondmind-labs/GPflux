@@ -14,21 +14,21 @@ from gpflux.exceptions import EncoderInitializationError
 
 
 def test_shapes():
-    seed = 50
+    seed = 300
     num_data, latent_dim = 200, 3
-    np.random.seed(300)
+    np.random.seed(seed)
     dp_encoder = DirectlyParameterizedNormalDiag(num_data, latent_dim)
 
     # Tests shapes
     assert np.all(tf.shape(dp_encoder.means) == (num_data, latent_dim))
-    assert np.all(tf.shape(dp_encoder.std) == (num_data, latent_dim))
+    assert np.all(tf.shape(dp_encoder.stds) == (num_data, latent_dim))
 
     # Tests values
-    np.random.seed(300)
-    assert np.all(dp_encoder.means == np.zeros((num_data, latent_dim)))
-    np.testing.assert_allclose(
-        dp_encoder.std.numpy(), 1e-5 * np.ones_like(dp_encoder.means)
-    )
+    np.random.seed(seed)
+    expected_means = 0.01 * np.random.randn(num_data, latent_dim)
+    expected_stds = 1e-5 * np.ones_like(expected_means)
+    np.testing.assert_equal(dp_encoder.means.numpy(), expected_means)
+    np.testing.assert_allclose(dp_encoder.stds.numpy(), expected_stds, rtol=1e-11)
 
 
 def test_call():
@@ -41,7 +41,7 @@ def test_call():
     assert np.all(tf.shape(encoder_means) == (num_data, latent_dim))
     assert np.all(means == encoder_means)
     assert encoder_means is dp_encoder.means
-    assert encoder_std is dp_encoder.std
+    assert encoder_std is dp_encoder.stds
 
 
 def test_bad_shapes():
