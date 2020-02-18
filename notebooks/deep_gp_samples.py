@@ -15,14 +15,14 @@
 
 # %%
 import gpflow
-import gpflux2 as gpflux
-from gpflux2.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux2.initializers import ZeroOneInitializer
-from gpflux2.layers import GPLayer
+import gpflux as gpflux
+from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
+from gpflux.initializers import ZeroOneInitializer
+from gpflux.layers import GPLayer
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from gpflux2.experiment_support.plotting import plot_layers
+from gpflux.experiment_support.plotting import plot_layers
 
 tf.random.set_seed(42)
 
