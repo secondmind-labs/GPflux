@@ -69,22 +69,22 @@ class TrackableLayer(tf.keras.layers.Layer):
             if not v.trainable
         ]
 
-    @property
+    @property  # type: ignore
     @extend_with_method(submodule_trainable_variables)
     def trainable_weights(self):
         return super().trainable_weights
 
-    @property
+    @property  # type: ignore
     @extend_with_method(submodule_non_trainable_variables)
     def non_trainable_weights(self):
         return super().non_trainable_weights
 
-    @property
+    @property  # type: ignore
     @extend_with_method(submodule_trainable_variables)
     def trainable_variables(self):
         return super().trainable_variables
 
-    @property
+    @property  # type: ignore
     @extend_with_method(submodule_variables)
     def variables(self):
         return super().variables

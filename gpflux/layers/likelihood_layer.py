@@ -22,7 +22,7 @@ class LikelihoodLayer(TrackableLayer):
         super().__init__(dtype=default_float())
         self.likelihood = likelihood
 
-    def call(self, inputs, training=False, targets=None, **kwargs):
+    def call(self, inputs, training=False, targets=None):
         """Note that this function can operate both on tuples of (mean, variance), and also simply
         samples.
         """

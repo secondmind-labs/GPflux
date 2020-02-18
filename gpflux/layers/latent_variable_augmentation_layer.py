@@ -16,7 +16,7 @@ class LatentVariableAugmentationLayer(LatentVariableLayer):
     of input and sampled latent_variable in the simple Layer framework.
     """
 
-    def call(self, data, training: bool = False, *args, **kwargs):
+    def call(self, data, training: bool = False, seed: int = None):
         """
         When training: Draw a sample of the latent variable from the posterior,
         whose distribution is parameterized by the encoder mapping from the data
@@ -35,6 +35,6 @@ class LatentVariableAugmentationLayer(LatentVariableLayer):
             recognition_data = tf.concat([inputs, targets], axis=-1)
         else:
             recognition_data = inputs
-        latent_data = super().call(recognition_data, training=training, *args, **kwargs)
+        latent_data = super().call(recognition_data, training=training, seed=seed)
         augmented_inputs = tf.concat([inputs, latent_data], axis=-1)
         return augmented_inputs

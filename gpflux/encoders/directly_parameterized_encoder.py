@@ -24,7 +24,9 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
     variance, IMPORTANT: Not compatible with minibatches
     """
 
-    def __init__(self, num_data: int, latent_dim: int, means: Optional[np.ndarray] = None):
+    def __init__(
+        self, num_data: int, latent_dim: int, means: Optional[np.ndarray] = None
+    ):
         """
         :param num_data: The number of data points
         :param latent_dim: The dimensionality of the latent variable
@@ -48,7 +50,5 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
 
     def call(self, inputs=None, *args, **kwargs):
         if inputs is not None:
-            tf.debugging.assert_shapes(
-                [(self.means, ["N", "W"]), (inputs, ["N", "D"])]
-            )
+            tf.debugging.assert_shapes([(self.means, ["N", "W"]), (inputs, ["N", "D"])])
         return self.means, self.stds

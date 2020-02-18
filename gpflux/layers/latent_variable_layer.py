@@ -80,12 +80,7 @@ class LatentVariableLayer(TrackableLayer):
         return self.prior.sample(sample_shape)
 
     def call(
-        self,
-        recognition_data,
-        training: bool = False,
-        seed: int = None,
-        *args,
-        **kwargs
+        self, recognition_data, training: bool = False, seed: int = None,
     ):
         """
         When training: draw a sample of the latent variable from the posterior,

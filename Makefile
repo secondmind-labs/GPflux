@@ -18,7 +18,7 @@ format-check:
 	black --check $(LIB_NAME) $(TESTS_NAME)
 format:
 	black $(LIB_NAME) $(TESTS_NAME)
-full-test: format-check test
+full-test: format-check types test
 lint:
 	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) $(LIB_NAME) $(TESTS_NAME)
 types:

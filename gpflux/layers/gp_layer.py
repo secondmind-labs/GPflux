@@ -125,10 +125,9 @@ class GPLayer(TrackableLayer):
         if not isinstance(kernel, MultioutputKernel):
             raise TypeError("`kernel` must be a `MultioutputKernel`")
 
+        inducing_dim = None  # type: Optional[int]
         if isinstance(inducing_variable, FallbackSeparateIndependentInducingVariables):
             inducing_dim = len(inducing_variable.inducing_variable_list)
-        else:
-            inducing_dim = None
 
         num_latent_gps = kernel.num_latents
 
@@ -209,7 +208,7 @@ class GPLayer(TrackableLayer):
 
         return samples, mean, cov
 
-    def call(self, inputs, training=False, *args, **kwargs):
+    def call(self, inputs, training=False):
         """The default behaviour upon calling the GPLayer()(X)"""
         samples, mean, cov = self.predict(
             inputs,
