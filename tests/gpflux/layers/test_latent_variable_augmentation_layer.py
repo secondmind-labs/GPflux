@@ -92,4 +92,3 @@ def test_add_losses(w_dim):
     local_kls = [tf.reduce_mean(lv.local_kls(posteriors))]
     np.testing.assert_allclose(lv.losses, local_kls)
     assert lv.losses > [0.0]
-

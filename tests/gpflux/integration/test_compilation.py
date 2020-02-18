@@ -148,7 +148,6 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
         y_pred = deep_gp_model(data_minibatch, training=True)
         return tf.reduce_sum(deep_gp_model.losses)
 
-
     def optimization_step(data_minibatch):
         optimizer.minimize(
             lambda: objective(data_minibatch), deep_gp_model.trainable_weights

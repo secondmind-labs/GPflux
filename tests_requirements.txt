@@ -1,11 +1,13 @@
 pytest
 pytest-random-order
 
+# Code quality tools:
 flake8
 mypy
+black
+pytest-cov
 
 tqdm
-pytest-cov
 
 # Notebook tests:
 jupytext

@@ -10,10 +10,8 @@ def all_layer_mean_var_samples(gp_layers, X):
     sample = X
     means, covs, samples = [], [], []
     for layer in gp_layers:
-        all_samples, mean, cov = layer.predict(sample,
-            full_output_cov=False,
-            full_cov=True,
-            num_samples=S,
+        all_samples, mean, cov = layer.predict(
+            sample, full_output_cov=False, full_cov=True, num_samples=S,
         )  # [S, N, D], [N, D], [D, N, N]
         sample = all_samples[0]
 
@@ -46,7 +44,7 @@ def plot_layer(X, m, v, s, idx, axes=None):
     ax2.set_xticklabels([])
     # samples
     ax3.set_title("Samples")
-    ax3.plot(X, s[idx][:, :, 0].T);
+    ax3.plot(X, s[idx][:, :, 0].T)
 
 
 def plot_layers(X, gp_layers):

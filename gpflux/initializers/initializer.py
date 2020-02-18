@@ -5,6 +5,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
+
 class Initializer(ABC):
     """Base object that initialises variational parameters and inducing points"""
 

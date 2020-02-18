@@ -36,7 +36,7 @@ BLACKLISTED_NOTEBOOKS = [
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../notebooks/')
+    return os.path.join(this_dir, "../notebooks/")
 
 
 def get_notebooks():
@@ -49,25 +49,27 @@ def get_notebooks():
         return os.path.basename(nb) in blacklisted_notebooks_basename
 
     # recursively traverse the notebook directory in search for ipython notebooks
-    all_notebooks = glob.iglob(os.path.join(_nbpath(), '**', '*.py'), recursive=True)
+    all_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.py"), recursive=True)
     notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
     return notebooks_to_test
 
 
 def _preproc():
-    pythonkernel = 'python' + str(sys.version_info[0])
-    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
+    pythonkernel = "python" + str(sys.version_info[0])
+    return ExecutePreprocessor(
+        timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True
+    )
 
 
 def _exec_notebook(notebook_filename):
     with open(notebook_filename) as notebook_file:
         nb = jupytext.read(notebook_file, as_version=nbformat.current_nbformat)
         try:
-            meta_data = {'path': os.path.dirname(notebook_filename)}
-            _preproc().preprocess(nb, {'metadata': meta_data})
+            meta_data = {"path": os.path.dirname(notebook_filename)}
+            _preproc().preprocess(nb, {"metadata": meta_data})
         except CellExecutionError as cell_error:
             traceback.print_exc(file=sys.stdout)
-            msg = 'Error executing the notebook {0}. See above for error.\nCell error: {1}'
+            msg = "Error executing the notebook {0}. See above for error.\nCell error: {1}"
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
@@ -75,10 +77,10 @@ def _exec_notebook_ts(notebook_filename):
     ts = time.time()
     _exec_notebook(notebook_filename)
     elapsed = time.time() - ts
-    print(notebook_filename, 'took {0} seconds.'.format(elapsed))
+    print(notebook_filename, "took {0} seconds.".format(elapsed))
 
 
 @pytest.mark.notebooks
-@pytest.mark.parametrize('notebook_file', get_notebooks())
+@pytest.mark.parametrize("notebook_file", get_notebooks())
 def test_notebook(notebook_file):
     _exec_notebook(notebook_file)

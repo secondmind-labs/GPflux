@@ -16,8 +16,7 @@ class GivenZInitializer(VariationalInitializer):
     testing, as starting KL divergences are exactly 0.
     """
 
-    def __init__(self, Z: Optional[np.ndarray] = None,
-                 q_sqrt_diagonal: float = 1e-2):
+    def __init__(self, Z: Optional[np.ndarray] = None, q_sqrt_diagonal: float = 1e-2):
         super().__init__(init_at_predict=False, q_sqrt_diagonal=q_sqrt_diagonal)
         self.Z = Z
 

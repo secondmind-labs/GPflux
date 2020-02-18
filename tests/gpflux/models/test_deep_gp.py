@@ -50,15 +50,19 @@ def build_deep_gp(input_dim, num_data):
     gp_layers = [
         GPLayer(l1_kernel, l1_inducing, num_data),
         GPLayer(l2_kernel, l2_inducing, num_data),
-        GPLayer(l3_kernel, l3_inducing, num_data, mean_function=Zero(), use_samples=False),
+        GPLayer(
+            l3_kernel, l3_inducing, num_data, mean_function=Zero(), use_samples=False
+        ),
     ]
     return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(Gaussian()))
 
 
-def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
+def train_deep_gp(
+    deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL
+):
     optimizer = tf.optimizers.Adam()
 
-    objective_closure = lambda: - deep_gp.elbo(data)
+    objective_closure = lambda: -deep_gp.elbo(data)
     objective_closure = tf.function(objective_closure, autograph=False)
 
     @tf.function
@@ -88,6 +92,7 @@ def setup_dataset(input_dim: int, num_data: int):
 def plot(train_data, mean=None):
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
+
     fig = plt.figure()
     plt.scatter(*train_data)
     plt.show()
@@ -96,6 +101,7 @@ def plot(train_data, mean=None):
 def get_live_plotter(train_data, model):
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
+
     plt.ion()
 
     X, Y = train_data
@@ -139,15 +145,19 @@ def run_demo(maxiter=int(80e3), plotter_interval=60):
     data = setup_dataset(input_dim, num_data)
     deep_gp = build_deep_gp(input_dim, num_data)
     fig, plotter = get_live_plotter(data, deep_gp)
-    train_deep_gp(deep_gp, data,
+    train_deep_gp(
+        deep_gp,
+        data,
         maxiter=maxiter,
         plotter=plotter,
-        plotter_interval=plotter_interval)
+        plotter_interval=plotter_interval,
+    )
 
 
 def test_smoke():
     import matplotlib
-    matplotlib.use('PS')  # Agg does not support 3D
+
+    matplotlib.use("PS")  # Agg does not support 3D
     run_demo(maxiter=2, plotter_interval=1)
 
 

@@ -94,9 +94,9 @@ def test_add_losses(GPFlowLikelihood):
     f_mean, f_var = gp_layer(X)
     y_mean, y_var = likelihood_layer((f_mean, f_var), training=True, targets=Y)
 
-    expected_loss = -np.sum(np.mean(
-        likelihood_layer.variational_expectations(f_mean, f_var, Y), axis=0
-    ))
+    expected_loss = -np.sum(
+        np.mean(likelihood_layer.variational_expectations(f_mean, f_var, Y), axis=0)
+    )
     np.testing.assert_almost_equal(likelihood_layer.losses, [expected_loss], decimal=11)
     assert likelihood_layer.losses != 0
 

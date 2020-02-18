@@ -97,7 +97,9 @@ def test_local_kls(distribution, w_dim):
     batch_size = 10
     params = distribution.parameters
     posterior_params = {
-        k: [v + 0.5 for _ in range(batch_size)] for k, v in params.items() if isinstance(v, np.ndarray)
+        k: [v + 0.5 for _ in range(batch_size)]
+        for k, v in params.items()
+        if isinstance(v, np.ndarray)
     }
     posterior = lv.distribution(**posterior_params)
     local_kls = lv.local_kls(posterior)

@@ -28,6 +28,7 @@ from gpflux.layers import TrackableLayer
 from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.exceptions import GPInitializationError
 
+
 class GPLayer(TrackableLayer):
     """A sparse variational multioutput GP layer"""
 
@@ -134,14 +135,16 @@ class GPLayer(TrackableLayer):
         if inducing_dim is not None:
             assert inducing_dim == num_latent_gps
 
-        num_inducing_points = len(inducing_variable) # currently the same for each dim
+        num_inducing_points = len(inducing_variable)  # currently the same for each dim
         return num_inducing_points, num_latent_gps
 
     def initialize_inducing_variables(self, **initializer_kwargs):
         if self._initialized:
             raise GPInitializationError("Initializing twice!")
 
-        self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
+        self.initializer.init_inducing_variable(
+            self.inducing_variable, **initializer_kwargs
+        )
         self._initialized = True
 
     def build(self, input_shape):
@@ -156,10 +159,10 @@ class GPLayer(TrackableLayer):
         self,
         inputs,
         *,
-        num_samples: Optional[int]=None,
-        full_output_cov: bool=False,
-        full_cov: bool=False,
-        white: bool=True,
+        num_samples: Optional[int] = None,
+        full_output_cov: bool = False,
+        full_cov: bool = False,
+        white: bool = True,
     ):
         """
         Make a prediction at N test inputs, with input_dim = D, output_dim=Q. Return a
@@ -193,15 +196,13 @@ class GPLayer(TrackableLayer):
         )
 
         if num_samples is None:
-            tf.debugging.assert_shapes([
-                (sample_cond, ['N', 'Q']),
-                (mean_cond, ['N', 'Q']),
-            ])
+            tf.debugging.assert_shapes(
+                [(sample_cond, ["N", "Q"]), (mean_cond, ["N", "Q"]),]
+            )
         else:
-            tf.debugging.assert_shapes([
-                (sample_cond, [num_samples, 'N', 'Q']),
-                (mean_cond, ['N', 'Q']),
-            ])
+            tf.debugging.assert_shapes(
+                [(sample_cond, [num_samples, "N", "Q"]), (mean_cond, ["N", "Q"]),]
+            )
 
         samples = sample_cond + mean_function
         mean = mean_cond + mean_function
@@ -218,7 +219,7 @@ class GPLayer(TrackableLayer):
         )
 
         # TF quirk: add_loss must add a tensor to compile
-        loss = self.prior_kl() if training else tf.constant(0., dtype=default_float())
+        loss = self.prior_kl() if training else tf.constant(0.0, dtype=default_float())
         loss_per_datapoint = loss / self.num_data
 
         self.add_loss(loss_per_datapoint)
@@ -227,7 +228,7 @@ class GPLayer(TrackableLayer):
             return samples
         return mean, cov
 
-    def prior_kl(self, whiten:bool=True):
+    def prior_kl(self, whiten: bool = True):
         """
         The KL divergence from the variational distribution to the prior
 
