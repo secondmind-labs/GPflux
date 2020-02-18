@@ -32,6 +32,7 @@ pipeline {
                 always {
                     junit '**/reports/*.xml'
                     cleanWs notFailBuild: true
+                    cleanWs cleanWhenFailure: true
                 }
             }
         }
