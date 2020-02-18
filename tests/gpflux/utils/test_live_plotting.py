@@ -9,7 +9,7 @@ from gpflux.utils.live_plotter import live_plot
 from gpflux.exceptions import InvalidPlotFunctionError
 
 # No GUI for testing
-matplotlib.use("agg")
+matplotlib.use("cairo")  # fastest non-interactive backend
 
 
 @live_plot
@@ -57,7 +57,31 @@ def test_live_plotter_user_controlled_fig():
         time.sleep(0.3)
 
 
-def test_animation():
+def test_animation_bugfix_regression():
+    animation_dir = "animation_testing_bugfix_regression"
+
+    @live_plot(do_animation=True, animation_dir=animation_dir)
+    def animation_live_plotter_single(data, fig=None, axes=None):
+        x_data, y_data = data
+        axes[0].scatter(x_data, y_data)
+
+    try:
+        for _ in range(5):
+            data = (np.random.randn(50), np.random.randn(50))
+            animation_live_plotter_single(data)
+            time.sleep(0.3)
+
+    finally:
+        # cleanup
+        animation_path = Path(animation_dir)
+        tmp_dir = animation_path / "tmp"
+        for img_file in tmp_dir.glob("*.png"):
+            img_file.unlink()
+        tmp_dir.rmdir()
+        animation_path.rmdir()
+
+
+def test_animation_demo():
     # 1.. Gen video
     for _ in range(5):
         x_data = np.random.randn(50)
@@ -108,6 +132,5 @@ if __name__ == "__main__":
 
     test_live_plotter(default_plotter)
     test_live_plotter(custom_plotter)
-    test_animation()
+    test_animation_demo()
     test_live_plotter_user_controlled_fig()
-    test_bad_wrapped_function()

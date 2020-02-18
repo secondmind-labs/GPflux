@@ -14,3 +14,5 @@ nbconvert
 jupyter_client
 ipykernel
 tornado
+
+pycairo  # non-interactive matplotlib backend for tests

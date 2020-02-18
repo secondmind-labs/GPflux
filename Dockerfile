@@ -5,7 +5,8 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        build-essential \
-       ffmpeg\
+       ffmpeg \
+       libcairo2-dev \
        git \
        tk-dev
 

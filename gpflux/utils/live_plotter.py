@@ -1,13 +1,15 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
+from contextlib import contextmanager
 from functools import wraps
 import inspect
-from contextlib import contextmanager
 from pathlib import Path
 from time import time
 from typing import Callable, Optional, TypeVar, Any, Dict
 
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.animation import FFMpegFileWriter
 
@@ -90,26 +92,35 @@ class LivePlotter:
         def decorated(*args, fig=None, axes=None, **kwargs):
             try:
                 stored_fig = getattr(func, fig_attrname)
-                stored_ax = getattr(func, axes_attrname)
-                for sax in stored_fig.axes:
+                stored_axes = getattr(func, axes_attrname)
+                for sax in stored_axes:
                     sax.clear()
 
-                ret = func(*args, fig=stored_fig, axes=stored_fig.axes, **kwargs)
+                fig = stored_fig
+                axes = stored_axes
+
             except AttributeError:
                 if fig is None:
                     fig = plt.figure(**self.fig_kwargs)
-                if axes is None and self.subplots_kwargs != {}:
-                    axes = fig.subplots(**self.subplots_kwargs)
-                elif axes is None:
-                    axes = [fig.add_subplot(111)]
-                ret = func(*args, fig=fig, axes=axes, **kwargs)
+                if axes is None:
+                    if self.subplots_kwargs != {}:
+                        axes = fig.subplots(**self.subplots_kwargs)
+                    else:
+                        axes = np.array([fig.add_subplot(111)])
+
                 plt.ion()
                 plt.show()
+
                 setattr(func, fig_attrname, fig)
                 setattr(func, axes_attrname, axes)
+
+            ret = func(*args, fig=fig, axes=axes, **kwargs)
+
             plt.pause(0.001)
             return ret
 
+        if not hasattr(decorated, "save"):
+            setattr(decorated, "save", lambda: None)
         return decorated
 
     def animate(self, func):
@@ -130,7 +141,6 @@ class LivePlotter:
         def decorated(*args, fig=None, axes=None, **kwargs):
             try:
                 getattr(func, movie_attrname)
-                ret = func(fig, axes, *args, **kwargs)
             except AttributeError:
                 movie_writer.setup(
                     fig,
@@ -138,8 +148,10 @@ class LivePlotter:
                     frame_prefix=tmp_prefix,
                     dpi=100,
                 )
-                ret = func(*args, **kwargs, fig=fig, axes=axes)
                 setattr(func, movie_attrname, movie_writer)
+
+            ret = func(*args, fig=fig, axes=axes, **kwargs)
+
             movie_writer.grab_frame()
             return ret
 
