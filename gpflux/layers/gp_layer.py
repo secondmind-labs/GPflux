@@ -8,17 +8,9 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from gpflow.kernels import (
-    MultioutputKernel,
-    SharedIndependent,
-    SeparateIndependent,
-    LinearCoregionalization,
-)
+from gpflow.kernels import MultioutputKernel
 from gpflow.conditionals import sample_conditional
-from gpflow.inducing_variables import (
-    MultioutputInducingVariables,
-    FallbackSeparateIndependentInducingVariables,
-)
+from gpflow.inducing_variables import MultioutputInducingVariables
 from gpflow.kullback_leiblers import prior_kl
 from gpflow.mean_functions import MeanFunction, Identity
 from gpflow.utilities.bijectors import triangular
@@ -27,6 +19,7 @@ from gpflow import default_float, Parameter
 from gpflux.layers import TrackableLayer
 from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.exceptions import GPInitializationError
+from gpflux.utils.runtime_checks import verify_compatibility
 
 
 class GPLayer(TrackableLayer):
@@ -77,7 +70,7 @@ class GPLayer(TrackableLayer):
         self.full_cov = full_cov
         self.num_data = num_data
 
-        self.num_inducing, self.num_latent_gps = self.verify_dims(
+        self.num_inducing, self.num_latent_gps = verify_compatibility(
             kernel, mean_function, inducing_variable
         )
 
@@ -102,40 +95,6 @@ class GPLayer(TrackableLayer):
             name="q_sqrt",
         )  # [output_dim, num_inducing, num_inducing]
         self._initialized = False
-
-    @staticmethod
-    def verify_dims(
-        kernel: MultioutputKernel,
-        mean_function: MeanFunction,
-        inducing_variable: MultioutputInducingVariables,
-    ):
-        """
-        Provide error checking on shapes at layer construction. This method will be
-        made simpler by having enhancements to GPflow: eg by adding foo.output_dim
-        attribute, where foo is a MultioutputInducingPoints
-
-        :param kernel: The multioutput kernel for the layer
-        :param inducing_variable: The inducing features for the layer
-        :param mean_function: The mean function applied to the inputs.
-        """
-        if not isinstance(inducing_variable, MultioutputInducingVariables):
-            raise TypeError(
-                "`inducing_variable` must be a `MultioutputInducingVariables`"
-            )
-        if not isinstance(kernel, MultioutputKernel):
-            raise TypeError("`kernel` must be a `MultioutputKernel`")
-
-        inducing_dim = None  # type: Optional[int]
-        if isinstance(inducing_variable, FallbackSeparateIndependentInducingVariables):
-            inducing_dim = len(inducing_variable.inducing_variable_list)
-
-        num_latent_gps = kernel.num_latents
-
-        if inducing_dim is not None:
-            assert inducing_dim == num_latent_gps
-
-        num_inducing_points = len(inducing_variable)  # currently the same for each dim
-        return num_inducing_points, num_latent_gps
 
     def initialize_inducing_variables(self, **initializer_kwargs):
         if self._initialized:
