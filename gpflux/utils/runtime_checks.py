@@ -8,7 +8,7 @@ from gpflow.inducing_variables import (
 from gpflow.kernels import MultioutputKernel
 from gpflow.mean_functions import MeanFunction, Identity
 
-from gpflux.exceptions import GPInitializationError
+from gpflux.exceptions import ShapeIncompatibilityError
 
 
 def verify_compatibility(
@@ -26,9 +26,13 @@ def verify_compatibility(
         :param mean_function: The mean function applied to the inputs.
         """
     if not isinstance(inducing_variable, MultioutputInducingVariables):
-        raise TypeError("`inducing_variable` must be a `MultioutputInducingVariables`")
+        raise TypeError(
+            "`inducing_variable` must be a `gpflow.inducing_variables.MultioutputInducingVariables`"
+        )
     if not isinstance(kernel, MultioutputKernel):
-        raise TypeError("`kernel` must be a `MultioutputKernel`")
+        raise TypeError("`kernel` must be a `gpflow.kernels.MultioutputKernel`")
+    if not isinstance(mean_function, MeanFunction):
+        raise TypeError("`kernel` must be a `gpflow.mean_functions.MeanFunction`")
 
     latent_inducing_points = None  # type: Optional[int]
     if isinstance(inducing_variable, FallbackSeparateIndependentInducingVariables):
@@ -38,9 +42,9 @@ def verify_compatibility(
 
     if latent_inducing_points is not None:
         if latent_inducing_points != num_latent_gps:
-            raise GPInitializationError(
+            raise ShapeIncompatibilityError(
                 f"The number of latent GPs ({num_latent_gps}) does not match "
-                f"the number of independent inducing_variables {latent_inducing_points}"
+                f"the number of separate independent inducing_variables ({latent_inducing_points})"
             )
 
     num_inducing_points = len(inducing_variable)  # currently the same for each dim
