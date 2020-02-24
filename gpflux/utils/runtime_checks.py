@@ -19,7 +19,7 @@ def verify_compatibility(
     """
         Provide error checking on shapes at layer construction. This method will be
         made simpler by having enhancements to GPflow: eg by adding foo.output_dim
-        attribute, where foo is a MultioutputInducingPoints
+        attribute, where foo is a MultioutputInducingVariable
 
         :param kernel: The multioutput kernel for the layer
         :param inducing_variable: The inducing features for the layer
