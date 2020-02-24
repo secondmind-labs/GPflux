@@ -64,7 +64,7 @@ def test_verify_compatibility_type_errors():
     valid_kernel = construct_basic_kernel([RBF()])
     valid_mean_function = Zero()  # all gpflow mean functions are currently valid
 
-    with pytest.raises(TypeError):  # gpflow kernels must me MultioutputKernels
+    with pytest.raises(TypeError):  # gpflow kernels must be MultioutputKernels
         verify_compatibility(RBF(), valid_mean_function, valid_inducing_variable)
 
     Z = valid_inducing_variable.inducing_variable_list[0].Z
