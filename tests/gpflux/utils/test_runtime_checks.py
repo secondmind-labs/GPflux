@@ -71,5 +71,5 @@ def test_verify_compatibility_type_errors():
     inducing_variable = InducingPoints(Z)
     with pytest.raises(
         TypeError
-    ):  # gpflow inducing_variables must me MultioutputInducingVariables
+    ):  # gpflow inducing_variables must be MultioutputInducingVariables
         verify_compatibility(valid_kernel, valid_mean_function, inducing_variable)
