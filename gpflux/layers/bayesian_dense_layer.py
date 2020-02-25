@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kullback_leiblers import gauss_kl
-from gpflow.utilities.bijectors import triangular
+from gpflow.utilities.bijectors import triangular, positive
 from gpflow import default_float, Parameter
 
 from gpflux.layers import TrackableLayer
@@ -83,7 +83,7 @@ class BayesianDenseLayer(TrackableLayer):
                 w_sqrt = 1e-5 * np.ones((self.dim, 1))
         self.w_sqrt = Parameter(
             w_sqrt,
-            transform=triangular() if not self.is_mean_field else None,
+            transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt"
         )
@@ -136,10 +136,15 @@ class BayesianDenseLayer(TrackableLayer):
             samples = samples[:, 0, :]  # [N, Q]
         else:
             samples = tf.transpose(samples, perm=[1, 0, 2])  # [S, N, Q]
-        return samples, None, None
+
+        if self.activity_function is not None:
+            samples = self.activity_function(samples)
+        return samples, samples, tf.ones_like(samples) * 1e-10  # multiple passes forward required!
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
+        assert self.full_output_cov is False
+        assert self.full_cov is False
         samples, mean, cov = self.predict(
             inputs,
             num_samples=None,
