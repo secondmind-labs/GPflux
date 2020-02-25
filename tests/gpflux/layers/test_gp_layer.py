@@ -99,7 +99,7 @@ def test_call_shapes():
     samples = gp_layer(X, training=False)
     assert samples.shape == (batch_size, output_dim)
 
-    gp_layer.use_samples = False
+    gp_layer.returns_samples = False
     assert not gp_layer.full_cov and not gp_layer.full_output_cov
 
     mean, cov = gp_layer(X, training=False)
