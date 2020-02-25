@@ -40,7 +40,7 @@ class GPLayer(TrackableLayer):
         initializer: Optional[Initializer] = None,
         mean_function: Optional[MeanFunction] = None,
         *,
-        use_samples: bool = True,
+        returns_samples: bool = True,
         full_output_cov: bool = False,
         full_cov: bool = False,
     ):
@@ -54,7 +54,7 @@ class GPLayer(TrackableLayer):
             parameters. Default: FeedForwardInitializer
         :param mean_function: The mean function applied to the inputs. Default: Identity
 
-        :param use_samples: If True, return samples on calling the layer,
+        :param returns_samples: If True, return samples on calling the layer,
              Else return mean and variance
         :param full_cov: Use a full covariance in predictions, or just the diagonals
         :param full_output_cov: Return a full output covariance
@@ -72,7 +72,7 @@ class GPLayer(TrackableLayer):
         self.initializer = initializer
         self.mean_function = mean_function
 
-        self.use_samples = use_samples
+        self.returns_samples = returns_samples
         self.full_output_cov = full_output_cov
         self.full_cov = full_cov
         self.num_data = num_data
@@ -223,7 +223,7 @@ class GPLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
-        if self.use_samples:
+        if self.returns_samples:
             return samples
         return mean, cov
 

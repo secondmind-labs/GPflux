@@ -73,7 +73,7 @@ def build_deep_gp(input_dim, Z, likelihood, num_data):
 
         extra_args = {}
         if is_last_layer:
-            extra_args.update(dict(mean_function=Zero(), use_samples=False))
+            extra_args.update(dict(mean_function=Zero(), returns_samples=False))
 
         layer = GPLayer(kernel, inducing_var, num_data, initializer, **extra_args)
         gp_layers.append(layer)
@@ -147,7 +147,7 @@ class BayesBench_DeepGP:
         self._optimize(X, Y, Config)
 
     def predict(self, X):
-        # The last GP layer has use_samples=False, hence the DeepGP model will
+        # The last GP layer has returns_samples=False, hence the DeepGP model will
         # pass a tuple to the likelihood layer, which will in turn call
         # predict_mean_and_var and return mean and variance.
         # TODO: it seems like this is too much magic under the hood

@@ -61,7 +61,7 @@ def test_call_shapes(GPFlowLikelihood):
     likelihood_layer = LikelihoodLayer(GPFlowLikelihood())
 
     # 1. Run tests with gp layer outputting f_mean, f_var
-    gp_layer.use_samples = False
+    gp_layer.returns_samples = False
 
     f_mean, f_var = gp_layer(X)
     y_mean, y_var = likelihood_layer((f_mean, f_var), training=False)
@@ -72,7 +72,7 @@ def test_call_shapes(GPFlowLikelihood):
 
     # 2. Run tests with gp_layer outputting f_sample
 
-    gp_layer.use_samples = True
+    gp_layer.returns_samples = True
 
     f_sample = gp_layer(X)
     y_sample = likelihood_layer(f_sample)  # training flag does not matter here
@@ -89,7 +89,7 @@ def test_add_losses(GPFlowLikelihood):
     likelihood_layer = LikelihoodLayer(GPFlowLikelihood())
 
     # 1. Run tests with gp layer outputting f_mean, f_var
-    gp_layer.use_samples = False
+    gp_layer.returns_samples = False
 
     f_mean, f_var = gp_layer(X)
     y_mean, y_var = likelihood_layer((f_mean, f_var), training=True, targets=Y)
@@ -104,7 +104,7 @@ def test_add_losses(GPFlowLikelihood):
     assert likelihood_layer.losses == [0.0]
 
     # 2. Run tests with gp_layer outputting f_sample
-    gp_layer.use_samples = True
+    gp_layer.returns_samples = True
 
     f_sample = gp_layer(X)
     y_sample = likelihood_layer(f_sample, training=True, targets=Y)

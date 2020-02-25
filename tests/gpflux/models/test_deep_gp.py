@@ -51,7 +51,11 @@ def build_deep_gp(input_dim, num_data):
         GPLayer(l1_kernel, l1_inducing, num_data),
         GPLayer(l2_kernel, l2_inducing, num_data),
         GPLayer(
-            l3_kernel, l3_inducing, num_data, mean_function=Zero(), use_samples=False
+            l3_kernel,
+            l3_inducing,
+            num_data,
+            mean_function=Zero(),
+            returns_samples=False,
         ),
     ]
     return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(Gaussian()))
