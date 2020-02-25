@@ -60,7 +60,7 @@ def build_gp_layers(layer_sizes, num_data):
         gp_layers.append(layer)
 
     gp_layers[-1].mean_function = Zero()
-    gp_layers[-1].use_samples = False
+    gp_layers[-1].returns_samples = False
 
     return gp_layers
 
