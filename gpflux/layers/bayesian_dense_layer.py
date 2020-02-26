@@ -27,7 +27,8 @@ class BayesianDenseLayer(TrackableLayer):
         w_sqrt: Optional[np.ndarray] = None,
         activity_function: Optional[Callable] = None,
         is_mean_field: bool = True,
-        temperature: float = 1e-4
+        temperature: float = 1e-4,
+        returns_samples: bool = True
     ):
         """
         A Bayesian dense layer for variational Bayesian neural nets. This layer holds the
@@ -41,6 +42,7 @@ class BayesianDenseLayer(TrackableLayer):
         :param activity_function: Indicating the type of activity function (None is linear)
         :param is_mean_field: Determines mean field approximation of the weight posterior
         :param temperature: For cooling or heating the posterior
+        :param returns_samples: needed to distinguish between latent and output layers
         """
 
         super().__init__(dtype=default_float())
@@ -61,6 +63,7 @@ class BayesianDenseLayer(TrackableLayer):
         self.activity_function = activity_function
         self.is_mean_field = is_mean_field
         self.temperature = temperature
+        self.returns_samples = returns_samples
 
         self.dim = (input_dim + 1) * output_dim
         self.full_output_cov = False
@@ -161,7 +164,7 @@ class BayesianDenseLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
-        if self.use_samples:
+        if self.returns_samples:
             return samples
         return mean, cov
 
