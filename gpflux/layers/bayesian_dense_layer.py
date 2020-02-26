@@ -38,7 +38,7 @@ class BayesianDenseLayer(TrackableLayer):
         :param num_data: number of data points
         :param w_mu: Initial value of the variational mean (weights + bias)
         :param w_sqrt: Initial value of the variational Cholesky (covering weights + bias)
-        :param activity_function: indicating type of activity function (None is linear)
+        :param activity_function: Indicating the type of activity function (None is linear)
         :param is_mean_field: Determines mean field approximation of the weight posterior
         :param temperature: For cooling or heating the posterior
         """
@@ -69,12 +69,12 @@ class BayesianDenseLayer(TrackableLayer):
         if w_mu is None:
             w = np.random.randn(input_dim, output_dim) * (2. / (input_dim + output_dim)) ** 0.5
             b = np.zeros((1, output_dim))
-            w_mu = np.concatenate((w, b), 0)
+            w_mu = np.reshape(np.concatenate((w, b), 0), (self.dim,))
         self.w_mu = Parameter(
-            np.reshape(w_mu, (self.dim, 1)),
+            w_mu[:, None],
             dtype=default_float(),
             name="w_mu"
-        )
+        )  # [dim, 1]
 
         if w_sqrt is None:
             if not self.is_mean_field:
@@ -86,7 +86,7 @@ class BayesianDenseLayer(TrackableLayer):
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt"
-        )
+        )  # [1, dim, dim] or [dim, 1]
 
         self._initialized = False
 
@@ -104,7 +104,7 @@ class BayesianDenseLayer(TrackableLayer):
         white: bool = False,
     ):
         """
-        Make a sample predictions at N test inputs, with input_dim = D, output_dim=Q. Return a
+        Make a sample predictions at N test inputs, with input_dim = D, output_dim = Q. Return a
         sample, and the conditional mean and covariance at these points.
 
         :param inputs: the inputs to predict at. shape [N, D]
@@ -123,7 +123,7 @@ class BayesianDenseLayer(TrackableLayer):
         if not self.is_mean_field:
             w = tf.math.add(self.w_mu, tf.tensordot(self.w_sqrt[0], z, [[-1], [0]]))  # [dim, S]
         else:
-            w = tf.math.add(self.w_mu, tf.transpose(tf.multiply(self.w_sqrt, z)))  # [dim, S]
+            w = tf.math.add(self.w_mu, tf.multiply(self.w_sqrt, z))  # [dim, S]
 
         N = tf.shape(inputs)[0]
         inputs_concat_1 = tf.concat((inputs, tf.ones((N, 1), dtype=default_float())), 1)  # [N, D+1]
@@ -139,7 +139,9 @@ class BayesianDenseLayer(TrackableLayer):
 
         if self.activity_function is not None:
             samples = self.activity_function(samples)
-        return samples, samples, tf.ones_like(samples) * 1e-10  # multiple passes forward required!
+
+        # Bayesian dense layers need to be used sample-wise, so treat samples as mean and 0 var
+        return samples, samples, tf.ones_like(samples) * 1e-10
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
@@ -152,7 +154,7 @@ class BayesianDenseLayer(TrackableLayer):
             full_cov=self.full_cov,
         )
 
-        # TF quirk: add_loss must add a tensor to compile
+        # TF quirk: add_loss must add a tensor to compile, multiply with temperature
         loss = self.temperature * self.prior_kl() if training \
             else tf.constant(0.0, dtype=default_float())
         loss_per_datapoint = loss / self.num_data

@@ -123,7 +123,7 @@ class GPLayer(TrackableLayer):
         white: bool = True,
     ):
         """
-        Make a prediction at N test inputs, with input_dim = D, output_dim=Q. Return a
+        Make a prediction at N test inputs, with input_dim = D, output_dim = Q. Return a
         sample, and the conditional mean and covariance at these points.
 
         :param inputs: the inputs to predict at. shape [N, D]
