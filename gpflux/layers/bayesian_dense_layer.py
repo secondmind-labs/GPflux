@@ -27,8 +27,7 @@ class BayesianDenseLayer(TrackableLayer):
         w_sqrt: Optional[np.ndarray] = None,
         activity_function: Optional[Callable] = None,
         is_mean_field: bool = True,
-        temperature: float = 1e-4,
-        returns_samples: bool = True
+        temperature: float = 1e-4
     ):
         """
         A Bayesian dense layer for variational Bayesian neural nets. This layer holds the
@@ -42,7 +41,6 @@ class BayesianDenseLayer(TrackableLayer):
         :param activity_function: Indicating the type of activity function (None is linear)
         :param is_mean_field: Determines mean field approximation of the weight posterior
         :param temperature: For cooling or heating the posterior
-        :param returns_samples: needed to distinguish between latent and output layers
         """
 
         super().__init__(dtype=default_float())
@@ -63,11 +61,11 @@ class BayesianDenseLayer(TrackableLayer):
         self.activity_function = activity_function
         self.is_mean_field = is_mean_field
         self.temperature = temperature
-        self.returns_samples = returns_samples
 
         self.dim = (input_dim + 1) * output_dim
         self.full_output_cov = False
         self.full_cov = False
+        self.returns_samples = True
 
         if w_mu is None:
             w = np.random.randn(input_dim, output_dim) * (2. / (input_dim + output_dim)) ** 0.5
@@ -121,7 +119,7 @@ class BayesianDenseLayer(TrackableLayer):
         assert full_cov is False
         assert white is False
 
-        _num_samples = num_samples if num_samples is not None else 1
+        _num_samples = num_samples or 1
         z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
         if not self.is_mean_field:
             w = tf.math.add(self.w_mu, tf.tensordot(self.w_sqrt[0], z, [[-1], [0]]))  # [dim, S]
@@ -143,8 +141,8 @@ class BayesianDenseLayer(TrackableLayer):
         if self.activity_function is not None:
             samples = self.activity_function(samples)
 
-        # Bayesian dense layers need to be used sample-wise, so treat samples as mean and 0 var
-        return samples, samples, tf.ones_like(samples) * 1e-10
+        # Bayesian dense layers need to be used sample-wise, no mean and covariance used
+        return samples, None, None
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
@@ -164,6 +162,7 @@ class BayesianDenseLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
+        assert self.returns_samples is True
         if self.returns_samples:
             return samples
         return mean, cov
