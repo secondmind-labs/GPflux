@@ -140,7 +140,7 @@ class BayesianDenseLayer(TrackableLayer):
         if self.activity_function is not None:
             samples = self.activity_function(samples)
 
-        # treat samples as mean with zero variance
+        # treat samples as mean with zero variance (mean and cov are not required by this use case)
         return samples, samples, tf.ones_like(samples) * 1e-10
 
     def call(self, inputs, training=False):
@@ -162,8 +162,8 @@ class BayesianDenseLayer(TrackableLayer):
         self.add_loss(loss_per_datapoint)
 
         if training is False:
-            return samples  # for prediction, only samples are required
-        return mean, cov  # for training, treat samples as mean with zero variance
+            return samples  # in case of non-training mode, return samples
+        return mean, cov  # for training, treat samples as mean with 0 var (one sample per data)
 
     def prior_kl(self):
         """
