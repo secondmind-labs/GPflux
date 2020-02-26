@@ -27,7 +27,8 @@ class BayesianDenseLayer(TrackableLayer):
         w_sqrt: Optional[np.ndarray] = None,
         activity_function: Optional[Callable] = None,
         is_mean_field: bool = True,
-        temperature: float = 1e-4
+        temperature: float = 1e-4,
+        returns_samples: bool = True
     ):
         """
         A Bayesian dense layer for variational Bayesian neural nets. This layer holds the
@@ -38,9 +39,11 @@ class BayesianDenseLayer(TrackableLayer):
         :param num_data: number of data points
         :param w_mu: Initial value of the variational mean (weights + bias)
         :param w_sqrt: Initial value of the variational Cholesky (covering weights + bias)
-        :param activity_function: Indicating the type of activity function (None is linear)
+        :param activity_function: The type of activity function (None is linear)
         :param is_mean_field: Determines mean field approximation of the weight posterior
         :param temperature: For cooling or heating the posterior
+        :param returns_samples: If True, return samples on calling the layer,
+             Else return mean and variance
         """
 
         super().__init__(dtype=default_float())
@@ -61,6 +64,7 @@ class BayesianDenseLayer(TrackableLayer):
         self.activity_function = activity_function
         self.is_mean_field = is_mean_field
         self.temperature = temperature
+        self.returns_samples = returns_samples
 
         self.dim = (input_dim + 1) * output_dim
         self.full_output_cov = False
@@ -140,7 +144,7 @@ class BayesianDenseLayer(TrackableLayer):
         if self.activity_function is not None:
             samples = self.activity_function(samples)
 
-        # treat samples as mean with zero variance (mean and cov are not required by this use case)
+        # treat samples as mean with zero cov (mean and cov are not required by this use case)
         return samples, samples, tf.ones_like(samples) * 1e-10
 
     def call(self, inputs, training=False):
@@ -161,7 +165,7 @@ class BayesianDenseLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
-        if training is False:
+        if self.returns_samples:
             return samples  # in case of non-training mode, return samples
         return mean, cov  # for training, treat samples as mean with 0 var (one sample per data)
 
