@@ -65,7 +65,6 @@ class BayesianDenseLayer(TrackableLayer):
         self.dim = (input_dim + 1) * output_dim
         self.full_output_cov = False
         self.full_cov = False
-        self.returns_samples = True
 
         if w_mu is None:
             w = np.random.randn(input_dim, output_dim) * (2. / (input_dim + output_dim)) ** 0.5
@@ -141,8 +140,9 @@ class BayesianDenseLayer(TrackableLayer):
         if self.activity_function is not None:
             samples = self.activity_function(samples)
 
-        # Bayesian dense layers need to be used sample-wise, no mean and covariance used
-        return samples, None, None
+        if num_samples is None:  # for training, treat samples as mean with zero variance
+            return None, samples, tf.ones_like(samples) * 1e-10
+        return samples, None, None  # for prediction, only samples are required
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
@@ -162,10 +162,9 @@ class BayesianDenseLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
-        assert self.returns_samples is True
-        if self.returns_samples:
-            return samples
-        return mean, cov
+        if training is False:
+            return samples  # for prediction, only samples are required
+        return mean, cov  # for training, treat samples as mean with zero variance
 
     def prior_kl(self):
         """
