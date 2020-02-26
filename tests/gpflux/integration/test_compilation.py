@@ -14,9 +14,12 @@ from gpflux.models import DeepGP
 
 tf.keras.backend.set_floatx("float64")
 
+
 #########################################
 # Helpers
 #########################################
+
+
 def setup_dataset(input_dim: int, num_data: int):
     lim = [0, 100]
     kernel = RBF(lengthscale=20)
@@ -145,7 +148,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
     test_mini_batch, _ = next(train_dataset_iter)
 
     def objective(data_minibatch):
-        y_pred = deep_gp_model(data_minibatch, training=True)
+        _ = deep_gp_model(data_minibatch, training=True)
         return tf.reduce_sum(deep_gp_model.losses)
 
     def optimization_step(data_minibatch):

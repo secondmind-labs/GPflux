@@ -8,8 +8,6 @@ import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-import tensorflow.keras as keras
-
 from gpflow.kernels import RBF
 
 from gpflux.layers import LatentVariableAugmentationLayer, LatentVariableLayer

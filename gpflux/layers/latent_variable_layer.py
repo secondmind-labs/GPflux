@@ -3,13 +3,12 @@
 # Proprietary and confidential
 """Latent variable layer for deep GPs"""
 
-from typing import Optional, Callable
+from typing import Optional
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflow import default_float, Parameter
+from gpflow import default_float
 
 from gpflux.layers import TrackableLayer
 

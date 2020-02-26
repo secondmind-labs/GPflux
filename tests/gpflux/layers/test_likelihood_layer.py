@@ -1,12 +1,7 @@
-import tensorflow as tf
 import numpy as np
 import pytest
 
-from gpflow.kernels import SeparateIndependent, RBF, Matern12, Matern32, Matern52
-from gpflow.inducing_variables import (
-    SeparateIndependentInducingVariables,
-    InducingPoints,
-)
+from gpflow.kernels import Matern52
 from gpflow.mean_functions import Zero
 from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson
 
@@ -23,7 +18,7 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
     num_data = 100
     data = make_data(input_dim, output_dim, num_data=num_data)
 
-    kernel = construct_basic_kernel(RBF(), output_dim)
+    kernel = construct_basic_kernel(Matern52(), output_dim)
     inducing_vars = construct_basic_inducing_variables(
         num_inducing, input_dim, output_dim
     )
@@ -46,7 +41,7 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
     sigma = 0.1
 
     X = np.random.random(size=(num_data, input_dim)) * lim[1]
-    cov = RBF()(X) + np.eye(num_data) * sigma ** 2
+    cov = Matern52()(X) + np.eye(num_data) * sigma ** 2
     Y = [
         np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
         for _ in range(output_dim)
@@ -107,7 +102,8 @@ def test_add_losses(GPFlowLikelihood):
     gp_layer.returns_samples = True
 
     f_sample = gp_layer(X)
-    y_sample = likelihood_layer(f_sample, training=True, targets=Y)
+    _ = likelihood_layer(f_sample, training=True, targets=Y)
+    # TODO: test for y_sample return value ...
 
     expected_loss = -np.sum(np.mean(likelihood_layer.log_prob(f_sample, Y), axis=0))
     np.testing.assert_almost_equal(likelihood_layer.losses, [expected_loss], decimal=11)

@@ -2,7 +2,6 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import numpy as np
 import tensorflow as tf
 
 from .initializer import VariationalInitializer
@@ -19,8 +18,6 @@ class FeedForwardInitializer(VariationalInitializer):
         super().__init__(init_at_predict=True, q_sqrt_diagonal=q_sqrt_diagonal)
 
     def init_inducing_variable(self, inducing_variable, inputs) -> None:
-        data_rows = tf.reshape(inputs, (-1, inputs.shape[-1]))  # [N, D]
-
         # HACK to deal with multioutput inducing variables
         if hasattr(inducing_variable, "inducing_variable_list"):
             inducing_variable_list = inducing_variable.inducing_variable_list

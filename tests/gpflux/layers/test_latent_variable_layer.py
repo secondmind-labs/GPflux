@@ -4,9 +4,6 @@ import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-import tensorflow.keras as keras
-from tensorflow.keras.layers import Dense, ReLU
-
 from gpflow.kernels import RBF
 from gpflow.kullback_leiblers import gauss_kl
 
@@ -67,7 +64,6 @@ def test_latent_prior_sample(distribution, w_dim):
 @pytest.mark.parametrize("w_dim", [1, 5])
 def test_latent_posterior_sample(test_data, w_dim):
     x_data, y_data = test_data
-    x_dim, y_dim = x_data.shape[1], y_data.shape[1]
     num_data = len(x_data)
 
     means = np.zeros((num_data, w_dim))

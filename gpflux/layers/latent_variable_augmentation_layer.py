@@ -4,7 +4,7 @@
 
 import tensorflow as tf
 
-from gpflux.layers import TrackableLayer, LatentVariableLayer
+from gpflux.layers import LatentVariableLayer
 
 
 class LatentVariableAugmentationLayer(LatentVariableLayer):

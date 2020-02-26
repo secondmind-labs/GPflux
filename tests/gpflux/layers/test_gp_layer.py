@@ -2,11 +2,7 @@ import tensorflow as tf
 import numpy as np
 import pytest
 
-from gpflow.kernels import SeparateIndependent, RBF, Matern12, Matern32, Matern52
-from gpflow.inducing_variables import (
-    SeparateIndependentInducingVariables,
-    InducingPoints,
-)
+from gpflow.kernels import RBF
 from gpflow.mean_functions import Zero
 
 from gpflux.exceptions import GPInitializationError
@@ -94,7 +90,6 @@ def test_call_shapes():
 
     output_dim = Y.shape[-1]
     batch_size = X.shape[0]
-    num_samples = 10
 
     samples = gp_layer(X, training=False)
     assert samples.shape == (batch_size, output_dim)
@@ -164,16 +159,16 @@ def test_losses_are_added():
 
     assert len(gp_layer.losses) == 0
 
-    outputs = gp_layer(X, training=True)
+    _ = gp_layer(X, training=True)
     assert gp_layer.losses == [gp_layer.prior_kl() / gp_layer.num_data]
 
     # Check loss is 0 when training is False
-    outputs = gp_layer(X, training=False)
+    _ = gp_layer(X, training=False)
     assert gp_layer.losses == [tf.zeros_like(gp_layer.losses[0])]
 
     # Check calling multiple times only adds one loss
-    outputs = gp_layer(X, training=True)
-    outputs = gp_layer(X, training=True)
+    _ = gp_layer(X, training=True)
+    _ = gp_layer(X, training=True)
     assert len(gp_layer.losses) == 1
     assert gp_layer.losses == [gp_layer.prior_kl() / gp_layer.num_data]
 
@@ -182,10 +177,10 @@ def test_initialization():
     gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5)
     assert not gp_layer._initialized
 
-    f_pred = gp_layer(X)
+    _ = gp_layer(X)
     assert gp_layer._initialized
 
-    with pytest.raises(GPInitializationError) as e:
+    with pytest.raises(GPInitializationError):
         gp_layer.initialize_inducing_variables()
 
 

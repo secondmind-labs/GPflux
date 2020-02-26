@@ -155,11 +155,11 @@ class GPLayer(TrackableLayer):
 
         if num_samples is None:
             tf.debugging.assert_shapes(
-                [(sample_cond, ["N", "Q"]), (mean_cond, ["N", "Q"]),]
+                [(sample_cond, ["N", "Q"]), (mean_cond, ["N", "Q"])]
             )
         else:
             tf.debugging.assert_shapes(
-                [(sample_cond, [num_samples, "N", "Q"]), (mean_cond, ["N", "Q"]),]
+                [(sample_cond, [num_samples, "N", "Q"]), (mean_cond, ["N", "Q"])]
             )
 
         samples = sample_cond + mean_function
