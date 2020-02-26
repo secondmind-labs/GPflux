@@ -140,9 +140,8 @@ class BayesianDenseLayer(TrackableLayer):
         if self.activity_function is not None:
             samples = self.activity_function(samples)
 
-        if num_samples is None:  # for training, treat samples as mean with zero variance
-            return None, samples, tf.ones_like(samples) * 1e-10
-        return samples, None, None  # for prediction, only samples are required
+        # treat samples as mean with zero variance
+        return samples, samples, tf.ones_like(samples) * 1e-10
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
