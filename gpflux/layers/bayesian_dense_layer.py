@@ -166,8 +166,8 @@ class BayesianDenseLayer(TrackableLayer):
         self.add_loss(loss_per_datapoint)
 
         if self.returns_samples:
-            return samples  # in case of non-training mode, return samples
-        return mean, cov  # for training, treat samples as mean with 0 var (one sample per data)
+            return samples  # for latent layers, return samples
+        return mean, cov  # for output layers, return samples as mean with 0 var
 
     def prior_kl(self):
         """
