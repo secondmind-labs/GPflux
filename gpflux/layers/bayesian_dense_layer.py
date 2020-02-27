@@ -54,7 +54,10 @@ class BayesianDenseLayer(TrackableLayer):
         if w_mu is not None:
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
-            assert w_sqrt.shape == ((input_dim + 1) * output_dim, (input_dim + 1) * output_dim)
+            if not is_mean_field:
+                assert w_sqrt.shape == ((input_dim + 1) * output_dim, (input_dim + 1) * output_dim)
+            else:
+                assert w_sqrt.shape == ((input_dim + 1) * output_dim,)
         assert temperature > 0.0
 
         self.input_dim = input_dim
@@ -82,11 +85,11 @@ class BayesianDenseLayer(TrackableLayer):
 
         if w_sqrt is None:
             if not self.is_mean_field:
-                w_sqrt = 1e-5 * np.eye(self.dim)[None]
+                w_sqrt = 1e-5 * np.eye(self.dim)
             else:
-                w_sqrt = 1e-5 * np.ones((self.dim, 1))
+                w_sqrt = 1e-5 * np.ones((self.dim,))
         self.w_sqrt = Parameter(
-            w_sqrt,
+            w_sqrt[None] if not self.is_mean_field else w_sqrt[:, None],
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt"
@@ -97,6 +100,7 @@ class BayesianDenseLayer(TrackableLayer):
     def build(self, input_shape):
         """Build the variables necessary on first call"""
         super().build(input_shape)
+        self._initialized = True
 
     def predict(
         self,
