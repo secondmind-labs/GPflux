@@ -167,7 +167,7 @@ class BayesianDenseLayer(TrackableLayer):
 
         if self.returns_samples:
             return samples  # for latent layers, return samples
-        return mean, cov  # for output layers, return samples as mean with 0 var
+        return mean, cov  # for output layers, return samples as mean with 0 cov
 
     def prior_kl(self):
         """
