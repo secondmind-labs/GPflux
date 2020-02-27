@@ -14,7 +14,7 @@ requirements = [
 ]
 
 setup(name='gpflux',
-      version="beta",
+      version='0.0.1',
       author="PROWLER.io",
       author_email="gpflux@prowler.io",
       description="GPFlux: Deep GP library",
