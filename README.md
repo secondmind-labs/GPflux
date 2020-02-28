@@ -38,13 +38,32 @@ layer2 = gpflux.layers.GPLayer(kern2, feat2, D_out, mean_function=mean2)
 model = gpflux.DeepGP(X, Y, [layer1, layer2])
 ```
 
-## Install
+## Install and build
 
-GPFlux requires TensorFlow and GPFlow to be installed.
-Running the following the command adds GPFlux to your Python env.
+This project is assuming you are using `python3`.
+
+To install:
 ```bash
-$ python setup.py develop
+make install
 ```
+To run full tests:
+```bash
+make full_test
+```
+To do basic linting:
+```bash
+make lint
+```
+To build (runs make install, full_test and lint in tox environment):
+```bash
+make build
+```
+To profile running time of learning:
+```bash
+make profile
+```
+
+Refer to Makefile for more commands.
 
 ## References
 

@@ -12,60 +12,64 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
+import glob
+import os
 import sys
 import time
-import os
+import traceback
 
-import pytest
+import jupytext
 import nbformat
-
+import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-
-NOTEBOOK_FILES = [
-    "deep_gp_samples.ipynb",
-    "latent_variables_mnist.ipynb",
-]
-
+# To blacklist a notebook, add its full base name (including .ipynb extension,
+# but without any directory component). If there are several notebooks in
+# different directories with the same base name, they will all get blacklisted
+# (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = [
-    "conditional_deep_gp.ipynb",
+    "conditional_deep_gp.py",
+    "deep_nonstationary_gp_samples.py",
 ]
-
-
-@pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
-def test_notebook(notebook_file):
-    _exec_notebook_ts(notebook_file)
-
-
-def test_no_notebook_missing():
-    import glob
-    all_notebooks = glob.glob(os.path.join(_nbpath(), '*.ipynb'))
-    actual_notebook_files = set(map(os.path.basename, all_notebooks))
-    assert set(NOTEBOOK_FILES) == actual_notebook_files - set(BLACKLISTED_NOTEBOOKS)
 
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../notebooks/')
+    return os.path.join(this_dir, "../notebooks/")
+
+
+def get_notebooks():
+    """
+    Returns all notebooks in `_nbpath` that are not blacklisted.
+    """
+
+    def notebook_blacklisted(nb):
+        blacklisted_notebooks_basename = map(os.path.basename, BLACKLISTED_NOTEBOOKS)
+        return os.path.basename(nb) in blacklisted_notebooks_basename
+
+    # recursively traverse the notebook directory in search for ipython notebooks
+    all_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.py"), recursive=True)
+    notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
+    return notebooks_to_test
 
 
 def _preproc():
-    pythonkernel = 'python' + str(sys.version_info[0])
-    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel,
-                               interrupt_on_timeout=True)
+    pythonkernel = "python" + str(sys.version_info[0])
+    return ExecutePreprocessor(
+        timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True
+    )
 
 
 def _exec_notebook(notebook_filename):
-    full_notebook_filename = os.path.join(_nbpath(), notebook_filename)
-    with open(full_notebook_filename) as notebook_file:
-        nb = nbformat.read(notebook_file, as_version=nbformat.current_nbformat)
+    with open(notebook_filename) as notebook_file:
+        nb = jupytext.read(notebook_file, as_version=nbformat.current_nbformat)
         try:
-            _preproc().preprocess(nb, {'metadata': {'path': _nbpath()}})
+            meta_data = {"path": os.path.dirname(notebook_filename)}
+            _preproc().preprocess(nb, {"metadata": meta_data})
         except CellExecutionError as cell_error:
             traceback.print_exc(file=sys.stdout)
-            msg = 'Error executing the notebook {0}. See above for error.\nCell error: {1}'
+            msg = "Error executing the notebook {0}. See above for error.\nCell error: {1}"
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
@@ -73,4 +77,10 @@ def _exec_notebook_ts(notebook_filename):
     ts = time.time()
     _exec_notebook(notebook_filename)
     elapsed = time.time() - ts
-    print(notebook_filename, 'took {0} seconds.'.format(elapsed))
+    print(notebook_filename, "took {0} seconds.".format(elapsed))
+
+
+@pytest.mark.notebooks
+@pytest.mark.parametrize("notebook_file", get_notebooks())
+def test_notebook(notebook_file):
+    _exec_notebook(notebook_file)

@@ -1,0 +1,20 @@
+pytest
+pytest-random-order
+
+# Code quality tools:
+flake8
+mypy
+black
+pytest-cov
+
+tqdm
+
+# Notebook tests:
+jupytext
+nbformat
+nbconvert
+jupyter_client
+ipykernel
+tornado
+
+pycairo  # non-interactive matplotlib backend for tests

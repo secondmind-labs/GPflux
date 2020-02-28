@@ -1,145 +1,121 @@
-# Copyright (C) PROWLER.io 2018 - All Rights Reserved
+# Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""Latent variable layer for deep GPs"""
 
+from typing import Optional
 
-import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
-from enum import Enum
+from gpflow import default_float
 
-from gpflow import settings, params_as_tensors
-from gpflow.kullback_leiblers import gauss_kl
-
-from .layers import BaseLayer
-from ..encoders import RecognitionNetwork
+from gpflux.layers import TrackableLayer
 
 
-class LatentVarMode(Enum):
+class LatentVariableLayer(TrackableLayer):
     """
-    We need to distinguish between training and test points
-    when propagating with latent variables. We have
-    a parameterized variational posterior for the N data,
-    but at test points we might want to do one of three things:
+    A latent variable layer, with amortized mean-field VI.
+
+    The latent variable is distribution agnostic, but assumes a variational posterior
+    that is fully factorised and is of the same distribution family as the prior.
     """
-    # sample from N(0, 1)
-    PRIOR = 1
 
-    # we are dealing with the N observed data points,
-    # so we use the variational posterior
-    POSTERIOR = 2
+    def __init__(
+        self, encoder: tf.keras.Model, prior: tfp.distributions.Distribution,
+    ):
+        """
+        :param prior: A distribution representing the prior over the latent variable
+        :param encoder:  A tf.keras.Model which gets passed the arguments to the call of the
+            LatentVariableLayer and returns the appropriate parameters to the approximate
+            posterior distribution.
+        """
 
-    # for plotting purposes, it is useful to have a mechanism
-    # for setting W to fixed values, e.g. on a grid
-    GIVEN = 3
-
-
-class LatentVariableLayer(BaseLayer):
-    """
-    A latent variable layer, with amortized mean-field VI
-
-    The prior is N(0, 1), and the approximate posterior is factorized
-    into N(a, b), where a, b come from an encoder network.
-
-    When propagating there are two possibilities:
-    1) We're doing inference, so we use the variational distribution
-    2) We're looking at test points, so we use the prior
-    """
-    #TODO(vincent) 2) does not seem to match up with the LatentVarMode doc string
-
-    def __init__(self, latent_dim, XY_dim=None, encoder=None):
-        BaseLayer.__init__(self)
-        self.latent_dim = latent_dim
-
-        if encoder is None:
-            assert XY_dim, 'must pass XY_dim or else an encoder'
-            encoder = RecognitionNetwork(latent_dim, XY_dim, [10, 10])
-
+        super().__init__(dtype=default_float())
         self.encoder = encoder
-        self.is_encoded = False
+        self.prior = prior
+        self.distribution = prior.__class__
 
-    def encode_once(self):
-        if not self.is_encoded:
-            XY = tf.concat([self.root.X, self.root.Y], 1)
-            q_mu, log_q_sqrt = self.encoder(XY)
-            self.q_mu = q_mu
-            self.q_sqrt = tf.nn.softplus(log_q_sqrt - 3.)  # bias it towards small vals at first
-            #TODO(vincent) document this hard-coded feature ^^^
-            self.is_encoded = True
+    def build(self, input_shape):
+        """Build the encoder and shapes necessary on first call"""
+        super().build(input_shape)
+        self.encoder.build(input_shape)
 
-    def KL(self):
-        self.encode_once()
-        return gauss_kl(self.q_mu, self.q_sqrt)
+    def sample_posteriors(
+        self,
+        recognition_data,
+        num_samples: Optional[int] = None,
+        training: bool = False,
+        seed: int = None,
+    ):
+        """
+        Draw samples from the posterior disributions, given data for the encoder layer,
+        and also return those distributions.
 
-    def propagate(self, X, sampling=True, W=None, **kwargs):
-        raise NotImplementedError
+        :param recognition_data: data input for the encoder
+        :param num_samples: number of samples
+        :param training: training flag (for encoder)
+        :param seed: random seed to sample with
 
-    def describe(self):
-        return "{} with latent dim {}"\
-                    .format(self.__class__.__name__,
-                            self.latent_dim)
+        :return: (samples, posteriors)
+        """
+        distributions_params = self.encoder(recognition_data, training)
 
+        posteriors = self.distribution(*distributions_params, allow_nan_stats=False)
 
-class LatentVariableConcatLayer(LatentVariableLayer):
-    """
-    A latent variable layer where the latents are concatenated with the input
-    """
-    @params_as_tensors
-    def propagate(self,
-                  X,
-                  *,
-                  sampling=True,
-                  latent_var_mode=LatentVarMode.POSTERIOR,
-                  W=None,
-                  full_cov=False,
-                  full_output_cov=False):
-
-        self.encode_once()
-        if sampling:
-            if latent_var_mode == LatentVarMode.POSTERIOR:
-                z= tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
-                W = self.q_mu + z * self.q_sqrt
-
-            elif latent_var_mode == LatentVarMode.PRIOR:
-                W = tf.random_normal([tf.shape(X)[0], self.latent_dim],
-                                     dtype=settings.float_type)
-
-            elif latent_var_mode == LatentVarMode.GIVEN:
-                assert isinstance(W, tf.Tensor)
-
-
-            return tf.concat([X, W], 1)
-
+        if num_samples is None:  # mimic numpy - take one sample and squeeze
+            samples = posteriors.sample(1, seed=seed)
+            samples = tf.squeeze(samples, axis=0)  # [N, D]
         else:
+            samples = posteriors.sample(num_samples, seed=seed)  # [S, N, D]
+        return samples, posteriors
 
-            if latent_var_mode == LatentVarMode.POSTERIOR:
-                XW_mean = tf.concat([X, self.q_mu], 1)
-                XW_var = tf.concat([tf.zeros_like(X), self.q_sqrt ** 2])
-                return XW_mean, XW_var
+    def sample_prior(self, sample_shape):
+        """
+        Draw samples from the prior.
 
-            elif latent_var_mode == LatentVarMode.PRIOR:
-                z = tf.zeros([tf.shape(X)[0], self.latent_dim], dtype=settings.float_type)
-                o = tf.ones([tf.shape(X)[0], self.latent_dim], dtype=settings.float_type)
-                XW_mean = tf.concat([X, z], 1)
-                XW_var = tf.concat([tf.zeros_like(X), o])
-                return XW_mean, XW_var
+        :param sample_shape: shape to draw from prior
+        """
+        return self.prior.sample(sample_shape)
 
-            else:
-                raise NotImplementedError
+    def call(
+        self, recognition_data, training: bool = False, seed: int = None,
+    ):
+        """
+        When training: draw a sample of the latent variable from the posterior,
+        whose distribution is parameterized by the encoder mapping from the data.
+        Add a KL divergence posterior||prior to the losses.
 
+        When not training: draw a sample of the latent variable from the prior.
 
-# class LatentVariableAdditiveLayer(LatentVariableLayer):
-#     """
-#     A latent variable layer where the latents are added to the input
-#     """
-#     @params_as_tensors
-#     def propagate(self, X, sampling=True, W=None, **kwargs):
-#         self.encode_once()
-#         if sampling:
-#             if W is None:
-#                 z = tf.random_normal(tf.shape(self.q_mu), dtype=settings.float_type)
-#                 W = self.q_mu + z * self.q_sqrt
-#             return X + W
-#
-#         else:
-#             return X + self.q_mu, self.q_sqrt**2
+        :param recognition_data: the data inputs to the encoder network (if training).
+            if not training - a single tensor, with leading dimensions indicating the
+            number of samples to draw from the prior
+        :param training: training mode indicator
+
+        :return: samples of the latent variable
+        """
+        if training:
+            samples, posteriors = self.sample_posteriors(
+                recognition_data, num_samples=None, training=training, seed=seed
+            )
+            loss = tf.reduce_mean(self.local_kls(posteriors), name="local_kls")
+        else:
+            sample_shape = tf.shape(recognition_data)[:-1]
+            samples = self.sample_prior(sample_shape)
+            loss = tf.constant(0.0, dtype=tf.float64)
+
+        self.add_loss(loss, inputs=True)  # for `inputs`
+        # see https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#add_loss
+        self.add_metric(loss, name="local_kl", aggregation="mean")
+        return samples
+
+    def local_kls(self, posteriors: tfp.distributions.Distribution):
+        """
+        The KL divergences [approximate posterior||prior]
+
+        :param posteriors: a distribution representing the approximate posteriors
+
+        :return: tensor with the KL divergences for each of the posteriors
+        """
+        return posteriors.kl_divergence(self.prior)

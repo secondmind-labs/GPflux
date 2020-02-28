@@ -1,28 +1,29 @@
-"""
-Vincent Dutordoir
-16/07/2018
+# Copyright (C) PROWLER.io 2020 - All Rights Reserved
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
 
-Experiments running bayesian benchmark regression's
-task with Deep GPs.
+"""
+Experiments running bayesian_benchmarks's regression task with Deep GPs.
 """
 
+import tqdm
 import gpflow
-import gpflux
-import numpy as np
+import tensorflow as tf
+from gpflow.mean_functions import Zero
+from gpflow.kernels import SquaredExponential
+from gpflow.likelihoods import Gaussian
+from gpflow.utilities import set_trainable, print_summary
+from gpflux.models import DeepGP
+from gpflux.layers import GPLayer, LikelihoodLayer
+from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
+from gpflux.initializers import GivenZInitializer, FeedForwardInitializer
 
-import gpflow.training.monitor as mon
+import numpy as np
 
 from pprint import pprint
 from scipy.cluster.vq import kmeans2
 
-# from: https://github.com/hughsalimbeni/bayesian_benchmarks
-from bayesian_benchmarks.tasks.regression import run as run_regression
-from bayesian_benchmarks.tasks.regression import argument_parser
-from gpflow.training import AdamOptimizer
 
-
-TENSORBOARD_NAME = "/mnt/vincent/uci2/bayesbench_tensorboards/"
-# TENSORBOARD_NAME = "test/"
 
 def init_inducing_points(X, num):
     if X.shape[0] > num:
@@ -31,7 +32,59 @@ def init_inducing_points(X, num):
         return np.concatenate([X, np.random.randn(num - X.shape[0], X.shape[1])], 0)
 
 
-class BayesBench_DeepGP():
+def build_deep_gp(input_dim, Z, likelihood, num_data):
+    layer_dims = [input_dim, input_dim, 1]
+    num_inducing = Z.shape[0]
+    assert Z.shape == (num_inducing, input_dim)
+
+    def kernel_factory(dim: int, is_last_layer: bool):
+        variance = 1.0 if is_last_layer else 0.1
+        return SquaredExponential(lengthscale=float(dim)**0.5, variance=variance)
+
+    gp_layers = []
+
+    for i_layer, (D_in, D_out) in enumerate(zip(layer_dims[:-1], layer_dims[1:])):
+        is_first_layer = i_layer == 0
+        is_last_layer = i_layer == len(layer_dims) - 2
+
+        # Pass in kernels, specify output dim (shared hyperparams/variables)
+
+        inducing_var = construct_basic_inducing_variables(
+            num_inducing=num_inducing,
+            input_dim=D_in,
+            share_variables=True,
+        )
+
+        kernel = construct_basic_kernel(
+            kernels=kernel_factory(D_in, is_last_layer),
+            output_dim=D_out,
+            share_hyperparams=True,
+        )
+
+        if is_first_layer:
+            initializer = GivenZInitializer(Z)
+        else:
+            initializer = FeedForwardInitializer()
+
+        if not is_last_layer:
+            initializer.q_sqrt_diagonal = 1e-2
+        else:
+            initializer.q_sqrt_diagonal = 1.0
+
+        extra_args = {}
+        if is_last_layer:
+            extra_args.update(dict(mean_function=Zero(), returns_samples=False))
+
+        layer = GPLayer(kernel, inducing_var, num_data, initializer, **extra_args)
+        gp_layers.append(layer)
+
+    return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(likelihood))
+
+
+tf.keras.backend.set_floatx("float64")
+
+
+class BayesBench_DeepGP:
     """
     We wrap our Deep GP model in a RegressionModel class, to comply with
     bayesian_benchmarks' interface. This means we need to implement:
@@ -39,75 +92,84 @@ class BayesBench_DeepGP():
     - predict
     - sample
     """
+    class Config:
+        NATGRAD = True
+        # NATGRAD = False
+        ADAM_LR = 0.01
+        GAMMA = 0.1
+        VAR = 0.01
+        FIX_VAR = False
+        M = 100
+        MAXITER = int(10e3)
+        MINIBATCH = 1000
+        #TB_NAME = TENSORBOARD_NAME +\
+        #          name +\
+        #          "_dgp_var_{}_{}_nat_{}_M_{}".\
+        #            format(VAR, FIX_VAR, NATGRAD, M)
+
     def __init__(self, is_test=False, seed=0):
         self.is_test = is_test
+        if self.is_test:
+            self.Config.M = 5
+            self.Config.MAXITER = 500
 
-    def fit(self, X, Y, Xt=None, Yt=None, name=None):
+    def fit(self, X, Y, Xt=None, Yt=None, name=None, Config=None):
+        if Config is None:
+            Config = self.Config
+
+        num_data = X.shape[0]
+        assert Y.shape[0] == num_data
+        X_dim, Y_dim = X.shape[1], Y.shape[1]
+        assert Y_dim == 1
+
+        if num_data <= Config.MINIBATCH:
+            Config.MINIBATCH = None
+
         self.Xt = Xt
         self.Yt = Yt
-
-        class Config:
-            NATGRAD = True
-            X_dim, Y_dim = X.shape[1], Y.shape[1]
-            D_in = X_dim
-            OUTPUT_DIMS = [D_in, Y.shape[1]]
-            ADAM_LR = 0.01
-            GAMMA = 0.1
-            VAR = 0.01
-            FIX_VAR = False
-            if self.is_test:
-                M = 5
-                MAXITER = 500
-            else:
-                M = 100
-                MAXITER = int(10e3)
-            MB = 1000 if X.shape[0] > 1000 else None
-            TB_NAME = TENSORBOARD_NAME +\
-                      name +\
-                      "_dgp_var_{}_{}_nat_{}_M_{}".\
-                        format(VAR, FIX_VAR, NATGRAD, M)
-
 
         print("Configuration")
         pprint(vars(Config))
 
-        # Layer 1
-        Z1 = init_inducing_points(X, Config.M)
-        feat1 = gpflow.features.InducingPoints(Z1)
-        kern1 = gpflow.kernels.RBF(Config.D_in, lengthscales=Config.D_in ** 0.5, variance=0.1)
-        mean1 = gpflow.mean_functions.Identity(Config.D_in)
-        layer1 = gpflux.layers.GPLayer(kern1, feat1, Config.OUTPUT_DIMS[0],
-                                       mean_function=mean1)
-        layer1.q_sqrt = 1e-5 * layer1.q_sqrt.read_value()
-
-        # Layer 2
-        Z2 = Z1.copy()
-        feat2 = gpflow.features.InducingPoints(Z2)
-        kern2 = gpflow.kernels.RBF(Config.D_in, lengthscales=Config.D_in ** 0.5)
-        mean2 = None  # gpflow.mean_functions.Linear(np.random.randn(Config.D_in, Config.Y_dim))
-        layer2 = gpflux.layers.GPLayer(kern2, feat2, Config.OUTPUT_DIMS[0], mean_function=mean2)
-        # layer2.q_sqrt = 1e-2 * layer2.q_sqrt.read_value()
-
         # build model
-        self.model = gpflux.DeepGP(X, Y, [layer1, layer2], batch_size=Config.MB)
-        self.model.likelihood.variance = Config.VAR
-        self.model.likelihood.set_trainable(not Config.FIX_VAR)
+        Z = init_inducing_points(X, Config.M)
+        likelihood = Gaussian(variance=Config.VAR)
+        set_trainable(likelihood, not Config.FIX_VAR)
+
+        model = build_deep_gp(X_dim, Z, likelihood, num_data)
+
+        print_summary(model)
+
+        self.model = model
         # self.beta = 1.5
-        print(self.model)
 
         # minimize
-        self._optimize(Config)
+        self._optimize(X, Y, Config)
 
     def predict(self, X):
-        return self.model.predict_y(X)
+        # The last GP layer has returns_samples=False, hence the DeepGP model will
+        # pass a tuple to the likelihood layer, which will in turn call
+        # predict_mean_and_var and return mean and variance.
+        # TODO: it seems like this is too much magic under the hood
+        return self.model(X)
 
     def sample(self, X, num_samples):
-        m, v = self.model.predict_y(X)
+        # TODO: ideally we would support running multiple samples through the
+        # DeepGP in the first place, then we could simply pass num_samples
+        assert num_samples in (1, None), "TODO: enable more samples"
+        m, v = self.predict(X)
         return m + np.random.randn(*m.shape) * np.sqrt(v)
 
     def log_pdf(self, Xt, Yt):
-        return self.model.log_pdf(Xt, Yt)
+        # TODO: we may want to do something more sensible for predictive log-
+        # density
+        @tf.function(autograph=False)
+        def elbo_sample():
+            return self.model.elbo((Xt, Yt))
+        elbos = [elbo_sample() for _ in range(100)]
+        return np.mean(elbos)
 
+    """
     def _create_monitor_tasks(self, file_writer, Config):
 
         model_tboard_task = mon.ModelToTensorBoardTask(file_writer, self.model)\
@@ -115,14 +177,14 @@ class BayesBench_DeepGP():
             .with_condition(mon.PeriodicIterationCondition(10))\
             .with_exit_condition(True)
 
-
         print_task = mon.PrintTimingsTask().with_name('print')\
             .with_condition(mon.PeriodicIterationCondition(10))\
             .with_exit_condition(True)
 
         hz = 200
 
-        lml_tboard_task = mon.LmlToTensorBoardTask(file_writer, self.model, display_progress=False)\
+        lml_tboard_task = mon.LmlToTensorBoardTask(file_writer, self.model,
+                                                   display_progress=False)\
             .with_name('lml_tboard')\
             .with_condition(mon.PeriodicIterationCondition(hz))\
             .with_exit_condition(True)
@@ -133,7 +195,7 @@ class BayesBench_DeepGP():
               .with_condition(mon.PeriodicIterationCondition(hz))\
               .with_exit_condition(True)
 
-        kl_u_func = lambda *args, **kwargs: self.model.compute_KL_U()
+        kl_u_func = lambda *args, **kwargs: self.model.compute_KL_U_sum()
         kl_u_task = mon.ScalarFuncToTensorBoardTask(file_writer, kl_u_func, "KL_U")\
               .with_name('kl_u')\
               .with_condition(mon.PeriodicIterationCondition(hz))\
@@ -147,46 +209,69 @@ class BayesBench_DeepGP():
 
         return [print_task, model_tboard_task, lml_tboard_task,
                   test_loglik_task, kl_u_task, data_fit_task]
+    """
 
+    def _optimize(self, X, Y, Config):
 
-    def _optimize(self, Config):
+        num_data = X.shape[0]
+        adam_opt = tf.optimizers.Adam(learning_rate=Config.ADAM_LR)
 
-        session = self.model.enquire_session()
-        global_step = mon.create_global_step(session)
-        file_writer = mon.LogdirWriter(Config.TB_NAME)
-        monitor_tasks = self._create_monitor_tasks(file_writer, Config)
+        data = (X, Y)
 
+        @tf.function(autograph=False)
+        def model_objective(batch):
+            return - self.model.elbo(batch)
 
-        # Adam
-        adam_opt = AdamOptimizer(learning_rate=Config.ADAM_LR)
-        adam_step = adam_opt.make_optimize_action(self.model, global_step=global_step)
+        if Config.MINIBATCH is not None:
+            batch_size = np.minimum(Config.MINIBATCH, num_data)
+            data_minibatch = tf.data.Dataset.from_tensor_slices(data) \
+                .prefetch(num_data).repeat().shuffle(num_data) \
+                .batch(batch_size)
+            data_minibatch_it = iter(data_minibatch)
+
+            def objective_closure() -> tf.Tensor:
+                batch = next(data_minibatch_it)
+                return model_objective(batch)
+
+        else:
+            def objective_closure() -> tf.Tensor:
+                return model_objective(data)
 
         natgrad_step = None
         if Config.NATGRAD:
-            var_params = [self.model.layers[-1].q_mu, self.model.layers[-1].q_sqrt]
-            _ = [param.set_trainable(False) for param in var_params]
-            nat_grad_opt = gpflow.train.NatGradOptimizer(Config.GAMMA)
-            natgrad_step = nat_grad_opt.make_optimize_action(
-                                self.model, var_list=[(var_params[0], var_params[1])])
+            var_params = [(self.model.gp_layers[-1].q_mu, self.model.gp_layers[-1].q_sqrt)]
+            # stop Adam from optimizing variational parameters
+            for param_list in var_params:
+                for param in param_list:
+                    set_trainable(param, False)
 
-        print("Before optimization:", self.model.compute_log_likelihood())
-        with mon.Monitor(monitor_tasks, session, global_step, print_summary=True) as monitor:
-            for i in range(Config.MAXITER):
-                if natgrad_step is not None:
-                    natgrad_step()
-                adam_step()
-                monitor(i)
+            natgrad_opt = gpflow.optimizers.NaturalGradient(gamma=Config.GAMMA)
 
-        print("After optimization:", self.model.compute_log_likelihood())
+            @tf.function
+            def natgrad_step():
+                natgrad_opt.minimize(objective_closure, var_params)
 
+        @tf.function
+        def adam_step():
+            adam_opt.minimize(objective_closure, self.model.trainable_weights)
+
+        print("Before optimization:", self.model.elbo(data))
+        tq = tqdm.tqdm(range(Config.MAXITER))
+        for i in tq:
+            if natgrad_step is not None:
+                natgrad_step()
+            adam_step()
+            if i % 60 == 0:
+                tq.set_postfix_str(f"objective: {objective_closure()}")
+
+        print("After optimization:", self.model.elbo(data))
 
 
 if __name__ == "__main__":
+    # from: https://github.com/Prowler-io/bayesian_benchmarks
+    from bayesian_benchmarks.tasks.regression import run as run_regression
+    from bayesian_benchmarks.tasks.regression import parse_args
 
-    cmd_line_arguments = argument_parser()
-
-    run_regression(cmd_line_arguments.parse_args(),
+    run_regression(parse_args(),
                    is_test=True,
-                   write_to_database=True,
-                   verbose=True,
-                   Model=BayesBench_DeepGP)
+                   model=BayesBench_DeepGP(is_test=False))
