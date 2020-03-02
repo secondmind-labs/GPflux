@@ -51,7 +51,7 @@ class BayesianDenseLayer(TrackableLayer):
         assert input_dim >= 1
         assert output_dim >= 1
         assert num_data >= 1
-        if w_mu is not None:
+        if w_mu is not None:  # add + 1 for the bias
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
             if not is_mean_field:
@@ -76,7 +76,7 @@ class BayesianDenseLayer(TrackableLayer):
         if w_mu is None:
             w = np.random.randn(input_dim, output_dim) * (2. / (input_dim + output_dim)) ** 0.5
             b = np.zeros((1, output_dim))
-            w_mu = np.reshape(np.concatenate((w, b), 0), (self.dim,))
+            w_mu = np.concatenate((w, b), axis=0).reshape((self.dim,))
         self.w_mu = Parameter(
             w_mu[:, None],
             dtype=default_float(),
@@ -129,12 +129,14 @@ class BayesianDenseLayer(TrackableLayer):
         _num_samples = num_samples or 1
         z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
         if not self.is_mean_field:
-            w = tf.math.add(self.w_mu, tf.tensordot(self.w_sqrt[0], z, [[-1], [0]]))  # [dim, S]
+            w = self.w_mu + tf.matmul(self.w_sqrt[0], z)  # [dim, S]
         else:
-            w = tf.math.add(self.w_mu, tf.multiply(self.w_sqrt, z))  # [dim, S]
+            w = self.w_mu + self.w_sqrt * z  # [dim, S]
 
         N = tf.shape(inputs)[0]
-        inputs_concat_1 = tf.concat((inputs, tf.ones((N, 1), dtype=default_float())), 1)  # [N, D+1]
+        inputs_concat_1 = tf.concat(
+            (inputs, tf.ones((N, 1), dtype=default_float())), axis=1
+        )  # [N, D+1]
         samples = tf.tensordot(
             inputs_concat_1,
             tf.reshape(tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)),
@@ -153,8 +155,6 @@ class BayesianDenseLayer(TrackableLayer):
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
-        assert self.full_output_cov is False
-        assert self.full_cov is False
         samples, mean, cov = self.predict(
             inputs,
             num_samples=None,
