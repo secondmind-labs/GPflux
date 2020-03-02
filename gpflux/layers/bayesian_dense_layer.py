@@ -13,6 +13,7 @@ from gpflow.utilities.bijectors import triangular, positive
 from gpflow import default_float, Parameter
 
 from gpflux.layers import TrackableLayer
+from gpflux.helpers import xavier_initialization_numpy
 
 
 class BayesianDenseLayer(TrackableLayer):
@@ -74,7 +75,7 @@ class BayesianDenseLayer(TrackableLayer):
         self.full_cov = False
 
         if w_mu is None:
-            w = np.random.randn(input_dim, output_dim) * (2. / (input_dim + output_dim)) ** 0.5
+            w = xavier_initialization_numpy(input_dim, output_dim)
             b = np.zeros((1, output_dim))
             w_mu = np.concatenate((w, b), axis=0).reshape((self.dim,))
         self.w_mu = Parameter(

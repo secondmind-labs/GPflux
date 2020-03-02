@@ -45,3 +45,7 @@ def construct_basic_inducing_variables(
         empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
         shared_ip = InducingPoints(empty_array)
         return SharedIndependentInducingVariables(shared_ip)
+
+
+def xavier_initialization_numpy(input_dim, output_dim):
+    return np.random.randn(input_dim, output_dim) * (2. / (input_dim + output_dim)) ** 0.5
