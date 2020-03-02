@@ -28,6 +28,13 @@ def construct_basic_inducing_variables(
     num_inducing, input_dim, output_dim=None, share_variables=False
 ):
     if isinstance(num_inducing, list):
+        if output_dim is not None:
+            # TODO: the following assert may clash with MixedMultiOutputFeatures
+            # where the number of independent GPs can differ from the output
+            # dimension
+            assert output_dim == len(num_inducing)
+        assert share_variables is False
+
         inducing_variables = []
         for num_ind_var in num_inducing:
             empty_array = np.zeros((num_ind_var, input_dim), dtype=dfloat())
@@ -42,6 +49,8 @@ def construct_basic_inducing_variables(
         return SeparateIndependentInducingVariables(inducing_variables)
 
     else:
+        # TODO: should we assert output_dim is None ?
+
         empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
         shared_ip = InducingPoints(empty_array)
         return SharedIndependentInducingVariables(shared_ip)

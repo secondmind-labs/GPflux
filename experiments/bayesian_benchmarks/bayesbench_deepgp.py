@@ -16,7 +16,7 @@ from gpflow.utilities import set_trainable, print_summary
 from gpflux.models import DeepGP
 from gpflux.layers import GPLayer, LikelihoodLayer
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux.initializers import GivenZInitializer, FeedForwardInitializer
+from gpflux.initializers import KmeansInitializer, FeedForwardInitializer, ZeroOneVariationalInitializer
 
 import numpy as np
 
@@ -24,18 +24,10 @@ from pprint import pprint
 from scipy.cluster.vq import kmeans2
 
 
+def build_deep_gp(X, likelihood, num_inducing):
+    num_data, input_dim = X.shape
 
-def init_inducing_points(X, num):
-    if X.shape[0] > num:
-        return kmeans2(X, num, minit='points')[0]
-    else:
-        return np.concatenate([X, np.random.randn(num - X.shape[0], X.shape[1])], 0)
-
-
-def build_deep_gp(input_dim, Z, likelihood, num_data):
     layer_dims = [input_dim, input_dim, 1]
-    num_inducing = Z.shape[0]
-    assert Z.shape == (num_inducing, input_dim)
 
     def kernel_factory(dim: int, is_last_layer: bool):
         variance = 1.0 if is_last_layer else 0.1
@@ -62,14 +54,11 @@ def build_deep_gp(input_dim, Z, likelihood, num_data):
         )
 
         if is_first_layer:
-            initializer = GivenZInitializer(Z)
-        else:
+            initializer = KmeansInitializer(X, num_inducing=num_inducing)
+        elif not is_last_layer:
             initializer = FeedForwardInitializer()
-
-        if not is_last_layer:
-            initializer.q_sqrt_diagonal = 1e-2
         else:
-            initializer.q_sqrt_diagonal = 1.0
+            initializer = FeedForwardInitializer(qu_initializer=ZeroOneVariationalInitializer())
 
         extra_args = {}
         if is_last_layer:
@@ -118,9 +107,7 @@ class BayesBench_DeepGP:
             Config = self.Config
 
         num_data = X.shape[0]
-        assert Y.shape[0] == num_data
-        X_dim, Y_dim = X.shape[1], Y.shape[1]
-        assert Y_dim == 1
+        assert Y.shape == (num_data, 1), "only supporting single-output regression problems so far"
 
         if num_data <= Config.MINIBATCH:
             Config.MINIBATCH = None
@@ -132,11 +119,10 @@ class BayesBench_DeepGP:
         pprint(vars(Config))
 
         # build model
-        Z = init_inducing_points(X, Config.M)
         likelihood = Gaussian(variance=Config.VAR)
         set_trainable(likelihood, not Config.FIX_VAR)
 
-        model = build_deep_gp(X_dim, Z, likelihood, num_data)
+        model = build_deep_gp(X, likelihood, num_inducing=Config.M)
 
         print_summary(model)
 
