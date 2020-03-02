@@ -103,6 +103,9 @@ MODEL_BUILDERS = [
 @pytest.mark.parametrize("deep_gp_model_builder", MODEL_BUILDERS)
 def test_model_compilation(deep_gp_model_builder):
     """Test whether a keras functional style model compiles with a standard optimizer"""
+    tf.random.set_seed(0)
+    np.random.seed(0)
+
     layer_sizes = [5, 5, 1]
     num_data = 200
     batch = 100
@@ -114,9 +117,6 @@ def test_model_compilation(deep_gp_model_builder):
     train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).batch(batch)
 
     optimizer = tf.keras.optimizers.Adam()
-
-    tf.random.set_seed(0)
-    np.random.seed(0)
 
     deep_gp_model.compile(optimizer=optimizer)
     history = deep_gp_model.fit(train_dataset, epochs=10)
@@ -132,6 +132,9 @@ def test_model_compilation(deep_gp_model_builder):
 @pytest.mark.parametrize("use_tf_function", [True, False])
 @pytest.mark.parametrize("deep_gp_model_builder", MODEL_BUILDERS)
 def test_model_eager(deep_gp_model_builder, use_tf_function):
+    tf.random.set_seed(0)
+    np.random.seed(0)
+
     layer_sizes = [5, 5, 1]
     num_data = 200
     batch = 100
@@ -159,9 +162,6 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
     if use_tf_function:
         objective = tf.function(objective, autograph=False)
         optimization_step = tf.function(optimization_step, autograph=False)
-
-    tf.random.set_seed(0)
-    np.random.seed(0)
 
     # TO DO: investigate why the difference between OOP vs FP models, and tf.function
     assert 4.46 < objective(test_mini_batch) < 4.59

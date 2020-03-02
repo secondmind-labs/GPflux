@@ -6,7 +6,7 @@ from gpflow.kernels import RBF
 from gpflow.mean_functions import Zero
 
 from gpflux.exceptions import GPInitializationError
-from gpflux.initializers import ZeroOneInitializer
+from gpflux.initializers import ZZeroOneInitializer
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 from gpflux.layers import GPLayer
 
@@ -21,7 +21,7 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
     inducing_vars = construct_basic_inducing_variables(
         num_inducing, input_dim, output_dim
     )
-    initializer = ZeroOneInitializer()
+    initializer = ZZeroOneInitializer()
     mean_function = Zero(output_dim)
 
     gp_layer = GPLayer(
