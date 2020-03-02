@@ -62,11 +62,11 @@ def test_build(is_mean_field):
     assert bnn_layer.is_mean_field == is_mean_field
     assert bnn_layer.dim == dim
     assert bnn_layer.full_output_cov == bnn_layer.full_cov == False
-    assert bnn_layer.w_mu.shape == (dim, 1)
+    assert bnn_layer.w_mu.shape == (dim,)
     if not is_mean_field:
-        assert bnn_layer.w_sqrt.shape == (1, dim, dim)
+        assert bnn_layer.w_sqrt.shape == (dim, dim)
     else:
-        assert bnn_layer.w_sqrt.shape == (dim, 1)
+        assert bnn_layer.w_sqrt.shape == (dim,)
     assert bnn_layer._initialized
 
 

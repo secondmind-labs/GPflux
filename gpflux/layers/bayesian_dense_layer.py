@@ -78,7 +78,7 @@ class BayesianDenseLayer(TrackableLayer):
             b = np.zeros((1, output_dim))
             w_mu = np.concatenate((w, b), axis=0).reshape((self.dim,))
         self.w_mu = Parameter(
-            w_mu[:, None],
+            w_mu,
             dtype=default_float(),
             name="w_mu"
         )  # [dim, 1]
@@ -89,7 +89,7 @@ class BayesianDenseLayer(TrackableLayer):
             else:
                 w_sqrt = 1e-5 * np.ones((self.dim,))
         self.w_sqrt = Parameter(
-            w_sqrt[None] if not self.is_mean_field else w_sqrt[:, None],
+            w_sqrt,
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt"
@@ -129,9 +129,9 @@ class BayesianDenseLayer(TrackableLayer):
         _num_samples = num_samples or 1
         z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
         if not self.is_mean_field:
-            w = self.w_mu + tf.matmul(self.w_sqrt[0], z)  # [dim, S]
+            w = self.w_mu[:, None] + tf.matmul(self.w_sqrt, z)  # [dim, S]
         else:
-            w = self.w_mu + self.w_sqrt * z  # [dim, S]
+            w = self.w_mu[:, None] + self.w_sqrt[:, None] * z  # [dim, S]
 
         N = tf.shape(inputs)[0]
         inputs_concat_1 = tf.concat(
@@ -178,4 +178,7 @@ class BayesianDenseLayer(TrackableLayer):
         The KL divergence from the variational distribution to the prior
         :return: KL divergence from N(w_mu, w_sqrt) to N(0, I)
         """
-        return gauss_kl(self.w_mu, self.w_sqrt)
+        return gauss_kl(
+            self.w_mu[:, None],
+            self.w_sqrt[None] if not self.is_mean_field else self.w_sqrt[:, None]
+        )
