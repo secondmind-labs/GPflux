@@ -14,6 +14,7 @@ from gpflow import default_float, Parameter
 
 from gpflux.layers import TrackableLayer
 from gpflux.helpers import xavier_initialization_numpy
+from gpflux.exceptions import GPInitializationError
 
 
 class BayesianDenseLayer(TrackableLayer):
@@ -26,7 +27,7 @@ class BayesianDenseLayer(TrackableLayer):
         num_data: int,
         w_mu: Optional[np.ndarray] = None,
         w_sqrt: Optional[np.ndarray] = None,
-        activity_function: Optional[Callable] = None,
+        activation: Optional[Callable] = None,
         is_mean_field: bool = True,
         temperature: float = 1e-4,
         returns_samples: bool = True
@@ -40,7 +41,7 @@ class BayesianDenseLayer(TrackableLayer):
         :param num_data: number of data points
         :param w_mu: Initial value of the variational mean (weights + bias)
         :param w_sqrt: Initial value of the variational Cholesky (covering weights + bias)
-        :param activity_function: The type of activity function (None is linear)
+        :param activation: The type of activation function (None is linear)
         :param is_mean_field: Determines mean field approximation of the weight posterior
         :param temperature: For cooling or heating the posterior
         :param returns_samples: If True, return samples on calling the layer,
@@ -65,7 +66,10 @@ class BayesianDenseLayer(TrackableLayer):
         self.output_dim = output_dim
         self.num_data = num_data
 
-        self.activity_function = activity_function
+        self.w_mu_ini = w_mu
+        self.w_sqrt_ini = w_sqrt
+
+        self.activation = activation
         self.is_mean_field = is_mean_field
         self.temperature = temperature
         self.returns_samples = returns_samples
@@ -74,23 +78,14 @@ class BayesianDenseLayer(TrackableLayer):
         self.full_output_cov = False
         self.full_cov = False
 
-        if w_mu is None:
-            w = xavier_initialization_numpy(input_dim, output_dim)
-            b = np.zeros((1, output_dim))
-            w_mu = np.concatenate((w, b), axis=0).reshape((self.dim,))
         self.w_mu = Parameter(
-            w_mu,
+            np.zeros((self.dim,)),
             dtype=default_float(),
             name="w_mu"
         )  # [dim]
 
-        if w_sqrt is None:
-            if not self.is_mean_field:
-                w_sqrt = 1e-5 * np.eye(self.dim)
-            else:
-                w_sqrt = 1e-5 * np.ones((self.dim,))
         self.w_sqrt = Parameter(
-            w_sqrt,
+            np.zeros((self.dim, self.dim)) if not self.is_mean_field else np.ones((self.dim,)),
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt"
@@ -98,10 +93,29 @@ class BayesianDenseLayer(TrackableLayer):
 
         self._initialized = False
 
+    def initialize_variational_distribution(self, **initializer_kwargs):
+        if self._initialized:
+            raise GPInitializationError("Initializing twice!")
+
+        if self.w_mu_ini is None:
+            w = xavier_initialization_numpy(self.input_dim, self.output_dim)
+            b = np.zeros((1, self.output_dim))
+            self.w_mu_ini = np.concatenate((w, b), axis=0).reshape((self.dim,))
+        self.w_mu.assign(self.w_mu_ini)
+
+        if self.w_sqrt_ini is None:
+            if not self.is_mean_field:
+                self.w_sqrt_ini = 1e-5 * np.eye(self.dim)
+            else:
+                self.w_sqrt_ini = 1e-5 * np.ones((self.dim,))
+        self.w_sqrt.assign(self.w_sqrt_ini)
+
+        self._initialized = True
+
     def build(self, input_shape):
         """Build the variables necessary on first call"""
         super().build(input_shape)
-        self._initialized = True
+        self.initialize_variational_distribution()
 
     def predict(
         self,
@@ -148,8 +162,8 @@ class BayesianDenseLayer(TrackableLayer):
         else:
             samples = tf.transpose(samples, perm=[1, 0, 2])  # [S, N, Q]
 
-        if self.activity_function is not None:
-            samples = self.activity_function(samples)
+        if self.activation is not None:
+            samples = self.activation(samples)
 
         # treat samples as mean with zero cov (mean and cov are not required by this use case)
         return samples, samples, tf.ones_like(samples) * 1e-10
@@ -164,8 +178,10 @@ class BayesianDenseLayer(TrackableLayer):
         )
 
         # TF quirk: add_loss must add a tensor to compile, multiply with temperature
-        loss = self.temperature * self.prior_kl() if training \
-            else tf.constant(0.0, dtype=default_float())
+        if training:
+            loss = self.temperature * self.prior_kl()
+        else:
+            loss = tf.constant(0.0, dtype=default_float())
         loss_per_datapoint = loss / self.num_data
 
         self.add_loss(loss_per_datapoint)

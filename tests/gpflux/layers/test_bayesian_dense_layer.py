@@ -26,7 +26,7 @@ def setup_bnn_layer_and_data(is_mean_field: bool):
         num_data,
         w_mu=w_mu,
         w_sqrt=w_sqrt,
-        activity_function=activity_function,
+        activation=activity_function,
         is_mean_field=is_mean_field
     )
     return bnn_layer, data
