@@ -1,11 +1,10 @@
-pytest
-pytest-random-order
-
 # Code quality tools:
 flake8
 mypy
 black
+pytest
 pytest-cov
+pytest-random-order
 
 tqdm
 
