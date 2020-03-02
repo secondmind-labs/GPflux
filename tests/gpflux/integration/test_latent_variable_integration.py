@@ -5,12 +5,9 @@ import pytest
 
 import tensorflow as tf
 import tensorflow_probability as tfp
-
 import tensorflow.keras as keras
-from tensorflow.keras.layers import Dense, ReLU
 
 from gpflow.kernels import RBF
-from gpflow.kullback_leiblers import gauss_kl
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
@@ -22,7 +19,6 @@ from gpflux.layers import (
 )
 from gpflux.encoders import DirectlyParameterizedNormalDiag
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux.models import DeepGP
 
 
 tf.keras.backend.set_floatx("float64")
@@ -82,7 +78,7 @@ def train_model(x_data, y_data, model, use_keras_compile):
         data_batch, _ = next(train_dataset_iter)
 
         def objective(data_minibatch):
-            y_pred = model(data_minibatch, training=True)
+            _ = model(data_minibatch, training=True)
             return tf.reduce_sum(model.losses)
 
         def optimization_step():

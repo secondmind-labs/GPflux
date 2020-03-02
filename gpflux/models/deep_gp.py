@@ -2,7 +2,6 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 import tensorflow as tf
-import numpy as np
 
 from gpflux.layers import GPLayer
 

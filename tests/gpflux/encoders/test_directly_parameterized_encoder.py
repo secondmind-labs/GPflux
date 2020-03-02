@@ -7,8 +7,6 @@ import pytest
 
 import tensorflow as tf
 
-import tensorflow.keras as keras
-
 from gpflux.encoders import DirectlyParameterizedNormalDiag
 from gpflux.exceptions import EncoderInitializationError
 
@@ -49,8 +47,8 @@ def test_bad_shapes():
 
     means = np.random.randn(num_data, latent_dim + 4)
     with pytest.raises(EncoderInitializationError):
-        dp_encoder = DirectlyParameterizedNormalDiag(num_data, latent_dim, means)
+        _ = DirectlyParameterizedNormalDiag(num_data, latent_dim, means)
 
     means = np.random.randn(num_data + 1, latent_dim)
     with pytest.raises(EncoderInitializationError):
-        dp_encoder = DirectlyParameterizedNormalDiag(num_data, latent_dim, means)
+        _ = DirectlyParameterizedNormalDiag(num_data, latent_dim, means)

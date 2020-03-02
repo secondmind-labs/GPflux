@@ -4,7 +4,6 @@
 """A Keras Layer that wraps a likelihood, while containing the necessary operations
 for training"""
 import tensorflow as tf
-from tensorflow.keras.backend import learning_phase
 
 from gpflow.likelihoods import Likelihood
 from gpflow import default_float

@@ -1,12 +1,15 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
+from typing import Optional
+
 from gpflow.inducing_variables import (
     MultioutputInducingVariables,
     FallbackSeparateIndependentInducingVariables,
 )
 from gpflow.kernels import MultioutputKernel
-from gpflow.mean_functions import MeanFunction, Identity
+from gpflow.mean_functions import MeanFunction
 
 from gpflux.exceptions import ShapeIncompatibilityError
 
@@ -34,7 +37,7 @@ def verify_compatibility(
     if not isinstance(mean_function, MeanFunction):
         raise TypeError("`kernel` must be a `gpflow.mean_functions.MeanFunction`")
 
-    latent_inducing_points = None  # type: Optional[int]
+    latent_inducing_points: Optional[int] = None
     if isinstance(inducing_variable, FallbackSeparateIndependentInducingVariables):
         latent_inducing_points = len(inducing_variable.inducing_variable_list)
 

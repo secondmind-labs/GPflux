@@ -4,8 +4,12 @@ pipeline {
         label 'linux'
     }
 
+    environment {
+        ARTIFACTORY_PUSH = credentials('JenkinsArtifactoryUser')
+    }
+
     stages {
-        stage('Test'){
+        stage('Test') {
             agent {
                 dockerfile {
                     filename 'Dockerfile'
@@ -36,5 +40,15 @@ pipeline {
                 }
             }
         }
+        
+        stage('Upload Production Release') {
+            when {
+                branch 'master'
+            }
+            steps {
+                sh "tox -e publish -- ${ARTIFACTORY_PYPI_URL}/pypi-prod-local"
+            }
+        }
+
     }
 }

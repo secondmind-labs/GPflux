@@ -6,24 +6,34 @@ TESTS_NAME = tests
 LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
                      $(LIB_NAME)/layers/__init__.py:F401 \
                      $(LIB_NAME)/models/__init__.py:F401 \
-                     $(LIB_NAME)/initializers/__init__.py:F401"
+                     $(LIB_NAME)/initializers/__init__.py:F401 \
+                     $(LIB_NAME)/encoders/__init__.py:F401"
+
+LINT_IGNORES = "W503,E203"
 
 
 build:
 	tox
+
 install:
 	pip install -e .
 	pip install -r tests_requirements.txt
+
 format-check:
 	black --check $(LIB_NAME) $(TESTS_NAME)
+
 format:
 	black $(LIB_NAME) $(TESTS_NAME)
-full-test: format-check types test
+
 lint:
-	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) $(LIB_NAME) $(TESTS_NAME)
+	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) --extend-ignore=$(LINT_IGNORES) $(LIB_NAME) $(TESTS_NAME)
+
 types:
 	mypy $(LIB_NAME)
-test:
+
+static-tests: format-check lint types
+
+pytest:
 	pytest --cov=$(LIB_NAME) \
 	       --cov-report html:cover_html \
 	       --cov-config .coveragerc \
@@ -33,3 +43,6 @@ test:
 	       --junitxml=reports/junit.xml \
 	       -v --tb=short \
 	       $(TESTS_NAME)
+
+.PHONY: tests
+tests: static-tests pytest

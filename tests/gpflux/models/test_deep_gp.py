@@ -1,14 +1,11 @@
 import numpy as np
-import matplotlib
 
 import tensorflow as tf
 import tqdm
 
 from gpflow.kernels import RBF, Matern12
 from gpflow.likelihoods import Gaussian
-from gpflow.optimizers import Scipy
-from gpflow.mean_functions import Identity, Zero
-from gpflow.utilities import deepcopy_components
+from gpflow.mean_functions import Zero
 
 from gpflux.models import DeepGP
 from gpflux.layers import GPLayer, LikelihoodLayer
@@ -66,8 +63,9 @@ def train_deep_gp(
 ):
     optimizer = tf.optimizers.Adam()
 
-    objective_closure = lambda: -deep_gp.elbo(data)
-    objective_closure = tf.function(objective_closure, autograph=False)
+    @tf.function(autograph=False)
+    def objective_closure():
+        return -deep_gp.elbo(data)
 
     @tf.function
     def step():
@@ -93,18 +91,11 @@ def setup_dataset(input_dim: int, num_data: int):
     return X, Y
 
 
-def plot(train_data, mean=None):
-    from matplotlib import pyplot as plt
-    from mpl_toolkits import mplot3d
-
-    fig = plt.figure()
-    plt.scatter(*train_data)
-    plt.show()
-
-
 def get_live_plotter(train_data, model):
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
+
+    _ = mplot3d  # importing mplot3d has side-effects; we don't actually need to use it
 
     plt.ion()
 
@@ -116,7 +107,7 @@ def get_live_plotter(train_data, model):
     ax.set_xlim3d(np.min(X[:, 0]), np.max(X[:, 0]))
     ax.set_ylim3d(np.min(X[:, 1]), np.max(X[:, 1]))
 
-    line = ax.scatter3D(X[:, 0], X[:, 1], Y, s=2, c="#003366")
+    _ = ax.scatter3D(X[:, 0], X[:, 1], Y, s=2, c="#003366")
 
     test_xx = np.linspace(np.min(X[:, 0]), np.max(X[:, 0]), 50)
     test_yy = np.linspace(np.min(X[:, 1]), np.max(X[:, 1]), 50)
