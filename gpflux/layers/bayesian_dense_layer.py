@@ -81,7 +81,7 @@ class BayesianDenseLayer(TrackableLayer):
             w_mu,
             dtype=default_float(),
             name="w_mu"
-        )  # [dim, 1]
+        )  # [dim]
 
         if w_sqrt is None:
             if not self.is_mean_field:
@@ -93,7 +93,7 @@ class BayesianDenseLayer(TrackableLayer):
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt"
-        )  # [1, dim, dim] or [dim, 1]
+        )  # [dim, dim] or [dim]
 
         self._initialized = False
 
