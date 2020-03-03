@@ -50,5 +50,13 @@ pipeline {
             }
         }
 
+        stage('Upload Develop Release') {
+            when {
+                branch "develop"
+            }
+            steps {
+                sh "tox -e publish -- ${ARTIFACTORY_PYPI_URL}/pypi-dev-local"
+            }
+        }
     }
 }
