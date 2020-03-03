@@ -117,7 +117,7 @@ class BayesianDenseLayer(TrackableLayer):
         super().build(input_shape)
         self.initialize_variational_distribution()
 
-    def predict(
+    def predict_samples(
         self,
         inputs,
         *,
@@ -150,7 +150,7 @@ class BayesianDenseLayer(TrackableLayer):
 
         N = tf.shape(inputs)[0]
         inputs_concat_1 = tf.concat(
-            (inputs, tf.ones((N, 1), dtype=default_float())), axis=1
+            (inputs, tf.ones((N, 1), dtype=default_float())), axis=-1
         )  # [N, D+1]
         samples = tf.tensordot(
             inputs_concat_1,
@@ -158,27 +158,27 @@ class BayesianDenseLayer(TrackableLayer):
             [[-1], [1]]
         )  # [N, S, Q]
         if num_samples is None:
-            samples = samples[:, 0, :]  # [N, Q]
+            samples = tf.squeeze(samples, axis=-2)  # [N, Q]
         else:
             samples = tf.transpose(samples, perm=[1, 0, 2])  # [S, N, Q]
 
         if self.activation is not None:
             samples = self.activation(samples)
 
-        # treat samples as mean with zero cov (mean and cov are not required by this use case)
-        return samples, samples, tf.ones_like(samples) * 1e-10
+        return samples
 
     def call(self, inputs, training=False):
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
-        samples, mean, cov = self.predict(
+        sample = self.predict_samples(
             inputs,
             num_samples=None,
             full_output_cov=self.full_output_cov,
             full_cov=self.full_cov,
         )
 
-        # TF quirk: add_loss must add a tensor to compile, multiply with temperature
+        # TF quirk: add_loss must add a tensor to compile
         if training:
+            # Wenzel et al. 2020: How good is the Bayes posterior in DNNs really?
             loss = self.temperature * self.prior_kl()
         else:
             loss = tf.constant(0.0, dtype=default_float())
@@ -186,9 +186,11 @@ class BayesianDenseLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
+        # for latent layers, return samples
         if self.returns_samples:
-            return samples  # for latent layers, return samples
-        return mean, cov  # for output layers, return samples as mean with 0 cov
+            return sample  # [N, Q]
+        # for output layers, return samples as mean with 0 cov
+        return sample, tf.ones_like(sample) * 1e-10  # [N, Q], [N, Q]
 
     def prior_kl(self):
         """

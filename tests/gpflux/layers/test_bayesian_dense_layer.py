@@ -121,11 +121,11 @@ def test_predict_shapes(is_mean_field):
     batch_size = X.shape[0]
     num_samples = 10
 
-    samples, mean, cov = bnn_layer.predict(X)
-    assert samples.shape == mean.shape == cov.shape == (batch_size, output_dim)
+    samples = bnn_layer.predict_samples(X)
+    assert samples.shape == (batch_size, output_dim)
 
-    samples, mean, cov = bnn_layer.predict(X, num_samples=num_samples)
-    assert samples.shape == mean.shape == cov.shape == (num_samples, batch_size, output_dim)
+    samples = bnn_layer.predict_samples(X, num_samples=num_samples)
+    assert samples.shape == (num_samples, batch_size, output_dim)
 
 
 @pytest.mark.parametrize('is_mean_field', is_mean_field_values)
