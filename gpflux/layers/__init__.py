@@ -8,3 +8,4 @@ from gpflux.layers.latent_variable_augmentation_layer import (
     LatentVariableAugmentationLayer,
 )
 from gpflux.layers.likelihood_layer import LikelihoodLayer
+from gpflux.layers.bayesian_dense_layer import BayesianDenseLayer

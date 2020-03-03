@@ -77,7 +77,6 @@ def test_kl_change_q_sqrt():
     gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5)
 
     gp_layer.build(X.shape)
-
     assert gp_layer.prior_kl() == 0.0
 
     gp_layer.q_sqrt.assign(gp_layer.q_sqrt * 3)
@@ -120,7 +119,6 @@ def test_call_shapes():
 
 def test_predict_shapes():
     gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5)
-
     gp_layer.build(X.shape)
 
     output_dim = Y.shape[-1]
