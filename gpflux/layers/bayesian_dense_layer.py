@@ -30,7 +30,7 @@ class BayesianDenseLayer(TrackableLayer):
         activation: Optional[Callable] = None,
         is_mean_field: bool = True,
         temperature: float = 1e-4,
-        returns_samples: bool = True
+        returns_samples: bool = True,
     ):
         """
         A Bayesian dense layer for variational Bayesian neural nets. This layer holds the
@@ -57,7 +57,10 @@ class BayesianDenseLayer(TrackableLayer):
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
             if not is_mean_field:
-                assert w_sqrt.shape == ((input_dim + 1) * output_dim, (input_dim + 1) * output_dim)
+                assert w_sqrt.shape == (
+                    (input_dim + 1) * output_dim,
+                    (input_dim + 1) * output_dim,
+                )
             else:
                 assert w_sqrt.shape == ((input_dim + 1) * output_dim,)
         assert temperature > 0.0
@@ -79,16 +82,16 @@ class BayesianDenseLayer(TrackableLayer):
         self.full_cov = False
 
         self.w_mu = Parameter(
-            np.zeros((self.dim,)),
-            dtype=default_float(),
-            name="w_mu"
+            np.zeros((self.dim,)), dtype=default_float(), name="w_mu"
         )  # [dim]
 
         self.w_sqrt = Parameter(
-            np.zeros((self.dim, self.dim)) if not self.is_mean_field else np.ones((self.dim,)),
+            np.zeros((self.dim, self.dim))
+            if not self.is_mean_field
+            else np.ones((self.dim,)),
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
-            name="w_sqrt"
+            name="w_sqrt",
         )  # [dim, dim] or [dim]
 
         self._initialized = False
@@ -142,7 +145,9 @@ class BayesianDenseLayer(TrackableLayer):
         assert white is False
 
         _num_samples = num_samples or 1
-        z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
+        z = tf.random.normal(
+            (self.dim, _num_samples), dtype=default_float()
+        )  # [dim, S]
         if not self.is_mean_field:
             w = self.w_mu[:, None] + tf.matmul(self.w_sqrt, z)  # [dim, S]
         else:
@@ -154,8 +159,10 @@ class BayesianDenseLayer(TrackableLayer):
         )  # [N, D+1]
         samples = tf.tensordot(
             inputs_concat_1,
-            tf.reshape(tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)),
-            [[-1], [1]]
+            tf.reshape(
+                tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)
+            ),
+            [[-1], [1]],
         )  # [N, S, Q]
         if num_samples is None:
             samples = tf.squeeze(samples, axis=-2)  # [N, Q]
@@ -199,5 +206,5 @@ class BayesianDenseLayer(TrackableLayer):
         """
         return gauss_kl(
             self.w_mu[:, None],
-            self.w_sqrt[None] if not self.is_mean_field else self.w_sqrt[:, None]
+            self.w_sqrt[None] if not self.is_mean_field else self.w_sqrt[:, None],
         )

@@ -15,8 +15,11 @@ def setup_bnn_layer_and_data(is_mean_field: bool):
     output_dim = 4
     num_data = 100
     w_mu = np.zeros(((input_dim + 1) * output_dim,))
-    w_sqrt = np.eye((input_dim + 1) * output_dim) if not is_mean_field \
+    w_sqrt = (
+        np.eye((input_dim + 1) * output_dim)
+        if not is_mean_field
         else np.ones(((input_dim + 1) * output_dim,))
+    )
     activity_function = tf.nn.relu
     data = make_data(input_dim, output_dim, num_data=num_data)
 
@@ -27,7 +30,7 @@ def setup_bnn_layer_and_data(is_mean_field: bool):
         w_mu=w_mu,
         w_sqrt=w_sqrt,
         activation=activity_function,
-        is_mean_field=is_mean_field
+        is_mean_field=is_mean_field,
     )
     return bnn_layer, data
 
@@ -46,7 +49,7 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
     return X, Y
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_build(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
     input_dim = X.shape[-1]
@@ -61,7 +64,7 @@ def test_build(is_mean_field):
     assert bnn_layer.num_data == num_data
     assert bnn_layer.is_mean_field == is_mean_field
     assert bnn_layer.dim == dim
-    assert bnn_layer.full_output_cov == bnn_layer.full_cov == False
+    assert not bnn_layer.full_output_cov and not bnn_layer.full_cov
     assert bnn_layer.w_mu.shape == (dim,)
     if not is_mean_field:
         assert bnn_layer.w_sqrt.shape == (dim, dim)
@@ -70,7 +73,7 @@ def test_build(is_mean_field):
     assert bnn_layer._initialized
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_kl_change_w_mean(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
 
@@ -82,7 +85,7 @@ def test_kl_change_w_mean(is_mean_field):
     assert bnn_layer.prior_kl() > 0.0
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_kl_change_w_sqrt(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
 
@@ -93,7 +96,7 @@ def test_kl_change_w_sqrt(is_mean_field):
     assert bnn_layer.prior_kl() > 0.0
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_call_shapes(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
     bnn_layer.build(X.shape)
@@ -112,7 +115,7 @@ def test_call_shapes(is_mean_field):
     assert cov.shape == (batch_size, output_dim)
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_predict_shapes(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
     bnn_layer.build(X.shape)
@@ -128,7 +131,7 @@ def test_predict_shapes(is_mean_field):
     assert samples.shape == (num_samples, batch_size, output_dim)
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_losses_are_added(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
     bnn_layer.build(X.shape)
@@ -139,24 +142,28 @@ def test_losses_are_added(is_mean_field):
 
     assert len(bnn_layer.losses) == 0
 
-    outputs = bnn_layer(X, training=True)
-    assert bnn_layer.losses == [bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data]
+    _ = bnn_layer(X, training=True)
+    assert bnn_layer.losses == [
+        bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data
+    ]
 
     # Check loss is 0 when training is False
-    outputs = bnn_layer(X, training=False)
+    _ = bnn_layer(X, training=False)
     assert bnn_layer.losses == [tf.zeros_like(bnn_layer.losses[0])]
 
     # Check calling multiple times only adds one loss
-    outputs = bnn_layer(X, training=True)
-    outputs = bnn_layer(X, training=True)
+    _ = bnn_layer(X, training=True)
+    _ = bnn_layer(X, training=True)
     assert len(bnn_layer.losses) == 1
-    assert bnn_layer.losses == [bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data]
+    assert bnn_layer.losses == [
+        bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data
+    ]
 
 
-@pytest.mark.parametrize('is_mean_field', is_mean_field_values)
+@pytest.mark.parametrize("is_mean_field", is_mean_field_values)
 def test_initialization(is_mean_field):
     bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field)
     assert not bnn_layer._initialized
 
-    f_pred = bnn_layer(X)
+    _ = bnn_layer(X)
     assert bnn_layer._initialized
