@@ -10,7 +10,7 @@ RUN apt-get update \
        git \
        tk-dev
 
-RUN python -m pip install tox==3.2.1
+RUN python -m pip install tox
 
 ADD . /src
 

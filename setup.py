@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 requirements = [
     "numpy",
@@ -21,5 +21,5 @@ setup(
     description="GPFlux: Deep GP library",
     keywords="Deep-Gaussian-processes",
     install_requires=requirements,
-    packages=find_packages(include=["gpflux*", "experiments*"]),
+    packages=find_namespace_packages(include=["gpflux*"]),
 )
