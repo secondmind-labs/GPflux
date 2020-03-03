@@ -17,7 +17,7 @@
 import gpflow
 import gpflux as gpflux
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux.initializers import ZeroOneInitializer
+from gpflux.initializers import ZZeroOneInitializer
 from gpflux.layers import GPLayer
 import numpy as np
 import tensorflow as tf
@@ -40,19 +40,19 @@ M = Z.shape[0]
 inducing_var1 = construct_basic_inducing_variables(M, D, D)
 kernel1 = construct_basic_kernel(gpflow.kernels.SquaredExponential(lengthscale=0.15),
                                  output_dim=D, share_hyperparams=True)
-layer1 = GPLayer(kernel1, inducing_var1, Ns, initializer=ZeroOneInitializer(Z))
+layer1 = GPLayer(kernel1, inducing_var1, Ns, initializer=ZZeroOneInitializer(Z))
 
 # Layer 2
 inducing_var2 = construct_basic_inducing_variables(M, D, D)
 kernel2 = construct_basic_kernel(gpflow.kernels.SquaredExponential(lengthscale=0.8, variance=0.1),
                                  output_dim=D, share_hyperparams=True)
-layer2 = GPLayer(kernel2, inducing_var2, Ns, initializer=ZeroOneInitializer(Z))
+layer2 = GPLayer(kernel2, inducing_var2, Ns, initializer=ZZeroOneInitializer(Z))
 
 # Layer 3
 inducing_var3 = construct_basic_inducing_variables(M, D, D)
 kernel3 = construct_basic_kernel(gpflow.kernels.SquaredExponential(lengthscale=0.3, variance=0.1),
                                  output_dim=D, share_hyperparams=True)
-layer3 = GPLayer(kernel3, inducing_var3, Ns, initializer=ZeroOneInitializer(Z))
+layer3 = GPLayer(kernel3, inducing_var3, Ns, initializer=ZZeroOneInitializer(Z))
 
 gp_layers = [layer1, layer2, layer3]
 for layer in gp_layers:

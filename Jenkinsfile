@@ -43,7 +43,7 @@ pipeline {
         
         stage('Upload Production Release') {
             when {
-                branch 'master'
+                tag "release-*"
             }
             steps {
                 sh "tox -e publish -- ${ARTIFACTORY_PYPI_URL}/pypi-prod-local"

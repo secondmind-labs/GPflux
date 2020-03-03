@@ -6,7 +6,7 @@ from gpflow.mean_functions import Zero
 from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson
 
 from gpflux.layers import GPLayer, LikelihoodLayer
-from gpflux.initializers import ZeroOneInitializer
+from gpflux.initializers import ZZeroOneInitializer
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 
 TEST_GPFLOW_LIKELIHOODS = [Bernoulli, Beta, Gaussian, Poisson]
@@ -22,7 +22,7 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
     inducing_vars = construct_basic_inducing_variables(
         num_inducing, input_dim, output_dim
     )
-    initializer = ZeroOneInitializer()
+    initializer = ZZeroOneInitializer()
     mean_function = Zero(output_dim)
 
     gp_layer = GPLayer(
