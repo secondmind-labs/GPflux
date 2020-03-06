@@ -16,12 +16,15 @@ from gpflow.utilities import set_trainable, print_summary
 from gpflux.models import DeepGP
 from gpflux.layers import GPLayer, LikelihoodLayer
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux.initializers import KmeansInitializer, FeedForwardInitializer, ZeroOneVariationalInitializer
+from gpflux.initializers import (
+    KmeansInitializer,
+    FeedForwardInitializer,
+    ZeroOneVariationalInitializer,
+)
 
 import numpy as np
 
 from pprint import pprint
-from scipy.cluster.vq import kmeans2
 
 
 def build_deep_gp(X, likelihood, num_inducing):
@@ -31,7 +34,7 @@ def build_deep_gp(X, likelihood, num_inducing):
 
     def kernel_factory(dim: int, is_last_layer: bool):
         variance = 1.0 if is_last_layer else 0.1
-        return SquaredExponential(lengthscale=float(dim)**0.5, variance=variance)
+        return SquaredExponential(lengthscale=float(dim) ** 0.5, variance=variance)
 
     gp_layers = []
 
@@ -42,9 +45,7 @@ def build_deep_gp(X, likelihood, num_inducing):
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var = construct_basic_inducing_variables(
-            num_inducing=num_inducing,
-            input_dim=D_in,
-            share_variables=True,
+            num_inducing=num_inducing, input_dim=D_in, share_variables=True,
         )
 
         kernel = construct_basic_kernel(
@@ -58,7 +59,9 @@ def build_deep_gp(X, likelihood, num_inducing):
         elif not is_last_layer:
             initializer = FeedForwardInitializer()
         else:
-            initializer = FeedForwardInitializer(qu_initializer=ZeroOneVariationalInitializer())
+            initializer = FeedForwardInitializer(
+                qu_initializer=ZeroOneVariationalInitializer()
+            )
 
         extra_args = {}
         if is_last_layer:
@@ -81,6 +84,7 @@ class BayesBench_DeepGP:
     - predict
     - sample
     """
+
     class Config:
         NATGRAD = True
         # NATGRAD = False
@@ -91,7 +95,7 @@ class BayesBench_DeepGP:
         M = 100
         MAXITER = int(10e3)
         MINIBATCH = 1000
-        #TB_NAME = TENSORBOARD_NAME +\
+        # TB_NAME = TENSORBOARD_NAME +\
         #          name +\
         #          "_dgp_var_{}_{}_nat_{}_M_{}".\
         #            format(VAR, FIX_VAR, NATGRAD, M)
@@ -107,7 +111,10 @@ class BayesBench_DeepGP:
             Config = self.Config
 
         num_data = X.shape[0]
-        assert Y.shape == (num_data, 1), "only supporting single-output regression problems so far"
+        assert Y.shape == (
+            num_data,
+            1,
+        ), "only supporting single-output regression problems so far"
 
         if num_data <= Config.MINIBATCH:
             Config.MINIBATCH = None
@@ -152,6 +159,7 @@ class BayesBench_DeepGP:
         @tf.function(autograph=False)
         def elbo_sample():
             return self.model.elbo((Xt, Yt))
+
         elbos = [elbo_sample() for _ in range(100)]
         return np.mean(elbos)
 
@@ -206,13 +214,17 @@ class BayesBench_DeepGP:
 
         @tf.function(autograph=False)
         def model_objective(batch):
-            return - self.model.elbo(batch)
+            return -self.model.elbo(batch)
 
         if Config.MINIBATCH is not None:
             batch_size = np.minimum(Config.MINIBATCH, num_data)
-            data_minibatch = tf.data.Dataset.from_tensor_slices(data) \
-                .prefetch(num_data).repeat().shuffle(num_data) \
+            data_minibatch = (
+                tf.data.Dataset.from_tensor_slices(data)
+                .prefetch(num_data)
+                .repeat()
+                .shuffle(num_data)
                 .batch(batch_size)
+            )
             data_minibatch_it = iter(data_minibatch)
 
             def objective_closure() -> tf.Tensor:
@@ -220,12 +232,15 @@ class BayesBench_DeepGP:
                 return model_objective(batch)
 
         else:
+
             def objective_closure() -> tf.Tensor:
                 return model_objective(data)
 
         natgrad_step = None
         if Config.NATGRAD:
-            var_params = [(self.model.gp_layers[-1].q_mu, self.model.gp_layers[-1].q_sqrt)]
+            var_params = [
+                (self.model.gp_layers[-1].q_mu, self.model.gp_layers[-1].q_sqrt)
+            ]
             # stop Adam from optimizing variational parameters
             for param_list in var_params:
                 for param in param_list:
@@ -258,6 +273,4 @@ if __name__ == "__main__":
     from bayesian_benchmarks.tasks.regression import run as run_regression
     from bayesian_benchmarks.tasks.regression import parse_args
 
-    run_regression(parse_args(),
-                   is_test=True,
-                   model=BayesBench_DeepGP(is_test=False))
+    run_regression(parse_args(), is_test=True, model=BayesBench_DeepGP(is_test=False))

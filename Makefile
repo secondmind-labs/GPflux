@@ -1,5 +1,8 @@
 LIB_NAME = gpflux
 TESTS_NAME = tests
+ARCHS_NAME = experiments
+LINT_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME)
+TYPE_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME)
 
 # the --per-file-ignores are to ignore "unused import" warnings in __init__.py files (F401)
 # the F403 ignore in gpflux/__init__.py allows the `from .<submodule> import *`
@@ -20,16 +23,16 @@ install:
 	pip install -r tests_requirements.txt
 
 format-check:
-	black --check $(LIB_NAME) $(TESTS_NAME)
+	black --check $(LINT_NAMES)
 
 format:
-	black $(LIB_NAME) $(TESTS_NAME)
+	black $(LINT_NAMES)
 
 lint:
-	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) --extend-ignore=$(LINT_IGNORES) $(LIB_NAME) $(TESTS_NAME)
+	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) --extend-ignore=$(LINT_IGNORES) $(LINT_NAMES)
 
 types:
-	mypy $(LIB_NAME)
+	mypy $(TYPE_NAMES)
 
 static-tests: format-check lint types
 
