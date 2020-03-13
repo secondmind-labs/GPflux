@@ -10,14 +10,14 @@ from gpflow.inducing_variables import (
     SharedIndependentInducingVariables,
     InducingPoints,
 )
-from gpflow.utilities import deepcopy_components
+from gpflow.utilities import deepcopy
 
 
 def construct_basic_kernel(kernels, output_dim=None, share_hyperparams=False):
     if isinstance(kernels, list):
         mo_kern = SeparateIndependent(kernels)
     elif not share_hyperparams:
-        copies = [deepcopy_components(kernels) for _ in range(output_dim)]
+        copies = [deepcopy(kernels) for _ in range(output_dim)]
         mo_kern = SeparateIndependent(copies)
     else:
         mo_kern = SharedIndependent(kernels, output_dim)
