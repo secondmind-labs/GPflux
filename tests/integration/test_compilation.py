@@ -22,7 +22,7 @@ tf.keras.backend.set_floatx("float64")
 
 def setup_dataset(input_dim: int, num_data: int):
     lim = [0, 100]
-    kernel = RBF(lengthscale=20)
+    kernel = RBF(lengthscales=20)
     sigma = 0.01
     X = np.random.uniform(low=lim[0], high=lim[1], size=(num_data, input_dim))
     cov = kernel(X) + np.eye(num_data) * sigma ** 2

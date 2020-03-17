@@ -41,7 +41,7 @@ def verify_compatibility(
     if isinstance(inducing_variable, FallbackSeparateIndependentInducingVariables):
         latent_inducing_points = len(inducing_variable.inducing_variable_list)
 
-    num_latent_gps = kernel.num_latents
+    num_latent_gps = kernel.num_latent_gps
 
     if latent_inducing_points is not None:
         if latent_inducing_points != num_latent_gps:

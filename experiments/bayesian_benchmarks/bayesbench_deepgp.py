@@ -34,7 +34,7 @@ def build_deep_gp(X, likelihood, num_inducing):
 
     def kernel_factory(dim: int, is_last_layer: bool):
         variance = 1.0 if is_last_layer else 0.1
-        return SquaredExponential(lengthscale=float(dim) ** 0.5, variance=variance)
+        return SquaredExponential(lengthscales=float(dim) ** 0.5, variance=variance)
 
     gp_layers = []
 

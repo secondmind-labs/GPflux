@@ -82,7 +82,7 @@ def train_deep_gp(
 
 def setup_dataset(input_dim: int, num_data: int):
     lim = [0, 100]
-    kernel = RBF(lengthscale=20)
+    kernel = RBF(lengthscales=20)
     sigma = 0.01
     X = np.random.random(size=(num_data, input_dim)) * lim[1]
     cov = kernel.K(X) + np.eye(num_data) * sigma ** 2

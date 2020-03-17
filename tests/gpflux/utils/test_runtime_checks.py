@@ -43,15 +43,15 @@ def make_inducing_variables(num_latent_iv):
 
 @pytest.mark.parametrize("kernel", make_kernels(3))
 @pytest.mark.parametrize("inducing_variable", make_inducing_variables(3))
-def test_verify_compatibility_num_latents_compatible(kernel, inducing_variable):
+def test_verify_compatibility_num_latent_gps_compatible(kernel, inducing_variable):
     mean_function = Zero()
-    _, num_latents = verify_compatibility(kernel, mean_function, inducing_variable)
-    assert num_latents == kernel.num_latents
+    _, num_latent_gps = verify_compatibility(kernel, mean_function, inducing_variable)
+    assert num_latent_gps == kernel.num_latent_gps
 
 
 @pytest.mark.parametrize("kernel", make_kernels(5))
 @pytest.mark.parametrize("inducing_variable", make_inducing_variables(10))
-def test_verify_compatibility_num_latents_incompatible(kernel, inducing_variable):
+def test_verify_compatibility_num_latent_gps_incompatible(kernel, inducing_variable):
     mean_function = Zero()
     with pytest.raises(ShapeIncompatibilityError):
         verify_compatibility(kernel, mean_function, inducing_variable)

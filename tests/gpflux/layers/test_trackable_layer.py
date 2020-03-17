@@ -47,9 +47,9 @@ def setup_layer_modules_variables():
     ]
     modules_variables = [
         modules[0].variance.unconstrained_variable,
-        modules[0].lengthscale.unconstrained_variable,
+        modules[0].lengthscales.unconstrained_variable,
         modules[1].var_0.variance.unconstrained_variable,
-        modules[1].var_0.lengthscale.unconstrained_variable,
+        modules[1].var_0.lengthscales.unconstrained_variable,
         modules[2].var_0,
         modules[2].var_1,
     ]
