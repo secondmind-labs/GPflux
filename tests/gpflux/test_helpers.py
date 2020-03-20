@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 
 from gpflow.kernels import (
@@ -13,7 +15,11 @@ from gpflow.inducing_variables import (
     SharedIndependentInducingVariables,
 )
 
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
+from gpflux.helpers import (
+    construct_basic_kernel,
+    construct_basic_inducing_variables,
+    make_dataclass_from_class,
+)
 
 
 def test_construct_kernel_separate_independent_custom_list():
@@ -96,3 +102,25 @@ def test_construct_inducing_shared_independent_duplicates():
     np.testing.assert_equal(
         moiv.inducing_variable_shared.Z.numpy(), np.zeros((num_inducing, input_dim))
     )
+
+
+def test_make_dataclass_from_class():
+    @dataclass
+    class BlankDataclass:
+        foo: int
+        bar: str
+
+    class PopulatedClass:
+        foo = 42
+        bar = "hello world"
+        baz = "other stuff"
+
+    overwritten = "overwritten"
+    assert PopulatedClass.bar != overwritten
+
+    result = make_dataclass_from_class(
+        BlankDataclass, PopulatedClass(), bar=overwritten
+    )
+    assert isinstance(result, BlankDataclass)
+    assert result.foo == PopulatedClass.foo
+    assert result.bar == overwritten

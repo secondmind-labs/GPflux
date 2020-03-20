@@ -1,6 +1,9 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+from dataclasses import fields
+import inspect
+
 import numpy as np
 
 from gpflow import default_float as dfloat
@@ -54,6 +57,19 @@ def construct_basic_inducing_variables(
         empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
         shared_ip = InducingPoints(empty_array)
         return SharedIndependentInducingVariables(shared_ip)
+
+
+def make_dataclass_from_class(dataclass, instance, **updates):
+    """
+    Takes a regular object `instance` with a superset of fields for a
+    `dataclass` (`@dataclass`-decorated class), i.e. it has all of the
+    dataclass's fields but may also have more, as well as additional key=value
+    keyword arguments (`**updates`), and returns an instance of the dataclass.
+    """
+    dataclass_keys = [f.name for f in fields(dataclass)]
+    field_dict = {k: v for k, v in inspect.getmembers(instance) if k in dataclass_keys}
+    field_dict.update(updates)
+    return dataclass(**field_dict)
 
 
 def xavier_initialization_numpy(input_dim, output_dim):

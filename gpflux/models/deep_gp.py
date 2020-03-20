@@ -30,6 +30,13 @@ class DeepGP(tf.keras.Model):
             intermediate_output = layer(intermediate_output, training=training)
         return intermediate_output
 
+    def predict_y(self, inputs, training=None):
+        if training:
+            raise NotImplementedError("use __call__ for training")
+        final_gp_output = self.predict_f(inputs)
+        final_output = self.likelihood_layer(final_gp_output)
+        return final_output
+
     def call(self, data, training=None):
         inputs, targets = data
 
