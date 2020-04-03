@@ -98,9 +98,9 @@ def test_construct_inducing_shared_independent_duplicates():
 
     assert isinstance(moiv, SharedIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
-    assert len(moiv.inducing_variable_shared) == num_inducing
+    assert len(moiv.inducing_variable) == num_inducing
     np.testing.assert_equal(
-        moiv.inducing_variable_shared.Z.numpy(), np.zeros((num_inducing, input_dim))
+        moiv.inducing_variable.Z.numpy(), np.zeros((num_inducing, input_dim))
     )
 
 

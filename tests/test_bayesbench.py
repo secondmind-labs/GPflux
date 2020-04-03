@@ -35,11 +35,10 @@ def compute_gpr_lml(X, Y):
     model = gpflow.models.GPR(
         (X, Y), gpflow.kernels.SquaredExponential(), noise_variance=0.1
     )
-    neg_log_marginal_likelihood = tf.function(model.neg_log_marginal_likelihood)
     gpflow.optimizers.Scipy().minimize(
-        neg_log_marginal_likelihood, model.trainable_variables, jit=True
+        model.training_loss, model.trainable_variables, compile=True
     )
-    return -neg_log_marginal_likelihood()
+    return -model.training_loss()
 
 
 def test_bayesbench_deepgp_snelson(bayesbench_deepgp):

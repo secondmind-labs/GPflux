@@ -30,15 +30,7 @@ class Initializer(ABC):
         self.qu_initializer.init_variational_params(q_mu, q_sqrt)
 
     def init_inducing_variable(self, inducing_variable, inputs=None) -> None:
-        # HACK to deal with multioutput inducing variables
-        if hasattr(inducing_variable, "inducing_variable_list"):
-            inducing_variable_list = inducing_variable.inducing_variable_list
-        elif hasattr(inducing_variable, "inducing_variable_shared"):
-            inducing_variable_list = [inducing_variable.inducing_variable_shared]
-        else:
-            raise AttributeError("Could not find inducing variable attribute")
-
-        for inducing_var in inducing_variable_list:
+        for inducing_var in inducing_variable.inducing_variables:
             if self.init_at_predict:
                 self.init_single_inducing_variable(inducing_var, inputs=inputs)
             else:
