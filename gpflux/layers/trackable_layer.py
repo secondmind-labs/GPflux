@@ -4,25 +4,38 @@
 """A base Keras Layer that tracks variables and weights in GPflux"""
 
 
-from functools import wraps
 import itertools
+from typing import Any, Callable, List, Optional
+from functools import wraps
 
 import tensorflow as tf
 
 
-def extend_with_method(method):
-    """"
-    This decorator calls a decorated method which returns a list, and extends
-    the result with the return value of another method on the same class. This
-    method is called after the decorated function, with the same arguments as
-    the decorated function.
+def extend_and_filter(
+    extend_method: Callable[..., List],
+    filter_method: Optional[Callable[..., List]] = None,
+) -> Callable[[Any], Any]:
+    """
+    This decorator calls a decorated method, and extends the result with another method
+    on the same class. This method is called after the decorated function, with the same
+    arguments as the decorated function. If specified, a second filter method can be applied
+    to the extended list. Filter method should also be a method from the class.
+
+    :param extend_method: Callable
+        Accepts the same argument as the decorated method.
+        The returned list from `extend_method` will be added to the
+        decorated method's returned list.
+    :param filter_method: Callable
+        Takes in the extended list and filters it.
+        Defaults to no filtering for `filter_method` equal to `None`.
     """
 
     def decorator(f):
         @wraps(f)
         def wrapped(self, *args, **kwargs):
             ret = f(self, *args, **kwargs)
-            ret.extend(method(self, *args, **kwargs))
+            ret.extend(extend_method(self, *args, **kwargs))
+            ret = filter_method(self, ret) if filter_method is not None else ret
             return ret
 
         return wrapped
@@ -69,22 +82,28 @@ class TrackableLayer(tf.keras.layers.Layer):
             if not v.trainable
         ]
 
+    def _dedup_weights(self, weights):
+        """Deduplicate weights while maintaining order as much as possible."""
+        # copy this method from the super class
+        # to have it in the local class' namespace
+        return super()._dedup_weights(weights)
+
     @property  # type: ignore
-    @extend_with_method(submodule_trainable_variables)
+    @extend_and_filter(submodule_trainable_variables, _dedup_weights)
     def trainable_weights(self):
         return super().trainable_weights
 
     @property  # type: ignore
-    @extend_with_method(submodule_non_trainable_variables)
+    @extend_and_filter(submodule_non_trainable_variables, _dedup_weights)
     def non_trainable_weights(self):
         return super().non_trainable_weights
 
     @property  # type: ignore
-    @extend_with_method(submodule_trainable_variables)
+    @extend_and_filter(submodule_trainable_variables, _dedup_weights)
     def trainable_variables(self):
         return super().trainable_variables
 
     @property  # type: ignore
-    @extend_with_method(submodule_variables)
+    @extend_and_filter(submodule_variables, _dedup_weights)
     def variables(self):
         return super().variables
