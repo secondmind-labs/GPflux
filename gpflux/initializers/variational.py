@@ -56,3 +56,23 @@ class ZeroOneVariationalInitializer(MeanFieldVariationalInitializer):
 
     def __init__(self):
         super().__init__(q_sqrt_diagonal=1.0)
+
+
+class GivenVariationalInitializer(VariationalInitializer):
+    """
+    Initialises q(u) to a given distribution.
+    """
+
+    def __init__(self, q_mu, q_sqrt):
+        """
+        Will Initialise q(u) to N(q_mu, q_sqrt q_sqrt^T)
+        """
+        self.q_mu = q_mu
+        self.q_sqrt = q_sqrt
+
+    def init_variational_params(self, q_mu, q_sqrt) -> None:
+        """
+        Initialize the variational parameter to q(u) specified by __init__
+        """
+        q_mu.assign(self.q_mu)
+        q_sqrt.assign(self.q_sqrt)

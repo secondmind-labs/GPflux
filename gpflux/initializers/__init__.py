@@ -5,6 +5,7 @@ from gpflux.initializers.initializer import Initializer
 from gpflux.initializers.variational import (
     MeanFieldVariationalInitializer,
     ZeroOneVariationalInitializer,
+    GivenVariationalInitializer,
 )
 from gpflux.initializers.feed_forward_initializer import FeedForwardInitializer
 from gpflux.initializers.kmeans_initializer import KmeansInitializer

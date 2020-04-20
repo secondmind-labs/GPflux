@@ -1,15 +1,17 @@
 from dataclasses import dataclass
 
 import numpy as np
+import gpflow
 
 from gpflow.kernels import (
-    RBF,
+    SquaredExponential,
     Matern52,
     MultioutputKernel,
     SharedIndependent,
     SeparateIndependent,
 )
 from gpflow.inducing_variables import (
+    InducingPoints,
     MultioutputInducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
@@ -18,12 +20,13 @@ from gpflow.inducing_variables import (
 from gpflux.helpers import (
     construct_basic_kernel,
     construct_basic_inducing_variables,
+    construct_gp_layer,
     make_dataclass_from_class,
 )
 
 
 def test_construct_kernel_separate_independent_custom_list():
-    kernel_list = [RBF(), Matern52()]
+    kernel_list = [SquaredExponential(), Matern52()]
     mok = construct_basic_kernel(kernel_list)
 
     assert isinstance(mok, MultioutputKernel)
@@ -32,14 +35,14 @@ def test_construct_kernel_separate_independent_custom_list():
 
 
 def test_construct_kernel_separate_independent_duplicates():
-    kernel = RBF(variance=5)
+    kernel = Matern52(variance=5)
     output_dim = 3
     mok = construct_basic_kernel(kernel, output_dim=output_dim, share_hyperparams=False)
 
     assert isinstance(mok, MultioutputKernel)
     assert isinstance(mok, SeparateIndependent)
     # check all kernels same type
-    assert all([isinstance(k, RBF) for k in mok.kernels])
+    assert all([isinstance(k, Matern52) for k in mok.kernels])
     # check kernels have same hyperparameter values but are independent
     assert mok.kernels[0] is not mok.kernels[-1]
     assert mok.kernels[0].variance == mok.kernels[-1].variance
@@ -47,14 +50,14 @@ def test_construct_kernel_separate_independent_duplicates():
 
 
 def test_construct_kernel_shared_independent_duplicates():
-    kernel = RBF(variance=5)
+    kernel = Matern52(variance=5)
     output_dim = 3
     mok = construct_basic_kernel(kernel, output_dim=output_dim, share_hyperparams=True)
 
     assert isinstance(mok, MultioutputKernel)
     assert isinstance(mok, SharedIndependent)
 
-    assert isinstance(mok.kernel, RBF)
+    assert isinstance(mok.kernel, Matern52)
     assert mok.kernel is kernel
 
 
@@ -102,6 +105,35 @@ def test_construct_inducing_shared_independent_duplicates():
     np.testing.assert_equal(
         moiv.inducing_variable.Z.numpy(), np.zeros((num_inducing, input_dim))
     )
+
+
+def test_construct_gp_layer():
+    num_data = 11
+    num_inducing = 23
+    input_dim = 5
+    output_dim = 7
+
+    # build layer
+    layer = construct_gp_layer(num_data, num_inducing, input_dim, output_dim)
+
+    # kernel
+    assert isinstance(layer.kernel, SharedIndependent)
+    assert isinstance(layer.kernel.kernel, SquaredExponential)
+    assert (
+        len(layer.kernel.kernel.lengthscales.numpy()) == input_dim
+    ), "expected ARD kernel"
+
+    # inducing variable
+    assert isinstance(layer.inducing_variable, SharedIndependentInducingVariables)
+    assert isinstance(layer.inducing_variable.inducing_variable, InducingPoints)
+    assert len(layer.inducing_variable.inducing_variable) == num_inducing
+
+    # mean function
+    assert isinstance(layer.mean_function, gpflow.mean_functions.Zero)
+
+    # variational parameters
+    assert layer.q_mu.numpy().shape == (num_inducing, output_dim)
+    assert layer.q_sqrt.numpy().shape == (output_dim, num_inducing, num_inducing)
 
 
 def test_make_dataclass_from_class():
