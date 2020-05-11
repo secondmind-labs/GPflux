@@ -39,7 +39,7 @@ def construct_basic_inducing_variables(
             # TODO: the following assert may clash with MixedMultiOutputFeatures
             # where the number of independent GPs can differ from the output
             # dimension
-            assert output_dim == len(num_inducing)
+            assert output_dim == len(num_inducing)  # pragma: no cover
         assert share_variables is False
 
         inducing_variables = []

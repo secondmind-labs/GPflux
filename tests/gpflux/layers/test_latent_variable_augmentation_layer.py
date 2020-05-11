@@ -82,10 +82,10 @@ def test_add_losses(w_dim):
         tf.zeros((num_data, y_dim), dtype=tf.float64),
     )
 
-    _ = lv(inputs=inputs)
+    _ = lv(inputs)
     assert lv.losses == [0.0]
 
-    _ = lv(inputs=inputs, training=True)
+    _ = lv(inputs, training=True)
     _, posteriors = lv.sample_posteriors(recognition_data=None)
     local_kls = [tf.reduce_mean(lv.local_kls(posteriors))]
     np.testing.assert_allclose(lv.losses, local_kls)

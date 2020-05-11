@@ -98,7 +98,7 @@ class BayesianDenseLayer(TrackableLayer):
 
     def initialize_variational_distribution(self, **initializer_kwargs):
         if self._initialized:
-            raise GPInitializationError("Initializing twice!")
+            raise GPInitializationError("Initializing twice!")  # pragma: no cover
 
         if self.w_mu_ini is None:
             w = xavier_initialization_numpy(self.input_dim, self.output_dim)

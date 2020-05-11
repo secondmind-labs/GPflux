@@ -26,7 +26,9 @@ class FeedForwardInitializer(Initializer):
         self, inducing_variable: InducingPoints, inputs=None
     ) -> None:
         if inputs is None:
-            raise ValueError("FeedForwardInitializer requires `inputs` to be passed")
+            raise ValueError(
+                "FeedForwardInitializer requires `inputs` to be passed"
+            )  # pragma: no cover
 
         num_inducing = len(inducing_variable)
         num_data = tf.shape(inputs)[0]

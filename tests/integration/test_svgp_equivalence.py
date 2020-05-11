@@ -52,9 +52,12 @@ def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
 
 
 def assign_svgp_to_sldgp(svgp, sldgp):
+    # NOTE: We need to call the prediction method first to make sure that the
+    # Keras layers have built and the initializers have been called already;
+    # otherwise the initializers would overwrite the assigned q_mu/q_sqrt!
     _ = sldgp.predict_f(
         svgp.inducing_variable.Z
-    )  # make sure keras layers have built; need to call as .build() does not work
+    )  # We cannot call .build() directly as the inputs to the model are (X, Y) tuple, not a float
 
     gp = sldgp.gp_layers[0]
     gp.q_mu.assign(svgp.q_mu)
@@ -93,8 +96,20 @@ def test_svgp_equivalence_after_assign():
 
 
 def fit_adam(model, data, maxiter, adam_learning_rate=0.01):
+    X, Y = data
+    num_data = len(X)
+
     def training_loss():
-        return -model.elbo(data)
+        """
+        NOTE: the Keras model.compile()/fit() uses the implicit losses, which are computed as
+
+        >>> _ = model(data, training=True)
+        >>> return tf.reduce_sum(model.losses)
+
+        The scaling factor leads to a O(1e-3) discrepancy between approaches; to have an exact
+        comparison we therefore re-scale the objective here.
+        """
+        return -model.elbo(data) / num_data
 
     adam = tf.optimizers.Adam(adam_learning_rate)
 
@@ -116,17 +131,174 @@ def keras_fit_adam(model, data, maxiter, adam_learning_rate=0.01):
     model.fit(train_dataset, epochs=maxiter)
 
 
-@pytest.mark.parametrize(
-    "sldgp_fitter, tol_kws",
-    [
-        (fit_adam, {}),
-        (keras_fit_adam, dict(rtol=1e-3, atol=1e-5)),
-    ],  # NOTE smallest tolerance that passes
-)
-def test_svgp_equivalence_with_adam(sldgp_fitter, tol_kws, maxiter=500):
+@pytest.mark.parametrize("sldgp_fitter", [fit_adam, keras_fit_adam])
+def test_svgp_equivalence_with_adam(sldgp_fitter, maxiter=500):
     X, Y = data = load_data()
+
     svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
     fit_adam(svgp, data, maxiter=maxiter)
+
     sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
     sldgp_fitter(sldgp, data, maxiter=maxiter)
-    assert_equivalence(svgp, sldgp, data, **tol_kws)
+
+    assert_equivalence(svgp, sldgp, data)
+
+
+def keras_fit_natgrad(
+    base_model,
+    data,
+    gamma=1.0,
+    adam_learning_rate=0.01,
+    maxiter=1000,
+    use_other_loss_fn=False,
+    momentum=False,
+    run_eagerly=None,
+):
+    if use_other_loss_fn:
+
+        def other_loss_fn():
+            return -base_model.elbo(data)
+
+    else:
+        other_loss_fn = None
+
+    model = gpflux.optimization.NatGradWrapper(base_model, other_loss_fn=other_loss_fn)
+    natgrad = gpflux.optimization.MomentumNaturalGradient(
+        gamma=gamma, momentum=momentum
+    )
+    adam = tf.optimizers.Adam(adam_learning_rate)
+    model.compile(optimizer=[natgrad, adam], run_eagerly=run_eagerly)
+    X, Y = data
+    dataset_tuple = ((X, Y), Y)
+    batch_size = len(X)
+    train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).batch(batch_size)
+    model.fit(train_dataset, epochs=maxiter)
+
+
+def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
+    if isinstance(model, gpflow.models.SVGP):
+        variational_params = [(model.q_mu, model.q_sqrt)]
+    else:
+        layer = model.gp_layers[0]
+        variational_params = [(layer.q_mu, layer.q_sqrt)]
+
+    variational_variables = []
+    for var_list in variational_params:
+        for var in var_list:
+            gpflow.set_trainable(var, False)
+            variational_variables.append(var.unconstrained_variable)
+    hyperparam_variables = model.trainable_variables
+
+    X, Y = data
+    num_data = len(X)
+
+    @tf.function
+    def training_loss():
+        return -model.elbo(data) / num_data
+
+    natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
+    adam = tf.optimizers.Adam(adam_learning_rate)
+
+    @tf.function
+    def optimization_step():
+        """
+        NOTE: In GPflow, we would normally do alternating ascent:
+
+        >>> natgrad.minimize(training_loss, var_list=variational_params)
+        >>> adam.minimize(training_loss, var_list=hyperparam_variables)
+
+        This, however, does not match up with the single pass we require for Keras's
+        model.compile()/fit(). Hence we manually re-create the same optimization step.
+        """
+        with tf.GradientTape() as tape:
+            tape.watch(variational_variables)
+            loss = training_loss()
+        variational_grads, other_grads = tape.gradient(
+            loss, (variational_params, hyperparam_variables)
+        )
+        for (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt) in zip(
+            variational_grads, variational_params
+        ):
+            natgrad._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt)
+        adam.apply_gradients(zip(other_grads, hyperparam_variables))
+
+    for i in range(maxiter):
+        optimization_step()
+
+
+@pytest.mark.parametrize(
+    "sldgp_fitter", [fit_natgrad, keras_fit_natgrad],
+)
+def test_svgp_equivalence_with_natgrad(sldgp_fitter):
+    maxiter = 10
+    X, Y = data = load_data()
+
+    svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
+    fit_natgrad(svgp, data, maxiter=maxiter, gamma=1.0)
+
+    sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
+    sldgp_fitter(sldgp, data, maxiter=maxiter, gamma=1.0)
+
+    assert_equivalence(svgp, sldgp, data)
+
+
+def run_gpflux_sldgp(data, optimizer, maxiter):
+    kernel, likelihood, inducing_variable = make_kernel_likelihood_iv()
+    num_data = len(data[0])
+    model = create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data)
+    if optimizer == "natgrad":
+        fit_natgrad(model, data, maxiter=maxiter)
+    elif optimizer == "adam":
+        fit_adam(model, data, maxiter=maxiter)
+    elif optimizer == "scipy":
+        pytest.skip("Numerically unstable")
+        fit_scipy(model, data, maxiter=maxiter)
+    elif optimizer == "keras_adam":
+        keras_fit_adam(model, data, maxiter=maxiter)
+    elif optimizer == "keras_natgrad":
+        keras_fit_natgrad(
+            model, data, maxiter=maxiter, momentum=False, run_eagerly=True
+        )  # run_eagerly needed so codecov can pick up the lines
+    elif optimizer == "keras_natgrad_momentum":
+        keras_fit_natgrad(
+            model, data, maxiter=maxiter, momentum=True, run_eagerly=True
+        )  # run_eagerly needed so codecov can pick up the lines
+    else:
+        raise NotImplementedError
+    return model
+
+
+def run_gpflow_svgp(data, optimizer, maxiter):
+    kernel, likelihood, inducing_variable = make_kernel_likelihood_iv()
+    model = create_gpflow_svgp(kernel, likelihood, inducing_variable)
+    if optimizer == "natgrad":
+        fit_natgrad(model, data, maxiter=maxiter)
+    elif optimizer == "adam":
+        fit_adam(model, data, maxiter=maxiter)
+    elif optimizer == "scipy":
+        fit_scipy(model, data, maxiter=maxiter)
+    else:
+        raise NotImplementedError
+    return model
+
+
+@pytest.mark.parametrize(
+    "optimizer",
+    [
+        "natgrad",
+        "adam",
+        "scipy",
+        "keras_adam",
+        "keras_natgrad",
+        "keras_natgrad_momentum",
+    ],
+)
+def test_run_gpflux_sldgp(optimizer):
+    data = load_data()
+    _ = run_gpflux_sldgp(data, optimizer, maxiter=10)
+
+
+@pytest.mark.parametrize("optimizer", ["natgrad", "adam", "scipy"])
+def test_run_gpflow_svgp(optimizer):
+    data = load_data()
+    _ = run_gpflow_svgp(data, optimizer, maxiter=10)

@@ -8,9 +8,9 @@ requirements = [
     "scipy",
     "scikit-learn",
     "matplotlib",
-    "tensorflow>=2.0.0",
+    "tensorflow==2.1.0",
     "tensorflow-probability>=0.8.0",
-    "gpflow>=2.0.0rc1",
+    "gpflow>=2.0.2",
 ]
 
 setup(
