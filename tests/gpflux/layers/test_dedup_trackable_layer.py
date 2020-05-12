@@ -6,12 +6,13 @@ from typing import Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from tensorflow.python.util import object_identity
+from tensorflow.python.ops.resource_variable_ops import ResourceVariable
 
 import gpflow
 import gpflux
 from gpflow.utilities import parameter_dict
-from utils import build_gp_layer
-from tensorflow.python.util import object_identity
+from gpflux.helpers import construct_gp_layer
 
 
 class CONFIG:
@@ -49,11 +50,13 @@ def model(data) -> tf.keras.models.Model:
     num_data = len(X)
     input_dim = X.shape[-1]
 
-    layer1 = build_gp_layer(num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim)
+    layer1 = construct_gp_layer(
+        num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim
+    )
     layer1.returns_samples = True
 
     output_dim = Y.shape[-1]
-    layer2 = build_gp_layer(
+    layer2 = construct_gp_layer(
         num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim
     )
     layer2.returns_samples = False
@@ -128,7 +131,11 @@ def test_weights_equals_deduplicated_parameter_dict(model):
     Checks GPflux's `model.trainable_weights` elements equals deduplicated
     GPflow's `gpflow.utilities.parameter_dict(model)`.
     """
-    parameters = parameter_dict(model).values()
+    # We filter out the parameters of type ResourceVariable.
+    # They have been added to the model by the `add_metric` call in the layer.
+    parameters = [
+        p for p in parameter_dict(model).values() if not isinstance(p, ResourceVariable)
+    ]
     variables = map(lambda p: p.unconstrained_variable, parameters)
     deduplicate_variables = object_identity.ObjectIdentitySet(variables)
 

@@ -9,12 +9,12 @@ import numpy as np
 
 import gpflow
 from gpflow import default_float as dfloat
-from gpflow.kernels import SeparateIndependent, SharedIndependent
 from gpflow.inducing_variables import (
     InducingPoints,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
+from gpflow.kernels import SeparateIndependent, SharedIndependent
 from gpflow.utilities import deepcopy
 from gpflux.layers import GPLayer
 from gpflux.initializers import Initializer

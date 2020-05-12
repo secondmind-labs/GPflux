@@ -1,3 +1,4 @@
+from gpflux import callbacks
 from gpflux import encoders
 from gpflux import helpers
 from gpflux import initializers

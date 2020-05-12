@@ -4,11 +4,11 @@ import numpy as np
 import gpflow
 
 from gpflow.kernels import (
-    SquaredExponential,
     Matern52,
     MultioutputKernel,
-    SharedIndependent,
     SeparateIndependent,
+    SharedIndependent,
+    SquaredExponential,
 )
 from gpflow.inducing_variables import (
     InducingPoints,
@@ -18,8 +18,8 @@ from gpflow.inducing_variables import (
 )
 
 from gpflux.helpers import (
-    construct_basic_kernel,
     construct_basic_inducing_variables,
+    construct_basic_kernel,
     construct_gp_layer,
     make_dataclass_from_class,
 )

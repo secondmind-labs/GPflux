@@ -39,6 +39,7 @@ class LikelihoodLayer(TrackableLayer):
             # Scale by batch size, and sum over output dimensions
             loss_per_datapoint = tf.reduce_sum(tf.reduce_mean(losses, axis=0))
             self.add_loss(loss_per_datapoint)
+            self.add_metric(loss_per_datapoint, name="elbo_datafit", aggregation="mean")
 
             return self.predict_mean_and_var(F_mu, F_var)
         else:
@@ -53,6 +54,7 @@ class LikelihoodLayer(TrackableLayer):
             # Scale by batch size, and sum over output dimensions
             loss_per_datapoint = tf.reduce_sum(tf.reduce_mean(losses, axis=0))
             self.add_loss(loss_per_datapoint)
+            self.add_metric(loss_per_datapoint, name="elbo_datafit", aggregation="mean")
 
             # TO DO: should not be identity - we should sample through the likelihood
             return tf.identity(inputs)

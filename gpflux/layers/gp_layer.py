@@ -107,6 +107,7 @@ class GPLayer(TrackableLayer):
 
     def build(self, input_shape):
         """Build the variables necessary on first call"""
+
         super().build(input_shape)
         self.initializer.init_variational_params(self.q_mu, self.q_sqrt)
 
@@ -181,6 +182,7 @@ class GPLayer(TrackableLayer):
         loss_per_datapoint = loss / self.num_data
 
         self.add_loss(loss_per_datapoint)
+        self.add_metric(loss_per_datapoint, name="elbo_kl_gp", aggregation="mean")
 
         if self.returns_samples:
             return samples

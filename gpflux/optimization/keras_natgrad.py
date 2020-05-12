@@ -98,7 +98,9 @@ class NatGradModel(tf.keras.Model):
         # NOTE the structure of variational_params is directly linked to the _natgrad_step,
         # do not change out of sync
         variational_params = [
-            (l.q_mu, l.q_sqrt) for l in self.layers if isinstance(l, GPLayer)
+            (layer.q_mu, layer.q_sqrt)
+            for layer in self.layers
+            if isinstance(layer, GPLayer)
         ]
         # NOTE could use a natgrad_parameters attribute on a layer or a
         # singledispatch function to make this more flexible for other layers
