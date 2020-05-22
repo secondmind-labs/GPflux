@@ -36,6 +36,9 @@ class GPLayer(TrackableLayer):
         returns_samples: bool = True,
         full_output_cov: bool = False,
         full_cov: bool = False,
+        verify: bool = True,
+        num_latent_gps: int = None,
+        white: bool = True,
     ):
         """
         A sparse variational GP layer in whitened representation. This layer holds the
@@ -69,10 +72,15 @@ class GPLayer(TrackableLayer):
         self.full_output_cov = full_output_cov
         self.full_cov = full_cov
         self.num_data = num_data
+        self.white = white
 
-        self.num_inducing, self.num_latent_gps = verify_compatibility(
-            kernel, mean_function, inducing_variable
-        )
+        if verify:
+            self.num_inducing, self.num_latent_gps = verify_compatibility(
+                kernel, mean_function, inducing_variable
+            )
+        else:
+            self.num_inducing, self.num_latent_gps = len(inducing_variable), num_latent_gps
+
 
         # TODO the initial value of q_mu and q_sqrt got changed from empty()
         # to zeros() due to the new Parameter validation in gpflow2, which
@@ -175,10 +183,11 @@ class GPLayer(TrackableLayer):
             num_samples=None,
             full_output_cov=self.full_output_cov,
             full_cov=self.full_cov,
+            white=self.white,
         )
 
         # TF quirk: add_loss must add a tensor to compile
-        loss = self.prior_kl() if training else tf.constant(0.0, dtype=default_float())
+        loss = self.prior_kl(whiten=self.white) if training else tf.constant(0.0, dtype=default_float())
         loss_per_datapoint = loss / self.num_data
 
         self.add_loss(loss_per_datapoint)
