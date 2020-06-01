@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 import gpflux
+import pio_mllib.optimizers
 
 tf.keras.backend.set_floatx("float64")
 
@@ -163,7 +164,7 @@ def keras_fit_natgrad(
         other_loss_fn = None
 
     model = gpflux.optimization.NatGradWrapper(base_model, other_loss_fn=other_loss_fn)
-    natgrad = gpflux.optimization.MomentumNaturalGradient(
+    natgrad = pio_mllib.optimizers.MomentumNaturalGradient(
         gamma=gamma, momentum=momentum
     )
     adam = tf.optimizers.Adam(adam_learning_rate)

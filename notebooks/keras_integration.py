@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 import gpflux
+import pio_mllib.optimizers
 from gpflow.ci_utils import ci_niter
 
 import matplotlib.pyplot as plt
@@ -110,8 +111,8 @@ callbacks = [
 
 dgp_natgrad.compile(
     [
-        gpflux.optimization.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
-        gpflux.optimization.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
+        pio_mllib.optimizers.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
+        pio_mllib.optimizers.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
         tf.optimizers.Adam(learning_rate=0.1),
     ]
 )
