@@ -1,7 +1,7 @@
 LIB_NAME = gpflux
 TESTS_NAME = tests
 ARCHS_NAME = experiments
-LINT_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME)
+LINT_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME) notebooks
 TYPE_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME)
 
 # the --per-file-ignores are to ignore "unused import" warnings in __init__.py files (F401)
@@ -33,7 +33,7 @@ format:
 	black $(LINT_NAMES)
 
 lint:
-	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) --extend-ignore=$(LINT_IGNORES) $(LINT_NAMES)
+	flake8 --per-file-ignores=$(LINT_FILE_IGNORES) --extend-ignore=$(LINT_IGNORES) --exclude=.ipynb_checkpoints $(LINT_NAMES)
 
 types:
 	mypy $(TYPE_NAMES)

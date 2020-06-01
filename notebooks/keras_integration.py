@@ -20,22 +20,23 @@ import gpflow
 import gpflux
 from gpflow.ci_utils import ci_niter
 
+import matplotlib.pyplot as plt
+
 # %%
 tf.keras.backend.set_floatx("float64")
 
 # %%
-import matplotlib.pyplot as plt
 # %matplotlib inline
 
 # %%
-d = np.load('../tests/snelson1d.npz')
-X, Y = data = d['X'], d['Y']
+d = np.load("../tests/snelson1d.npz")
+X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 _, output_dim = Y.shape
 
 # %%
 plt.figure()
-plt.plot(X, Y, '.')
+plt.plot(X, Y, ".")
 plt.show()
 
 
@@ -43,36 +44,38 @@ plt.show()
 def create_layers():
     num_inducing = 13
     hidden_dim = 1
-    
+
     init_kmeans = gpflux.initializers.KmeansInitializer(X, num_inducing)
     layer1 = gpflux.helpers.construct_gp_layer(
-        num_data, num_inducing, input_dim, hidden_dim,
-        initializer=init_kmeans
+        num_data, num_inducing, input_dim, hidden_dim, initializer=init_kmeans
     )
-    layer1.mean_function = gpflow.mean_functions.Identity()  # TODO: pass layer_type instead
-    
-    init_last_layer = gpflux.initializers.FeedForwardInitializer(gpflux.initializers.ZeroOneVariationalInitializer())
+    layer1.mean_function = (
+        gpflow.mean_functions.Identity()
+    )  # TODO: pass layer_type instead
+
+    init_last_layer = gpflux.initializers.FeedForwardInitializer(
+        gpflux.initializers.ZeroOneVariationalInitializer()
+    )
     layer2 = gpflux.helpers.construct_gp_layer(
-        num_data, num_inducing, hidden_dim, output_dim,
-        initializer=init_last_layer,
+        num_data, num_inducing, hidden_dim, output_dim, initializer=init_last_layer,
     )
     layer2.returns_samples = False  # TODO: pass layer_type instead
-    
+
     likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))
-    
+
     return layer1, layer2, likelihood_layer
 
 
 # %%
 def create_model(model_class):
     layer1, layer2, likelihood_layer = create_layers()
-    
+
     inputs = tf.keras.Input((input_dim,))
     targets = tf.keras.Input((output_dim,))
     f1 = layer1(inputs)
     f2 = layer2(f1)
     outputs = likelihood_layer(f2, targets=targets)
-    
+
     model = model_class(inputs=(inputs, targets), outputs=outputs)
     return model
 
@@ -92,7 +95,9 @@ callbacks = [
 
 dgp.compile(tf.optimizers.Adam(learning_rate=0.1))
 
-history = dgp.fit(x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks)
+history = dgp.fit(
+    x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+)
 
 # %%
 dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
@@ -103,23 +108,27 @@ callbacks = [
     )
 ]
 
-dgp_natgrad.compile([
-    gpflux.optimization.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
-    gpflux.optimization.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
-    tf.optimizers.Adam(learning_rate=0.1)
-])
+dgp_natgrad.compile(
+    [
+        gpflux.optimization.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
+        gpflux.optimization.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
+        tf.optimizers.Adam(learning_rate=0.1),
+    ]
+)
 
-history_natgrad = dgp_natgrad.fit(x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks)
+history_natgrad = dgp_natgrad.fit(
+    x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+)
 
 # %%
 res = dgp((X, np.zeros_like(Y)))
 
 # %%
-plt.plot(X, Y, 'x')
-plt.errorbar(X.squeeze(), np.squeeze(res[0]), np.sqrt(np.squeeze(res[1])), ls='')
+plt.plot(X, Y, "x")
+plt.errorbar(X.squeeze(), np.squeeze(res[0]), np.sqrt(np.squeeze(res[1])), ls="")
 plt.show()
 
 # %%
-plt.plot(history.history["loss"], label='Adam')
-plt.plot(history_natgrad.history["loss"], label='NatGrad')
+plt.plot(history.history["loss"], label="Adam")
+plt.plot(history_natgrad.history["loss"], label="NatGrad")
 plt.show()
