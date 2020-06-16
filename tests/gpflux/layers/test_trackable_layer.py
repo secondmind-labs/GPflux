@@ -3,7 +3,7 @@ from typing import List
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
-from gpflow.kernels import RBF, Matern12
+from gpflow.kernels import RBF, Matern12, Matern52
 from gpflow import default_float
 
 from gpflux.layers import TrackableLayer
@@ -44,7 +44,12 @@ def setup_layer_modules_variables():
                 tf.Variable(7.0, dtype=default_float(), trainable=False),
             ]
         ),
+        [
+            CompositeModule(attributes=[Matern52()]),
+            CompositeModule(attributes=[Matern52()]),
+        ],
     ]
+
     modules_variables = [
         modules[0].variance.unconstrained_variable,
         modules[0].lengthscales.unconstrained_variable,
@@ -52,11 +57,17 @@ def setup_layer_modules_variables():
         modules[1].var_0.lengthscales.unconstrained_variable,
         modules[2].var_0,
         modules[2].var_1,
+        modules[3][0].var_0.variance.unconstrained_variable,
+        modules[3][0].var_0.lengthscales.unconstrained_variable,
+        modules[3][1].var_0.variance.unconstrained_variable,
+        modules[3][1].var_0.lengthscales.unconstrained_variable,
     ]
 
     attributes = variables + modules
     trackable_layer = TrackableCompositeLayer(attributes=attributes)
-    return trackable_layer, variables, modules, modules_variables
+
+    flat_modules = modules[:3] + modules[3]
+    return trackable_layer, variables, flat_modules, modules_variables
 
 
 def to_tensor_set(tensor_set: List[tf.Tensor]):

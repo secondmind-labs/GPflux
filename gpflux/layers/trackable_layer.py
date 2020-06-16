@@ -58,8 +58,27 @@ class TrackableLayer(tf.keras.layers.Layer):
 
     @property
     def _submodules(self):
-        """Return a list of tf.Module instances that are attributes on the class"""
-        return [v for v in self.__dict__.values() if isinstance(v, tf.Module)]
+        """Return a list of tf.Module instances that are attributes on the class. Note
+        this also include list or tuples of tf.Modules"""
+
+        submodules = []
+
+        def get_nested_submodules(*objs):
+            for o in objs:
+                if isinstance(o, tf.Module):
+                    submodules.append(o)
+
+        for key, obj in self.__dict__.items():
+            if isinstance(obj, tf.Module):
+                submodules.append(obj)
+            elif isinstance(obj, (list, tuple)):
+                tf.nest.map_structure(get_nested_submodules, obj)
+            elif isinstance(obj, (dict,)):
+                tf.nest.map_structure(get_nested_submodules, obj.values())
+
+        return list(
+            dict.fromkeys(submodules)
+        )  # remove duplicates, maintaining order (dict 3.6)
 
     def submodule_variables(self):
         """Return flat iterable of variables from the attributes that are tf.Modules"""
