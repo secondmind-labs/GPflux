@@ -2,8 +2,8 @@ import timeit
 import numpy as np
 import tensorflow as tf
 
-from vish.plotting import plot_spherical_function
-from vish.spherical_harmonics import (
+from gpflux.vish.plotting import plot_spherical_function
+from gpflux.vish.spherical_harmonics import (
     FastSphericalHarmonicsCollection,
     SphericalHarmonicsCollection,
     SphericalHarmonicsLevel,

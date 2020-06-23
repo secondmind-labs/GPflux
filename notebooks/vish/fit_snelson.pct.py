@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 from bayesian_benchmarks import data as uci_datasets
 
 import gpflow
-from vish.inducing_variables import SphericalHarmonicInducingVariable
-from vish.kernels import Matern, Parameterised, ArcCosine
-from vish.spherical_harmonics import SphericalHarmonicsCollection
-from vish.helpers import preprocess_data
+from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
+from gpflux.vish.kernels import Matern, Parameterised, ArcCosine
+from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
+from gpflux.vish.helpers import preprocess_data
 
 from notebooks.ci_utils import is_running_pytest
 

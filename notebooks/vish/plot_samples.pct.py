@@ -5,16 +5,16 @@ import tensorflow as tf
 
 from gpflow.config import default_float
 
-from vish.kernels import Matern
-from vish.plotting import plot_spherical_function
-from vish.spherical_harmonics import (
+from gpflux.vish.kernels import Matern
+from gpflux.vish.plotting import plot_spherical_function
+from gpflux.vish.spherical_harmonics import (
     FastSphericalHarmonicsCollection,
     SphericalHarmonicsCollection,
     SphericalHarmonicsLevel,
     num_harmonics,
 )
-from vish.gegenbauer_polynomial import Gegenbauer
-from vish.matern_spectral_density import spectral_density
+from gpflux.vish.gegenbauer_polynomial import Gegenbauer
+from gpflux.vish.matern_spectral_density import spectral_density
 
 from notebooks.ci_utils import is_running_pytest
 

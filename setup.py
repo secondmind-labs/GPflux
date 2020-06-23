@@ -11,6 +11,7 @@ requirements = [
     "tensorflow==2.1.0",
     "tensorflow-probability>=0.8.0",
     "gpflow>=2.0.2",
+    "json-tricks"
 ]
 
 setup(

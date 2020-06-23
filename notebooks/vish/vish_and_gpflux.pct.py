@@ -8,14 +8,13 @@ import gpflow
 import gpflux
 
 from notebooks.ci_utils import is_running_pytest
-from vish.helpers import (
-    get_max_degree_closest_to_num_inducing,
+from gpflux.vish.helpers import (
+    get_max_degree_closest_but_smaller_than_num_inducing,
     preprocess_data
 )
-# from gpflux.
-from vish.inducing_variables import SphericalHarmonicInducingVariable
-from vish.kernels import ArcCosine, Matern, Parameterised
-from vish.spherical_harmonics import SphericalHarmonicsCollection
+from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
+from gpflux.vish.kernels import ArcCosine, Matern, Parameterised
+from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
 
 
 tf.keras.backend.set_floatx('float64')
@@ -23,9 +22,9 @@ tf.keras.backend.set_floatx('float64')
 
 class Config:
     max_num_inducing = 20 if is_running_pytest() else 1024
-    max_degree = (
+    max_degree, num_inducing = (
         # Snelson is one dimensional + 2 bias dimensions
-        get_max_degree_closest_to_num_inducing(3, max_num_inducing)
+        get_max_degree_closest_but_smaller_than_num_inducing("matern", 3, max_num_inducing)
     )
     num_epochs = 20 if is_running_pytest() else 1000
     batch_size = 200
