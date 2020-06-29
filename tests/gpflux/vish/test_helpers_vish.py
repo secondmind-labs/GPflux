@@ -1,12 +1,12 @@
 import pytest
 import numpy as np
 
-from vish.helpers import (
+from gpflux.vish.helpers import (
     get_num_inducing,
     get_max_degree_closest_but_smaller_than_num_inducing,
 )
-from vish.kernels import ArcCosine, Matern
-from vish.inducing_variables import (
+from gpflux.vish.kernels import ArcCosine, Matern
+from gpflux.vish.inducing_variables import (
     SphericalHarmonicInducingVariable,
     SphericalHarmonicsCollection,
 )

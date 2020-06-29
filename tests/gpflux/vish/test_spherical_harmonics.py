@@ -5,7 +5,7 @@ from scipy.integrate import quad
 from scipy.special import gamma
 from scipy.special import gegenbauer as scipy_gegenbauer
 
-from vish.spherical_harmonics import (
+from gpflux.vish.spherical_harmonics import (
     FastSphericalHarmonicsCollection,
     SphericalHarmonicsCollection,
     SphericalHarmonicsLevel,
