@@ -7,7 +7,7 @@ from scipy.special import comb, gegenbauer as scipy_gegenbauer
 from gpflow.base import TensorLike
 from gpflow.config import default_float
 
-from gpflux.vish.fundamental_set import build_fundamental_system
+from gpflux.vish.fundamental_set import FundamentalSystemCache
 from gpflux.vish.gegenbauer_polynomial import Gegenbauer
 from gpflux.vish.misc import surface_area_sphere
 
@@ -30,7 +30,7 @@ def eigenvalue_harmonics(
     :param dimension:
         S^{d-1} = { x ∈ R^d and ||x||_2 = 1 }
         For a circle d=2, for a ball d=3
-    
+
     :return: the corresponding eigenvalue of the spherical harmonic
         for the specified degrees, same shape as degrees.
     """
@@ -245,13 +245,7 @@ class SphericalHarmonicsLevel:
         self.alpha = (self.dimension - 2) / 2.0
         self.num_harmonics_in_level = num_harmonics(self.dimension, self.degree)
 
-        self.V = build_fundamental_system(
-            self.dimension,
-            self.degree,
-            self.num_harmonics_in_level,
-            num_restarts=10,
-            gtol=1e-8,
-        )  # [M, D], with M = number of harmonics
+        self.V = FundamentalSystemCache(self.dimension).load(self.degree)
 
         # surface area of S^{d−1}
         self.surface_area_sphere = surface_area_sphere(dimension)
