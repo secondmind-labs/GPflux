@@ -16,7 +16,7 @@ from gpflux.vish.spherical_harmonics import (
 from gpflux.vish.gegenbauer_polynomial import Gegenbauer
 from gpflux.vish.matern_spectral_density import spectral_density
 
-from notebooks.ci_utils import is_running_pytest
+from notebooks.vish.ci_utils import is_running_pytest
 
 DIM = 3
 NU = 0.5

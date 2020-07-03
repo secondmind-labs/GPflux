@@ -4,6 +4,8 @@ import tensorflow as tf
 from scipy.integrate import quad
 from scipy.special import gamma
 from scipy.special import gegenbauer as scipy_gegenbauer
+from gpflux.vish.fundamental_set import FundamentalSystemCache
+
 
 from gpflux.vish.spherical_harmonics import (
     FastSphericalHarmonicsCollection,
@@ -105,7 +107,8 @@ def test_equality_spherical_harmonics_collections(dimension, max_degree):
 @pytest.mark.parametrize("dimension", range(3, 7, 1))
 @pytest.mark.parametrize("degree", range(1, 7, 3))
 def test_addition_theorem(dimension, degree):
-    harmonics = SphericalHarmonicsLevel(dimension, degree)
+    fundamental_system = FundamentalSystemCache(dimension)
+    harmonics = SphericalHarmonicsLevel(dimension, degree, fundamental_system)
     X = np.random.randn(100, dimension)
     X = X / (np.sum(X ** 2, keepdims=True, axis=1) ** 0.5)
     harmonics_at_X = harmonics(X)[..., None]  # [M:=N(dimension, degree), N, 1]

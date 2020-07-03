@@ -9,7 +9,7 @@ from gpflux.vish.spherical_harmonics import (
     num_harmonics,
 )
 
-from notebooks.ci_utils import is_running_pytest
+from notebooks.vish.ci_utils import is_running_pytest
 
 if __name__ == "__main__":
     dimension = 3

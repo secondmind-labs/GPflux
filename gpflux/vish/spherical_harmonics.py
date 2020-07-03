@@ -71,10 +71,7 @@ class SphericalHarmonicsCollection:
     """
 
     def __init__(
-        self,
-        dimension: int,
-        degrees: Union[int, List[int]],
-        debug: bool = False,
+        self, dimension: int, degrees: Union[int, List[int]], debug: bool = False,
     ):
         """
         :param dimension: if d = dimension, then

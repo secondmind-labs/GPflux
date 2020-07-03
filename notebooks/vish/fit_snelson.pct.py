@@ -10,7 +10,7 @@ from gpflux.vish.kernels import Matern, Parameterised, ArcCosine
 from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
 from gpflux.vish.helpers import preprocess_data
 
-from notebooks.ci_utils import is_running_pytest
+from notebooks.vish.ci_utils import is_running_pytest
 
 
 def get_snelson():
@@ -26,7 +26,6 @@ def get_uci(dataset):
     # data_train = data.X_train, data.Y_train
     # data_test = data.X_test, data.Y_test
     # return data_train, data_test
-
 
 
 # +
@@ -49,6 +48,7 @@ data_test = data
 # from vish.helpers import add_bias
 # data_train = add_bias(data.X_train), data.Y_train
 # data_test = add_bias(data.X_test), data.Y_test
+
 
 def build_model(dimension):
 

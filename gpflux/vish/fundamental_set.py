@@ -6,12 +6,12 @@ from scipy.special import comb as combinations, gegenbauer as Gegenbauer
 
 
 class FundamentalSystemCache:
-    """A simple cache object to access precomputed fundamental sets.
+    """A simple cache object to access precomputed fundamental system.
 
-    Fundamental sets are sets of points that allow the user to evaluate the spherical
+    Fundamental system are sets of points that allow the user to evaluate the spherical
     harmonics in a arbitrary dimensions"""
 
-    def __init__(self, dimension: int, load_dir="fundamental_set"):
+    def __init__(self, dimension: int, load_dir="fundamental_systems"):
         self.load_dir = Path(__file__).parents[0] / load_dir
         self.file_name = self.load_dir / f"fs_{dimension}D.npz"
         self.dimension = dimension
