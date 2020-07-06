@@ -55,9 +55,7 @@ def test_orthonormal_basis_4d(max_degree):
     theta3 = np.linspace(0, np.pi, num_grid)
     theta1, theta2, theta3 = np.meshgrid(theta1, theta2, theta3)
     x_spherical = np.c_[
-        theta1.reshape((-1, 1)),
-        theta2.reshape((-1, 1)),
-        theta3.reshape((-1, 1)),
+        theta1.reshape((-1, 1)), theta2.reshape((-1, 1)), theta3.reshape((-1, 1)),
     ]  # [N^3, 3]
     x_cart = spherical_to_cartesian_4d(x_spherical)
 
@@ -66,9 +64,7 @@ def test_orthonormal_basis_4d(max_degree):
 
     d_x_spherical = 2 * np.pi ** 3 / num_grid ** 3
 
-    inner_products = (
-        np.ones((len(harmonics_at_x), len(harmonics_at_x))) * np.nan
-    )
+    inner_products = np.ones((len(harmonics_at_x), len(harmonics_at_x))) * np.nan
 
     for i, Y1 in enumerate(harmonics_at_x):
         for j, Y2 in enumerate(harmonics_at_x):

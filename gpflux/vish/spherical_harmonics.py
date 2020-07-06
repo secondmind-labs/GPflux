@@ -91,13 +91,13 @@ class SphericalHarmonicsCollection:
         if isinstance(degrees, int):
             degrees = range(degrees)
 
+        self.fundamental_system = FundamentalSystemCache(dimension)
         self.harmonic_levels = [
-            SphericalHarmonicsLevel(dimension, degree) for degree in degrees
+            SphericalHarmonicsLevel(dimension, degree, self.fundamental_system)
+            for degree in degrees
         ]
 
-    @tf.function(
-        input_signature=[tf.TensorSpec(shape=None, dtype=default_float())]
-    )
+    @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=default_float())])
     def __call__(self, x: TensorLike,) -> TensorLike:
         """
         Evaluates each of the spherical harmonic level in the collection,
@@ -117,9 +117,7 @@ class SphericalHarmonicsCollection:
         return tf.concat(list(values), axis=0)  # [num_harmonics, N]
 
     def __len__(self):
-        return sum(
-            len(harmonic_level) for harmonic_level in self.harmonic_levels
-        )
+        return sum(len(harmonic_level) for harmonic_level in self.harmonic_levels)
 
     def num_levels(self):
         return len(self.harmonic_levels)
@@ -128,9 +126,7 @@ class SphericalHarmonicsCollection:
         """For test purposes only"""
         return tf.reduce_sum(
             tf.stack(
-                values=[
-                    level.addition(X, X2) for level in self.harmonic_levels
-                ],
+                values=[level.addition(X, X2) for level in self.harmonic_levels],
                 axis=0,
             ),
             axis=0,
@@ -152,13 +148,11 @@ class FastSphericalHarmonicsCollection(SphericalHarmonicsCollection):
             For a circle d=2, for a ball d=3
         :param degrees: list of degrees of spherical harmonic levels,
             if integer all levels (or degrees) up to `degrees` are used.
-        :param debug: print debug messages. 
+        :param debug: print debug messages.
         """
         super().__init__(dimension, degrees, debug)
 
-        max_power = int(
-            max(max(h.gegenbauer.powers) for h in self.harmonic_levels)
-        )
+        max_power = int(max(max(h.gegenbauer.powers) for h in self.harmonic_levels))
         self.num_harmonics = sum(len(h) for h in self.harmonic_levels)
 
         weights = np.zeros((self.num_harmonics, max_power + 1))  # [M, P]
@@ -177,9 +171,7 @@ class FastSphericalHarmonicsCollection(SphericalHarmonicsCollection):
         self.powers = tf.convert_to_tensor(powers)  # [M, P]
 
         self.V = tf.convert_to_tensor(
-            np.concatenate(
-                [harmonic.V for harmonic in self.harmonic_levels], axis=0
-            )
+            np.concatenate([harmonic.V for harmonic in self.harmonic_levels], axis=0)
         )  # [M, D]
 
         self.L_inv = tf.linalg.LinearOperatorBlockDiag(
@@ -190,9 +182,7 @@ class FastSphericalHarmonicsCollection(SphericalHarmonicsCollection):
         )  # [M, M] block diagonal
 
     @tf.function(
-        input_signature=[
-            tf.TensorSpec(shape=[None, None], dtype=default_float())
-        ]
+        input_signature=[tf.TensorSpec(shape=[None, None], dtype=default_float())]
     )
     def __call__(self, X: TensorLike) -> TensorLike:
         """
@@ -211,7 +201,7 @@ class FastSphericalHarmonicsCollection(SphericalHarmonicsCollection):
 
 
 class SphericalHarmonicsLevel:
-    r""" 
+    r"""
     Spherical harmonics \phi(x) in a specific dimension and degree (or level).
 
     The harmonics are constructed by
@@ -224,11 +214,11 @@ class SphericalHarmonicsLevel:
        corresponds to the Gram-Schmidt procedure.
 
     [1] Approximation Theory and Harmonic Analysis on Spheres and Balls,
-        Feng Dai and Yuan Xu, Chapter 1. Spherical Harmonics, 
+        Feng Dai and Yuan Xu, Chapter 1. Spherical Harmonics,
         https://arxiv.org/pdf/1304.2585.pdf
     """
 
-    def __init__(self, dimension: int, degree: int):
+    def __init__(self, dimension: int, degree: int, fundamental_system=None):
         r"""
         param dimension: if d = dimension, then
             S^{d-1} = { x ∈ R^d and ||x||_2 = 1 }
@@ -242,7 +232,7 @@ class SphericalHarmonicsLevel:
         self.alpha = (self.dimension - 2) / 2.0
         self.num_harmonics_in_level = num_harmonics(self.dimension, self.degree)
 
-        self.V = FundamentalSystemCache(self.dimension).load(self.degree)
+        self.V = fundamental_system.load(self.degree)
 
         # surface area of S^{d−1}
         self.surface_area_sphere = surface_area_sphere(dimension)
@@ -256,9 +246,7 @@ class SphericalHarmonicsLevel:
         self.gegenbauer = Gegenbauer(self.degree, self.alpha)
 
     @tf.function(
-        input_signature=[
-            tf.TensorSpec(shape=[None, None], dtype=default_float())
-        ]
+        input_signature=[tf.TensorSpec(shape=[None, None], dtype=default_float())]
     )
     def __call__(self, X: TensorLike) -> TensorLike:
         r"""
@@ -279,7 +267,7 @@ class SphericalHarmonicsLevel:
         at the inner product between x and x'.
 
         Mathematically:
-            \sum_{k=1}^{N(dim, degree)} \phi_k(X) * \phi_k(Y) 
+            \sum_{k=1}^{N(dim, degree)} \phi_k(X) * \phi_k(Y)
                 = (degree + \alpha) / \alpha / \omega_d * C_degree^\alpha(X^T Y)
         where \alpha = (dimension - 2) / 2 and omega_d the surface area of the
         hypersphere S^{d-1}.
@@ -302,9 +290,9 @@ class SphericalHarmonicsLevel:
         r"""
         Evaluates \sum_k \phi_k(x) \phi_k(x), notice the argument at which we evaluate
         the harmonics is equal. See `self.addition` for the general case.
-    
-        This simplifies to 
-            \sum_{k=1}^{N(dim, degree)} \phi_k(x) * \phi_k(x) 
+
+        This simplifies to
+            \sum_{k=1}^{N(dim, degree)} \phi_k(x) * \phi_k(x)
                 = (degree + \alpha) / \alpha / \omega_d * C_degree^\alpha(1)
 
         as all vectors in `X` are normalised so that x^\top x == 1.
@@ -315,9 +303,7 @@ class SphericalHarmonicsLevel:
         c = (
             tf.ones((X.shape[0], 1), dtype=X.dtype) * self.gegenbauer.value_at_1
         )  # [N, 1]
-        return (
-            (self.degree / self.alpha + 1.0) / self.surface_area_sphere * c
-        )  # [N, 1]
+        return (self.degree / self.alpha + 1.0) / self.surface_area_sphere * c  # [N, 1]
 
     def eigenvalue(self) -> float:
         """
