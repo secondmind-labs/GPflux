@@ -36,7 +36,7 @@ class FundamentalSystemCache:
     def regenerate_and_save_cache(self, max_degrees: int) -> None:
         """Regenerate and overwrite saved cache to disk"""
         system = {}
-        for degree in range(max_degrees + 1):
+        for degree in range(max_degrees):
             print(f"finding level {degree}/{max_degrees} in {self.dimension}D")
             d_system = self.calculate(
                 self.dimension, degree, gtol=1e-8, num_restarts=10
