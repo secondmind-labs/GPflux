@@ -1,11 +1,7 @@
-import itertools
-
 import pytest
 import numpy as np
 import tensorflow as tf
-from scipy.special import gegenbauer
 
-import gpflow
 from gpflux.vish.kernels import Matern, ArcCosine, Parameterised
 from gpflux.vish.misc import chain
 from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection, num_harmonics
@@ -38,12 +34,8 @@ def test_kernels(kernel_class, truncation_level, dimension):
     x /= np.sum(x ** 2, axis=1, keepdims=True) ** 0.5  # [N, 1]
 
     harmonics_x = harmonics(x)[..., None]  # [M, N, 1]
-    harmonics_xxT = tf.matmul(
-        harmonics_x, harmonics_x, transpose_b=True
-    )  # [M, N, N]
-    expected = tf.reduce_sum(
-        Lambda_diag[..., None] * harmonics_xxT, axis=0
-    )  # [N, N]
+    harmonics_xxT = tf.matmul(harmonics_x, harmonics_x, transpose_b=True)  # [M, N, N]
+    expected = tf.reduce_sum(Lambda_diag[..., None] * harmonics_xxT, axis=0)  # [N, N]
 
     actual = kernel.K(x)
 
@@ -54,10 +46,8 @@ def test_kernels(kernel_class, truncation_level, dimension):
 def test_arccosine(dimension):
     r"""
     Test that k(x, x') = \sum_l \sum_i \lambda_l \phi_{l, k}(x) \phi_{l, k}(x'),
-    for k arccosine 
+    for k arccosine
     """
-    truncation_level = 25
-
     x = np.random.randn(10, dimension)
     x /= np.sum(x ** 2, axis=1, keepdims=True) ** 0.5  # [N, D]
 
@@ -80,9 +70,7 @@ def test_arccosine(dimension):
         sum_level_phi_X_phi_X2 = factors[..., None] * cs  # [L, N1, N2]
         # eigenvalues
         Lambda_level = kernel.eigenvalues[..., None]  # [L, 1, 1]
-        return tf.reduce_sum(
-            Lambda_level * sum_level_phi_X_phi_X2, axis=0
-        )  # [N1, N2]
+        return tf.reduce_sum(Lambda_level * sum_level_phi_X_phi_X2, axis=0)  # [N1, N2]
 
     approx = _K_mercer_theorem(x, x).numpy()  # [N, N]
     exact = kernel.K(x, x).numpy()

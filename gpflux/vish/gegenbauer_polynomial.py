@@ -3,10 +3,10 @@ from typing import List, Union, Tuple
 
 import numpy as np
 import tensorflow as tf
-from scipy.special import gamma, loggamma
+from scipy.special import loggamma
 from scipy.special import gegenbauer as scipy_gegenbauer
 
-from gpflow.base import TensorLike
+from gpflow.base import TensorType
 
 
 class Polynomial:
@@ -16,12 +16,10 @@ class Polynomial:
     """
 
     def __init__(
-        self,
-        coefficients: Union[List, np.ndarray],
-        powers: Union[List, np.ndarray],
+        self, coefficients: Union[List, np.ndarray], powers: Union[List, np.ndarray],
     ):
         r"""
-        The polynomial f(x) is given by f(x) = \sum_i c_i x^{p_i}, 
+        The polynomial f(x) is given by f(x) = \sum_i c_i x^{p_i},
         with c coefficients and p powers. The number of coefficients and
         the number of powers must match.
 
@@ -32,7 +30,7 @@ class Polynomial:
         self.coefficients = coefficients
         self.powers = powers
 
-    def __call__(self, x: TensorLike) -> TensorLike:
+    def __call__(self, x: TensorType) -> TensorType:
         """ Evaluates the polynomial @ `x`
         :param x: 1D input values at which to evaluate the polynomial, [...]
 
@@ -54,7 +52,7 @@ class Gegenbauer(Polynomial):
 
     [1] https://en.wikipedia.org/wiki/Gegenbauer_polynomials,
     [2] Approximation Theory and Harmonic Analysis on Spheres and Balls,
-        Feng Dai and Yuan Xu, Chapter 1. Spherical Harmonics, 
+        Feng Dai and Yuan Xu, Chapter 1. Spherical Harmonics,
         https://arxiv.org/pdf/1304.2585.pdf
     """
 
@@ -93,9 +91,7 @@ class Gegenbauer(Polynomial):
         for k in range(math.floor(n / 2) + 1):  # k=0 .. floor(n/2) (incl.)
             # computes the coefficients in log space for numerical stability
             log_coef = loggamma(n - k + alpha)
-            log_coef -= (
-                loggamma(alpha) + loggamma(k + 1) + loggamma(n - 2 * k + 1)
-            )
+            log_coef -= loggamma(alpha) + loggamma(k + 1) + loggamma(n - 2 * k + 1)
             log_coef += (n - 2 * k) * np.log(2)
             coef = np.exp(log_coef)
             coef *= (-1) ** k
@@ -104,7 +100,7 @@ class Gegenbauer(Polynomial):
 
         return coefficients, powers
 
-    def __call__(self, x: TensorLike) -> TensorLike:
+    def __call__(self, x: TensorType) -> TensorType:
         if self.n < 0:
             return tf.zeros_like(x)
         elif self.n == 0:

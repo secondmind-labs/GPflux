@@ -47,7 +47,7 @@ class FundamentalSystemCache:
 
     @staticmethod
     def calculate(
-        dimension: int, degree: int, *, gtol: int = 1e-5, num_restarts: int = 1
+        dimension: int, degree: int, *, gtol: float = 1e-5, num_restarts: int = 1
     ) -> np.array:
         return build_fundamental_system(
             dimension, degree, gtol=gtol, num_restarts=num_restarts
@@ -130,7 +130,8 @@ def calculate_decrement_in_determinant(Z, X_system, M_system_chol, gegenbauer):
     :param X_system: is a matrix of existing fundamental points [num_done, D]
     :param M_system_chol: is the cholesky of the matrix M of the done points [num_done, num_done]
 
-    :return: the negative-increment of the determinant of the matrix with Z (normalized) added to the done points
+    :return: the negative-increment of the determinant of the matrix with Z (normalized)
+     added to the done points
     """
     X = normalize(Z)
     XXd = np.dot(X_system, X)  # [num_done,]

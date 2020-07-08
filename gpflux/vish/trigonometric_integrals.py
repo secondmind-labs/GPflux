@@ -57,9 +57,7 @@ def integrate_0_upper__sin_n_cos_m(n: int, m: int, upper: str) -> float:
     elif upper == "pi":
         return const * remaining_integral_pi()
     else:
-        raise NotImplementedError(
-            "Upper value integral must be `half_pi` or `pi`"
-        )
+        raise NotImplementedError("Upper value integral must be `half_pi` or `pi`")
 
 
 def factorial2_consecutive_ints(p):
@@ -100,7 +98,7 @@ def integrate_0_pi__pi_minus_t_sin_n_cos_m(n: int, m: int) -> float:
         u(t) = (π - t)  -> du = -dt
         dv = sin(t)^n * cos(t)^m dt  -> v(t) = ∫ sin(t)^n * cos(t)^m dt + C
             we pick the constant so that v(0) = 0
-        
+
     <=> result = u(π) v(π) - u(0) v(0) + ∫ v(t) dt, t=0..π
     First two terms are zero as u(π) = 0 and v(0) = 0
     <=> result = ∫ v(t) dt, t=0..π
@@ -117,28 +115,18 @@ def integrate_0_pi__pi_minus_t_sin_n_cos_m(n: int, m: int) -> float:
     if _is_odd(n):
         k = (n - 1) // 2
         a, c = 0, 0
-        for l in range(k + 1):
-            kCl = comb(k, l)  # choose l out of k
-            a += (
-                kCl
-                * (-1) ** l
-                / (2 * l + m + 1)
-                * int_0_pi_cos_p(2 * l + m + 1)
-            )
-            c += kCl * (-1) ** l / (2 * l + m + 1)
+        for ll in range(k + 1):
+            kCl = comb(k, ll)  # choose l out of k
+            a += kCl * (-1) ** ll / (2 * ll + m + 1) * int_0_pi_cos_p(2 * ll + m + 1)
+            c += kCl * (-1) ** ll / (2 * ll + m + 1)
         return c * np.pi - a
 
     elif _is_odd(m):
         k = (m - 1) // 2
         a = 0
-        for l in range(k + 1):
-            kCl = comb(k, l)  # choose l out of k
-            a += (
-                kCl
-                * (-1) ** l
-                / (2 * l + n + 1)
-                * int_0_pi_sin_p(2 * l + n + 1)
-            )
+        for ll in range(k + 1):
+            kCl = comb(k, ll)  # choose l out of k
+            a += kCl * (-1) ** ll / (2 * ll + n + 1) * int_0_pi_sin_p(2 * ll + n + 1)
         return a
 
     elif _is_even(n) and _is_even(m):
@@ -156,10 +144,10 @@ def integrate_0_pi__pi_minus_t_sin_n_cos_m(n: int, m: int) -> float:
                 return 0
 
         m, n, a = m // 2, n // 2, 0
-        for l in range(n + 1):
+        for ll in range(n + 1):
             for k in range(m + 1):
-                consts = comb(n, l) * comb(m, k) * (-1) ** l
-                a += consts * int_0_pi_integral_cos_p_2t(l + k)
+                consts = comb(n, ll) * comb(m, k) * (-1) ** ll
+                a += consts * int_0_pi_integral_cos_p_2t(ll + k)
 
         return a / (2 ** (n + m))
     else:

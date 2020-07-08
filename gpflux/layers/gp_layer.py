@@ -54,6 +54,17 @@ class GPLayer(TrackableLayer):
              Else return mean and variance
         :param full_cov: Use a full covariance in predictions, or just the diagonals
         :param full_output_cov: Return a full output covariance
+        :param verify: if False, the call to `verify_compatibility` in the init is bypassed.
+            The user is then responsible for making sure `kernel`, `mean_function`
+            and `inducing_variable` are compatible and work togheter. It is also required
+            to specify `num_latent_gps`, as this will not be infered from the other objects.
+        :param num_latent_gps: number of (latent) GPs in the layer. Used to determine the size of
+            the variational parameters `q_mu` and `q_sqrt`. Only required to be passed when
+            `verify` is set to False, otherwise it is infered from the `kernel` and
+            `inducing_variable`.
+        :param white: determines the parameterisation of the inducing variables.
+            If True: p(u) = N(0, I), else p(u) = N(0, Kuu).
+            TODO(VD): The initializer currently only support white = True.
         """
 
         super().__init__(dtype=default_float())
@@ -79,8 +90,10 @@ class GPLayer(TrackableLayer):
                 kernel, mean_function, inducing_variable
             )
         else:
-            self.num_inducing, self.num_latent_gps = len(inducing_variable), num_latent_gps
-
+            self.num_inducing, self.num_latent_gps = (
+                len(inducing_variable),
+                num_latent_gps,
+            )
 
         # TODO the initial value of q_mu and q_sqrt got changed from empty()
         # to zeros() due to the new Parameter validation in gpflow2, which
@@ -187,7 +200,11 @@ class GPLayer(TrackableLayer):
         )
 
         # TF quirk: add_loss must add a tensor to compile
-        loss = self.prior_kl(whiten=self.white) if training else tf.constant(0.0, dtype=default_float())
+        loss = (
+            self.prior_kl(whiten=self.white)
+            if training
+            else tf.constant(0.0, dtype=default_float())
+        )
         loss_per_datapoint = loss / self.num_data
 
         self.add_loss(loss_per_datapoint)

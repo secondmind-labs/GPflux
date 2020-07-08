@@ -1,8 +1,7 @@
-import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.base import TensorLike
+from gpflow.base import TensorType
 from gpflow.kullback_leiblers import prior_kl
 
 from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
@@ -10,9 +9,7 @@ from gpflux.vish.kernels import ZonalKernel
 from gpflux.vish.conditional import Lambda_diag_elements
 
 
-@prior_kl.register(
-    SphericalHarmonicInducingVariable, ZonalKernel, object, object
-)
+@prior_kl.register(SphericalHarmonicInducingVariable, ZonalKernel, object, object)
 def _kl(harmonics, kernel, q_mu, q_sqrt, whiten=False):
     """
     Compute the KL divergence KL[q(u) || p(u)] with
@@ -25,7 +22,7 @@ def _kl(harmonics, kernel, q_mu, q_sqrt, whiten=False):
 
 
 def gauss_kl_for_K_diagonal_operator(
-    q_mu: TensorLike, q_sqrt: TensorLike, K: tf.linalg.LinearOperator
+    q_mu: TensorType, q_sqrt: TensorType, K: tf.linalg.LinearOperator
 ):
     """
     Author: ST--
@@ -64,7 +61,5 @@ def gauss_kl_for_K_diagonal_operator(
         tf.reduce_sum(Lq * K.solve(Lq), axis=[-1, -2])
     )  # [O(N²) instead of O(N³)
 
-    twoKL = (
-        trace_term + mahalanobis_term - constant_term + logdet_prior - logdet_q
-    )
+    twoKL = trace_term + mahalanobis_term - constant_term + logdet_prior - logdet_q
     return 0.5 * twoKL

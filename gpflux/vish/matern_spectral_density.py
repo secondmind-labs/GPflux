@@ -2,12 +2,12 @@ import numpy as np
 import tensorflow as tf
 from scipy.special import gamma
 
-from gpflow.base import TensorLike
+from gpflow.base import TensorType
 
 
 def spectral_density(
-    s: TensorLike, nu: float, variance: TensorLike, dimension: int
-) -> TensorLike:
+    s: TensorType, nu: float, variance: TensorType, dimension: int
+) -> TensorType:
     """
     Evaluate the spectral density of the Matern kernel.
     Implementation follows [1].
@@ -15,7 +15,7 @@ def spectral_density(
     [1] GPML, Chapter 4 equation 4.15, Rasmussen and Williams, 2006
 
     :param s: frequency at which to evaluate the spectral density
-    
+
     :return: Tensor [N, 1]
     """
     lengthscale = 1.0

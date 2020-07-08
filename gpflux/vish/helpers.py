@@ -1,3 +1,5 @@
+from typing import Tuple, Optional
+
 import numpy as np
 
 from gpflow.models.training_mixins import RegressionData
@@ -14,9 +16,7 @@ def get_num_inducing(kernel_type: str, dimension: int, max_degree: int) -> int:
         # For the Matern class kernels all the levels (or degrees) are used.
         return sum(num_harmonics(dimension, d) for d in range(max_degree))
     elif kernel_type == "arccosine":
-        harmonics_per_level = [
-            num_harmonics(dimension, d) for d in range(max_degree)
-        ]
+        harmonics_per_level = [num_harmonics(dimension, d) for d in range(max_degree)]
         # For the ArcCosine kernel the eigenvalues for all the odd levels larger than 2 or zero
         # We sum the number of harmonics at the following level 0, 1, 2, 4, 6, 8, ...
         return sum(harmonics_per_level[:3]) + sum(harmonics_per_level[4::2])
@@ -26,12 +26,12 @@ def get_num_inducing(kernel_type: str, dimension: int, max_degree: int) -> int:
 
 def get_max_degree_closest_but_smaller_than_num_inducing(
     kernel_type, dimension: int, num_inducing: int
-) -> int:
+) -> Optional[Tuple[int, int]]:
     r"""
     Returns the max degree such that the total number of harmonics for the given
     `dimension` is the closest but smaller or equal than `num_inducing`.
 
-    For matern kernels this corresponds to 
+    For matern kernels this corresponds to
     \sum_{degree=0}^{max_degree-1} N(dimension, degree) <= num_inducing (1)
     with max_degree the largest int such that (1) is true.
 
@@ -65,9 +65,7 @@ def add_bias(X: np.ndarray) -> np.ndarray:
     """
     num_data, input_dim = X.shape
     num_bias_dimensions = max(3 - input_dim, 1)
-    return np.c_[
-        X, np.ones((num_data, num_bias_dimensions), dtype=X.dtype)
-    ]  # [N, D+1]
+    return np.c_[X, np.ones((num_data, num_bias_dimensions), dtype=X.dtype)]  # [N, D+1]
 
 
 def range_scaler(X: np.ndarray, r=1.0):
@@ -83,16 +81,18 @@ def range_scaler(X: np.ndarray, r=1.0):
     return X
 
 
-def preprocess_data(data: RegressionData) -> RegressionData:
+def preprocess_data(
+    data: RegressionData,
+) -> Tuple[RegressionData, np.ndarray, np.ndarray]:
     """
     Takes the raw regression points data = (X, Y) and does the following operations:
     - Normalise Y to have zero mean and one standard dev.
     - Rescales each column of X to lie between -1 and 1.
     - Add a bias of 1 to each point in X. If X.shape[1] == 1, a double bias is added
         so that the dimensionality of X is at least 3D.
-    
+
     Also returns the mean and std dev of Y.
-    
+
     :param data: pair of X and Y
     :return: (X, Y), Y_mean, Y_std
     """

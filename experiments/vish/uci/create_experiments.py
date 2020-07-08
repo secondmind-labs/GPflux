@@ -42,9 +42,7 @@ class CommandsBuilder:
         for args in product(*self.values):
             config = ""
             for key, value in zip(self.keys, args):
-                config += self.single_config_template.format(
-                    key=key, value=value
-                )
+                config += self.single_config_template.format(key=key, value=value)
             command = self.command_template.format(config=config)
             commands.append(command)
         return commands

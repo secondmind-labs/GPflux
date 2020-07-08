@@ -25,7 +25,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
 
-NOTEBOOK_DIR = "../../../notebooks/vish"
+NOTEBOOK_DIR = "../../../experiments/vish/demos"
 
 
 def _nbpath():
@@ -55,9 +55,7 @@ def get_notebooks():
         return os.path.basename(nb) in blacklisted_notebooks_basename
 
     # recursively traverse the notebook directory in search for ipython notebooks
-    all_py_notebooks = glob.iglob(
-        os.path.join(_nbpath(), "**", "*.pct.py"), recursive=True
-    )
+    all_py_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.py"), recursive=True)
     all_md_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.md"), recursive=True)
     all_notebooks = itertools.chain(all_md_notebooks, all_py_notebooks)
     notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
@@ -83,7 +81,7 @@ def _exec_notebook(notebook_filename):
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
-@pytest.mark.notebooks
+@pytest.mark.slow
 @pytest.mark.parametrize("notebook_file", get_notebooks())
 def test_notebook(notebook_file):
     _exec_notebook(notebook_file)

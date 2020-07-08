@@ -1,11 +1,10 @@
-import itertools
-from typing import Any, List, Union
+from typing import Any, List
 
 import numpy as np
 import tensorflow as tf
 from scipy.special import gamma
 
-from gpflow.base import TensorLike
+from gpflow.base import TensorType
 
 
 def surface_area_sphere(d: int) -> float:
@@ -70,13 +69,12 @@ def chain(elements: List[Any], repetitions: List[int]) -> List[Any]:
     `repetitions` amount of time.
     Example:
         chain([1.3, 1.9], [3, 2]) ==> [1.3, 1.3, 1.3, 1.9, 1.9]
-    
+
     :param elements: contains elements to be repeated
     :param repetitions: number of times the correspnding element should be repeated.
     """
     return tf.concat(
-        values=[tf.repeat(elements[i], r) for i, r in enumerate(repetitions)],
-        axis=0,
+        values=[tf.repeat(elements[i], r) for i, r in enumerate(repetitions)], axis=0,
     )
 
     # This is equivalent but can not be auto-graphed:
@@ -87,7 +85,7 @@ def chain(elements: List[Any], repetitions: List[int]) -> List[Any]:
     # )
 
 
-def l2norm(X: TensorLike) -> TensorLike:
+def l2norm(X: TensorType) -> TensorType:
     """
     Returns the norm of the vectors in `X`. The vectors are
     D-dimensional and  stored in the last dimension of `X`.

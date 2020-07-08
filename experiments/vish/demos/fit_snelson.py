@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bayesian_benchmarks import data as uci_datasets
+# from bayesian_benchmarks import data as uci_datasets
 
 import gpflow
 from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
@@ -10,11 +10,11 @@ from gpflux.vish.kernels import Matern, Parameterised, ArcCosine
 from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
 from gpflux.vish.helpers import preprocess_data
 
-from notebooks.vish.ci_utils import is_running_pytest
+from gpflow.ci_utils import is_continuous_integration as is_running_pytest
 
 
 def get_snelson():
-    path = os.path.join(".", "snelson1d.npz")
+    path = os.path.join("../../../tests", "snelson1d.npz")
     data = np.load(path)
     return data["X"], data["Y"]
 
@@ -29,7 +29,7 @@ def get_uci(dataset):
 
 
 # +
-MAXITER = 3 if is_running_pytest() else 1000
+MAXITER = 3
 MODEL_TYPE = "vish"
 MAX_DEGREE = 25
 TRUNCATION_LEVEL = 25
@@ -64,7 +64,9 @@ def build_model(dimension):
         kernel = Parameterised(dimension, truncation_level=TRUNCATION_LEVEL,)
         degrees = range(MAX_DEGREE)
     elif KERNEL_TYPE == "ArcCosine":
-        kernel = ArcCosine(dimension, truncation_level=MAX_DEGREE, weight_variances=np.ones(dimension))
+        kernel = ArcCosine(
+            dimension, truncation_level=MAX_DEGREE, weight_variances=np.ones(dimension)
+        )
         degrees = kernel.degrees
 
     print(degrees)
@@ -80,7 +82,7 @@ def build_model(dimension):
 
 
 def build_model_svgp(dimension):
-    from vish.helpers import get_num_inducing
+    from gpflux.vish.helpers import get_num_inducing
 
     if KERNEL_TYPE == "ArcCosine":
         kernel = gpflow.kernels.ArcCosine(order=1, weight_variances=np.ones(dimension))
@@ -128,11 +130,14 @@ plt.figure()
 X_data = data[0][:, :1]
 Y_data = data[1]
 N_test = 500
-X_new = np.linspace(X_data.min() - 0.5, X_data.max() + 0.5, N_test).reshape(-1, 1)  # [N_test, 1]
+X_new = np.linspace(X_data.min() - 0.5, X_data.max() + 0.5, N_test).reshape(
+    -1, 1
+)  # [N_test, 1]
 X_new = np.c_[X_new, np.ones((N_test, 2))]  # [N_test, 3]
 f_mean, f_var = model.predict_y(X_new)
 
 import matplotlib.pyplot as plt
+
 plt.ylim(-5, 5)
 plt.plot(X_data, Y_data, "o")
 X_new = X_new[:, :1]
@@ -163,7 +168,8 @@ pprint.pprint(res)
 
 
 import matplotlib.pyplot as plt
-from vish.conditional import Lambda_diag_elements
+from gpflux.vish.conditional import Lambda_diag_elements
+
 Lambda = Lambda_diag_elements(model.inducing_variable, model.kernel).numpy()
 plt.figure()
 plt.plot(Lambda, "o")

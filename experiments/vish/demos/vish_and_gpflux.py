@@ -7,24 +7,27 @@ import tensorflow as tf
 import gpflow
 import gpflux
 
-from notebooks.ci_utils import is_running_pytest
+from gpflow.ci_utils import is_continuous_integration as is_running_pytest
+
 from gpflux.vish.helpers import (
     get_max_degree_closest_but_smaller_than_num_inducing,
-    preprocess_data
+    preprocess_data,
 )
 from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
 from gpflux.vish.kernels import ArcCosine, Matern, Parameterised
 from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
 
 
-tf.keras.backend.set_floatx('float64')
+tf.keras.backend.set_floatx("float64")
 
 
 class Config:
     max_num_inducing = 20 if is_running_pytest() else 1024
     max_degree, num_inducing = (
         # Snelson is one dimensional + 2 bias dimensions
-        get_max_degree_closest_but_smaller_than_num_inducing("matern", 3, max_num_inducing)
+        get_max_degree_closest_but_smaller_than_num_inducing(
+            "matern", 3, max_num_inducing
+        )
     )
     num_epochs = 20 if is_running_pytest() else 1000
     batch_size = 200
@@ -32,9 +35,9 @@ class Config:
 
 
 def get_snelson():
-    path = os.path.join(".", "snelson1d.npz")
+    path = os.path.join("../../../tests", "snelson1d.npz")
     data = np.load(path)
-    return (data["X"], data["Y"])
+    return data["X"], data["Y"]
 
 
 def build_model(data) -> tf.keras.models.Model:
@@ -45,10 +48,10 @@ def build_model(data) -> tf.keras.models.Model:
         dimension,
         truncation_level=truncation_level,
         nu=1.5,
-        weight_variances=np.ones(dimension)
+        weight_variances=np.ones(dimension),
     )
-    degrees = range(Config.max_degree)
-    
+    degrees = range(15)
+
     harmonics = SphericalHarmonicsCollection(dimension, degrees=degrees)
     inducing_variable = SphericalHarmonicInducingVariable(harmonics)
 
@@ -64,9 +67,7 @@ def build_model(data) -> tf.keras.models.Model:
     )
     gp_layer._initialized = True
 
-    likelihood_layer = gpflux.layers.LikelihoodLayer(
-        gpflow.likelihoods.Gaussian(1.0)
-    )
+    likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(1.0))
 
     inputs = tf.keras.Input((dimension,), name="inputs")
     targets = tf.keras.Input((1,), name="targets")
@@ -77,6 +78,8 @@ def build_model(data) -> tf.keras.models.Model:
 
 
 import time
+
+
 class TimeHistory(tf.keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
         self.times = []
@@ -97,7 +100,7 @@ def train_model(model, data_train, data_test):
             monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
         ),
         gpflux.callbacks.TensorBoard(path),
-        time_cb
+        time_cb,
     ]
     try:
         data_test = ((data_test[0], data_test[1] * np.nan), data_test[1])
@@ -131,7 +134,9 @@ if __name__ == "__main__":
     X_data = data[0][:, :1]
     Y_data = data[1]
     N_test = 100
-    X_new = np.linspace(X_data.min() - 0.5, X_data.max() + 0.5, N_test).reshape(-1, 1)  # [N_test, 1]
+    X_new = np.linspace(X_data.min() - 0.5, X_data.max() + 0.5, N_test).reshape(
+        -1, 1
+    )  # [N_test, 1]
     X_new = np.c_[X_new, np.ones((N_test, 2))]  # [N_test, 3]
     Y_nan = np.ones((len(X_new), 1)) * np.nan
     data_new = (X_new, Y_nan)

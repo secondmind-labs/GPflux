@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from scipy.special import comb, gegenbauer as scipy_gegenbauer
 
-from gpflow.base import TensorLike
+from gpflow.base import TensorType
 from gpflow.config import default_float
 
 from gpflux.vish.fundamental_set import FundamentalSystemCache
@@ -81,7 +81,7 @@ class SphericalHarmonicsCollection:
             if integer all levels (or degrees) up to `degrees` are used.
         highest degree of polynomial
             in the collection (exclusive)
-        :param debug: print debug messages. 
+        :param debug: print debug messages.
         """
         assert (
             dimension >= 3
@@ -89,7 +89,7 @@ class SphericalHarmonicsCollection:
         self.debug = debug
 
         if isinstance(degrees, int):
-            degrees = range(degrees)
+            degrees = list(range(degrees))
 
         self.fundamental_system = FundamentalSystemCache(dimension)
         self.harmonic_levels = [
@@ -98,11 +98,11 @@ class SphericalHarmonicsCollection:
         ]
 
     @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=default_float())])
-    def __call__(self, x: TensorLike,) -> TensorLike:
+    def __call__(self, x: TensorType,) -> TensorType:
         """
         Evaluates each of the spherical harmonic level in the collection,
         and stacks the results.
-        :param x: TensorLike, [N, D]
+        :param x: TensorType, [N, D]
             N points with unit norm in cartesian coordinate system.
         :return: [num harmonics in collection, N]
         """
@@ -184,11 +184,11 @@ class FastSphericalHarmonicsCollection(SphericalHarmonicsCollection):
     @tf.function(
         input_signature=[tf.TensorSpec(shape=[None, None], dtype=default_float())]
     )
-    def __call__(self, X: TensorLike) -> TensorLike:
+    def __call__(self, X: TensorType) -> TensorType:
         """
         Evaluates each of the spherical harmonics in the collection,
         and stacks the results.
-        :param x: TensorLike, [N, D]
+        :param x: TensorType, [N, D]
             N points with unit norm in cartesian coordinate system.
         :return: [num harmonics in collection, N]
         """
@@ -248,7 +248,7 @@ class SphericalHarmonicsLevel:
     @tf.function(
         input_signature=[tf.TensorSpec(shape=[None, None], dtype=default_float())]
     )
-    def __call__(self, X: TensorLike) -> TensorLike:
+    def __call__(self, X: TensorType) -> TensorType:
         r"""
         :param X: M normalised (i.e. unit) D-dimensional vector, [N, D]
 
@@ -259,8 +259,8 @@ class SphericalHarmonicsLevel:
         zonals = self.gegenbauer(VXT)  # [M, N]
         return tf.matmul(self.L_inv, zonals)  # [M, N]
 
-    # TODO(Vincent) for some reason Optional[TensorLike] doesn't work
-    def addition(self, X: TensorLike, Y: TensorLike = None) -> TensorLike:
+    # TODO(Vincent) for some reason Optional[TensorType] doesn't work
+    def addition(self, X: TensorType, Y: TensorType = None) -> TensorType:
         r"""
         Addition theorem. The sum of the product of all the spherical harmonics evaluated
         at x and x' of a specific degree simplifies to the gegenbauer polynomial evaluated
@@ -286,7 +286,7 @@ class SphericalHarmonicsLevel:
             (self.degree / self.alpha + 1.0) / self.surface_area_sphere * c
         )  # [N1, N2]
 
-    def addition_at_1(self, X: TensorLike) -> TensorLike:
+    def addition_at_1(self, X: TensorType) -> TensorType:
         r"""
         Evaluates \sum_k \phi_k(x) \phi_k(x), notice the argument at which we evaluate
         the harmonics is equal. See `self.addition` for the general case.

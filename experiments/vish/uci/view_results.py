@@ -15,9 +15,7 @@ def get_dataset_class(dataset):
 
 st.title("Visualise results")
 
-file_regex = st.text_input(
-    label="Specify location of JSON files", value="./logs/*/*",
-)
+file_regex = st.text_input(label="Specify location of JSON files", value="./logs/*/*",)
 print(file_regex)
 
 data = []
@@ -55,9 +53,7 @@ else:
     print(all_datasets)
 
     groupby_keys = st.multiselect(
-        label="Group by",
-        options=list(df.columns),
-        default=default_groupby_keys,
+        label="Group by", options=list(df.columns), default=default_groupby_keys,
     )
 
     selected_metrics = st.multiselect(

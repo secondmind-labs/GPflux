@@ -1,11 +1,6 @@
-import numpy as np
 import tensorflow as tf
 
-import gpflow
-import gpflow.covariances as cov
-from gpflow.base import TensorLike
 from gpflow.conditionals import conditional
-from gpflow.kullback_leiblers import prior_kl
 
 from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
 from gpflux.vish.kernels import ZonalKernel
@@ -17,13 +12,13 @@ def Lambda_diag_elements(
     harmonics: SphericalHarmonicInducingVariable, kernel: ZonalKernel,
 ) -> tf.Tensor:
     r"""
-    Returns the diagonal elements of Kuu as a flat array. This array corresponds to 
+    Returns the diagonal elements of Kuu as a flat array. This array corresponds to
     the concatentation of eigenvalues \lambda_i. The eigenvalue for each harmonic in
     a level is the same, so the eigenvalue is repeated the amount of harmonics in the level.
 
     Lambda = (\lambda_0, \lambda_1, ..., \lambda_1,
                 \lambda_2, ..., \lambda_2, ..., lambda_L, ..., \lambda_L)
-            
+
     :return: [M], where M = \sum_{level=0}^{num_level} N(dimension, level) and
         N(dim, level) give the number of harmonics per level, see
         `spherical_harmonics.num_harmonics`.
@@ -38,9 +33,7 @@ def Lambda_diag_elements(
     return tf.squeeze(chain(eigenvalues, number_of_harmonics_per_level))  # [M]
 
 
-@conditional.register(
-    object, SphericalHarmonicInducingVariable, ZonalKernel, object
-)
+@conditional.register(object, SphericalHarmonicInducingVariable, ZonalKernel, object)
 def _conditional(
     Xnew: tf.Tensor,
     harmonics: SphericalHarmonicInducingVariable,
@@ -92,9 +85,7 @@ def _conditional(
         # = \Phi \Lambda Lambda^\inv S Lambda^\inv \Lambda \Phi
         # = \Phi S \Phi
         # = \Phi L_S L_S^\top  \Phi
-        Phi_q_sqrt = tf.matmul(
-            Phi_Xnew[None], q_sqrt, transpose_a=True
-        )  # [K, N, M]
+        Phi_q_sqrt = tf.matmul(Phi_Xnew[None], q_sqrt, transpose_a=True)  # [K, N, M]
         Phi_S_Phi_diag = tf.reduce_sum(Phi_q_sqrt ** 2, axis=2)  # [K, N]
         var = Kff - Kuf_KuuInv_Kuf_diag + tf.transpose(Phi_S_Phi_diag)  # [N, K]
 

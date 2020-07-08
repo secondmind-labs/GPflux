@@ -9,7 +9,7 @@ from gpflow.conditionals import conditional
 from gpflow.kullback_leiblers import prior_kl
 from gpflux.vish.conditional import Lambda_diag_elements
 from gpflux.vish.inducing_variables import SphericalHarmonicInducingVariable
-from gpflux.vish.kernels import ArcCosine, Matern, Parameterised, ZonalKernel
+from gpflux.vish.kernels import ArcCosine, ZonalKernel
 from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
 
 
@@ -18,6 +18,7 @@ class NaiveSphericalHarmonicInducingVariable(SphericalHarmonicInducingVariable):
     Wrapper for `SphericalHarmonicInducingVariable` to redirect the multiple-dispatch
     methods Kuu, Kuf, conditional and prior_kl to do the naive thing.
     """
+
     pass
 
 
@@ -57,9 +58,7 @@ def conditional_naive(*args, **kwargs):
     return naive_conditional_implementation(*args, **kwargs)
 
 
-@prior_kl.register(
-    NaiveSphericalHarmonicInducingVariable, ZonalKernel, object, object
-)
+@prior_kl.register(NaiveSphericalHarmonicInducingVariable, ZonalKernel, object, object)
 def prior_kl_naive(*args, **kwargs):
     naive_prior_kl_implementation = prior_kl.dispatch(
         gpflow.inducing_variables.inducing_variables.InducingVariables,
@@ -100,7 +99,6 @@ def test_equality(dimension, max_degree):
     q_mu_init = q_sqrt_init @ np.random.randn(len(q_sqrt_init), 1)  # [M, 1]
     model_naive.q_sqrt.assign(q_sqrt_init[None])
     model_naive.q_mu.assign(q_mu_init)
-    elbo_naive = model_naive.elbo(data).numpy()
 
     # 'Fast' model, leveraging the diagonal Kuu.
     inducing_variable = SphericalHarmonicInducingVariable(harmonics)
@@ -112,15 +110,10 @@ def test_equality(dimension, max_degree):
     )
     model.q_sqrt.assign(q_sqrt_init[None])
     model.q_mu.assign(q_mu_init)
-    elbo = model.elbo(data).numpy()
 
-    np.testing.assert_allclose(
-        model.elbo(data).numpy(), model_naive.elbo(data).numpy()
-    )
+    np.testing.assert_allclose(model.elbo(data).numpy(), model_naive.elbo(data).numpy())
 
     # ELBO = Datafit - KL
     # If the ELBOs and the KLs are equal we know the Datafits are
     # equal as well.
-    np.testing.assert_allclose(
-        model.prior_kl().numpy(), model_naive.prior_kl().numpy()
-    )
+    np.testing.assert_allclose(model.prior_kl().numpy(), model_naive.prior_kl().numpy())

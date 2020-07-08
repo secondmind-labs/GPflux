@@ -1,12 +1,9 @@
 import gpflow
-import tensorflow as tf
 
 from gpflux.vish.spherical_harmonics import SphericalHarmonicsCollection
 
 
-class SphericalHarmonicInducingVariable(
-    gpflow.inducing_variables.InducingVariables
-):
+class SphericalHarmonicInducingVariable(gpflow.inducing_variables.InducingVariables):
     """Wrapper that contains the spherical harmonics"""
 
     def __init__(self, harmonics: SphericalHarmonicsCollection):

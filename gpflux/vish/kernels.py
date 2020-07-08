@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.base import Parameter, TensorLike, TensorType
+from gpflow.base import Parameter, TensorType, TensorType
 from gpflow.utilities import positive
 
 from gpflux.vish.gegenbauer_polynomial import Gegenbauer
@@ -50,17 +50,13 @@ class ZonalKernel(gpflow.kernels.Kernel, metaclass=abc.ABCMeta):
         self.dimension = dimension
         self.alpha = (self.dimension - 2.0) / 2.0
         self.variance = Parameter(variance, transform=positive())
-        self.weight_variances = Parameter(
-            weight_variances, transform=positive()
-        )
+        self.weight_variances = Parameter(weight_variances, transform=positive())
         self.truncation_level = truncation_level  # referred to as L
         # surface area of S^{d−1}
         self.surface_area_sphere = surface_area_sphere(dimension)
 
         self.degrees = np.arange(truncation_level).reshape(-1, 1)  # [L, 1]
-        self.gegenbauers = [
-            Gegenbauer(level, self.alpha) for level in self.degrees
-        ]
+        self.gegenbauers = [Gegenbauer(level, self.alpha) for level in self.degrees]
 
     def get_first_num_eigenvalues_and_degrees(
         self, num: Optional[int] = None
@@ -74,7 +70,7 @@ class ZonalKernel(gpflow.kernels.Kernel, metaclass=abc.ABCMeta):
         :param num: number of first eigenvalues to return.
             If None, all available eigenvalues are given, i.e. up to
             `self.truncation_level`.
-        
+
         :return: Array of eigenvalues and degrees, ([num, 1], [num, 1])
         """
         if num is None:
@@ -83,7 +79,7 @@ class ZonalKernel(gpflow.kernels.Kernel, metaclass=abc.ABCMeta):
         return self.eigenvalues[:num], self.degrees[:num]
 
     @property
-    def eigenvalues(self) -> TensorLike:
+    def eigenvalues(self) -> TensorType:
         """
         :return: [L, 1]
         """
@@ -112,15 +108,11 @@ class ZonalKernel(gpflow.kernels.Kernel, metaclass=abc.ABCMeta):
         cs = tf.stack(
             values=[c(inner_product) for c in self.gegenbauers], axis=0
         )  # [L, N1, N2]
-        factors = (
-            self.degrees / self.alpha + 1.0
-        ) / self.surface_area_sphere  # [L, 1]
+        factors = self.degrees / self.alpha + 1.0  # [L, 1]
         sum_level_phi_X_phi_X2 = factors[..., None] * cs  # [L, N1, N2]
         # eigenvalues
         Lambda_level = self.eigenvalues[..., None]  # [L, 1, 1]
-        return tf.reduce_sum(
-            Lambda_level * sum_level_phi_X_phi_X2, axis=0
-        )  # [N1, N2]
+        return tf.reduce_sum(Lambda_level * sum_level_phi_X_phi_X2, axis=0)  # [N1, N2]
 
     def K_diag(self, X):
         """
@@ -130,14 +122,10 @@ class ZonalKernel(gpflow.kernels.Kernel, metaclass=abc.ABCMeta):
         cs_at_one = tf.stack(
             values=[ones * c.value_at_1 for c in self.gegenbauers], axis=0
         )  # [L, N, 1]
-        factors = (
-            self.degrees / self.alpha + 1.0
-        ) / self.surface_area_sphere  # [L, 1]
+        factors = self.degrees / self.alpha + 1.0  # [L, 1]
         sum_level_phi_X_phi_X2 = factors[..., None] * cs_at_one  # [L, N, 1]
         Lambda_level = self.eigenvalues[..., None]  # [L, 1, 1]
-        return tf.reduce_sum(Lambda_level * sum_level_phi_X_phi_X2, axis=0)[
-            :, 0
-        ]  # [N]
+        return tf.reduce_sum(Lambda_level * sum_level_phi_X_phi_X2, axis=0)[:, 0]  # [N]
 
 
 class Matern(ZonalKernel):
@@ -233,18 +221,16 @@ class ArcCosine(ZonalKernel):
 
         # Only keep the degrees and eigenvalues that are non-zero
         self.degrees = self.degrees[mask].reshape(-1, 1)
-        self._eigenvalues_without_variance = all_eigenvalues_wo_variance[
-            mask
-        ].reshape(-1, 1)
+        self._eigenvalues_without_variance = all_eigenvalues_wo_variance[mask].reshape(
+            -1, 1
+        )
         # The gegenbauers are not needed anymore for the ArcCosine kernel
         # because the analytical expression for k(x, x') is known. The
         # default (super) implementations of K and K_diag are also overwritten
         # with this expression.
         # However, for test purposes (see tests/test_kernels:test_arccosine),
         # we keep the list of gegenbauers and update it corresponding to the mask.
-        self.gegenbauers = [
-            Gegenbauer(level, self.alpha) for level in self.degrees
-        ]
+        self.gegenbauers = [Gegenbauer(level, self.alpha) for level in self.degrees]
 
     def _J(self, theta):
         return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)

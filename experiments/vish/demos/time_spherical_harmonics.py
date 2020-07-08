@@ -10,7 +10,7 @@ from gpflux.vish.spherical_harmonics import (
     num_harmonics,
 )
 
-from notebooks.vish.ci_utils import is_running_pytest
+from gpflow.ci_utils import is_continuous_integration as is_running_pytest
 
 
 if __name__ == "__main__":

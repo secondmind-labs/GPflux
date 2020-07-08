@@ -6,7 +6,9 @@ import pytest
 import tensorflow as tf
 from scipy.integrate import quad
 from scipy.special import gegenbauer as scipy_gegenbauer
+from scipy.special import factorial, gamma
 
+from gpflux.vish.misc import surface_area_sphere
 from gpflux.vish.gegenbauer_polynomial import (
     Polynomial,
     Gegenbauer,
@@ -29,7 +31,7 @@ def test_polynomial():
     )
 
 
-@pytest.mark.parametrize("alpha", [0.5, 1.5, 2.0, 9.0,])
+@pytest.mark.parametrize("alpha", [0.5, 1.5, 2.0, 9.0])
 @pytest.mark.parametrize("n", range(10))
 def test_Gegenbauer(alpha, n):
     x = np.linspace(-1, 1, 1_000).reshape(-1, 1)
@@ -49,3 +51,34 @@ def test_Gegenbauer_extreme(max_degree, dimension):
         scipy_gegenbauer(max_degree, alpha)(x),
         Gegenbauer(max_degree, alpha)(tf.convert_to_tensor(x)).numpy(),
     )
+
+
+@pytest.mark.parametrize("degree", range(8))
+@pytest.mark.parametrize("dimension", range(3, 9))
+def test_normalisation_gegenbauer(degree, dimension):
+    omega_d = surface_area_sphere(dimension) / surface_area_sphere(dimension - 1)
+    alpha = (dimension - 2) / 2
+    gegenbauer = Gegenbauer(degree, alpha)
+
+    def c(t):
+        return gegenbauer(tf.cast(t, dtype=tf.float64)).numpy()
+
+    def func(t):
+        return c(t) ** 2 * (1 - t ** 2) ** (alpha - 0.5)
+
+    desired = quad(func, -1, 1)[0]
+    value = c(1) * alpha / (degree + alpha) * omega_d
+    np.testing.assert_almost_equal(desired, value, decimal=5)
+
+    # Definition Wiki https://en.wikipedia.org/wiki/Gegenbauer_polynomials
+    value2 = np.pi * 2 ** (1 - 2 * alpha) * gamma(degree + 2 * alpha)
+    value2 /= factorial(degree) * (degree + alpha) * gamma(alpha) ** 2
+    np.testing.assert_almost_equal(desired, value2, decimal=5)
+
+
+@pytest.mark.parametrize("alpha", [0.5, 1.5, 2.0, 9.0])
+@pytest.mark.parametrize("n", range(10))
+def test_gegenbauer_at_1(n, alpha):
+    c_1 = Gegenbauer(n, alpha)(tf.cast(1.0, dtype=tf.float64)).numpy()
+    expected = gamma(2 * alpha + n) / gamma(2 * alpha) / factorial(n)
+    np.testing.assert_almost_equal(c_1, expected)

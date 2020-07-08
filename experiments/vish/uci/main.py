@@ -1,20 +1,15 @@
 import datetime
 import math
 import json
-import os
-import pprint
-import sys
 import time
 from dataclasses import dataclass
-from typing import Tuple, Type
+from typing import Type
 
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from sacred import Experiment
 from sacred.observers import FileStorageObserver
 from scipy.stats import norm
-from sklearn.metrics import mean_squared_error, r2_score
 
 import gpflux
 import gpflow
@@ -25,7 +20,7 @@ from vish.helpers import (
     get_max_degree_closest_but_smaller_than_num_inducing,
 )
 from vish.inducing_variables import SphericalHarmonicInducingVariable
-from vish.kernels import ArcCosine, Matern, Parameterised
+from vish.kernels import ArcCosine, Matern
 from vish.spherical_harmonics import SphericalHarmonicsCollection
 
 from utils import ExperimentName
@@ -48,10 +43,7 @@ def config():
     dataset = "Yacht"
     # number of inducing points
     max_num_inducing = 1024
-    (
-        max_degree,
-        num_inducing,
-    ) = get_max_degree_closest_but_smaller_than_num_inducing(
+    (max_degree, num_inducing,) = get_max_degree_closest_but_smaller_than_num_inducing(
         kernel_type="matern" if "mat" in kernel_type else "arccosine",
         # dimension + 1 to account for the bias
         dimension=get_dataset_class(dataset).D + 1,
@@ -142,12 +134,7 @@ def experiment_info_dict(
 
 @ex.capture
 def build_kernel_and_inducing_variable(
-    dimension,
-    kernel_type,
-    max_degree,
-    model_type,
-    num_inducing,
-    truncation_level,
+    dimension, kernel_type, max_degree, model_type, num_inducing, truncation_level,
 ):
     if model_type == "vish":
         if "mat" in kernel_type:
@@ -206,6 +193,7 @@ def build_model(data_train, model_type, framework):
     if model_type == "vish":
         print("Init")
         from vish.conditional import Lambda_diag_elements
+
         q_sqrt_init = np.diag(
             Lambda_diag_elements(layer.inducing_variable, layer.kernel).numpy() ** 0.5
         )  # [M, M]
@@ -234,9 +222,7 @@ def build_gpflux_model(data_train, kernel_type, max_degree, natgrad):
     )
     gp_layer._initialized = True
 
-    likelihood_layer = gpflux.layers.LikelihoodLayer(
-        gpflow.likelihoods.Gaussian(1.0)
-    )
+    likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(1.0))
 
     inputs = tf.keras.Input((dimension,), name="inputs")
     targets = tf.keras.Input((1,), name="targets")

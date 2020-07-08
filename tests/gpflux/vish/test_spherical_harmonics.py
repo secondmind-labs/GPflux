@@ -1,17 +1,14 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from scipy.integrate import quad
-from scipy.special import gamma
-from scipy.special import gegenbauer as scipy_gegenbauer
+
 from gpflux.vish.fundamental_set import FundamentalSystemCache
-
-
 from gpflux.vish.spherical_harmonics import (
     FastSphericalHarmonicsCollection,
     SphericalHarmonicsCollection,
     SphericalHarmonicsLevel,
 )
+from gpflux.vish.fundamental_set import build_fundamental_system
 from gpflux.vish.misc import spherical_to_cartesian, spherical_to_cartesian_4d
 
 
@@ -38,6 +35,10 @@ def test_orthonormal_basis_3d(max_degree):
         @ (harmonics_at_x.T * np.sin(x_spherical[:, [1]]))
         * d_x_spherical
     )
+
+    from gpflux.vish.misc import surface_area_sphere
+
+    inner_products = inner_products / surface_area_sphere(dimension)
 
     np.testing.assert_array_almost_equal(
         inner_products, np.eye(len(harmonics_at_x)), decimal=2
@@ -78,6 +79,10 @@ def test_orthonormal_basis_4d(max_degree):
             )
             inner_products[i, j] = v
 
+    from gpflux.vish.misc import surface_area_sphere
+
+    inner_products = inner_products / surface_area_sphere(dimension)
+
     np.testing.assert_array_almost_equal(
         inner_products, np.eye(len(harmonics)), decimal=1
     )
@@ -91,7 +96,7 @@ def test_equality_spherical_harmonics_collections(dimension, max_degree):
     harmonics = SphericalHarmonicsCollection(dimension, max_degree)
 
     num_points = 100
-    X = np.random.randn(100, dimension)
+    X = np.random.randn(num_points, dimension)
     # make unit vectors
     X /= np.sum(X ** 2, axis=-1, keepdims=True) ** 0.5
 
@@ -122,3 +127,11 @@ def test_addition_theorem(dimension, degree):
     np.testing.assert_array_almost_equal(
         np.diag(addition_manual)[..., None], harmonics.addition_at_1(X).numpy()
     )
+
+
+def test_building_fundamental_set_shapes():
+    dimension = 40
+    degree = 1
+    num_harmonics = 5
+    x_system = build_fundamental_system(dimension, degree, num_harmonics)
+    assert x_system.shape == (5, 40)
