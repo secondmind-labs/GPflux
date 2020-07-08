@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy import linalg, optimize
-from scipy.special import comb as combinations, gegenbauer as Gegenbauer
+from scipy.special import comb as combinations, gegenbauer as ScipyGegenbauer
 
 
 class FundamentalSystemCache:
@@ -70,7 +70,7 @@ def build_fundamental_system(
         https://arxiv.org/pdf/1304.2585.pdf
     """
     alpha = (dimension - 2) / 2.0
-    gegenbauer = Gegenbauer(degree, alpha)
+    gegenbauer = ScipyGegenbauer(degree, alpha)
     system_size = num_harmonics(dimension, degree)
 
     # 1. Choose first direction in system to be north pole
@@ -169,18 +169,20 @@ def cholesky_of_gegenbauered_gram(gegenbauer_polynomial, x_matrix):
     return np.linalg.cholesky(gegenbauer_polynomial(XtX))
 
 
-def normalize(vec):
+def normalize(vec: np.ndarray):
+    assert len(vec.shape) == 1
     return vec / norm(vec)
 
 
-def norm(vec):
+def norm(vec: np.ndarray):
+    assert len(vec.shape) == 1
     return np.sqrt(np.sum(np.square(vec)))
 
 
 if __name__ == "__main__":
     from multiprocessing import Pool
 
-    def calc_degrees(dimension, max_harmonics):
+    def calc_degrees(dimension: int, max_harmonics: int):
         harmonics = 0
         degree = 1
         while harmonics < max_harmonics:
@@ -189,7 +191,7 @@ if __name__ == "__main__":
         degree -= 1
         return degree
 
-    def regenerate_cache(dimension):
+    def regenerate_cache(dimension: int):
         max_degrees = calc_degrees(dimension, max_harmonics=1000)
         FundamentalSystemCache(dimension).regenerate_and_save_cache(max_degrees)
 
