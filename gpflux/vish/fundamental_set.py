@@ -11,7 +11,7 @@ class FundamentalSystemCache:
     Fundamental system are sets of points that allow the user to evaluate the spherical
     harmonics in an arbitrary dimension"""
 
-    def __init__(self, dimension: int, load_dir="fundamental_systems"):
+    def __init__(self, dimension: int, load_dir="fundamental_system"):
         self.load_dir = Path(__file__).parents[0] / load_dir
         self.file_name = self.load_dir / f"fs_{dimension}D.npz"
         self.dimension = dimension
