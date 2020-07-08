@@ -17,7 +17,8 @@ class FundamentalSystemCache:
         self.dimension = dimension
 
         if self.file_name.exists():
-            self.cache = np.load(self.file_name)
+            with np.load(self.file_name) as data:
+                self.cache = {k: v for (k, v) in data.items()}
         else:
             self.cache = {}
 
