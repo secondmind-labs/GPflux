@@ -1,8 +1,8 @@
 LIB_NAME = gpflux
 TESTS_NAME = tests
 ARCHS_NAME = experiments
-LINT_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME) notebooks
-TYPE_NAMES = $(LIB_NAME) $(ARCHS_NAME) $(TESTS_NAME)
+LINT_NAMES = $(LIB_NAME) $(TESTS_NAME) notebooks
+TYPE_NAMES = $(LIB_NAME) $(TESTS_NAME)
 
 # the --per-file-ignores are to ignore "unused import" warnings in __init__.py files (F401)
 # the F403 ignore in gpflux/__init__.py allows the `from .<submodule> import *`
@@ -14,6 +14,7 @@ LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
                      $(LIB_NAME)/layers/__init__.py:F401 \
                      $(LIB_NAME)/models/__init__.py:F401 \
                      $(LIB_NAME)/optimization/__init__.py:F401 \
+                     $(LIB_NAME)/vish/__init__.py:F401,F403 \
                      $(LIB_NAME)/utils/__init__.py:F401"
 
 LINT_IGNORES = "W503,E203"

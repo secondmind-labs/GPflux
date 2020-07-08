@@ -11,6 +11,7 @@ requirements = [
     "tensorflow==2.1.0",
     "tensorflow-probability==0.9.0",
     "gpflow>=2.0.2",
+    "json-tricks",
     "pio_mllib>=0.0.1",
 ]
 
