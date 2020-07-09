@@ -97,7 +97,8 @@ def build_fundamental_system(
 
             if result[1] <= ndet:
                 Z_next, ndet, *_ = result
-                # break  # should we break when we find the best vector
+                #  TODO: we should we break when we find the best vector.
+                #  Unclear how to do this at this point.
             # Try again with new x_init
             restarts += 1
 
