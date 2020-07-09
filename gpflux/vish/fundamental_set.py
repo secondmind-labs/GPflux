@@ -101,7 +101,7 @@ def build_fundamental_system(
                 #  Unclear how to do this at this point.
             # Try again with new x_init
             restarts += 1
-        print(f"det: {-ndet}, ({i + 1} of {system_size})")
+        print(f"det: {-ndet}, ({i + 1} of {system_size}, {dimension}D)")
         X_next = normalize(Z_next).reshape(1, dimension)
         X_system = np.vstack([X_system, X_next])
         M_system_chol = cholesky_of_gegenbauered_gram(gegenbauer, X_system)
