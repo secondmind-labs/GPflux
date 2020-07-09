@@ -130,8 +130,8 @@ def test_addition_theorem(dimension, degree):
 
 
 def test_building_fundamental_set_shapes():
-    dimension = 40
-    degree = 1
-    num_harmonics = 5
-    x_system = build_fundamental_system(dimension, degree, num_harmonics)
-    assert x_system.shape == (5, 40)
+    dimension = 5
+    x_system1 = build_fundamental_system(dimension, degree=1)
+    assert x_system1.shape == (5, 5)
+    x_system2 = build_fundamental_system(dimension, degree=0)
+    assert x_system2.shape == (1, 5)
