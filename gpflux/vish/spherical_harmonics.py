@@ -282,9 +282,7 @@ class SphericalHarmonicsLevel:
             Y = X
         XYT = tf.matmul(X, Y, transpose_b=True)  # [N1, N2]
         c = self.gegenbauer(XYT)  # [N1, N2]
-        return (
-            (self.degree / self.alpha + 1.0) * c
-        )  # [N1, N2]
+        return (self.degree / self.alpha + 1.0) * c  # [N1, N2]
 
     def addition_at_1(self, X: TensorType) -> TensorType:
         r"""
