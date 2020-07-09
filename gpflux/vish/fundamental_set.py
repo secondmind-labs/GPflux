@@ -140,6 +140,9 @@ def calculate_decrement_in_determinant(Z, X_system, M_system_chol, gegenbauer):
     M_new = gegenbauer(1.0)  # X normalized so X @ X^T = 1
     M_cross = gegenbauer(XXd)
 
+    # Determinant of M is computed efficiently making use of the Schur complement
+    # M = [[ M_system_chol, M_cross], [ M_cross^T, M_new]]
+    # det(M) = det(M_system_chol) * det(M_new - M_cross^T M_system_chol^{-1} M_cross )
     res = linalg.solve_triangular(M_system_chol, M_cross, trans=0, lower=True)
     return np.sum(np.square(res)) - M_new
 
