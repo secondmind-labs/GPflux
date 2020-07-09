@@ -7,7 +7,7 @@ from scipy.special import comb, gegenbauer as scipy_gegenbauer
 from gpflow.base import TensorType
 from gpflow.config import default_float
 
-from gpflux.vish.fundamental_set import build_fundamental_system
+from gpflux.vish.fundamental_set import FundamentalSystemCache
 from gpflux.vish.gegenbauer_polynomial import Gegenbauer
 from gpflux.vish.misc import surface_area_sphere
 
@@ -91,8 +91,10 @@ class SphericalHarmonicsCollection:
         if isinstance(degrees, int):
             degrees = list(range(degrees))
 
+        self.fundamental_system = FundamentalSystemCache(dimension)
         self.harmonic_levels = [
-            SphericalHarmonicsLevel(dimension, degree) for degree in degrees
+            SphericalHarmonicsLevel(dimension, degree, self.fundamental_system)
+            for degree in degrees
         ]
 
     @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=default_float())])
@@ -216,7 +218,7 @@ class SphericalHarmonicsLevel:
         https://arxiv.org/pdf/1304.2585.pdf
     """
 
-    def __init__(self, dimension: int, degree: int):
+    def __init__(self, dimension: int, degree: int, fundamental_system=None):
         r"""
         param dimension: if d = dimension, then
             S^{d-1} = { x ∈ R^d and ||x||_2 = 1 }
@@ -230,13 +232,7 @@ class SphericalHarmonicsLevel:
         self.alpha = (self.dimension - 2) / 2.0
         self.num_harmonics_in_level = num_harmonics(self.dimension, self.degree)
 
-        self.V = build_fundamental_system(
-            self.dimension,
-            self.degree,
-            self.num_harmonics_in_level,
-            num_restarts=10,
-            gtol=1e-8,
-        )  # [M, D], with M = number of harmonics
+        self.V = fundamental_system.load(self.degree)
 
         # surface area of S^{d−1}
         self.surface_area_sphere = surface_area_sphere(dimension)

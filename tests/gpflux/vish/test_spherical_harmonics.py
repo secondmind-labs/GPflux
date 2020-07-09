@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from gpflux.vish.fundamental_set import FundamentalSystemCache
 from gpflux.vish.spherical_harmonics import (
     FastSphericalHarmonicsCollection,
     SphericalHarmonicsCollection,
@@ -107,7 +108,8 @@ def test_equality_spherical_harmonics_collections(dimension, max_degree):
 @pytest.mark.parametrize("dimension", range(3, 7, 1))
 @pytest.mark.parametrize("degree", range(1, 7, 3))
 def test_addition_theorem(dimension, degree):
-    harmonics = SphericalHarmonicsLevel(dimension, degree)
+    fundamental_system = FundamentalSystemCache(dimension)
+    harmonics = SphericalHarmonicsLevel(dimension, degree, fundamental_system)
     X = np.random.randn(100, dimension)
     X = X / (np.sum(X ** 2, keepdims=True, axis=1) ** 0.5)
     harmonics_at_X = harmonics(X)[..., None]  # [M:=N(dimension, degree), N, 1]
@@ -128,8 +130,8 @@ def test_addition_theorem(dimension, degree):
 
 
 def test_building_fundamental_set_shapes():
-    dimension = 40
-    degree = 1
-    num_harmonics = 5
-    x_system = build_fundamental_system(dimension, degree, num_harmonics)
-    assert x_system.shape == (5, 40)
+    dimension = 5
+    x_system1 = build_fundamental_system(dimension, degree=1)
+    assert x_system1.shape == (5, 5)
+    x_system2 = build_fundamental_system(dimension, degree=0)
+    assert x_system2.shape == (1, 5)
