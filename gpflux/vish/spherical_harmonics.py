@@ -237,7 +237,7 @@ class SphericalHarmonicsLevel:
         # surface area of S^{d−1}
         self.surface_area_sphere = surface_area_sphere(dimension)
         # normalising constant
-        c = self.alpha * self.surface_area_sphere / (degree + self.alpha)
+        c = self.alpha / (degree + self.alpha)
         VtV = np.dot(self.V, self.V.T)
         self.A = c * scipy_gegenbauer(self.degree, self.alpha)(VtV)
         self.L = np.linalg.cholesky(self.A)  # [M, M]
@@ -268,7 +268,7 @@ class SphericalHarmonicsLevel:
 
         Mathematically:
             \sum_{k=1}^{N(dim, degree)} \phi_k(X) * \phi_k(Y)
-                = (degree + \alpha) / \alpha / \omega_d * C_degree^\alpha(X^T Y)
+                = (degree + \alpha) / \alpha * C_degree^\alpha(X^T Y)
         where \alpha = (dimension - 2) / 2 and omega_d the surface area of the
         hypersphere S^{d-1}.
 
@@ -283,7 +283,7 @@ class SphericalHarmonicsLevel:
         XYT = tf.matmul(X, Y, transpose_b=True)  # [N1, N2]
         c = self.gegenbauer(XYT)  # [N1, N2]
         return (
-            (self.degree / self.alpha + 1.0) / self.surface_area_sphere * c
+            (self.degree / self.alpha + 1.0) * c
         )  # [N1, N2]
 
     def addition_at_1(self, X: TensorType) -> TensorType:
@@ -293,7 +293,7 @@ class SphericalHarmonicsLevel:
 
         This simplifies to
             \sum_{k=1}^{N(dim, degree)} \phi_k(x) * \phi_k(x)
-                = (degree + \alpha) / \alpha / \omega_d * C_degree^\alpha(1)
+                = (degree + \alpha) / \alpha * C_degree^\alpha(1)
 
         as all vectors in `X` are normalised so that x^\top x == 1.
 
@@ -303,7 +303,7 @@ class SphericalHarmonicsLevel:
         c = (
             tf.ones((X.shape[0], 1), dtype=X.dtype) * self.gegenbauer.value_at_1
         )  # [N, 1]
-        return (self.degree / self.alpha + 1.0) / self.surface_area_sphere * c  # [N, 1]
+        return (self.degree / self.alpha + 1.0) * c  # [N, 1]
 
     def eigenvalue(self) -> float:
         """
