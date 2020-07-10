@@ -125,7 +125,13 @@ def test_model_compilation(deep_gp_model_builder):
     assert 3.830 < history.history["loss"][-1] < 3.841
 
     test_batch, _ = next(iter(train_dataset))
-    mean, var = deep_gp_model.predict(test_batch)
+
+    output = deep_gp_model.predict(test_batch)
+    if isinstance(deep_gp_model, DeepGP):
+        mean, var = output[0]
+    else:
+        mean, var = output
+
     assert mean.shape == (batch, 1)
     assert var.shape == (batch, 1)
 
@@ -173,6 +179,10 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
     assert 3.67 < objective(test_mini_batch) < 3.81
 
     test_batch, _ = next(iter(train_dataset))
-    mean, var = deep_gp_model.predict(test_batch)
+    output = deep_gp_model.predict(test_batch)
+    if isinstance(deep_gp_model, DeepGP):
+        mean, var = output[0]
+    else:
+        mean, var = output
     assert mean.shape == (batch, 1)
     assert var.shape == (batch, 1)

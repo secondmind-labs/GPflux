@@ -149,7 +149,11 @@ class GPLayer(TrackableLayer):
             output dimension Q. Cov shape -> [N, Q]
         :param white:
         """
-        if self.initializer.init_at_predict and not self._initialized:
+        if (
+            inputs.shape[0] is not None  # do not initialize for symbolic tensors
+            and self.initializer.init_at_predict
+            and not self._initialized
+        ):
             self.initialize_inducing_variables(inputs=inputs)
 
         mean_function = self.mean_function(inputs)

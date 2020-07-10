@@ -121,7 +121,7 @@ def get_live_plotter(train_data, model):
     def plotter(*args, **kwargs):
         nonlocal contour_line
 
-        ZZ_val = model((sample_points, None), training=False)
+        ZZ_val = model.predict_f(sample_points)
         if isinstance(ZZ_val, tuple):
             ZZ_val = ZZ_val[0]
         ZZ_hat = ZZ_val.numpy().reshape(XX.shape)
