@@ -41,6 +41,7 @@ def build_gp_layers(layer_sizes, num_data):
         )
 
         layer = GPLayer(kernel, inducing_vars, num_data)
+        layer.q_sqrt.assign(0.01 * layer.q_sqrt)
         gp_layers.append(layer)
 
     gp_layers[-1].mean_function = Zero()

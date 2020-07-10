@@ -2,13 +2,11 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Optional
 import warnings
 
 import numpy as np
 from scipy.cluster.vq import kmeans2
 
-from .initializer import VariationalInitializer
 from .z_initializer import GivenZInitializer
 
 
@@ -35,14 +33,11 @@ class KmeansInitializer(GivenZInitializer):
     """
 
     def __init__(
-        self,
-        X: np.ndarray,
-        num_inducing: int,
-        qu_initializer: Optional[VariationalInitializer] = None,
+        self, X: np.ndarray, num_inducing: int,
     ):
         """
         :param X: dataset whose k-means clusters to use for inducing points.
         :param num_inducing: number of clusters to select
         """
         Z = init_inducing_points(X, num_inducing)
-        super().__init__(Z=Z, qu_initializer=qu_initializer)
+        super().__init__(Z=Z)

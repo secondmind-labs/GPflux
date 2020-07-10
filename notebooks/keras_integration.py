@@ -53,10 +53,9 @@ def create_layers():
     layer1.mean_function = (
         gpflow.mean_functions.Identity()
     )  # TODO: pass layer_type instead
+    layer1.q_sqrt.assign(layer1.q_sqrt * 0.01)
 
-    init_last_layer = gpflux.initializers.FeedForwardInitializer(
-        gpflux.initializers.ZeroOneVariationalInitializer()
-    )
+    init_last_layer = gpflux.initializers.FeedForwardInitializer()
     layer2 = gpflux.helpers.construct_gp_layer(
         num_data, num_inducing, hidden_dim, output_dim, initializer=init_last_layer,
     )

@@ -95,14 +95,6 @@ class GPLayer(TrackableLayer):
                 num_latent_gps,
             )
 
-        # TODO the initial value of q_mu and q_sqrt got changed from empty()
-        # to zeros() due to the new Parameter validation in gpflow2, which
-        # would error on any nan or inf values obtained in the random memory
-        # block obtained by empty(). If we want to indicate that these are
-        # uninitialised variables, we may want to set them to nan using
-        # full(..., np.nan) and/or add a check_validity=False option to
-        # gpflow.Parameter()
-
         self.q_mu = Parameter(
             np.zeros((self.num_inducing, self.num_latent_gps)),
             dtype=default_float(),
@@ -110,7 +102,7 @@ class GPLayer(TrackableLayer):
         )  # [num_inducing, output_dim]
 
         self.q_sqrt = Parameter(
-            np.zeros((self.num_latent_gps, self.num_inducing, self.num_inducing)),
+            np.stack([np.eye(self.num_inducing) for _ in range(self.num_latent_gps)]),
             transform=triangular(),
             dtype=default_float(),
             name="q_sqrt",
@@ -130,8 +122,6 @@ class GPLayer(TrackableLayer):
         """Build the variables necessary on first call"""
 
         super().build(input_shape)
-        self.initializer.init_variational_params(self.q_mu, self.q_sqrt)
-
         if not self.initializer.init_at_predict:
             self.initialize_inducing_variables()
 

@@ -43,7 +43,7 @@ def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
         mok,
         moiv,
         num_data,
-        initializer=gpflux.initializers.ZZeroOneInitializer(Z=inducing_variable.Z),
+        initializer=gpflux.initializers.GivenZInitializer(Z=inducing_variable.Z),
         mean_function=gpflow.mean_functions.Zero(),
         returns_samples=False,
     )

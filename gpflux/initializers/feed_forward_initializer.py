@@ -2,13 +2,11 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Optional
-
 import tensorflow as tf
 from gpflow import default_float
 from gpflow.inducing_variables import InducingPoints
 
-from .initializer import Initializer, VariationalInitializer
+from .initializer import Initializer
 
 
 class FeedForwardInitializer(Initializer):
@@ -19,8 +17,8 @@ class FeedForwardInitializer(Initializer):
     pad with draws from a unit-normal distribution.
     """
 
-    def __init__(self, qu_initializer: Optional[VariationalInitializer] = None):
-        super().__init__(init_at_predict=True, qu_initializer=qu_initializer)
+    def __init__(self):
+        super().__init__(init_at_predict=True)
 
     def init_single_inducing_variable(
         self, inducing_variable: InducingPoints, inputs=None

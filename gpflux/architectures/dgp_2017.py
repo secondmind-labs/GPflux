@@ -20,8 +20,6 @@ from gpflow.utilities import set_trainable
 from gpflux.layers import GPLayer, LikelihoodLayer
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.initializers import (
-    ZeroOneVariationalInitializer,
-    MeanFieldVariationalInitializer,
     KmeansInitializer,
     FeedForwardInitializer,
 )
@@ -93,25 +91,18 @@ def build_deep_gp_2017(X: np.ndarray, layer_dims: Sequence[int], config: Config)
 
         if is_last_layer:
             mean_function = Zero()
+            q_sqrt_scaling = 1
         else:
             mean_function = construct_mean_function(X_running, D_in, D_out)
             X_running = mean_function(X_running)
             if tf.is_tensor(X_running):
                 X_running = X_running.numpy()
-
-        if is_last_layer:
-            qu_initializer = ZeroOneVariationalInitializer()
-        else:
-            qu_initializer = MeanFieldVariationalInitializer(
-                config.inner_layer_qsqrt_factor
-            )
+            q_sqrt_scaling = config.inner_layer_qsqrt_factor
 
         if is_first_layer:
-            initializer = KmeansInitializer(
-                X, num_inducing=config.num_inducing, qu_initializer=qu_initializer
-            )
+            initializer = KmeansInitializer(X, num_inducing=config.num_inducing)
         else:
-            initializer = FeedForwardInitializer(qu_initializer=qu_initializer)
+            initializer = FeedForwardInitializer()
 
         returns_samples = not is_last_layer
 
@@ -123,6 +114,7 @@ def build_deep_gp_2017(X: np.ndarray, layer_dims: Sequence[int], config: Config)
             mean_function=mean_function,
             returns_samples=returns_samples,
         )
+        layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
         gp_layers.append(layer)
 
     likelihood = Gaussian(config.likelihood_noise_variance)

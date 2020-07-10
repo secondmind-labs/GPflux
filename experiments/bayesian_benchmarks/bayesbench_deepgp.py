@@ -19,7 +19,6 @@ from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_vari
 from gpflux.initializers import (
     KmeansInitializer,
     FeedForwardInitializer,
-    ZeroOneVariationalInitializer,
 )
 
 import numpy as np
@@ -56,18 +55,19 @@ def build_deep_gp(X, likelihood, num_inducing):
 
         if is_first_layer:
             initializer = KmeansInitializer(X, num_inducing=num_inducing)
-        elif not is_last_layer:
-            initializer = FeedForwardInitializer()
+
         else:
-            initializer = FeedForwardInitializer(
-                qu_initializer=ZeroOneVariationalInitializer()
-            )
+            initializer = FeedForwardInitializer()
 
         extra_args = {}
         if is_last_layer:
             extra_args.update(dict(mean_function=Zero(), returns_samples=False))
+            q_sqrt_scaling = 1
+        else:
+            q_sqrt_scaling = 0.01
 
         layer = GPLayer(kernel, inducing_var, num_data, initializer, **extra_args)
+        layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
         gp_layers.append(layer)
 
     return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(likelihood))
