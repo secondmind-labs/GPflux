@@ -20,6 +20,7 @@ from gpflux.layers import TrackableLayer
 from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.exceptions import GPInitializationError
 from gpflux.utils.runtime_checks import verify_compatibility
+from gpflux.sampling.sample import efficient_sample
 
 
 class GPLayer(TrackableLayer):
@@ -217,4 +218,17 @@ class GPLayer(TrackableLayer):
         """
         return prior_kl(
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=whiten
+        )
+
+    def sample(self):
+        return (
+            efficient_sample(
+                self.inducing_variable,
+                self.kernel,
+                self.q_mu,
+                q_sqrt=self.q_sqrt,
+                white=self.white,
+            )
+            # Makes use of the magic __add__ of the Sample class
+            + self.mean_function
         )

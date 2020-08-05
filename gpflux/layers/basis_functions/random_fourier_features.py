@@ -12,8 +12,6 @@ from gpflow.base import TensorType
 # Supported kernels for Random Fourier Features (RFF).
 # RFF can be built for stationary kernels (shift invariant) for which we can
 # sample frequencies from their power spectrum.
-from tensorflow_core.python.framework import tensor_shape
-
 RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
     gpflow.kernels.Matern12,
@@ -106,13 +104,8 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         return output
 
     def compute_output_shape(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape)
+        input_shape = tf.TensorShape(input_shape)
         input_shape = input_shape.with_rank(2)
-        if input_shape.dims[-1].value is None:
-            raise ValueError(
-                "The innermost dimension of input shape must be defined. Given: %s"
-                % input_shape
-            )
         return input_shape[:-1].concatenate(self.output_dim)
 
     def get_config(self):

@@ -9,3 +9,5 @@ from gpflux.layers.latent_variable_augmentation_layer import (
 )
 from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.layers.bayesian_dense_layer import BayesianDenseLayer
+
+from gpflux.layers import basis_functions

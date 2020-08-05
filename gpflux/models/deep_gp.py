@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from gpflux.layers import GPLayer
 from gpflux.models.bayesian_model import BayesianModel
+from gpflux.sampling.sample import Sample
 
 
 class DeepGP(BayesianModel):
@@ -21,3 +22,16 @@ class DeepGP(BayesianModel):
         super().__init__(X_input, Y_input, F_output, likelihood_layer, num_data)
 
         self.gp_layers = gp_layers
+
+    def sample(self):
+        function_draws = [layer.sample() for layer in self.gp_layers]
+
+        class ChainedSample(Sample):
+            """Chains samples from consecutive layers."""
+
+            def __call__(self, X):
+                for f in function_draws:
+                    X = f(X)
+                return X
+
+        return ChainedSample()
