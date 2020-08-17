@@ -41,6 +41,7 @@ def compute_gpr_lml(X, Y):
     return -model.training_loss()
 
 
+@pytest.mark.skip()
 def test_bayesbench_deepgp_snelson(bayesbench_deepgp):
     tf.random.set_seed(0)
     np.random.seed(0)

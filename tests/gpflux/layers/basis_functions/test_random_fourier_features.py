@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from tensorflow.python.keras.utils.kernelized_utils import inner_product
-from tensorflow_core.python.keras.testing_utils import layer_test
+from tensorflow.python.keras.testing_utils import layer_test
 
 from gpflux.layers.basis_functions.random_fourier_features import (
     RandomFourierFeatures,
