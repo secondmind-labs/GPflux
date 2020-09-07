@@ -10,7 +10,7 @@ requirements = [
     "matplotlib",
     "tensorflow==2.2.0",
     "tensorflow-probability==0.10.1",
-    "gpflow>=2.0.2",
+    "gpflow>=2.1.0",
     "json-tricks",
     "pio_mllib>=0.0.1",
 ]

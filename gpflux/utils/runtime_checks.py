@@ -20,14 +20,14 @@ def verify_compatibility(
     inducing_variable: MultioutputInducingVariables,
 ):
     """
-        Provide error checking on shapes at layer construction. This method will be
-        made simpler by having enhancements to GPflow: eg by adding foo.output_dim
-        attribute, where foo is a MultioutputInducingVariable
+    Provide error checking on shapes at layer construction. This method will be
+    made simpler by having enhancements to GPflow: eg by adding foo.output_dim
+    attribute, where foo is a MultioutputInducingVariable
 
-        :param kernel: The multioutput kernel for the layer
-        :param inducing_variable: The inducing features for the layer
-        :param mean_function: The mean function applied to the inputs.
-        """
+    :param kernel: The multioutput kernel for the layer
+    :param inducing_variable: The inducing features for the layer
+    :param mean_function: The mean function applied to the inputs.
+    """
     if not isinstance(inducing_variable, MultioutputInducingVariables):
         raise TypeError(
             "`inducing_variable` must be a `gpflow.inducing_variables.MultioutputInducingVariables`"

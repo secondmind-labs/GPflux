@@ -31,7 +31,8 @@ class Polynomial:
         self.powers = powers
 
     def __call__(self, x: TensorType) -> TensorType:
-        """ Evaluates the polynomial @ `x`
+        """
+        Evaluates the polynomial @ `x`
         :param x: 1D input values at which to evaluate the polynomial, [...]
 
         :return:

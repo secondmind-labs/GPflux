@@ -127,9 +127,13 @@ class NatGradModel(tf.keras.Model):
         # TensorFlow 2.2.
 
         variational_params, other_vars = self._split_natgrad_params_and_other_vars()
+        variational_params_vars = [
+            (q_mu.unconstrained_variable, q_sqrt.unconstrained_variable)
+            for (q_mu, q_sqrt) in variational_params
+        ]
 
         variational_params_grads, other_grads = tape.gradient(
-            loss, (variational_params, other_vars)
+            loss, (variational_params_vars, other_vars)
         )
 
         num_natgrad_opt = len(self.natgrad_optimizers)

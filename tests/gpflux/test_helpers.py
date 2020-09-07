@@ -45,8 +45,8 @@ def test_construct_kernel_separate_independent_duplicates():
     assert all([isinstance(k, Matern52) for k in mok.kernels])
     # check kernels have same hyperparameter values but are independent
     assert mok.kernels[0] is not mok.kernels[-1]
-    assert mok.kernels[0].variance == mok.kernels[-1].variance
-    assert mok.kernels[0].lengthscales == mok.kernels[-1].lengthscales
+    assert mok.kernels[0].variance.numpy() == mok.kernels[-1].variance.numpy()
+    assert mok.kernels[0].lengthscales.numpy() == mok.kernels[-1].lengthscales.numpy()
 
 
 def test_construct_kernel_shared_independent_duplicates():

@@ -183,11 +183,13 @@ def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
         layer = model.gp_layers[0]
         variational_params = [(layer.q_mu, layer.q_sqrt)]
 
-    variational_variables = []
-    for var_list in variational_params:
-        for var in var_list:
-            gpflow.set_trainable(var, False)
-            variational_variables.append(var.unconstrained_variable)
+    variational_params_vars = []
+    for param_list in variational_params:
+        these_vars = []
+        for param in param_list:
+            gpflow.set_trainable(param, False)
+            these_vars.append(param.unconstrained_variable)
+        variational_params_vars.append(these_vars)
     hyperparam_variables = model.trainable_variables
 
     X, Y = data
@@ -212,10 +214,10 @@ def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
         model.compile()/fit(). Hence we manually re-create the same optimization step.
         """
         with tf.GradientTape() as tape:
-            tape.watch(variational_variables)
+            tape.watch(variational_params_vars)
             loss = training_loss()
         variational_grads, other_grads = tape.gradient(
-            loss, (variational_params, hyperparam_variables)
+            loss, (variational_params_vars, hyperparam_variables)
         )
         for (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt) in zip(
             variational_grads, variational_params

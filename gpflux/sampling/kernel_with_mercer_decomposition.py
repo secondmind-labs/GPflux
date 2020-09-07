@@ -53,7 +53,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         phi_squared = self._eigenfunctions(X) ** 2  # [N, L]
         r = tf.reduce_sum(phi_squared * tf.transpose(self._eigenvalues), axis=1)  # [N,]
         N = tf.shape(X)[0]
-        tf.debugging.assert_equal(tf.shape(r), [N,])  # noqa: E231
+        tf.debugging.assert_equal(tf.shape(r), [N])  # noqa: E231
         return r
 
 
