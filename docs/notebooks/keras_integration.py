@@ -13,6 +13,12 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+"""
+# Keras integration
+
+TODO: Some explanation...
+"""
 # %%
 import numpy as np
 import tensorflow as tf
@@ -29,7 +35,7 @@ tf.keras.backend.set_floatx("float64")
 # %matplotlib inline
 
 # %%
-d = np.load("../tests/snelson1d.npz")
+d = np.load("../../tests/snelson1d.npz")
 X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 _, output_dim = Y.shape

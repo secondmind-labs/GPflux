@@ -7,6 +7,7 @@ mypy==0.770
 pytest
 pytest-cov
 pytest-random-order
+typing-extensions
 
 tqdm
 
@@ -17,3 +18,4 @@ nbconvert
 jupyter_client
 ipykernel
 tornado
+pydata-sphinx-theme

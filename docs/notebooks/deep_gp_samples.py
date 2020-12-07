@@ -13,6 +13,12 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+"""
+# Deep GP samples
+
+TODO: Some explanation...
+"""
 # %%
 import gpflow
 from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables

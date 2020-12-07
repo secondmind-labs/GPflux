@@ -1,11 +1,13 @@
-.PHONY: help install format check test check-and-test
+.PHONY: help install docs format check test check-and-test
 
 
 LIB_NAME = gpflux
 TESTS_NAME = tests
 ARCHS_NAME = experiments
-LINT_NAMES = $(LIB_NAME) $(TESTS_NAME) notebooks
+LINT_NAMES = $(LIB_NAME) $(TESTS_NAME) docs/notebooks
 TYPE_NAMES = $(LIB_NAME)
+SUCCESS='\033[0;32m'
+
 
 # the --per-file-ignores are to ignore "unused import" warnings in __init__.py files (F401)
 # the F403 ignore in gpflux/__init__.py allows the `from .<submodule> import *`
@@ -32,6 +34,18 @@ install:  ## Install repo for developement
 	pip install -r requirements.txt
 	@echo "\n=== pip install test requirements ======================"
 	pip install -r tests_requirements.txt
+
+docs:  ## Build the documentation
+	@echo "\n=== pip install doc requirements =============="
+	pip install -r docs/docs_requirements.txt
+	@echo "\n=== install pandoc =============="
+	TEMP_DEB="$(mktemp)" && \
+		wget -O "$TEMP_DEB" 'https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb' && \
+		sudo dpkg -i "$TEMP_DEB"
+	rm -f "$TEMP_DEB"
+	@echo "\n=== build docs =============="
+	(cd docs ; make html)
+	@echo "\n${SUCCESS}=== Docs are available at docs/_build/html/index.html ============== ${SUCCESS}"
 
 
 format: ## Formats code with `black` and `isort`
