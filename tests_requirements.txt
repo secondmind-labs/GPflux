@@ -1,7 +1,9 @@
 # Code quality tools:
-flake8
-mypy
 black==19.10b0
+codecov
+flake8==3.8.4
+isort==5.6.4
+mypy==0.770
 pytest
 pytest-cov
 pytest-random-order
@@ -15,5 +17,3 @@ nbconvert
 jupyter_client
 ipykernel
 tornado
-
-pycairo  # non-interactive matplotlib backend for tests

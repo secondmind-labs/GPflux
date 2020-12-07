@@ -2,9 +2,9 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import gpflow
-
 import tensorflow as tf
+
+import gpflow
 
 from gpflux.layers.convolution_layer import ConvLayer
 

@@ -4,7 +4,9 @@
 
 import numpy as np
 import tensorflow as tf
+
 from gpflow import settings
+
 from .transformer import spatial_transformer_network as stn
 
 

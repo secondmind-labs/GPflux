@@ -1,15 +1,26 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+from typing import List, Optional
+
 import tensorflow as tf
 
-from gpflux.layers import GPLayer
+from gpflow.base import TensorType
+
+from gpflux.layers.gp_layer import GPLayer, TrackableLayer
+from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.models.bayesian_model import BayesianModel
 from gpflux.sampling.sample import Sample
 
 
 class DeepGP(BayesianModel):
-    def __init__(self, gp_layers, likelihood_layer, input_dim=None, output_dim=None):
+    def __init__(
+        self,
+        gp_layers: List[TrackableLayer],
+        likelihood_layer: LikelihoodLayer,
+        input_dim: Optional[int] = None,
+        output_dim: Optional[int] = None,
+    ):
         X_input = tf.keras.Input((input_dim,))
         Y_input = tf.keras.Input((output_dim,))
 
@@ -23,13 +34,13 @@ class DeepGP(BayesianModel):
 
         self.gp_layers = gp_layers
 
-    def sample(self):
+    def sample(self) -> Sample:
         function_draws = [layer.sample() for layer in self.gp_layers]
 
         class ChainedSample(Sample):
             """Chains samples from consecutive layers."""
 
-            def __call__(self, X):
+            def __call__(self, X: TensorType) -> TensorType:
                 for f in function_draws:
                     X = f(X)
                 return X

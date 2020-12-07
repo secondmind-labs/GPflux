@@ -9,8 +9,15 @@ import tensorflow as tf
 import gpflow
 from gpflow import kernels, settings
 from gpflow.multioutput.kernels import Mok
-from gpflux.convolution.convolution_utils import PatchShape, ImageShape, ImagePatchConfig, \
-    PatchHandler, ExtractPatchHandler, K_image_symm
+
+from gpflux.convolution.convolution_utils import (
+    ExtractPatchHandler,
+    ImagePatchConfig,
+    ImageShape,
+    K_image_symm,
+    PatchHandler,
+    PatchShape,
+)
 
 
 class ConvKernel(Mok):

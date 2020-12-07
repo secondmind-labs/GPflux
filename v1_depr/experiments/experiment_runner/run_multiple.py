@@ -3,8 +3,8 @@
 # Proprietary and confidential
 
 import multiprocessing
-import os
 import multiprocessing as mp
+import os
 import time
 from collections import namedtuple
 

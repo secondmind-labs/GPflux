@@ -7,8 +7,9 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+
 from gpflux.invariance.kernels import Invariant, StochasticInvariant
-from gpflux.invariance.orbits import Rot90, QuantRotation
+from gpflux.invariance.orbits import QuantRotation, Rot90
 
 
 @pytest.mark.parametrize("orbit,samples,orbit_kwargs, full_orbit, full_orbit_kwargs", [

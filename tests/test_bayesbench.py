@@ -1,9 +1,11 @@
-import os
-import numpy as np
 import importlib.util
+import os
+
+import numpy as np
 import pytest
-import gpflow
 import tensorflow as tf
+
+import gpflow
 
 
 def import_module_from_path(path, module_name):
@@ -32,12 +34,8 @@ def get_snelson_X_and_Y():
 
 
 def compute_gpr_lml(X, Y):
-    model = gpflow.models.GPR(
-        (X, Y), gpflow.kernels.SquaredExponential(), noise_variance=0.1
-    )
-    gpflow.optimizers.Scipy().minimize(
-        model.training_loss, model.trainable_variables, compile=True
-    )
+    model = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential(), noise_variance=0.1)
+    gpflow.optimizers.Scipy().minimize(model.training_loss, model.trainable_variables, compile=True)
     return -model.training_loss()
 
 
@@ -57,9 +55,7 @@ def test_bayesbench_deepgp_snelson(bayesbench_deepgp):
     bench.fit(X, Y)
     elbo = bench.log_pdf(X, Y)
 
-    assert np.allclose(
-        elbo, expected_elbo, rtol=0.02
-    )  # 3000 steps not quite converged yet
+    assert np.allclose(elbo, expected_elbo, rtol=0.02)  # 3000 steps not quite converged yet
     # with more optimisation steps could reduce rtol to 0.001
 
     # TODO: significant difference between runs - sometimes it hits ~ -56 after ~2000 steps

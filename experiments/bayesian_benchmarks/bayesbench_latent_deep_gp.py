@@ -6,20 +6,20 @@ Experiments running bayesian benchmark regression's
 task with deep conditional latent gp models.
 """
 
-import gpflow
-import gpflux
+from pprint import pprint
+
 import numpy as np
 
-import gpflow.training.monitor as mon
-
-from pprint import pprint
+# from: https://github.com/hughsalimbeni/bayesian_benchmarks
+from bayesian_benchmarks.tasks.regression import argument_parser
+from bayesian_benchmarks.tasks.regression import run as run_regression
 from scipy.cluster.vq import kmeans2
 
-# from: https://github.com/hughsalimbeni/bayesian_benchmarks
-from bayesian_benchmarks.tasks.regression import run as run_regression
-from bayesian_benchmarks.tasks.regression import argument_parser
+import gpflow
+import gpflow.training.monitor as mon
 from gpflow.training import AdamOptimizer
 
+import gpflux
 
 TENSORBOARD_NAME = "./test/"
 

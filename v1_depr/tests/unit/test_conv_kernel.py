@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 import gpflow
+
 from gpflux.convolution.convolution_kernel import ConvKernel, K_image_symm
 
 

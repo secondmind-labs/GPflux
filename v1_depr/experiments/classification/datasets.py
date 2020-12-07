@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Tuple, List
+from typing import List, Tuple
 
-import gpflow
 import numpy as np
 import observations as obs
 import tensorflow as tf
 import tensorflow.keras.preprocessing.image as image_process
 
+import gpflow
 
 DatasetTrain = Tuple[np.ndarray, np.ndarray]
 DatasetTest = Tuple[np.ndarray, np.ndarray]

@@ -1,12 +1,12 @@
+import json
 import time
 from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
-import json
+
 # from .util import create_op
 import util
-
 from tensorflow.python.client import timeline
 
 

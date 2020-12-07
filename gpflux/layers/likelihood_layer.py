@@ -3,12 +3,16 @@
 # Proprietary and confidential
 """A Keras Layer that wraps a likelihood, while containing the necessary operations
 for training"""
+from typing import Optional, Union
+
 import tensorflow as tf
 
-from gpflow.likelihoods import Likelihood
 from gpflow import default_float
+from gpflow.base import TensorType
+from gpflow.likelihoods import Likelihood
+from gpflow.models.model import MeanAndVariance
 
-from gpflux.layers import TrackableLayer
+from gpflux.layers.trackable_layer import TrackableLayer
 
 
 class LikelihoodLayer(TrackableLayer):
@@ -21,7 +25,12 @@ class LikelihoodLayer(TrackableLayer):
         super().__init__(dtype=default_float())
         self.likelihood = likelihood
 
-    def call(self, inputs, training=False, targets=None):
+    def call(
+        self,
+        inputs: Union[MeanAndVariance, TensorType],
+        training: bool = False,
+        targets: Optional[TensorType] = None,
+    ) -> Union[MeanAndVariance, TensorType]:
         """Note that this function can operate both on tuples of (mean, variance), and also simply
         samples.
         """
@@ -59,14 +68,16 @@ class LikelihoodLayer(TrackableLayer):
             # TO DO: should not be identity - we should sample through the likelihood
             return tf.identity(inputs)
 
-    def log_prob(self, samples, targets):
+    def log_prob(self, samples: TensorType, targets: TensorType) -> TensorType:
         """A wrapper around the gpflow.Likelihood method"""
         return self.likelihood.log_prob(samples, targets)
 
-    def variational_expectations(self, F_mu, F_var, targets):
+    def variational_expectations(
+        self, F_mu: TensorType, F_var: TensorType, targets: TensorType
+    ) -> TensorType:
         """A wrapper around the gpflow.Likelihood method"""
         return self.likelihood.variational_expectations(F_mu, F_var, targets)
 
-    def predict_mean_and_var(self, F_mu, F_var):
+    def predict_mean_and_var(self, F_mu: TensorType, F_var: TensorType) -> TensorType:
         """A wrapper around the gpflow.Likelihood method"""
         return self.likelihood.predict_mean_and_var(F_mu, F_var)

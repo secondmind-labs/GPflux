@@ -1,13 +1,13 @@
-import tensorflow as tf
 import numpy as np
 import pytest
+import tensorflow as tf
 
 from gpflow.kernels import RBF
 from gpflow.mean_functions import Zero
 
 from gpflux.exceptions import GPInitializationError
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.initializers import GivenZInitializer
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 from gpflux.layers import GPLayer
 
 
@@ -18,9 +18,7 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
     data = make_data(input_dim, output_dim, num_data=num_data)
 
     kernel = construct_basic_kernel(RBF(), output_dim)
-    inducing_vars = construct_basic_inducing_variables(
-        num_inducing, input_dim, output_dim
-    )
+    inducing_vars = construct_basic_inducing_variables(num_inducing, input_dim, output_dim)
     initializer = GivenZInitializer()
     mean_function = Zero(output_dim)
 
@@ -41,10 +39,7 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
 
     X = np.random.random(size=(num_data, input_dim)) * lim[1]
     cov = RBF().K(X) + np.eye(num_data) * sigma ** 2
-    Y = [
-        np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
-        for _ in range(output_dim)
-    ]
+    Y = [np.random.multivariate_normal(np.zeros(num_data), cov)[:, None] for _ in range(output_dim)]
     Y = np.hstack(Y)
     return X, Y
 

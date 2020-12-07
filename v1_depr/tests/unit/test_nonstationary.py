@@ -2,11 +2,12 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
+
 from gpflux.nonstationary import NonstationaryKernel
 
 

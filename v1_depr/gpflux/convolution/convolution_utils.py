@@ -3,15 +3,16 @@
 # Proprietary and confidential
 
 from abc import ABC, abstractmethod
-from functools import partial, lru_cache
-from typing import Union, List, Tuple
+from functools import lru_cache, partial
+from typing import List, Tuple, Union
 
-from multipledispatch import dispatch
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+from multipledispatch import dispatch
 
 import gpflow
 from gpflow import kernels
+
 from gpflux import utils
 from gpflux.conv_square_dists import diag_conv_inner_prod
 

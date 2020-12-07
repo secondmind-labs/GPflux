@@ -7,12 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from sacred import Experiment
-
-import gpflow
 from model_builder_utils import build_model
+from sacred import Experiment
 from utils import calc_multiclass_error, compute_predictions, get_dataset
 
+import gpflow
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.logging.set_verbosity(tf.logging.FATAL)

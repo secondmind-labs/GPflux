@@ -3,12 +3,14 @@
 # Proprietary and confidential
 
 import abc
-import gpflow
+
 import numpy as np
 from keras import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
+from keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 
-from experiments.experiment_runner.utils import reshape_to_2d, labels_onehot_to_int
+import gpflow
+
+from experiments.experiment_runner.utils import labels_onehot_to_int, reshape_to_2d
 from gpflux.layers.convolution_layer import WeightedSumConvLayer
 from gpflux.models.deep_gp import DeepGP
 

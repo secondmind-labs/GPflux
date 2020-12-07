@@ -2,16 +2,17 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Optional
+from typing import Any, Optional, Tuple
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from gpflow.utilities.bijectors import positive
 from gpflow import Parameter
+from gpflow.base import TensorType
+from gpflow.utilities.bijectors import positive
 
 from gpflux.exceptions import EncoderInitializationError
-from gpflux.layers import TrackableLayer
+from gpflux.layers.trackable_layer import TrackableLayer
 
 
 class DirectlyParameterizedNormalDiag(TrackableLayer):
@@ -24,9 +25,7 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
     variance, IMPORTANT: Not compatible with minibatches
     """
 
-    def __init__(
-        self, num_data: int, latent_dim: int, means: Optional[np.ndarray] = None
-    ):
+    def __init__(self, num_data: int, latent_dim: int, means: Optional[np.ndarray] = None):
         """
         :param num_data: The number of data points
         :param latent_dim: The dimensionality of the latent variable
@@ -48,7 +47,9 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
         self.means = tf.Variable(means, name="w_means")
         self.stds = Parameter(stds, transform=positive(), name="w_stds")
 
-    def call(self, inputs=None, *args, **kwargs):
+    def call(
+        self, inputs: Optional[TensorType] = None, *args: Any, **kwargs: Any
+    ) -> Tuple[TensorType, TensorType]:
         if inputs is not None:
             tf.debugging.assert_shapes([(self.means, ["N", "W"]), (inputs, ["N", "D"])])
         return self.means, self.stds

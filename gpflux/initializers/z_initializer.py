@@ -2,11 +2,13 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Optional
 import warnings
+from typing import Optional
+
 import numpy as np
 import tensorflow as tf
 
+from gpflow.base import TensorType
 from gpflow.inducing_variables import InducingPoints
 
 from .initializer import Initializer
@@ -28,7 +30,7 @@ class GivenZInitializer(Initializer):
         self.Z = Z
 
     def init_single_inducing_variable(
-        self, inducing_variable: InducingPoints, inputs=None
+        self, inducing_variable: InducingPoints, inputs: Optional[TensorType] = None
     ) -> None:
         if self.Z is None:
             warnings.warn("No Z specified, initializing inducing_variable to zeros!")

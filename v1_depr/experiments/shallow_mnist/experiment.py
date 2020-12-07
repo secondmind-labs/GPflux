@@ -7,15 +7,20 @@ from sacred import Experiment
 from tensorflow.keras import Sequential
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.initializers import constant, truncated_normal
-from tensorflow.keras.layers import (BatchNormalization, Conv2D, Dense,
-                                     Dropout, Flatten, MaxPool2D)
+from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Dropout, Flatten, MaxPool2D
 from tensorflow.keras.regularizers import l2
+from utils import (
+    calc_binary_error,
+    calc_multiclass_error,
+    get_dataset,
+    get_error_cb,
+    save_gpflow_model,
+)
 
 import gpflow
 import gpflow.training.monitor as mon
+
 import gpflux
-from utils import (calc_binary_error, calc_multiclass_error, get_dataset,
-                   get_error_cb, save_gpflow_model)
 
 NAME = "mnist"
 ex = Experiment(NAME)

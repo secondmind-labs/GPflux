@@ -5,7 +5,7 @@
 import pickle
 from collections import defaultdict
 from pathlib import Path
-from typing import NamedTuple, List, cast
+from typing import List, NamedTuple, cast
 
 import numpy as np
 

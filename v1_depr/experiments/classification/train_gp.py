@@ -1,19 +1,19 @@
 # pylint: disable=E1120,W0612
 
-from typing import Any, List, Tuple
 import datetime
 from pathlib import Path
+from typing import Any, List, Tuple
 
+import datasets
+import gp_utils
 import numpy as np
 import tensorflow as tf
+import train_utils
 from sacred import Experiment
 
-import train_utils
-import datasets
 import gpflow
 from gpflow import settings
 from gpflow.training import monitor as mon
-import gp_utils
 
 NAME = "classification"
 ex = Experiment(NAME)

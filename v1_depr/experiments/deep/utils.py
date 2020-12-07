@@ -47,7 +47,6 @@ def trace(T, sess, name):
     import tensorflow as tf
     from tensorflow.python.client import timeline
 
-
     # add additional options to trace the session execution
     options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
     run_metadata = tf.RunMetadata()

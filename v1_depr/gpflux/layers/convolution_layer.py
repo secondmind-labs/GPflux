@@ -8,9 +8,10 @@ from typing import List, Optional, Union
 import numpy as np
 
 import gpflow
-from gpflux.initializers import Initializer, NormalInitializer
+
 from gpflux.convolution.convolution_kernel import ConvKernel, WeightedSumConvKernel
 from gpflux.convolution.inducing_patch import IndexedInducingPatch, InducingPatch
+from gpflux.initializers import Initializer, NormalInitializer
 from gpflux.layers import GPLayer
 
 

@@ -1,0 +1,16 @@
+on: [push]
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: make install
+    - name: Run checks
+      run: make check
+    - name: Run tests
+      run: make test

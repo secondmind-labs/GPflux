@@ -5,7 +5,7 @@
 import tensorflow as tf
 
 import gpflow
-from gpflow import params_as_tensors, Param
+from gpflow import Param, params_as_tensors
 
 
 class NonstationaryKernel(gpflow.kernels.Kernel):

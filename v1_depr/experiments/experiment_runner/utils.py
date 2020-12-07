@@ -2,19 +2,23 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import uuid
-from pathlib import Path
 import os
 import subprocess
+import uuid
+from pathlib import Path
 
-import gpflow
 import keras
 import numpy as np
 from scipy.io import loadmat
 from sklearn.model_selection import train_test_split
 
-from experiments.experiment_runner.data_infrastructure import ImageClassificationDataset, \
-    MaxNormalisingPreprocessor, Dataset
+import gpflow
+
+from experiments.experiment_runner.data_infrastructure import (
+    Dataset,
+    ImageClassificationDataset,
+    MaxNormalisingPreprocessor,
+)
 from gpflux.convolution.convolution_utils import ImagePatchConfig, PatchHandler
 
 

@@ -2,23 +2,20 @@
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
 import abc
-from typing import Callable, Union
+from typing import Callable, Optional, Union
 
 import tensorflow as tf
 
 from gpflow.base import TensorType
 from gpflow.conditionals import conditional
-from gpflow.covariances import Kuf, Kuu
 from gpflow.config import default_float, default_jitter
+from gpflow.covariances import Kuf, Kuu
 from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
-
 from gpflow.utilities import Dispatcher
-from gpflux.sampling.utils import draw_conditional_sample, compute_A_inv_b
-from gpflux.sampling.kernel_with_mercer_decomposition import (
-    KernelWithMercerDecomposition,
-)
 
+from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.utils import compute_A_inv_b, draw_conditional_sample
 
 efficient_sample = Dispatcher("efficient_sample")
 
@@ -43,9 +40,7 @@ class Sample(abc.ABC):
         """
         raise NotImplementedError
 
-    def __add__(
-        self, other: Union["Sample", Callable[[TensorType], TensorType]]
-    ) -> "Sample":
+    def __add__(self, other: Union["Sample", Callable[[TensorType], TensorType]]) -> "Sample":
         """ Allows to sum two Sample instances or simply with another callable."""
         this = self.__call__
 
@@ -62,8 +57,8 @@ def _efficient_sample_conditional_gaussian(
     kernel: Kernel,
     q_mu: tf.Tensor,
     *,
-    q_sqrt=None,
-    white=False,
+    q_sqrt: Optional[TensorType] = None,
+    white: bool = False,
 ) -> Sample:
     """
     Most costly implementation for obtaining a consistent GP sample.
@@ -77,7 +72,7 @@ def _efficient_sample_conditional_gaussian(
         P = tf.shape(q_mu)[-1]  # num latent GPs
         f = tf.zeros((0, P), dtype=default_float())  # [N_old, P]
 
-        def __call__(self, X_new):
+        def __call__(self, X_new: TensorType) -> TensorType:
             N_old = tf.shape(self.f)[0]
             N_new = tf.shape(X_new)[0]
 
@@ -87,13 +82,7 @@ def _efficient_sample_conditional_gaussian(
                 self.X = tf.concat([self.X, X_new], axis=0)
 
             mean, cov = conditional(
-                self.X,
-                inducing_variable,
-                kernel,
-                q_mu,
-                q_sqrt=q_sqrt,
-                white=white,
-                full_cov=True,
+                self.X, inducing_variable, kernel, q_mu, q_sqrt=q_sqrt, white=white, full_cov=True,
             )  # mean: [N_old+N_new, P], cov: [P, N_old+N_new, N_old+N_new]
             mean = tf.linalg.matrix_transpose(mean)  # [P, N_old+N_new]
             f_old = tf.linalg.matrix_transpose(self.f)  # [P, N_old]
@@ -115,8 +104,8 @@ def _efficient_sample_matheron_rule(
     kernel: KernelWithMercerDecomposition,
     q_mu: tf.Tensor,
     *,
-    q_sqrt=None,
-    white=False,
+    q_sqrt: Optional[TensorType] = None,
+    white: bool = False,
 ) -> Sample:
     """
     :param q_mu: [M, P]
@@ -138,8 +127,7 @@ def _efficient_sample_matheron_rule(
 
     M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
     u_sample_noise = tf.matmul(
-        q_sqrt,  # [P, M, M]
-        tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, 1]
+        q_sqrt, tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
     u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
@@ -159,9 +147,7 @@ def _efficient_sample_matheron_rule(
             N = tf.shape(X)[0]
             phi_X = kernel.eigenfunctions(X)  # [N, L]
             weight_space_prior_X = phi_X @ prior_weights  # [N, 1]
-            Knm = tf.linalg.matrix_transpose(
-                Kuf(inducing_variable, kernel, X)
-            )  # [N, M]
+            Knm = tf.linalg.matrix_transpose(Kuf(inducing_variable, kernel, X))  # [N, M]
             function_space_update_X = Knm @ v  # [N, P]
 
             tf.debugging.assert_equal(tf.shape(weight_space_prior_X), [N, 1])

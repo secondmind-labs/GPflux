@@ -3,14 +3,13 @@
 # Proprietary and confidential
 import pytest
 
+from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Matern52
 from gpflow.mean_functions import Zero
-from gpflow.inducing_variables import InducingPoints
 
-from gpflux.utils.runtime_checks import verify_compatibility
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 from gpflux.exceptions import ShapeIncompatibilityError
-
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
+from gpflux.utils.runtime_checks import verify_compatibility
 
 # has no effect on compatibility in these tests
 input_dim = 7
@@ -20,20 +19,15 @@ num_inducing = 35
 def make_kernels(num_latent_k):
     return [
         construct_basic_kernel([Matern52() for _ in range(num_latent_k)]),
-        construct_basic_kernel(
-            Matern52(), output_dim=num_latent_k, share_hyperparams=False
-        ),
-        construct_basic_kernel(
-            Matern52(), output_dim=num_latent_k, share_hyperparams=True
-        ),
+        construct_basic_kernel(Matern52(), output_dim=num_latent_k, share_hyperparams=False),
+        construct_basic_kernel(Matern52(), output_dim=num_latent_k, share_hyperparams=True),
     ]
 
 
 def make_inducing_variables(num_latent_iv):
     return [
         construct_basic_inducing_variables(
-            num_inducing=[num_inducing for _ in range(num_latent_iv)],
-            input_dim=input_dim,
+            num_inducing=[num_inducing for _ in range(num_latent_iv)], input_dim=input_dim,
         ),
         construct_basic_inducing_variables(
             num_inducing=num_inducing, input_dim=input_dim, output_dim=num_latent_iv
@@ -67,7 +61,5 @@ def test_verify_compatibility_type_errors():
 
     Z = valid_inducing_variable.inducing_variable_list[0].Z
     inducing_variable = InducingPoints(Z)
-    with pytest.raises(
-        TypeError
-    ):  # gpflow inducing_variables must be MultioutputInducingVariables
+    with pytest.raises(TypeError):  # gpflow inducing_variables must be MultioutputInducingVariables
         verify_compatibility(valid_kernel, valid_mean_function, inducing_variable)

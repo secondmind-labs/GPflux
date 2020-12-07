@@ -10,10 +10,11 @@ import tensorflow as tf
 
 import gpflow
 from gpflow import params_as_tensors_for
-from gpflux.convolution.conditionals import conditional, sample_conditional, Kuf, Kuu
+
+from gpflux.convolution.conditionals import Kuf, Kuu, conditional, sample_conditional
 from gpflux.convolution.convolution_kernel import ConvKernel, WeightedSumConvKernel
-from gpflux.convolution.convolution_utils import ImagePatchConfig, ExtractPatchHandler
-from gpflux.convolution.inducing_patch import InducingPatch, IndexedInducingPatch
+from gpflux.convolution.convolution_utils import ExtractPatchHandler, ImagePatchConfig
+from gpflux.convolution.inducing_patch import IndexedInducingPatch, InducingPatch
 
 DTYPE = np.float64
 

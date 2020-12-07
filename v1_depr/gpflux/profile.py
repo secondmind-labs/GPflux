@@ -2,23 +2,24 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import time
 import os
-from typing import Tuple, Callable, Dict, Optional, List
+import time
+from typing import Callable, Dict, List, Optional, Tuple
 
-from tqdm import tqdm
+import keras
 import numpy as np
 import tensorflow as tf
-import keras
+from tqdm import tqdm
 
 import gpflow
 from gpflow.features import InducingPoints
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
+
 from gpflux.initializers import NormalInitializer
+from gpflux.layers import GPLayer
 from gpflux.layers.convolution_layer import WeightedSumConvLayer
 from gpflux.models.deep_gp import DeepGP
-from gpflux.layers import GPLayer
 
 SEED = 0  # used seed to ensure that there's no variance in timing coming from randomness
 

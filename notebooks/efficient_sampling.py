@@ -24,9 +24,7 @@ import gpflux
 from gpflow.config import default_float
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_mercer_decomposition import (
-    KernelWithMercerDecomposition,
-)
+from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
 
 tf.keras.backend.set_floatx("float64")
 
@@ -57,9 +55,7 @@ layer = gpflux.layers.GPLayer(
     mean_function=gpflow.mean_functions.Zero(),
 )
 layer._initialized = True
-likelihood_layer = gpflux.layers.LikelihoodLayer(
-    gpflow.likelihoods.Gaussian()
-)  # noqa: E231
+likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
 model = gpflux.models.DeepGP([layer], likelihood_layer)
 # %%
 
@@ -71,9 +67,7 @@ callbacks = [
     )
 ]
 
-history = model.fit(
-    x=(X, Y), y=None, batch_size=num_data, epochs=100, callbacks=callbacks
-)
+history = model.fit(x=(X, Y), y=None, batch_size=num_data, epochs=100, callbacks=callbacks)
 
 
 # %%

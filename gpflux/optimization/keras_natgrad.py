@@ -2,14 +2,17 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Callable, List, Tuple
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 
 import tensorflow as tf
 from tensorflow.python.util.object_identity import ObjectIdentitySet
 
 from gpflow import Parameter
+from gpflow.base import TensorType
+from gpflow.models.model import MeanAndVariance
 from gpflow.optimizers import NaturalGradient
-from gpflux.layers import GPLayer
+
+from gpflux.layers.gp_layer import GPLayer
 
 __all__ = [
     "NatGradModel",
@@ -29,9 +32,7 @@ class NatGradModel(tf.keras.Model):
         parameters (hyperparameters, inducing point locations).
     """
 
-    def __init__(
-        self, *args, other_loss_fn: Callable[[], tf.Tensor] = None, **kwargs,
-    ):
+    def __init__(self, *args: Any, other_loss_fn: Callable[[], tf.Tensor] = None, **kwargs: Any):
         """
         :param other_loss_fn: experimental feature to allow specifying a
             different loss closure for computing gradients for Adam optimizer.
@@ -62,7 +63,7 @@ class NatGradModel(tf.keras.Model):
         return self._all_optimizers[-1]
 
     @optimizer.setter
-    def optimizer(self, optimizers):
+    def optimizer(self, optimizers: List[Union[NaturalGradient, tf.optimizers.Optimizer]]) -> None:
         if optimizers is None:
             # tf.keras.Model.__init__() sets self.optimizer = None
             self._all_optimizers = None
@@ -98,9 +99,7 @@ class NatGradModel(tf.keras.Model):
         # NOTE the structure of variational_params is directly linked to the _natgrad_step,
         # do not change out of sync
         variational_params = [
-            (layer.q_mu, layer.q_sqrt)
-            for layer in self.layers
-            if isinstance(layer, GPLayer)
+            (layer.q_mu, layer.q_sqrt) for layer in self.layers if isinstance(layer, GPLayer)
         ]
         # NOTE could use a natgrad_parameters attribute on a layer or a
         # singledispatch function to make this more flexible for other layers
@@ -109,9 +108,7 @@ class NatGradModel(tf.keras.Model):
         variational_vars_set = ObjectIdentitySet(
             p.unconstrained_variable for vp in variational_params for p in vp
         )
-        other_vars = [
-            v for v in self.trainable_variables if v not in variational_vars_set
-        ]
+        other_vars = [v for v in self.trainable_variables if v not in variational_vars_set]
 
         return variational_params, other_vars
 
@@ -147,9 +144,7 @@ class NatGradModel(tf.keras.Model):
         for (natgrad_optimizer, (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt)) in zip(
             self.natgrad_optimizers, variational_params_grads, variational_params
         ):
-            natgrad_optimizer._natgrad_apply_gradients(
-                q_mu_grad, q_sqrt_grad, q_mu, q_sqrt
-            )
+            natgrad_optimizer._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt)
 
         if self.other_loss_fn is not None:
             with tf.GradientTape() as tape:
@@ -158,7 +153,7 @@ class NatGradModel(tf.keras.Model):
 
         self.optimizer.apply_gradients(zip(other_grads, other_vars))
 
-    def train_step(self, data):  # pragma: no cover
+    def train_step(self, data: Any) -> Mapping[str, Any]:  # pragma: no cover
         """ For TensorFlow 2.2 """
         # TODO(Ti) once moving to TensorFlow 2.2, we need to clean up this
         # method and check it actually works
@@ -170,9 +165,7 @@ class NatGradModel(tf.keras.Model):
 
         with tf.GradientTape() as tape:
             y_pred = self.__call__(x, training=True)
-            loss = self.compiled_loss(
-                y, y_pred, sample_weight, regularization_losses=self.losses
-            )
+            loss = self.compiled_loss(y, y_pred, sample_weight, regularization_losses=self.losses)
         self.compiled_metrics.update_state(y, y_pred, sample_weight)
 
         self._backwards(tape, loss)
@@ -186,7 +179,7 @@ class NatGradWrapper(NatGradModel):
     work with NaturalGradient optimizers. For more details, see NatGradModel.
     """
 
-    def __init__(self, base_model: tf.keras.Model, *args, **kwargs):
+    def __init__(self, base_model: tf.keras.Model, *args: Any, **kwargs: Any):
         """
         :param base_model: the class-based Keras model to be wrapped
         """
@@ -194,17 +187,19 @@ class NatGradWrapper(NatGradModel):
         self.base_model = base_model
 
     @property
-    def layers(self):
+    def layers(self) -> List[tf.keras.layers.Layer]:
         if not hasattr(self, "base_model"):
             # required for super().__init__(), in which base_model has not been set yet
             return super().layers
         else:
             return self.base_model.layers
 
-    def elbo(self, data):
+    def elbo(self, data: Any) -> TensorType:
         # DeepGP-specific pass-through
         return self.base_model.elbo(data)
 
-    def call(self, data, training=None):
+    def call(
+        self, data: Any, training: Optional[bool] = None
+    ) -> Union[TensorType, MeanAndVariance]:
         # pass-through for model call
         return self.base_model.call(data, training=training)

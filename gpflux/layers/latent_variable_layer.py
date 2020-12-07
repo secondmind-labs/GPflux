@@ -3,14 +3,16 @@
 # Proprietary and confidential
 """Latent variable layer for deep GPs"""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow import default_float
+from gpflow.base import TensorType
 
-from gpflux.layers import TrackableLayer
+from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.types import ShapeType
 
 
 class LatentVariableLayer(TrackableLayer):
@@ -36,18 +38,18 @@ class LatentVariableLayer(TrackableLayer):
         self.prior = prior
         self.distribution = prior.__class__
 
-    def build(self, input_shape):
+    def build(self, input_shape: ShapeType) -> None:
         """Build the encoder and shapes necessary on first call"""
         super().build(input_shape)
         self.encoder.build(input_shape)
 
     def sample_posteriors(
         self,
-        recognition_data,
+        recognition_data: TensorType,
         num_samples: Optional[int] = None,
         training: bool = False,
         seed: int = None,
-    ):
+    ) -> Tuple[TensorType, tfp.distributions.Distribution]:
         """
         Draw samples from the posterior disributions, given data for the encoder layer,
         and also return those distributions.
@@ -70,7 +72,7 @@ class LatentVariableLayer(TrackableLayer):
             samples = posteriors.sample(num_samples, seed=seed)  # [S, N, D]
         return samples, posteriors
 
-    def sample_prior(self, sample_shape):
+    def sample_prior(self, sample_shape: ShapeType) -> TensorType:
         """
         Draw samples from the prior.
 
@@ -79,8 +81,8 @@ class LatentVariableLayer(TrackableLayer):
         return self.prior.sample(sample_shape)
 
     def call(
-        self, recognition_data, training: bool = False, seed: int = None,
-    ):
+        self, recognition_data: TensorType, training: bool = False, seed: Optional[int] = None,
+    ) -> TensorType:
         """
         When training: draw a sample of the latent variable from the posterior,
         whose distribution is parameterized by the encoder mapping from the data.
@@ -110,7 +112,7 @@ class LatentVariableLayer(TrackableLayer):
         self.add_metric(loss, name="local_kl", aggregation="mean")
         return samples
 
-    def local_kls(self, posteriors: tfp.distributions.Distribution):
+    def local_kls(self, posteriors: tfp.distributions.Distribution) -> TensorType:
         """
         The KL divergences [approximate posterior||prior]
 

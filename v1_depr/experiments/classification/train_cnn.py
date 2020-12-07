@@ -1,18 +1,16 @@
 # pylint: disable=E1120,W0612
 
+import datetime
 import math
 import os
-import datetime
 from pathlib import Path
 
 import cnn
 import datasets
-
 import numpy as np
 import tensorflow.keras.backend as K
 from sacred import Experiment
 from tensorflow.keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard
-
 
 NAME = "cnn-training"
 ex = Experiment(NAME)

@@ -1,5 +1,5 @@
-from functools import reduce
 from collections import OrderedDict
+from functools import reduce
 from pathlib import Path
 from typing import Tuple, Union
 
@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from sacred import Experiment
+from utils import get_dataset, load_gpflow_model
 
 import gpflow
-from utils import get_dataset, load_gpflow_model
 
 NAME = "analyze-models"
 ex = Experiment(NAME)

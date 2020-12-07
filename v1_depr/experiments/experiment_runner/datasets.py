@@ -4,8 +4,13 @@
 
 import numpy as np
 
-from experiments.experiment_runner.utils import _get_max_normalised, _mix_train_test, load_svhn, \
-    load_grey_cifar, numpy_fixed_seed
+from experiments.experiment_runner.utils import (
+    _get_max_normalised,
+    _mix_train_test,
+    load_grey_cifar,
+    load_svhn,
+    numpy_fixed_seed,
+)
 
 
 def _get_dataset_fraction(dataset, fraction):

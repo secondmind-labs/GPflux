@@ -5,14 +5,13 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-
 from tqdm import tqdm
 
 import gpflow
 
 from gpflux.invariance.features import InvariantInducingPoints, StochasticInvariantInducingPoints
 from gpflux.invariance.kernels import Invariant, StochasticInvariant
-from gpflux.invariance.orbits import FlipInputDims, Rot90, QuantRotation, Permutation
+from gpflux.invariance.orbits import FlipInputDims, Permutation, QuantRotation, Rot90
 
 
 @pytest.mark.parametrize("orbit,orbit_kwargs", [(FlipInputDims, {}),

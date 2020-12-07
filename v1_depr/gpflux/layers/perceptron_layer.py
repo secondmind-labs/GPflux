@@ -5,6 +5,7 @@
 import tensorflow as tf
 
 from gpflow import params_as_tensors, settings
+
 from gpflux.layers import LayerOutput, LinearLayer
 
 

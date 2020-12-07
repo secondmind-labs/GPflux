@@ -1,14 +1,12 @@
 #  Copyright (C) PROWLER.io 2020 - All Rights Reserved
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
-from typing import Union
+from typing import Optional, Union
 
 import tensorflow as tf
+
 import gpflow
-
-
 from gpflow.base import TensorType
-
 
 NoneType = type(None)
 
@@ -32,7 +30,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         self._eigenfunctions = eigenfunctions
         self._eigenvalues = eigenvalues  # [L, 1]
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> TensorType:
         """Approximates the true kernel by an inner product between eigenfunctions"""
         phi = self._eigenfunctions(X)  # [N, L]
         if X2 is None:
@@ -40,15 +38,13 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         else:
             phi2 = self._eigenfunctions(X2)  # [N2, L]
 
-        r = tf.matmul(
-            phi, tf.transpose(self._eigenvalues) * phi2, transpose_b=True
-        )  # [N, N2]
+        r = tf.matmul(phi, tf.transpose(self._eigenvalues) * phi2, transpose_b=True)  # [N, N2]
 
         N1, N2 = tf.shape(phi)[0], tf.shape(phi2)[0]
         tf.debugging.assert_equal(tf.shape(r), [N1, N2])
         return r
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> TensorType:
         """Approximates the true kernel by an inner product between eigenfunctions"""
         phi_squared = self._eigenfunctions(X) ** 2  # [N, L]
         r = tf.reduce_sum(phi_squared * tf.transpose(self._eigenvalues), axis=1)  # [N,]
@@ -94,15 +90,15 @@ class KernelWithMercerDecomposition(gpflow.kernels.Kernel):
         tf.ensure_shape(self._eigenvalues, tf.TensorShape([None, 1]))
 
     @property
-    def eigenfunctions(self):
+    def eigenfunctions(self) -> tf.keras.layers.Layer:
         return self._eigenfunctions
 
     @property
-    def eigenvalues(self):
+    def eigenvalues(self) -> TensorType:
         return self._eigenvalues
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> TensorType:
         return self._kernel.K(X, X2)
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> TensorType:
         return self._kernel.K_diag(X)

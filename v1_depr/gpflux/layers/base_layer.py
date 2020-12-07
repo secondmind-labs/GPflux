@@ -3,7 +3,7 @@
 # Proprietary and confidential
 
 
-from typing import Optional, NamedTuple
+from typing import NamedTuple, Optional
 
 import numpy as np
 import tensorflow as tf

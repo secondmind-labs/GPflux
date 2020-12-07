@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-
 import tensorflow as tf
+
 from gpflow.inducing_variables import InducingPoints
 
 from gpflux.initializers import FeedForwardInitializer

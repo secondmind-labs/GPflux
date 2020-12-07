@@ -1,6 +1,5 @@
 import numpy as np
 
-
 from gpflux.sampling.utils import compute_A_inv_b
 
 

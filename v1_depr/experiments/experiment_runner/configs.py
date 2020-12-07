@@ -2,12 +2,12 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import gpflow
 import keras
+
+import gpflow
 from gpflow.training import monitor as mon
 
-from experiments.experiment_runner.utils import Configuration
-from experiments.experiment_runner.utils import calc_multiclass_error
+from experiments.experiment_runner.utils import Configuration, calc_multiclass_error
 from gpflux.initializers import NormalInitializer, PatchSamplerInitializer
 
 

@@ -4,9 +4,9 @@
 
 import argparse
 
-from experiments.experiment_runner.datasets import mnist, grey_cifar10, svhn, fashion_mnist
-from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig, ConvGPConfig
-from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
+from experiments.experiment_runner.configs import ConvGPConfig, KerasConfig, TickConvGPConfig
+from experiments.experiment_runner.creators import BasicCNN, ShallowConvGP
+from experiments.experiment_runner.datasets import fashion_mnist, grey_cifar10, mnist, svhn
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
 

@@ -5,15 +5,14 @@
 
 
 import itertools
-from typing import Any, Callable, List, Optional
 from functools import wraps
+from typing import Any, Callable, Optional, Sequence
 
 import tensorflow as tf
 
 
 def extend_and_filter(
-    extend_method: Callable[..., List],
-    filter_method: Optional[Callable[..., List]] = None,
+    extend_method: Callable[..., Sequence], filter_method: Optional[Callable[..., Sequence]] = None,
 ) -> Callable[[Any], Any]:
     """
     This decorator calls a decorated method, and extends the result with another method
@@ -30,9 +29,9 @@ def extend_and_filter(
         Defaults to no filtering for `filter_method` equal to `None`.
     """
 
-    def decorator(f):
+    def decorator(f: Callable) -> Callable:
         @wraps(f)
-        def wrapped(self, *args, **kwargs):
+        def wrapped(self, *args, **kwargs):  # type: ignore
             ret = f(self, *args, **kwargs)
             ret.extend(extend_method(self, *args, **kwargs))
             ret = filter_method(self, ret) if filter_method is not None else ret
@@ -57,13 +56,13 @@ class TrackableLayer(tf.keras.layers.Layer):
     """
 
     @property
-    def _submodules(self):
+    def _submodules(self) -> Sequence[tf.Module]:
         """Return a list of tf.Module instances that are attributes on the class. Note
         this also include list or tuples of tf.Modules"""
 
         submodules = []
 
-        def get_nested_submodules(*objs):
+        def get_nested_submodules(*objs: Any) -> None:
             for o in objs:
                 if isinstance(o, tf.Module):
                     submodules.append(o)
@@ -76,32 +75,21 @@ class TrackableLayer(tf.keras.layers.Layer):
             elif isinstance(obj, (dict,)):
                 tf.nest.map_structure(get_nested_submodules, obj.values())
 
-        return list(
-            dict.fromkeys(submodules)
-        )  # remove duplicates, maintaining order (dict 3.6)
+        return list(dict.fromkeys(submodules))  # remove duplicates, maintaining order (dict 3.6)
 
-    def submodule_variables(self):
+    def submodule_variables(self) -> Sequence[tf.Variable]:
         """Return flat iterable of variables from the attributes that are tf.Modules"""
         return list(itertools.chain(*[module.variables for module in self._submodules]))
 
-    def submodule_trainable_variables(self):
+    def submodule_trainable_variables(self) -> Sequence[tf.Variable]:
         """Return flat iterable of trainable variables from attributes that are tf.Modules"""
-        return list(
-            itertools.chain(
-                *[module.trainable_variables for module in self._submodules]
-            )
-        )
+        return list(itertools.chain(*[module.trainable_variables for module in self._submodules]))
 
-    def submodule_non_trainable_variables(self):
+    def submodule_non_trainable_variables(self) -> Sequence[tf.Variable]:
         """Return flat iterable of non trainable variables from attributes that are tf.Modules"""
-        return [
-            v
-            for module in self._submodules
-            for v in module.variables
-            if not v.trainable
-        ]
+        return [v for module in self._submodules for v in module.variables if not v.trainable]
 
-    def _dedup_weights(self, weights):
+    def _dedup_weights(self, weights):  # type: ignore
         """Deduplicate weights while maintaining order as much as possible."""
         # copy this method from the super class
         # to have it in the local class' namespace
@@ -109,20 +97,20 @@ class TrackableLayer(tf.keras.layers.Layer):
 
     @property  # type: ignore
     @extend_and_filter(submodule_trainable_variables, _dedup_weights)
-    def trainable_weights(self):
+    def trainable_weights(self) -> Sequence[tf.Variable]:
         return super().trainable_weights
 
     @property  # type: ignore
     @extend_and_filter(submodule_non_trainable_variables, _dedup_weights)
-    def non_trainable_weights(self):
+    def non_trainable_weights(self) -> Sequence[tf.Variable]:
         return super().non_trainable_weights
 
     @property  # type: ignore
     @extend_and_filter(submodule_trainable_variables, _dedup_weights)
-    def trainable_variables(self):
+    def trainable_variables(self) -> Sequence[tf.Variable]:
         return super().trainable_variables
 
     @property  # type: ignore
     @extend_and_filter(submodule_variables, _dedup_weights)
-    def variables(self):
+    def variables(self) -> Sequence[tf.Variable]:
         return super().variables

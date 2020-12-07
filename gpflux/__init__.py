@@ -1,9 +1,10 @@
-from gpflux import callbacks
-from gpflux import encoders
-from gpflux import helpers
-from gpflux import initializers
-from gpflux import layers
-from gpflux import models
-from gpflux import optimization
-from gpflux import sampling
-from gpflux import vish
+from gpflux import (
+    callbacks,
+    encoders,
+    helpers,
+    initializers,
+    layers,
+    models,
+    optimization,
+    sampling,
+)

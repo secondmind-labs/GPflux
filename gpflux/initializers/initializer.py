@@ -3,8 +3,10 @@
 # Proprietary and confidential
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
-from gpflow.inducing_variables import InducingPoints
+from gpflow.base import TensorType
+from gpflow.inducing_variables import InducingPoints, InducingVariables
 
 
 class Initializer(ABC):
@@ -15,7 +17,9 @@ class Initializer(ABC):
     ):
         self.init_at_predict = init_at_predict
 
-    def init_inducing_variable(self, inducing_variable, inputs=None) -> None:
+    def init_inducing_variable(
+        self, inducing_variable: InducingVariables, inputs: Optional[TensorType] = None
+    ) -> None:
         for inducing_var in inducing_variable.inducing_variables:
             if self.init_at_predict:
                 self.init_single_inducing_variable(inducing_var, inputs=inputs)
@@ -24,7 +28,7 @@ class Initializer(ABC):
 
     @abstractmethod
     def init_single_inducing_variable(
-        self, inducing_variable: InducingPoints, inputs=None
+        self, inducing_variable: InducingPoints, inputs: Optional[TensorType] = None
     ) -> None:
         """
         Initializes the inducing variable (here assumed to be InducingPoints)

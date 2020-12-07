@@ -5,16 +5,21 @@ from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
+from model_builder_utils import build_model, cluster_patches, save_model_parameters
 from sacred import Experiment
 from sklearn import preprocessing
+from utils import (
+    calc_binary_error,
+    calc_multiclass_error,
+    get_dataset,
+    get_error_cb,
+    save_gpflow_model,
+)
 
 import gpflow
 import gpflow.training.monitor as mon
+
 import gpflux
-from model_builder_utils import (build_model, cluster_patches,
-                                 save_model_parameters)
-from utils import (calc_binary_error, calc_multiclass_error, get_dataset,
-                   get_error_cb, save_gpflow_model)
 
 NAME = "mnist"
 ex = Experiment(NAME)
@@ -374,6 +379,7 @@ def plot_g():
     model = convgp_setup_model(train_data)
 
     from utils import get_miclassified_binary
+
     # hits = get_miclassified_binary(model, Xs, Ys)
     # hits = hits.flatten()
     X = X.reshape(-1, 28**2)

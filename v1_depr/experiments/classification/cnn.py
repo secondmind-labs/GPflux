@@ -3,7 +3,6 @@ from tensorflow.keras.initializers import constant, glorot_normal, truncated_nor
 from tensorflow.keras.layers import BatchNormalization, Conv2D, Dense, Dropout, Flatten, MaxPool2D
 from tensorflow.keras.regularizers import l2
 
-
 __all__ = 'cifar10_cnn_model_top cifar10_cnn_model'.split()
 
 

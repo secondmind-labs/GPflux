@@ -1,16 +1,17 @@
 #  Copyright (C) PROWLER.io 2020 - All Rights Reserved
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
-import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from tensorflow.python.keras.utils.kernelized_utils import inner_product
 from tensorflow.python.keras.testing_utils import layer_test
+from tensorflow.python.keras.utils.kernelized_utils import inner_product
+
+import gpflow
 
 from gpflux.layers.basis_functions.random_fourier_features import (
-    RandomFourierFeatures,
     RFF_SUPPORTED_KERNELS,
+    RandomFourierFeatures,
 )
 
 
@@ -125,31 +126,19 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={
-            "kernel": kernel,
-            "output_dim": n_features,
-            "dtype": "float64",
-            "dynamic": True,
-        },
+        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
         input_shape=(batch_size, 1),
         input_dtype="float64",
     )
 
 
-def test_keras_testing_util_layer_test_multidim(
-    kernel_class, batch_size, n_dims, n_features
-):
+def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims, n_features):
     kernel = gpflow.kernels.SquaredExponential()
 
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={
-            "kernel": kernel,
-            "output_dim": n_features,
-            "dtype": "float64",
-            "dynamic": True,
-        },
+        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )

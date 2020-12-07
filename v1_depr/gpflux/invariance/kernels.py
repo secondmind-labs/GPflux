@@ -4,9 +4,9 @@
 
 from abc import ABC
 
-import gpflow
 import tensorflow as tf
 
+import gpflow
 
 # Note on the current implementation
 # There are two things which are unsatisfactory:

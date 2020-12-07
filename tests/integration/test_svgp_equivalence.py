@@ -1,10 +1,12 @@
 import os
-import pytest
+
 import numpy as np
+import pytest
 import tensorflow as tf
+
 import gpflow
+
 import gpflux
-import pio_mllib.optimizers
 
 tf.keras.backend.set_floatx("float64")
 
@@ -36,9 +38,7 @@ def create_gpflow_svgp(kernel, likelihood, inducing_variable):
 
 def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
     mok = gpflow.kernels.SharedIndependent(kernel, output_dim=1)
-    moiv = gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducing_variable
-    )
+    moiv = gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable)
     gp_layer = gpflux.layers.GPLayer(
         mok,
         moiv,
@@ -76,9 +76,7 @@ def fit_scipy(model, data, maxiter=100):
         return -model.elbo(data)
 
     opt = gpflow.optimizers.Scipy()
-    opt.minimize(
-        training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
-    )
+    opt.minimize(training_loss, model.trainable_variables, options=dict(maxiter=maxiter))
 
 
 def assert_equivalence(svgp, sldgp, data, **tol_kws):
@@ -152,7 +150,6 @@ def keras_fit_natgrad(
     adam_learning_rate=0.01,
     maxiter=1000,
     use_other_loss_fn=False,
-    momentum=False,
     run_eagerly=None,
 ):
     if use_other_loss_fn:
@@ -164,9 +161,7 @@ def keras_fit_natgrad(
         other_loss_fn = None
 
     model = gpflux.optimization.NatGradWrapper(base_model, other_loss_fn=other_loss_fn)
-    natgrad = pio_mllib.optimizers.MomentumNaturalGradient(
-        gamma=gamma, momentum=momentum
-    )
+    natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
     adam = tf.optimizers.Adam(adam_learning_rate)
     model.compile(optimizer=[natgrad, adam], run_eagerly=run_eagerly)
     X, Y = data
@@ -219,9 +214,7 @@ def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
         variational_grads, other_grads = tape.gradient(
             loss, (variational_params_vars, hyperparam_variables)
         )
-        for (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt) in zip(
-            variational_grads, variational_params
-        ):
+        for (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt) in zip(variational_grads, variational_params):
             natgrad._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt)
         adam.apply_gradients(zip(other_grads, hyperparam_variables))
 
@@ -260,11 +253,7 @@ def run_gpflux_sldgp(data, optimizer, maxiter):
         keras_fit_adam(model, data, maxiter=maxiter)
     elif optimizer == "keras_natgrad":
         keras_fit_natgrad(
-            model, data, maxiter=maxiter, momentum=False, run_eagerly=True
-        )  # run_eagerly needed so codecov can pick up the lines
-    elif optimizer == "keras_natgrad_momentum":
-        keras_fit_natgrad(
-            model, data, maxiter=maxiter, momentum=True, run_eagerly=True
+            model, data, maxiter=maxiter, run_eagerly=True
         )  # run_eagerly needed so codecov can pick up the lines
     else:
         raise NotImplementedError
@@ -286,15 +275,7 @@ def run_gpflow_svgp(data, optimizer, maxiter):
 
 
 @pytest.mark.parametrize(
-    "optimizer",
-    [
-        "natgrad",
-        "adam",
-        "scipy",
-        "keras_adam",
-        "keras_natgrad",
-        "keras_natgrad_momentum",
-    ],
+    "optimizer", ["natgrad", "adam", "scipy", "keras_adam", "keras_natgrad"],
 )
 def test_run_gpflux_sldgp(optimizer):
     data = load_data()

@@ -1,10 +1,10 @@
-import numpy as np
 import itertools as it
-from gpflux.conv_square_dists import diag_conv_inner_prod
-import tensorflow as tf
 
+import numpy as np
+import tensorflow as tf
 from sklearn.feature_extraction.image import extract_patches_2d
 
+from gpflux.conv_square_dists import diag_conv_inner_prod
 
 
 def patch_inner_product(X, patch_shape):

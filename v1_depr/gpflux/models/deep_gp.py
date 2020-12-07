@@ -3,18 +3,18 @@
 # Proprietary and confidential
 
 
-from typing import Optional, List, Iterator
 from functools import reduce
+from typing import Iterator, List, Optional
 
 import numpy as np
 import tensorflow as tf
 
 import gpflow
 from gpflow import settings
-from gpflow.decors import params_as_tensors, autoflow
+from gpflow.decors import autoflow, params_as_tensors
 from gpflow.likelihoods import Gaussian
 from gpflow.models.model import Model
-from gpflow.params.dataholders import Minibatch, DataHolder
+from gpflow.params.dataholders import DataHolder, Minibatch
 
 from gpflux.layers import AbstractLayer
 from gpflux.layers.base_layer import LayerOutput

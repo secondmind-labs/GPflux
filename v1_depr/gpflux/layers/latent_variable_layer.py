@@ -10,8 +10,9 @@ import tensorflow_probability as tfp
 
 from gpflow import params_as_tensors, settings
 from gpflow.kullback_leiblers import gauss_kl
-from gpflux.layers import AbstractLayer, LayerOutput
+
 from gpflux.encoders import RecognitionNetwork
+from gpflux.layers import AbstractLayer, LayerOutput
 
 
 class LatentVarMode(Enum):

@@ -1,23 +1,22 @@
-import numpy as np
-from sklearn.preprocessing import StandardScaler
+import sys
 
 import matplotlib
-from matplotlib import pyplot as plt
-from mpl_toolkits import mplot3d
-
+import numpy as np
 import tensorflow as tf
 import tqdm
+from matplotlib import pyplot as plt
+from mpl_toolkits import mplot3d
+from sklearn.preprocessing import StandardScaler
 
 from gpflow.kernels import RBF, Matern12
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
-from gpflux.models import DeepGP
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.layers import GPLayer, LikelihoodLayer
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
+from gpflux.models import DeepGP
 from gpflux.utils.live_plotter import live_plot
 
-import sys
 sys.path.append("automl_implementations")
 from dgp_2017 import DoublyStochasticDGP2017
 

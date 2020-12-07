@@ -1,0 +1,10 @@
+[flake8]
+# ignore:
+# E226 missing whitespace around arithmetic operator
+# W503 Line break occurred before a binary operator
+# W504 line break after binary operator
+# F811 redefinition because of multiple dispatch
+ignore = E226,W503,W504,F811
+max-line-length = 100
+max-complexity = 10
+exclude = .git,__pycache__,.mypy_cache,.pytest_cache

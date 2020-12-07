@@ -5,9 +5,10 @@
 import numpy as np
 
 import gpflow
+
+import gpflux
 from gpflux.models.deep_gp import DeepGP
 from gpflux.nonstationary import NonstationaryKernel
-import gpflux
 
 
 def test_nonstationary_gp_1d(session_tf):

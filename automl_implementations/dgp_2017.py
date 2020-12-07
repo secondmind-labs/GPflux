@@ -8,23 +8,23 @@ http://papers.nips.cc/paper/7045-doubly-stochastic-variational-inference-for-dee
 """
 
 import argparse
-from typing import Tuple, List, Sequence, Optional
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
 import tqdm
-
-from gpflux.architectures.dgp_2017 import build_deep_gp_2017, Config as DGP2017Config
-from gpflux.helpers import make_dataclass_from_class
-
 from automl.model_training.custom_model import CustomModel, register_custom_model
 from automl.reports import ModelDescriptionTable
+from utilities import pio_logging
+
 from automl_implementations.benchmarks.research_env.gpflux.gpflux_support import (
     art_aware_main,
     get_experiment_arguments,
     local_main,
 )
-from utilities import pio_logging
+from gpflux.architectures.dgp_2017 import Config as DGP2017Config
+from gpflux.architectures.dgp_2017 import build_deep_gp_2017
+from gpflux.helpers import make_dataclass_from_class
 
 LOG = pio_logging.logger(__name__)
 tf.keras.backend.set_floatx("float64")

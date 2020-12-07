@@ -6,20 +6,23 @@
 import argparse
 import pickle
 from pathlib import Path
-from typing import NamedTuple, Any
+from typing import Any, NamedTuple
+
+import numpy as np
 
 import gpflow
 
-from experiments.experiment_runner.datasets import random_mnist_10epc, random_mnist_1epc, \
-    random_mnist_100epc
-from experiments.experiment_runner.configs import TickConvGPConfig, KerasConfig
-from experiments.experiment_runner.creators import ShallowConvGP, BasicCNN
+from experiments.experiment_runner.configs import KerasConfig, TickConvGPConfig
+from experiments.experiment_runner.creators import BasicCNN, ShallowConvGP
+from experiments.experiment_runner.datasets import (
+    random_mnist_1epc,
+    random_mnist_10epc,
+    random_mnist_100epc,
+)
 from experiments.experiment_runner.learners import GPClassificator, KerasClassificator
 from experiments.experiment_runner.results_managing import Summary
 from experiments.experiment_runner.run_multiple import ExperimentSpecification, run_multiple
 from experiments.experiment_runner.utils import calc_nll_and_error_rate
-
-import numpy as np
 
 SmallCustomHistory = NamedTuple('CustomHistory',
                                 [

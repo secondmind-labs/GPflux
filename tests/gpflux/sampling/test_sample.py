@@ -4,11 +4,10 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.config import default_float, default_jitter
+
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_mercer_decomposition import (
-    KernelWithMercerDecomposition,
-)
-from gpflux.sampling.sample import efficient_sample, Sample
+from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.sample import Sample, efficient_sample
 
 
 @pytest.fixture(name="kernel")
@@ -105,6 +104,4 @@ def test_adding_sample_and_mean_function():
 
     sample_and_mean_function = sample + mean_function
 
-    np.testing.assert_array_almost_equal(
-        sample_and_mean_function(X), sample(X) + mean_function(X)
-    )
+    np.testing.assert_array_almost_equal(sample_and_mean_function(X), sample(X) + mean_function(X))

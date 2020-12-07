@@ -18,7 +18,6 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 import gpflux
-import pio_mllib.optimizers
 from gpflow.ci_utils import ci_niter
 
 import matplotlib.pyplot as plt
@@ -50,9 +49,7 @@ def create_layers():
     layer1 = gpflux.helpers.construct_gp_layer(
         num_data, num_inducing, input_dim, hidden_dim, initializer=init_kmeans
     )
-    layer1.mean_function = (
-        gpflow.mean_functions.Identity()
-    )  # TODO: pass layer_type instead
+    layer1.mean_function = gpflow.mean_functions.Identity()  # TODO: pass layer_type instead
     layer1.q_sqrt.assign(layer1.q_sqrt * 0.01)
 
     init_last_layer = gpflux.initializers.FeedForwardInitializer()
@@ -95,9 +92,7 @@ callbacks = [
 
 dgp.compile(tf.optimizers.Adam(learning_rate=0.1))
 
-history = dgp.fit(
-    x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
-)
+history = dgp.fit(x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks)
 
 # %%
 dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
@@ -110,8 +105,8 @@ callbacks = [
 
 dgp_natgrad.compile(
     [
-        pio_mllib.optimizers.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
-        pio_mllib.optimizers.MomentumNaturalGradient(gamma=0.05, beta1=0.9, beta2=0.99),
+        gpflow.optimizers.NaturalGradient(gamma=0.05),
+        gpflow.optimizers.NaturalGradient(gamma=0.05),
         tf.optimizers.Adam(learning_rate=0.1),
     ]
 )

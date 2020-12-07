@@ -7,8 +7,9 @@ import numpy as np
 import pytest
 
 import gpflow
-import gpflux
 from gpflow.training import AdamOptimizer
+
+import gpflux
 
 
 class Data:

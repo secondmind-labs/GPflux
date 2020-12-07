@@ -5,21 +5,30 @@
 import pickle
 import time
 from pathlib import Path
-from typing import NamedTuple, List
+from typing import List, NamedTuple
+
+import keras
+import numpy as np
+import tqdm
 
 import gpflow
-import keras
-import tqdm
 from gpflow.training import monitor as mon
 
 from experiments.experiment_runner.core import Learner, LearnerOutcome
-from experiments.experiment_runner.results_managing import ScalarSequence, Scalar, Summary
 from experiments.experiment_runner.data import StaticDataSource
-from experiments.experiment_runner.utils import get_text_summary, save_gpflow_model, \
-    calculate_ece_score, top1_error, top2_error, top3_error, calc_ece_from_probs, get_top_n_error, \
-    reshape_dataset_to2d, calc_nll_and_error_rate
-
-import numpy as np
+from experiments.experiment_runner.results_managing import Scalar, ScalarSequence, Summary
+from experiments.experiment_runner.utils import (
+    calc_ece_from_probs,
+    calc_nll_and_error_rate,
+    calculate_ece_score,
+    get_text_summary,
+    get_top_n_error,
+    reshape_dataset_to2d,
+    save_gpflow_model,
+    top1_error,
+    top2_error,
+    top3_error,
+)
 
 
 class KerasClassificator(Learner):

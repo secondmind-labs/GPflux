@@ -11,7 +11,6 @@ from pathlib import Path
 
 from experiments.experiment_runner.results_managing import DatasetReport
 
-
 PATH_TO_RESULTS = 'fractions_long/mnist_fractions_experiment2'
 
 

@@ -1,11 +1,10 @@
 import re
-from typing import Dict, Set, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import tensorflow as tf
 
 import gpflow
 from gpflow.utilities import parameter_dict
-
 
 __all__ = ["TensorBoard"]
 
@@ -20,7 +19,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
         self,
         log_dir: str = "logs",
         *,
-        keywords_to_monitor: Set[str] = {"kernel", "mean_function", "likelihood"},
+        keywords_to_monitor: List[str] = ["kernel", "mean_function", "likelihood"],
         max_size: int = 3,
         histogram_freq: int = 0,
         write_graph: bool = True,
@@ -57,7 +56,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
         self.keywords_to_monitor = keywords_to_monitor
         self.max_size = max_size
 
-    def set_model(self, model):
+    def set_model(self, model: tf.keras.Model) -> None:
         super().set_model(model)
         self.monitor = KerasModelToTensorBoard(
             # mimic Keras' tensorboard callback,
@@ -69,7 +68,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
             left_strip_character="._",
         )
 
-    def on_train_batch_end(self, batch: int, logs: Optional[Dict] = None):
+    def on_train_batch_end(self, batch: int, logs: Optional[Mapping] = None) -> None:
         """
         Writes scalar summaries for model parameters on every training batch.
 
@@ -82,11 +81,10 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
             # We only write at epoch ends
             return
 
-        train_batches = self._total_batches_seen[self._train_run_name]
         if batch % self.update_freq == 0:
-            self.monitor(train_batches)
+            self.monitor(batch)
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: int, logs: Optional[Mapping] = None) -> None:
         """Run model parameter monitoring at epoch end."""
         super().on_epoch_end(epoch, logs=logs)
 
@@ -102,19 +100,17 @@ class KerasModelToTensorBoard(gpflow.monitor.ModelToTensorBoard):
     # Keras automatically saves all layers in `self._layers[\d]` attribute of the model.
     _LAYER_PARAMETER_REGEXP = re.compile(r"\._layers\[\d+\]\.")
 
-    def _parameter_of_interest(self, str):
-        return self._LAYER_PARAMETER_REGEXP.match(str) is not None
+    def _parameter_of_interest(self, match: str) -> bool:
+        return self._LAYER_PARAMETER_REGEXP.match(match) is not None
 
-    def run(self, **unused_kwargs):
+    def run(self, **unused_kwargs: Any) -> None:
 
         for name, parameter in parameter_dict(self.model).items():
             if not self._parameter_of_interest(name):
                 # skip parameters
                 continue
             # check if the parameter name matches any of the specified keywords
-            if self.summarize_all or any(
-                (keyword in name) for keyword in self.keywords_to_monitor
-            ):
+            if self.summarize_all or any((keyword in name) for keyword in self.keywords_to_monitor):
                 # keys are sometimes prepended with a character, which we strip
                 name = name.lstrip(self.left_strip_character)
                 self._summarize_parameter(name, parameter)

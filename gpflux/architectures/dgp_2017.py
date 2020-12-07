@@ -15,14 +15,13 @@ import tensorflow as tf
 
 from gpflow.kernels import SquaredExponential, White
 from gpflow.likelihoods import Gaussian
-from gpflow.mean_functions import Zero, Identity, Linear
+from gpflow.mean_functions import Identity, Linear, Zero
 from gpflow.utilities import set_trainable
-from gpflux.layers import GPLayer, LikelihoodLayer
+
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
-from gpflux.initializers import (
-    KmeansInitializer,
-    FeedForwardInitializer,
-)
+from gpflux.initializers import FeedForwardInitializer, KmeansInitializer
+from gpflux.layers.gp_layer import GPLayer
+from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.models import DeepGP
 
 

@@ -5,7 +5,7 @@
 import os
 import time
 
-from gpflux.profile import get_timing_tasks, Timer, TimingTask
+from gpflux.profile import Timer, TimingTask, get_timing_tasks
 
 
 def test_smoke_profiling():

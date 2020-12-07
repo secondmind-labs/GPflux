@@ -4,12 +4,13 @@
 
 from typing import Optional
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from gpflow import params_as_tensors, Param, settings
-from gpflux.utils import xavier_weights
+from gpflow import Param, params_as_tensors, settings
+
 from gpflux.layers import AbstractLayer, LayerOutput
+from gpflux.utils import xavier_weights
 
 
 class LinearLayer(AbstractLayer):

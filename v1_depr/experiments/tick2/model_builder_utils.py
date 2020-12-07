@@ -3,8 +3,9 @@ import tensorflow as tf
 from sklearn import cluster
 
 import gpflow
-import gpflux
 from gpflow.conditionals import Kuu
+
+import gpflux
 
 
 def cluster_patches(NHWC_X, M, patch_size):

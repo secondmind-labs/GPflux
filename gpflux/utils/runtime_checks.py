@@ -5,8 +5,8 @@
 from typing import Optional
 
 from gpflow.inducing_variables import (
-    MultioutputInducingVariables,
     FallbackSeparateIndependentInducingVariables,
+    MultioutputInducingVariables,
 )
 from gpflow.kernels import MultioutputKernel
 from gpflow.mean_functions import MeanFunction

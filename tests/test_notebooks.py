@@ -39,6 +39,10 @@ def _nbpath():
     return os.path.join(this_dir, "../notebooks/")
 
 
+def test_notebook_dir_exists():
+    assert os.path.isdir(_nbpath())
+
+
 def get_notebooks():
     """
     Returns all notebooks in `_nbpath` that are not blacklisted.
@@ -56,9 +60,7 @@ def get_notebooks():
 
 def _preproc():
     pythonkernel = "python" + str(sys.version_info[0])
-    return ExecutePreprocessor(
-        timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True
-    )
+    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
 
 
 def _exec_notebook(notebook_filename):
@@ -73,14 +75,11 @@ def _exec_notebook(notebook_filename):
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
-def _exec_notebook_ts(notebook_filename):
-    ts = time.time()
-    _exec_notebook(notebook_filename)
-    elapsed = time.time() - ts
-    print(notebook_filename, "took {0} seconds.".format(elapsed))
-
-
 @pytest.mark.notebooks
 @pytest.mark.parametrize("notebook_file", get_notebooks())
 def test_notebook(notebook_file):
     _exec_notebook(notebook_file)
+
+
+def test_has_notebooks():
+    assert len(get_notebooks()) >= 2, "there are probably some notebooks that were not discovered"

@@ -1,14 +1,12 @@
 import numpy as np
-
+import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
-import pytest
 
 from gpflow.likelihoods import Gaussian
 
+from gpflux.layers import LatentVariableAugmentationLayer, LikelihoodLayer
 from gpflux.models import BayesianModel
-from gpflux.layers import LikelihoodLayer, LatentVariableAugmentationLayer
-
 from tests.integration.test_latent_variable_integration import (  # noqa: F401
     build_gp_layers,
     test_data,
@@ -51,11 +49,7 @@ def build_LVGPGP_Bayesian_Model(x_dim, w_dim, y_dim, num_data):
         f = gp(f)
 
     return BayesianModel(
-        X_input=x,
-        Y_input=y,
-        F_output=f,
-        likelihood_layer=likelihood_layer,
-        num_data=num_data,
+        X_input=x, Y_input=y, F_output=f, likelihood_layer=likelihood_layer, num_data=num_data,
     )
 
 

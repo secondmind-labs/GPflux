@@ -3,7 +3,7 @@
 # Proprietary and confidential
 import inspect
 from dataclasses import fields
-from typing import Optional, Type
+from typing import List, Optional, Type, TypeVar, Union
 
 import numpy as np
 
@@ -16,11 +16,16 @@ from gpflow.inducing_variables import (
 )
 from gpflow.kernels import SeparateIndependent, SharedIndependent
 from gpflow.utilities import deepcopy
-from gpflux.layers import GPLayer
+
 from gpflux.initializers import Initializer
+from gpflux.layers.gp_layer import GPLayer
 
 
-def construct_basic_kernel(kernels, output_dim=None, share_hyperparams=False):
+def construct_basic_kernel(
+    kernels: Union[gpflow.kernels.Kernel, List[gpflow.kernels.Kernel]],
+    output_dim: Optional[int] = None,
+    share_hyperparams: bool = False,
+) -> gpflow.kernels.Kernel:
     if isinstance(kernels, list):
         mo_kern = SeparateIndependent(kernels)
     elif not share_hyperparams:
@@ -32,8 +37,11 @@ def construct_basic_kernel(kernels, output_dim=None, share_hyperparams=False):
 
 
 def construct_basic_inducing_variables(
-    num_inducing, input_dim, output_dim=None, share_variables=False
-):
+    num_inducing: int,
+    input_dim: int,
+    output_dim: Optional[int] = None,
+    share_variables: bool = False,
+) -> gpflow.inducing_variables.InducingVariables:
     if isinstance(num_inducing, list):
         if output_dim is not None:
             # TODO: the following assert may clash with MixedMultiOutputFeatures
@@ -94,9 +102,7 @@ def construct_gp_layer(
 
     lengthscale = float(input_dim) ** 0.5
     base_kernel = kernel_class(lengthscales=np.full(input_dim, lengthscale))
-    kernel = construct_basic_kernel(
-        base_kernel, output_dim=output_dim, share_hyperparams=True,
-    )
+    kernel = construct_basic_kernel(base_kernel, output_dim=output_dim, share_hyperparams=True)
     inducing_variable = construct_basic_inducing_variables(
         num_inducing, input_dim, output_dim=output_dim, share_variables=True,
     )
@@ -110,7 +116,10 @@ def construct_gp_layer(
     return gp_layer
 
 
-def make_dataclass_from_class(dataclass, instance, **updates):
+T = TypeVar("T")
+
+
+def make_dataclass_from_class(dataclass: Type[T], instance: object, **updates: object) -> T:
     """
     Takes a regular object `instance` with a superset of fields for a
     `dataclass` (`@dataclass`-decorated class), i.e. it has all of the
@@ -120,10 +129,8 @@ def make_dataclass_from_class(dataclass, instance, **updates):
     dataclass_keys = [f.name for f in fields(dataclass)]
     field_dict = {k: v for k, v in inspect.getmembers(instance) if k in dataclass_keys}
     field_dict.update(updates)
-    return dataclass(**field_dict)
+    return dataclass(**field_dict)  # type: ignore
 
 
-def xavier_initialization_numpy(input_dim, output_dim):
-    return (
-        np.random.randn(input_dim, output_dim) * (2.0 / (input_dim + output_dim)) ** 0.5
-    )
+def xavier_initialization_numpy(input_dim: int, output_dim: int) -> np.ndarray:
+    return np.random.randn(input_dim, output_dim) * (2.0 / (input_dim + output_dim)) ** 0.5

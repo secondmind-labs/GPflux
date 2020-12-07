@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Union
 
-import tensorflow as tf
 import numpy as np
 import observations as obs
 import pandas as pd
+import tensorflow as tf
 
 import gpflow
+
 from gpflux.convolution.convolution_utils import ImagePatchConfig, PatchHandler
 
 
@@ -173,7 +174,6 @@ def get_error_cb(model, Xs, Ys, error_func, full=False, Ns=500):
 def trace(T, sess, name):
     import tensorflow as tf
     from tensorflow.python.client import timeline
-
 
     # add additional options to trace the session execution
     options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)

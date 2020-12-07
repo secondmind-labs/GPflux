@@ -7,13 +7,13 @@ from functools import lru_cache
 from itertools import permutations
 from math import factorial
 
-import gpflow
 import numpy as np
 import tensorflow as tf
-from gpflow import settings
-from gpflow import transforms
 
-from .transformations import rotate_img_angles, rotate_img_angles_stn, apply_stn_batch
+import gpflow
+from gpflow import settings, transforms
+
+from .transformations import apply_stn_batch, rotate_img_angles, rotate_img_angles_stn
 
 logger = settings.logger()
 

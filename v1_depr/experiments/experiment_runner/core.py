@@ -4,7 +4,7 @@
 
 import abc
 from pathlib import Path
-from typing import NamedTuple, Any
+from typing import Any, NamedTuple
 
 from experiments.experiment_runner.data import DataSource
 from experiments.experiment_runner.utils import short_uuid

@@ -1,15 +1,14 @@
-import tensorflow as tf
-from tensorflow import keras
-
 import numpy as np
 import pytest
+import tensorflow as tf
+from tensorflow import keras
 
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.layers import GPLayer, LikelihoodLayer
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 from gpflux.models import DeepGP
 
 tf.keras.backend.set_floatx("float64")
@@ -62,9 +61,7 @@ def build_keras_functional_deep_gp(layer_sizes, num_data):
     targets = keras.Input(shape=(layer_sizes[-1]))
     mean_and_var = likelihood_layer(x, targets=targets)
 
-    return keras.Model(
-        inputs=[inputs, targets], outputs=mean_and_var, name="deep_gp_fp"
-    )
+    return keras.Model(inputs=[inputs, targets], outputs=mean_and_var, name="deep_gp_fp")
 
 
 def build_keras_objected_oriented_deep_gp(layer_sizes, num_data):
@@ -149,9 +146,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
     (X, Y) = setup_dataset(layer_sizes[0], num_data)
 
     dataset_tuple = ((X, Y), Y)  # (inputs_to_model, targets_from_model)
-    train_dataset = (
-        tf.data.Dataset.from_tensor_slices(dataset_tuple).repeat().batch(batch)
-    )
+    train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).repeat().batch(batch)
     optimizer = tf.keras.optimizers.Adam()
 
     train_dataset_iter = iter(train_dataset)
@@ -162,9 +157,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
         return tf.reduce_sum(deep_gp_model.losses)
 
     def optimization_step(data_minibatch):
-        optimizer.minimize(
-            lambda: objective(data_minibatch), deep_gp_model.trainable_weights
-        )
+        optimizer.minimize(lambda: objective(data_minibatch), deep_gp_model.trainable_weights)
 
     if use_tf_function:
         objective = tf.function(objective, autograph=False)

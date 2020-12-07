@@ -6,9 +6,9 @@
 import numpy as np
 
 import gpflow
-from gpflow.models import SVGP
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
+from gpflow.models import SVGP
 
 from gpflux.layers import GPLayer
 from gpflux.models import DeepGP

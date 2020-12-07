@@ -3,18 +3,21 @@
 # Proprietary and confidential
 """A Bayesian Dense Keras Layer"""
 
-from typing import Optional, Callable
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 
+from gpflow import Parameter, default_float
+from gpflow.base import TensorType
 from gpflow.kullback_leiblers import gauss_kl
-from gpflow.utilities.bijectors import triangular, positive
-from gpflow import default_float, Parameter
+from gpflow.models.model import MeanAndVariance
+from gpflow.utilities.bijectors import positive, triangular
 
-from gpflux.layers import TrackableLayer
-from gpflux.helpers import xavier_initialization_numpy
 from gpflux.exceptions import GPInitializationError
+from gpflux.helpers import xavier_initialization_numpy
+from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.types import ShapeType
 
 
 class BayesianDenseLayer(TrackableLayer):
@@ -57,10 +60,7 @@ class BayesianDenseLayer(TrackableLayer):
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
             if not is_mean_field:
-                assert w_sqrt.shape == (
-                    (input_dim + 1) * output_dim,
-                    (input_dim + 1) * output_dim,
-                )
+                assert w_sqrt.shape == ((input_dim + 1) * output_dim, (input_dim + 1) * output_dim,)
             else:
                 assert w_sqrt.shape == ((input_dim + 1) * output_dim,)
         assert temperature > 0.0
@@ -81,14 +81,10 @@ class BayesianDenseLayer(TrackableLayer):
         self.full_output_cov = False
         self.full_cov = False
 
-        self.w_mu = Parameter(
-            np.zeros((self.dim,)), dtype=default_float(), name="w_mu"
-        )  # [dim]
+        self.w_mu = Parameter(np.zeros((self.dim,)), dtype=default_float(), name="w_mu")  # [dim]
 
         self.w_sqrt = Parameter(
-            np.zeros((self.dim, self.dim))
-            if not self.is_mean_field
-            else np.ones((self.dim,)),
+            np.zeros((self.dim, self.dim)) if not self.is_mean_field else np.ones((self.dim,)),
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt",
@@ -96,7 +92,7 @@ class BayesianDenseLayer(TrackableLayer):
 
         self._initialized = False
 
-    def initialize_variational_distribution(self, **initializer_kwargs):
+    def initialize_variational_distribution(self, **initializer_kwargs: Any) -> None:
         if self._initialized:
             raise GPInitializationError("Initializing twice!")  # pragma: no cover
 
@@ -115,20 +111,20 @@ class BayesianDenseLayer(TrackableLayer):
 
         self._initialized = True
 
-    def build(self, input_shape):
+    def build(self, input_shape: ShapeType) -> None:
         """Build the variables necessary on first call"""
         super().build(input_shape)
         self.initialize_variational_distribution()
 
     def predict_samples(
         self,
-        inputs,
+        inputs: TensorType,
         *,
         num_samples: Optional[int] = None,
         full_output_cov: bool = False,
         full_cov: bool = False,
         white: bool = False,
-    ):
+    ) -> TensorType:
         """
         Make a sample predictions at N test inputs, with input_dim = D, output_dim = Q. Return a
         sample, and the conditional mean and covariance at these points.
@@ -145,9 +141,7 @@ class BayesianDenseLayer(TrackableLayer):
         assert white is False
 
         _num_samples = num_samples or 1
-        z = tf.random.normal(
-            (self.dim, _num_samples), dtype=default_float()
-        )  # [dim, S]
+        z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
         if not self.is_mean_field:
             w = self.w_mu[:, None] + tf.matmul(self.w_sqrt, z)  # [dim, S]
         else:
@@ -159,9 +153,7 @@ class BayesianDenseLayer(TrackableLayer):
         )  # [N, D+1]
         samples = tf.tensordot(
             inputs_concat_1,
-            tf.reshape(
-                tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)
-            ),
+            tf.reshape(tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)),
             [[-1], [1]],
         )  # [N, S, Q]
         if num_samples is None:
@@ -174,13 +166,12 @@ class BayesianDenseLayer(TrackableLayer):
 
         return samples
 
-    def call(self, inputs, training=False):
+    def call(
+        self, inputs: TensorType, training: Optional[bool] = False
+    ) -> Union[TensorType, MeanAndVariance]:
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
         sample = self.predict_samples(
-            inputs,
-            num_samples=None,
-            full_output_cov=self.full_output_cov,
-            full_cov=self.full_cov,
+            inputs, num_samples=None, full_output_cov=self.full_output_cov, full_cov=self.full_cov,
         )
 
         # TF quirk: add_loss must add a tensor to compile
@@ -199,7 +190,7 @@ class BayesianDenseLayer(TrackableLayer):
         # for output layers, return samples as mean with 0 cov
         return sample, tf.ones_like(sample) * 1e-10  # [N, Q], [N, Q]
 
-    def prior_kl(self):
+    def prior_kl(self) -> TensorType:
         """
         The KL divergence from the variational distribution to the prior
         :return: KL divergence from N(w_mu, w_sqrt) to N(0, I)

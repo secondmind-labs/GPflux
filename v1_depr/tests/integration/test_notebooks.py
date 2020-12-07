@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
+import os
 import sys
 import time
-import os
+import traceback
 
-import pytest
 import nbformat
-import gpflow
+import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
+
+import gpflow
 
 NOTEBOOK_FILES = [
     "deep_gp_samples.ipynb",

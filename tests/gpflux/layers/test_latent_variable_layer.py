@@ -1,14 +1,13 @@
 import numpy as np
 import pytest
-
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.kernels import RBF
 from gpflow.kullback_leiblers import gauss_kl
 
-from gpflux.layers import LatentVariableLayer
 from gpflux.encoders import DirectlyParameterizedNormalDiag
+from gpflux.layers import LatentVariableLayer
 
 tf.keras.backend.set_floatx("float64")
 

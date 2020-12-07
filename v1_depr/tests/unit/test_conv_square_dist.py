@@ -4,14 +4,17 @@
 
 
 import numpy as np
-from numpy.testing import assert_allclose
 import tensorflow as tf
+from numpy.testing import assert_allclose
 
 from gpflow.kernels import RBF
-from gpflux.conv_square_dists import (diag_conv_square_dist,
-                                      full_conv_square_dist,
-                                      image_patch_conv_square_dist,
-                                      patchwise_conv_square_dist)
+
+from gpflux.conv_square_dists import (
+    diag_conv_square_dist,
+    full_conv_square_dist,
+    image_patch_conv_square_dist,
+    patchwise_conv_square_dist,
+)
 from gpflux.convolution.convolution_kernel import ConvKernel
 from gpflux.utils import get_image_patches
 

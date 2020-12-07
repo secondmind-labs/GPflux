@@ -15,8 +15,3 @@ class GPInitializationError(Exception):
 
 class EncoderInitializationError(Exception):
     pass
-
-
-# Plotting Errors
-class InvalidPlotFunctionError(Exception):
-    pass

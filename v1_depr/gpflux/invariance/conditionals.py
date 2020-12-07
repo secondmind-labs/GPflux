@@ -2,9 +2,10 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import gpflow
 import tensorflow as tf
-from gpflow import features, settings, decors, name_scope
+
+import gpflow
+from gpflow import decors, features, name_scope, settings
 from gpflow.dispatch import conditional
 
 from .features import StochasticInvariantInducingPoints

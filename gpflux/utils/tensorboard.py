@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterator, Type, Union, List
+from typing import Any, Iterator, List, Type, Union
 
 import tensorflow as tf
 from tensorflow.core.util import event_pb2
@@ -16,9 +16,7 @@ class Event:
     dtype: Type
 
 
-def tensorboard_event_iterator(
-    file_pattern: Union[str, List[str], tf.Tensor]
-) -> Iterator[Event]:
+def tensorboard_event_iterator(file_pattern: Union[str, List[str], tf.Tensor]) -> Iterator[Event]:
     """
     Iterator yielding preprocessed tensorboard Events.
 

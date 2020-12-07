@@ -2,11 +2,12 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-import gpflow
 import tensorflow as tf
+
+import gpflow
 from gpflow.dispatch import dispatch
 
-from .kernels import InvariantBase, Invariant, StochasticInvariant
+from .kernels import Invariant, InvariantBase, StochasticInvariant
 
 
 class InvariantInducingPoints(gpflow.features.InducingPoints):

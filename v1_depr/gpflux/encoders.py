@@ -8,8 +8,16 @@ from typing import List, Optional
 import numpy as np
 import tensorflow as tf
 
-from gpflow import (Param, Parameterized, ParamList, autoflow,
-                    params_as_tensors, settings, transforms)
+from gpflow import (
+    Param,
+    Parameterized,
+    ParamList,
+    autoflow,
+    params_as_tensors,
+    settings,
+    transforms,
+)
+
 from gpflux.utils import xavier_weights
 
 

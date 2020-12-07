@@ -4,20 +4,19 @@
 
 from typing import Optional
 
-import gpflow
 import tensorflow as tf
 
-from gpflow import settings, params_as_tensors_for
+import gpflow
+from gpflow import params_as_tensors_for, settings
+from gpflow.conditionals import _sample_mvn, base_conditional
 from gpflow.dispatch import conditional, dispatch, sample_conditional
 from gpflow.multioutput.conditionals import fully_correlated_conditional_repeat
-from gpflow.conditionals import base_conditional, _sample_mvn
 from gpflow.multioutput.features import debug_kuf, debug_kuu
 
 from gpflux.convolution.convolution_kernel import ConvKernel, WeightedSumConvKernel
 from gpflux.convolution.convolution_utils import K_image_inducing_patches
-from gpflux.convolution.inducing_patch import InducingPatch, IndexedInducingPatch
+from gpflux.convolution.inducing_patch import IndexedInducingPatch, InducingPatch
 from gpflux.types import TensorLike
-
 
 # (Indexed)InducingPatch and ConvKernel
 

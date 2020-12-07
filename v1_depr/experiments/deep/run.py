@@ -1,14 +1,15 @@
 import os
-import gpflow
-import gpflow.training.monitor as mon
-import gpflux
+
 import numpy as np
 import tensorflow as tf
-
+from observations import cifar10, mnist
 from sacred import Experiment
-from observations import mnist, cifar10
+from utils import calc_binary_error, calc_multiclass_error, get_error_cb
 
-from utils import get_error_cb, calc_multiclass_error, calc_binary_error
+import gpflow
+import gpflow.training.monitor as mon
+
+import gpflux
 
 SUCCESS = 0
 NAME = "mnist_new3"

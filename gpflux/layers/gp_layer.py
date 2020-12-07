@@ -3,24 +3,26 @@
 # Proprietary and confidential
 """A Sparse Variational Multioutput Gaussian Process Keras Layers"""
 
-from typing import Optional
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 
-from gpflow.kernels import MultioutputKernel
+from gpflow import Parameter, default_float
+from gpflow.base import TensorType
 from gpflow.conditionals import sample_conditional
 from gpflow.inducing_variables import MultioutputInducingVariables
+from gpflow.kernels import MultioutputKernel
 from gpflow.kullback_leiblers import prior_kl
-from gpflow.mean_functions import MeanFunction, Identity
+from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
-from gpflow import default_float, Parameter
 
-from gpflux.layers import TrackableLayer
-from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.exceptions import GPInitializationError
+from gpflux.initializers import FeedForwardInitializer, Initializer
+from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.sampling.sample import Sample, efficient_sample
+from gpflux.types import ShapeType
 from gpflux.utils.runtime_checks import verify_compatibility
-from gpflux.sampling.sample import efficient_sample
 
 
 class GPLayer(TrackableLayer):
@@ -97,9 +99,7 @@ class GPLayer(TrackableLayer):
             )
 
         self.q_mu = Parameter(
-            np.zeros((self.num_inducing, self.num_latent_gps)),
-            dtype=default_float(),
-            name="q_mu",
+            np.zeros((self.num_inducing, self.num_latent_gps)), dtype=default_float(), name="q_mu",
         )  # [num_inducing, output_dim]
 
         self.q_sqrt = Parameter(
@@ -110,16 +110,14 @@ class GPLayer(TrackableLayer):
         )  # [output_dim, num_inducing, num_inducing]
         self._initialized = False
 
-    def initialize_inducing_variables(self, **initializer_kwargs):
+    def initialize_inducing_variables(self, **initializer_kwargs: Any) -> None:
         if self._initialized:
             raise GPInitializationError("Initializing twice!")
 
-        self.initializer.init_inducing_variable(
-            self.inducing_variable, **initializer_kwargs
-        )
+        self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
         self._initialized = True
 
-    def build(self, input_shape):
+    def build(self, input_shape: ShapeType) -> None:
         """Build the variables necessary on first call"""
 
         super().build(input_shape)
@@ -128,13 +126,13 @@ class GPLayer(TrackableLayer):
 
     def predict(
         self,
-        inputs,
+        inputs: TensorType,
         *,
         num_samples: Optional[int] = None,
         full_output_cov: bool = False,
         full_cov: bool = False,
         white: bool = True,
-    ):
+    ) -> Tuple[TensorType, TensorType, TensorType]:
         """
         Make a prediction at N test inputs, with input_dim = D, output_dim = Q. Return a
         sample, and the conditional mean and covariance at these points.
@@ -171,9 +169,7 @@ class GPLayer(TrackableLayer):
         )
 
         if num_samples is None:
-            tf.debugging.assert_shapes(
-                [(sample_cond, ["N", "Q"]), (mean_cond, ["N", "Q"])]
-            )
+            tf.debugging.assert_shapes([(sample_cond, ["N", "Q"]), (mean_cond, ["N", "Q"])])
         else:
             tf.debugging.assert_shapes(
                 [(sample_cond, [num_samples, "N", "Q"]), (mean_cond, ["N", "Q"])]
@@ -184,7 +180,9 @@ class GPLayer(TrackableLayer):
 
         return samples, mean, cov
 
-    def call(self, inputs, training=False):
+    def call(
+        self, inputs: TensorType, training: bool = False
+    ) -> Union[TensorType, Tuple[TensorType, TensorType]]:
         """The default behaviour upon calling the GPLayer()(X)"""
         samples, mean, cov = self.predict(
             inputs,
@@ -209,18 +207,16 @@ class GPLayer(TrackableLayer):
             return samples
         return mean, cov
 
-    def prior_kl(self, whiten: bool = True):
+    def prior_kl(self, whiten: bool = True) -> TensorType:
         """
         The KL divergence from the variational distribution to the prior
 
         :param whiten:
         :return: KL divergence from N(q_mu, q_sqrt) to N(0, I) independently for each GP
         """
-        return prior_kl(
-            self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=whiten
-        )
+        return prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=whiten)
 
-    def sample(self):
+    def sample(self) -> Sample:
         return (
             efficient_sample(
                 self.inducing_variable,

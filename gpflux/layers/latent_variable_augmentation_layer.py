@@ -1,10 +1,13 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from gpflux.layers import LatentVariableLayer
+from gpflow.base import TensorType
+
+from gpflux.layers.latent_variable_layer import LatentVariableLayer
 
 
 class LatentVariableAugmentationLayer(LatentVariableLayer):
@@ -16,7 +19,12 @@ class LatentVariableAugmentationLayer(LatentVariableLayer):
     of input and sampled latent_variable in the simple Layer framework.
     """
 
-    def call(self, data, training: bool = False, seed: int = None):
+    def call(
+        self,
+        data: Tuple[TensorType, TensorType],
+        training: bool = False,
+        seed: Optional[int] = None,
+    ) -> TensorType:
         """
         When training: Draw a sample of the latent variable from the posterior,
         whose distribution is parameterized by the encoder mapping from the data

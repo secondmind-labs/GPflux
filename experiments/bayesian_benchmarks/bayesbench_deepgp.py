@@ -6,24 +6,22 @@
 Experiments running bayesian_benchmarks's regression task with Deep GPs.
 """
 
-import tqdm
-import gpflow
-import tensorflow as tf
-from gpflow.mean_functions import Zero
-from gpflow.kernels import SquaredExponential
-from gpflow.likelihoods import Gaussian
-from gpflow.utilities import set_trainable, print_summary
-from gpflux.models import DeepGP
-from gpflux.layers import GPLayer, LikelihoodLayer
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
-from gpflux.initializers import (
-    KmeansInitializer,
-    FeedForwardInitializer,
-)
+from pprint import pprint
 
 import numpy as np
+import tensorflow as tf
+import tqdm
 
-from pprint import pprint
+import gpflow
+from gpflow.kernels import SquaredExponential
+from gpflow.likelihoods import Gaussian
+from gpflow.mean_functions import Zero
+from gpflow.utilities import print_summary, set_trainable
+
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
+from gpflux.initializers import FeedForwardInitializer, KmeansInitializer
+from gpflux.layers import GPLayer, LikelihoodLayer
+from gpflux.models import DeepGP
 
 
 def build_deep_gp(X, likelihood, num_inducing):
@@ -270,7 +268,7 @@ class BayesBench_DeepGP:
 
 if __name__ == "__main__":
     # from: https://github.com/Prowler-io/bayesian_benchmarks
-    from bayesian_benchmarks.tasks.regression import run as run_regression
     from bayesian_benchmarks.tasks.regression import parse_args
+    from bayesian_benchmarks.tasks.regression import run as run_regression
 
     run_regression(parse_args(), is_test=True, model=BayesBench_DeepGP(is_test=False))

@@ -2,24 +2,22 @@ import itertools
 
 import numpy as np
 import pytest
-
 import tensorflow as tf
-import tensorflow_probability as tfp
 import tensorflow.keras as keras
+import tensorflow_probability as tfp
 
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
+from gpflux.encoders import DirectlyParameterizedNormalDiag
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.layers import (
+    GPLayer,
     LatentVariableAugmentationLayer,
     LatentVariableLayer,
-    GPLayer,
     LikelihoodLayer,
 )
-from gpflux.encoders import DirectlyParameterizedNormalDiag
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
-
 
 tf.keras.backend.set_floatx("float64")
 
@@ -100,9 +98,7 @@ def train_model(x_data, y_data, model, use_keras_compile):
     "w_dim, use_keras_compile, do_augmentation",
     itertools.product([1, 2], [True, False], [True, False]),
 )
-def test_cde_direct_parametrization(
-    test_data, w_dim, use_keras_compile, do_augmentation
-):
+def test_cde_direct_parametrization(test_data, w_dim, use_keras_compile, do_augmentation):
     """Test a directly parameterized CDE, using functional API, both eager or compiled.
     Test that the losses decrease."""
 

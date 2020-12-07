@@ -1,10 +1,10 @@
 import numpy as np
+
+from gpflow.features import InducingPoints
 from gpflow.kernels import RBF, Polynomial, White
 from gpflow.likelihoods import Gaussian, MultiClass, SoftMax
-from gpflow.features import InducingPoints
 
-from gpflux.invariance import StochasticInvariant
-from gpflux.invariance import Rotation
+from gpflux.invariance import Rotation, StochasticInvariant
 
 
 def RBFPolynomial(dim, degree=0.9):

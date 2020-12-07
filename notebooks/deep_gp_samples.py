@@ -37,9 +37,7 @@ M = Z.shape[0]
 # Layer 1
 inducing_var1 = construct_basic_inducing_variables(M, D, D)
 kernel1 = construct_basic_kernel(
-    gpflow.kernels.SquaredExponential(lengthscales=0.15),
-    output_dim=D,
-    share_hyperparams=True,
+    gpflow.kernels.SquaredExponential(lengthscales=0.15), output_dim=D, share_hyperparams=True,
 )
 layer1 = GPLayer(kernel1, inducing_var1, Ns, initializer=GivenZInitializer(Z))
 

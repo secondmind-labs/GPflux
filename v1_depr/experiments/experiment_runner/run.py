@@ -5,8 +5,7 @@
 import argparse
 from pathlib import Path
 
-from experiments.experiment_runner import datasets
-from experiments.experiment_runner import configs, creators, learners
+from experiments.experiment_runner import configs, creators, datasets, learners
 from experiments.experiment_runner.core import Experiment, Trainer
 from experiments.experiment_runner.data import StaticDataSource
 from experiments.experiment_runner.utils import get_from_module

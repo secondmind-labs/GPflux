@@ -3,14 +3,12 @@
 #  Proprietary and confidential
 import tensorflow as tf
 
-from gpflow.config import default_float, default_jitter
 from gpflow.base import TensorType
 from gpflow.conditionals.util import sample_mvn
+from gpflow.config import default_float, default_jitter
 
 
-def draw_conditional_sample(
-    mean: TensorType, cov: TensorType, f_old: TensorType
-) -> TensorType:
+def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType) -> TensorType:
     r"""
     Draws a sample \tilde{f_new} from the conditional multivariate Gaussian p(f_new | f_old),
     where mean and cov are the mean and covariance matrix of the joint multivariate Gaussian
@@ -65,7 +63,5 @@ def compute_A_inv_b(A: TensorType, b: TensorType) -> TensorType:
     L = tf.linalg.cholesky(A)
     # A^{-1} = L^{-T} L^{-1}
     L_inv_b = tf.linalg.triangular_solve(L, b)
-    A_inv_b = tf.linalg.triangular_solve(
-        L, L_inv_b, adjoint=True
-    )  # adjoint = transpose
+    A_inv_b = tf.linalg.triangular_solve(L, L_inv_b, adjoint=True)  # adjoint = transpose
     return A_inv_b

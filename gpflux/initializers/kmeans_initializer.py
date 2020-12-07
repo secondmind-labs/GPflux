@@ -10,16 +10,14 @@ from scipy.cluster.vq import kmeans2
 from .z_initializer import GivenZInitializer
 
 
-def init_inducing_points(X, num_inducing):
+def init_inducing_points(X: np.ndarray, num_inducing: int) -> np.ndarray:
     num_data, input_dim = X.shape
     if num_data > num_inducing:
         centroids, labels = kmeans2(X, k=num_inducing, minit="points")
         assert set(labels) == set(range(num_inducing))
         return centroids
     else:
-        warnings.warn(
-            "Requesting more inducing points than data set size is inefficient!"
-        )
+        warnings.warn("Requesting more inducing points than data set size is inefficient!")
         # if we have less data points than number of inducing points requested,
         # add randomly generated points (implicitly assumes data is zero-one
         # normalized):

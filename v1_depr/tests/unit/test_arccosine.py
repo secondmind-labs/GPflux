@@ -9,6 +9,7 @@ import tensorflow as tf
 from sklearn.feature_extraction.image import extract_patches_2d
 
 import gpflow
+
 from gpflux.convolution.convolution_kernel import ConvKernel, K_image_symm
 from gpflux.convolution.convolution_utils import K_image_inducing_patches
 
