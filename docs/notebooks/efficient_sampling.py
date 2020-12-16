@@ -56,7 +56,6 @@ layer = gpflux.layers.GPLayer(
     num_data,
     white=False,
     verify=False,
-    returns_samples=False,
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )
@@ -84,8 +83,9 @@ spread = X.max() + b - (X.min() - a)
 X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
 X_test_2 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
 
-m, v = model.predict_f(X_test)
-m, v = [tmp.numpy() for tmp in [m, v]]
+f_dist = model.predict_f(X_test)
+m = f_dist.mean().numpy()
+v = f_dist.scale.diag.numpy()
 
 f_sample_prior = model.sample()
 plt.plot(X_test_1, f_sample_prior(X_test_1).numpy(), "C1.")

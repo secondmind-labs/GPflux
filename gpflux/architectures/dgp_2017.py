@@ -103,16 +103,7 @@ def build_deep_gp_2017(X: np.ndarray, layer_dims: Sequence[int], config: Config)
         else:
             initializer = FeedForwardInitializer()
 
-        returns_samples = not is_last_layer
-
-        layer = GPLayer(
-            kernel,
-            inducing_var,
-            num_data,
-            initializer,
-            mean_function=mean_function,
-            returns_samples=returns_samples,
-        )
+        layer = GPLayer(kernel, inducing_var, num_data, initializer, mean_function=mean_function)
         layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
         gp_layers.append(layer)
 

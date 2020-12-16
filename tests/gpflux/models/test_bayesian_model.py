@@ -3,6 +3,7 @@ import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from gpflow import default_float
 from gpflow.likelihoods import Gaussian
 
 from gpflux.layers import LatentVariableAugmentationLayer, LikelihoodLayer
@@ -49,7 +50,7 @@ def build_LVGPGP_Bayesian_Model(x_dim, w_dim, y_dim, num_data):
         f = gp(f)
 
     return BayesianModel(
-        X_input=x, Y_input=y, F_output=f, likelihood_layer=likelihood_layer, num_data=num_data,
+        X_input=[x, y], F_output=f, likelihood_layer=likelihood_layer, num_data=num_data,
     )
 
 
@@ -69,22 +70,24 @@ def bayesian_model(test_data):
 def test_predict_f_shape(bayesian_model, test_data):
     X, Y = test_data
     num_data, y_dim = Y.shape
-    f_mean, f_cov = bayesian_model.predict_f(X)
-    assert f_mean.shape == (num_data, y_dim)
-    assert f_cov.shape == (num_data, y_dim)
+    f_dist = bayesian_model.predict_f([X, tf.cast(np.nan, default_float())])
+    assert f_dist.mean().shape == (num_data, y_dim)
+    assert f_dist.scale.diag.shape == (num_data, y_dim)
 
 
 def test_predict_y_shape(bayesian_model, test_data):
     X, Y = test_data
     num_data, y_dim = Y.shape
-    y_mean, y_cov = bayesian_model.predict_y(X)
-    assert y_mean.shape == (num_data, y_dim)
-    assert y_cov.shape == (num_data, y_dim)
+    y_dist = bayesian_model.predict_y([X, tf.cast(np.nan, default_float())])
+    assert y_dist.y_mean.shape == (num_data, y_dim)
+    assert y_dist.y_var.shape == (num_data, y_dim)
 
 
 def test_predict_f_samples_shape(bayesian_model, test_data):
     X, Y = test_data
     num_samples = 5
     num_data, y_dim = Y.shape
-    f_samples = bayesian_model.predict_f_samples(X, num_samples=num_samples)
+    f_samples = bayesian_model.predict_f_samples(
+        [X, tf.cast(np.nan, default_float())], num_samples=num_samples
+    )
     assert f_samples.shape == (num_samples, num_data, y_dim)

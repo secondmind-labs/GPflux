@@ -41,7 +41,7 @@ def build_deep_gp(input_dim, num_data):
     gp_layers = [
         GPLayer(l1_kernel, l1_inducing, num_data),
         GPLayer(l2_kernel, l2_inducing, num_data),
-        GPLayer(l3_kernel, l3_inducing, num_data, mean_function=Zero(), returns_samples=False,),
+        GPLayer(l3_kernel, l3_inducing, num_data, mean_function=Zero()),
     ]
     return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(Gaussian()))
 
@@ -57,6 +57,8 @@ def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval
     def step():
         optimizer.minimize(objective_closure, deep_gp.trainable_weights)
 
+    # The model must be compiled to add the loss function:
+    deep_gp.compile(optimizer=optimizer)
     tq = tqdm.tqdm(range(maxiter))
     for i in tq:
         step()
@@ -107,7 +109,8 @@ def get_live_plotter(train_data, model):
     def plotter(*args, **kwargs):
         nonlocal contour_line
 
-        ZZ_val = model.predict_f(sample_points)
+        # turn distribution into sample:
+        ZZ_val = tf.convert_to_tensor(model.predict_f(sample_points))
         if isinstance(ZZ_val, tuple):
             ZZ_val = ZZ_val[0]
         ZZ_hat = ZZ_val.numpy().reshape(XX.shape)

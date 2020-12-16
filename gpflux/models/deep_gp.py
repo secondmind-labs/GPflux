@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from gpflow.base import TensorType
 
-from gpflux.layers.gp_layer import GPLayer, TrackableLayer
+from gpflux.layers.gp_layer import GPLayer
 from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.models.bayesian_model import BayesianModel
 from gpflux.sampling.sample import Sample
@@ -16,13 +16,11 @@ from gpflux.sampling.sample import Sample
 class DeepGP(BayesianModel):
     def __init__(
         self,
-        gp_layers: List[TrackableLayer],
+        gp_layers: List[GPLayer],
         likelihood_layer: LikelihoodLayer,
         input_dim: Optional[int] = None,
-        output_dim: Optional[int] = None,
     ):
         X_input = tf.keras.Input((input_dim,))
-        Y_input = tf.keras.Input((output_dim,))
 
         F_output = X_input
         for gp_layer in gp_layers:
@@ -30,7 +28,7 @@ class DeepGP(BayesianModel):
             F_output = gp_layer(F_output)
         num_data = gp_layers[0].num_data
 
-        super().__init__(X_input, Y_input, F_output, likelihood_layer, num_data)
+        super().__init__(X_input, F_output, likelihood_layer, num_data)
 
         self.gp_layers = gp_layers
 

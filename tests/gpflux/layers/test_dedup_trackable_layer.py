@@ -52,18 +52,16 @@ def model(data) -> tf.keras.models.Model:
     input_dim = X.shape[-1]
 
     layer1 = construct_gp_layer(num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim)
-    layer1.returns_samples = True
 
     output_dim = Y.shape[-1]
     layer2 = construct_gp_layer(num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim)
-    layer2.returns_samples = False
 
     likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))
 
     X = tf.keras.Input((input_dim,))
     f1 = layer1(X)
     f2 = layer2(f1)
-    y = likelihood_layer(f2, targets=Y)
+    y = likelihood_layer(f2)
     return tf.keras.Model(inputs=X, outputs=y)
 
 
@@ -99,6 +97,7 @@ def test_count_weights(model):
     assert count_params(model) == int(sum(_MODEL_PARAMS_AND_SIZE.values()))
 
 
+@pytest.mark.skip("parameter_dict does not handle the self reference in KerasHistory objects.")
 def test_parameter_names(model):
     """
     Check that the parameter names returned by `gpflow.utilities.parameter_dict`
@@ -119,6 +118,7 @@ def test_number_of_parameters(model):
     assert len(_MODEL_PARAMS_AND_SIZE) == len(model.trainable_weights)
 
 
+@pytest.mark.skip("parameter_dict does not handle the self reference in KerasHistory objects.")
 def test_weights_equals_deduplicated_parameter_dict(model):
     """
     Checks GPflux's `model.trainable_weights` elements equals deduplicated

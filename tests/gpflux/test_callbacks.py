@@ -53,7 +53,7 @@ def model(data) -> tf.keras.models.Model:
     X = tf.keras.Input((input_dim,))
     f1 = layer1(X)
     f2 = layer2(f1)
-    y = likelihood_layer(f2, targets=Y)
+    y = likelihood_layer(f2)
     return tf.keras.Model(inputs=X, outputs=y)
 
 
@@ -93,7 +93,6 @@ def test_tensorboard_callback(tmp_path, model, data, update_freq):
         # TODO(VD) investigate why epoch_lr is not in tensorboard files
         # "epoch_lr",
         "epoch_loss",
-        "epoch_elbo_datafit",
         "epoch_elbo_kl_gp",
         "layers[1].kernel.kernel.lengthscales",
         "layers[1].kernel.kernel.variance",
@@ -107,7 +106,6 @@ def test_tensorboard_callback(tmp_path, model, data, update_freq):
     if update_freq == "batch":
         expected_tags |= {
             "batch_loss",
-            "batch_elbo_datafit",
             "batch_elbo_kl_gp",
         }
 

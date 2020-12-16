@@ -1,8 +1,9 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-
 import matplotlib.pyplot as plt
+import tensorflow as tf
+from gpflow.conditionals.util import sample_mvn
 
 
 def all_layer_mean_var_samples(gp_layers, X):
@@ -10,9 +11,9 @@ def all_layer_mean_var_samples(gp_layers, X):
     sample = X
     means, covs, samples = [], [], []
     for layer in gp_layers:
-        all_samples, mean, cov = layer.predict(
-            sample, full_output_cov=False, full_cov=True, num_samples=S,
-        )  # [S, N, D], [N, D], [D, N, N]
+        mean, cov = layer.predict(sample, full_output_cov=False, full_cov=True)  # [N, D], [D, N, N]
+        all_samples = sample_mvn(tf.linalg.adjoint(mean), cov, full_cov=True, num_samples=S)
+        all_samples = tf.linalg.adjoint(all_samples)
         sample = all_samples[0]
 
         means.append(mean.numpy())

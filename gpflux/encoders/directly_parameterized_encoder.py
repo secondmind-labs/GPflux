@@ -12,7 +12,7 @@ from gpflow.base import TensorType
 from gpflow.utilities.bijectors import positive
 
 from gpflux.exceptions import EncoderInitializationError
-from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.layers import TrackableLayer
 
 
 class DirectlyParameterizedNormalDiag(TrackableLayer):

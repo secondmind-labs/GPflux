@@ -29,6 +29,8 @@ from gpflow.ci_utils import ci_niter
 import matplotlib.pyplot as plt
 
 # %%
+from gpflux.layers import LikelihoodLoss
+
 tf.keras.backend.set_floatx("float64")
 
 # %%
@@ -36,7 +38,7 @@ tf.keras.backend.set_floatx("float64")
 
 # %%
 d = np.load("../../tests/snelson1d.npz")
-X, Y = data = d["X"], d["Y"]
+X, Y = d["X"], d["Y"]
 num_data, input_dim = X.shape
 _, output_dim = Y.shape
 
@@ -62,7 +64,6 @@ def create_layers():
     layer2 = gpflux.helpers.construct_gp_layer(
         num_data, num_inducing, hidden_dim, output_dim, initializer=init_last_layer,
     )
-    layer2.returns_samples = False  # TODO: pass layer_type instead
 
     likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))
 
@@ -74,13 +75,12 @@ def create_model(model_class):
     layer1, layer2, likelihood_layer = create_layers()
 
     inputs = tf.keras.Input((input_dim,))
-    targets = tf.keras.Input((output_dim,))
     f1 = layer1(inputs)
     f2 = layer2(f1)
-    outputs = likelihood_layer(f2, targets=targets)
+    outputs = likelihood_layer(f2)
 
-    model = model_class(inputs=(inputs, targets), outputs=outputs)
-    return model
+    model = model_class(inputs=inputs, outputs=outputs)
+    return model, likelihood_layer.likelihood
 
 
 # %%
@@ -88,7 +88,7 @@ batch_size = 2
 num_epochs = ci_niter(200)
 
 # %%
-dgp = create_model(tf.keras.Model)
+dgp, dgp_likelihood = create_model(tf.keras.Model)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
@@ -96,12 +96,12 @@ callbacks = [
     )
 ]
 
-dgp.compile(tf.optimizers.Adam(learning_rate=0.1))
+dgp.compile(tf.optimizers.Adam(learning_rate=0.1), loss=LikelihoodLoss(dgp_likelihood))
 
-history = dgp.fit(x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks)
+history = dgp.fit(x=X, y=Y, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks)
 
 # %%
-dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
+dgp_natgrad, dgp_natgrad_likelihood = create_model(gpflux.optimization.NatGradModel)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
@@ -114,19 +114,20 @@ dgp_natgrad.compile(
         gpflow.optimizers.NaturalGradient(gamma=0.05),
         gpflow.optimizers.NaturalGradient(gamma=0.05),
         tf.optimizers.Adam(learning_rate=0.1),
-    ]
+    ],
+    loss=LikelihoodLoss(dgp_natgrad_likelihood),
 )
 
 history_natgrad = dgp_natgrad.fit(
-    x=data, y=None, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+    x=X, y=Y, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
 )
 
 # %%
-res = dgp((X, np.zeros_like(Y)))
+res = dgp(X)
 
 # %%
 plt.plot(X, Y, "x")
-plt.errorbar(X.squeeze(), np.squeeze(res[0]), np.sqrt(np.squeeze(res[1])), ls="")
+plt.errorbar(X.squeeze(), np.squeeze(res.y_mean), np.sqrt(np.squeeze(res.y_var)), ls="")
 plt.show()
 
 # %%

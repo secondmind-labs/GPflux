@@ -1,3 +1,4 @@
+import tensorflow as tf
 import numpy as np
 import pytest
 
@@ -5,9 +6,10 @@ from gpflow.kernels import Matern52
 from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson
 from gpflow.mean_functions import Zero
 
-from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.initializers import GivenZInitializer
+from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 from gpflux.layers import GPLayer, LikelihoodLayer
+from gpflux.layers.likelihood_layer import LikelihoodLoss, LikelihoodOutputs
 
 TEST_GPFLOW_LIKELIHOODS = [Bernoulli, Beta, Gaussian, Poisson]
 
@@ -48,83 +50,66 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
 @pytest.mark.parametrize("GPFlowLikelihood", TEST_GPFLOW_LIKELIHOODS)
 def test_call_shapes(GPFlowLikelihood):
     gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5)
-    likelihood_layer = LikelihoodLayer(GPFlowLikelihood())
+    likelihood_layer = LikelihoodLayer(GPFlowLikelihood(), returns_samples=False)
 
     # 1. Run tests with gp layer outputting f_mean, f_var
-    gp_layer.returns_samples = False
+    f_distribution = gp_layer(X)
+    y_dist_params = likelihood_layer(f_distribution)
 
-    f_mean, f_var = gp_layer(X)
-    y_mean, y_var = likelihood_layer((f_mean, f_var), training=False)
+    assert y_dist_params.y_mean.shape == f_distribution.shape
+    assert y_dist_params.y_var.shape == f_distribution.scale.diag.shape
+    # The mean might not change but the covariance should
+    assert np.all(y_dist_params.y_var != f_distribution.covariance())
 
-    assert y_mean.shape == f_mean.shape
-    assert y_var.shape == f_var.shape
-    assert np.all(y_var != f_var)  # The mean might not change but the covariance should
+    # 2. Run tests with likelihood outputting f_sample and y_sample
+    likelihood_layer.returns_samples = True
 
-    # 2. Run tests with gp_layer outputting f_sample
+    f_distribution = gp_layer(X)
+    # y_sample not yet defined
+    f_sample, _ = likelihood_layer(f_distribution)  # training flag does not matter here
 
-    gp_layer.returns_samples = True
-
-    f_sample = gp_layer(X)
-    y_sample = likelihood_layer(f_sample)  # training flag does not matter here
-
-    assert y_sample.shape == f_sample.shape
+    assert f_sample.shape == f_distribution.shape
     # note: currently we don't draw a sample of y_sample the likelihood!
     # this should be changed!
-    assert np.all(y_sample == f_sample.numpy())
+    assert np.all(f_sample == tf.convert_to_tensor(f_distribution).numpy())
 
 
 @pytest.mark.parametrize("GPFlowLikelihood", TEST_GPFLOW_LIKELIHOODS)
-def test_add_losses(GPFlowLikelihood):
+def test_losses(GPFlowLikelihood):
     gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5)
-    likelihood_layer = LikelihoodLayer(GPFlowLikelihood())
+    likelihood = GPFlowLikelihood()
+    likelihood_layer = LikelihoodLayer(likelihood, returns_samples=False)
+    likelihood_loss = LikelihoodLoss(likelihood)
 
     # 1. Run tests with gp layer outputting f_mean, f_var
-    gp_layer.returns_samples = False
+    f_distribution = gp_layer(X)
+    y_distribution_params = likelihood_layer(f_distribution)
+    f_mean = f_distribution.loc
+    f_var = f_distribution.scale.diag
 
-    f_mean, f_var = gp_layer(X)
-    y_mean, y_var = likelihood_layer((f_mean, f_var), training=True, targets=Y)
-
-    expected_loss = -np.sum(
-        np.mean(likelihood_layer.variational_expectations(f_mean, f_var, Y), axis=0)
+    expected_loss = -np.sum(np.mean(likelihood.variational_expectations(f_mean, f_var, Y), axis=0))
+    np.testing.assert_almost_equal(
+        likelihood_loss(Y, y_distribution_params), expected_loss, decimal=5
     )
-    np.testing.assert_almost_equal(likelihood_layer.losses, [expected_loss], decimal=11)
-    assert likelihood_layer.losses != 0
-
-    y_mean, y_var = likelihood_layer((f_mean, f_var), training=False)
-    assert likelihood_layer.losses == [0.0]
 
     # 2. Run tests with gp_layer outputting f_sample
-    gp_layer.returns_samples = True
+    likelihood_layer.returns_samples = True
 
     f_sample = gp_layer(X)
-    _ = likelihood_layer(f_sample, training=True, targets=Y)
-    # TODO: test for y_sample return value ...
+    # y_samples is not yet implemented. Assume that y_samples = f_samples
+    f_samples, y_samples = likelihood_layer(f_sample)
 
-    expected_loss = -np.sum(np.mean(likelihood_layer.log_prob(f_sample, Y), axis=0))
-    np.testing.assert_almost_equal(likelihood_layer.losses, [expected_loss], decimal=11)
-    assert likelihood_layer.losses != 0
-
-    y_mean, y_var = likelihood_layer((f_mean, f_var), training=False)
-    assert likelihood_layer.losses == [0.0]
+    expected_loss = -np.sum(np.mean(likelihood.log_prob(f_sample, Y), axis=0))
+    np.testing.assert_almost_equal(
+        likelihood_loss(Y, (f_samples, y_samples)), expected_loss, decimal=5
+    )
 
 
-@pytest.mark.parametrize("GPflowLikelihood", TEST_GPFLOW_LIKELIHOODS)
-def test_gpflow_consistency(GPflowLikelihood):
-    gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5)
-    likelihood_layer = LikelihoodLayer(GPflowLikelihood())
-    gp_layer.build(X.shape)
+def test_tensor_coercible():
+    f_mu = tf.zeros([1, 2])
+    f_var = tf.zeros([1, 2])
+    y_mu = tf.ones([1, 2])
+    y_var = tf.zeros([1, 2])
+    tensor_coercible = LikelihoodOutputs(f_mu, f_var, y_mu, y_var)
 
-    f_samples, f_mean, f_var = gp_layer.predict(X, num_samples=5)
-
-    layer_varexp = likelihood_layer.variational_expectations(f_mean, f_var, Y)
-    gpflow_varexp = GPflowLikelihood().variational_expectations(f_mean, f_var, Y)
-    assert np.all(layer_varexp == gpflow_varexp)
-
-    layer_mean, layer_var = likelihood_layer.predict_mean_and_var(f_mean, f_var)
-    gpflow_mean, gpflow_var = GPflowLikelihood().predict_mean_and_var(f_mean, f_var)
-    assert np.all(layer_mean == gpflow_mean)
-    assert np.all(layer_var == gpflow_var)
-
-    layer_log_prob = likelihood_layer.log_prob(f_samples, Y)
-    gpflow_log_prob = GPflowLikelihood().log_prob(f_samples, Y)
-    assert np.all(layer_log_prob == gpflow_log_prob)
+    np.testing.assert_array_equal(y_mu, tf.convert_to_tensor(tensor_coercible))

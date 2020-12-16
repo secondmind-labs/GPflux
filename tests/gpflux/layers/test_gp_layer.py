@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from gpflow.kernels import RBF
 from gpflow.mean_functions import Zero
@@ -85,31 +86,49 @@ def test_call_shapes():
     output_dim = Y.shape[-1]
     batch_size = X.shape[0]
 
-    samples = gp_layer(X, training=False)
+    samples = tf.convert_to_tensor(gp_layer(X, training=False))
     assert samples.shape == (batch_size, output_dim)
 
     gp_layer.returns_samples = False
     assert not gp_layer.full_cov and not gp_layer.full_output_cov
 
-    mean, cov = gp_layer(X, training=False)
-    assert mean.shape == (batch_size, output_dim)
-    assert cov.shape == (batch_size, output_dim)
+    distribution = gp_layer(X, training=False)
+    assert isinstance(distribution, tfp.distributions.MultivariateNormalDiag)
+    assert distribution.shape == (batch_size, output_dim)
 
     gp_layer.full_cov = True
-    mean, cov = gp_layer(X, training=False)
-    assert mean.shape == (batch_size, output_dim)
-    assert cov.shape == (output_dim, batch_size, batch_size)
+    distribution = gp_layer(X, training=False)
+    assert isinstance(distribution, tfp.distributions.MultivariateNormalTriL)
+    assert distribution.shape == (batch_size, output_dim)
+    assert distribution.covariance().shape == (output_dim, batch_size, batch_size)
 
     gp_layer.full_output_cov = True
     gp_layer.full_cov = False
-    mean, cov = gp_layer(X, training=False)
-    assert mean.shape == (batch_size, output_dim)
-    assert cov.shape == (batch_size, output_dim, output_dim)
+    distribution = gp_layer(X, training=False)
+    assert isinstance(distribution, tfp.distributions.MultivariateNormalTriL)
+    assert distribution.shape == (batch_size, output_dim)
+    assert distribution.covariance().shape == (batch_size, output_dim, output_dim)
 
     gp_layer.full_output_cov = True
     gp_layer.full_cov = True
     with pytest.raises(NotImplementedError):
         gp_layer(X)
+
+
+def test_call_shapes_num_samples():
+    num_samples = 10
+    gp_layer, (X, Y) = setup_gp_layer_and_data(num_inducing=5, num_samples=num_samples)
+    gp_layer.build(X.shape)
+
+    output_dim = Y.shape[-1]
+    batch_size = X.shape[0]
+
+    samples = tf.convert_to_tensor(gp_layer(X, training=False))
+    assert samples.shape == (num_samples, batch_size, output_dim)
+
+    gp_layer.full_cov = True
+    samples = tf.convert_to_tensor(gp_layer(X, training=False))
+    assert samples.shape == (num_samples, batch_size, output_dim)
 
 
 def test_predict_shapes():
@@ -118,28 +137,18 @@ def test_predict_shapes():
 
     output_dim = Y.shape[-1]
     batch_size = X.shape[0]
-    num_samples = 10
 
-    samples, mean, cov = gp_layer.predict(X)
-    assert samples.shape == (batch_size, output_dim)
-
-    samples, mean, cov = gp_layer.predict(X, num_samples=num_samples)
-    assert samples.shape == (num_samples, batch_size, output_dim)
-
-    samples, mean, cov = gp_layer.predict(X)
-    assert samples.shape == (batch_size, output_dim)
+    mean, cov = gp_layer.predict(X)
+    assert mean.shape == (batch_size, output_dim)
     assert cov.shape == (batch_size, output_dim)
 
-    samples, mean, cov = gp_layer.predict(X, full_cov=True)
-    assert samples.shape == (batch_size, output_dim)
+    mean, cov = gp_layer.predict(X, full_cov=True)
+    assert mean.shape == (batch_size, output_dim)
     assert cov.shape == (output_dim, batch_size, batch_size)
 
-    samples, mean, cov = gp_layer.predict(X, full_output_cov=True)
-    assert samples.shape == (batch_size, output_dim)
+    mean, cov = gp_layer.predict(X, full_output_cov=True)
+    assert mean.shape == (batch_size, output_dim)
     assert cov.shape == (batch_size, output_dim, output_dim)
-
-    with pytest.raises(NotImplementedError):
-        gp_layer.predict(X, full_cov=True, full_output_cov=True)
 
 
 def test_losses_are_added():

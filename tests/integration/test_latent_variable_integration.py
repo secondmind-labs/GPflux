@@ -54,7 +54,6 @@ def build_gp_layers(layer_sizes, num_data):
         gp_layers.append(layer)
 
     gp_layers[-1].mean_function = Zero()
-    gp_layers[-1].returns_samples = False
 
     return gp_layers
 
@@ -133,7 +132,7 @@ def test_cde_direct_parametrization(test_data, w_dim, use_keras_compile, do_augm
         w = lv(encoder_data)
         x_and_w = tf.concat([inputs, w], -1)
     f = gp(x_and_w)
-    mean_and_var = likelihood(f, targets=targets)
+    mean_and_var = likelihood(f)
 
     model = tf.keras.Model(inputs=[inputs, targets], outputs=mean_and_var)
 
