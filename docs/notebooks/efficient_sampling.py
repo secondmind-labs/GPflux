@@ -72,7 +72,7 @@ callbacks = [
     )
 ]
 
-history = model.fit(x=(X, Y), y=None, batch_size=num_data, epochs=100, callbacks=callbacks)
+history = model.fit(x=X, y=Y, batch_size=num_data, epochs=100, callbacks=callbacks)
 
 
 # %%

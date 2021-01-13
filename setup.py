@@ -8,7 +8,7 @@ requirements = [
     "numpy",
     "scipy",
     "tensorflow-probability>=0.11.0",
-    "tensorflow>=2.3.0,<2.4.0",
+    "tensorflow>=2.3.0",
 ]
 
 setup(

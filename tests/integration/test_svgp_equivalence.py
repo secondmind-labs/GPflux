@@ -7,7 +7,6 @@ import tensorflow as tf
 import gpflow
 
 import gpflux
-
 from gpflux.layers import LikelihoodLoss
 
 tf.keras.backend.set_floatx("float64")
@@ -128,7 +127,7 @@ def keras_fit_adam(model, data, maxiter, adam_learning_rate=0.01):
     adam = tf.optimizers.Adam(adam_learning_rate)
     model.compile(optimizer=adam)
     X, Y = data
-    dataset_tuple = ((X, Y), Y)
+    dataset_tuple = (X, Y)
     batch_size = len(X)
     train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).batch(batch_size)
     model.fit(train_dataset, epochs=maxiter)

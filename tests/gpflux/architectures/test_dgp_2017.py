@@ -24,8 +24,7 @@ def test_smoke_build_deep_gp_2017(layer_dims, num_data):
 
     config = make_dataclass_from_class(DGP2017Config, DemoConfig)
     X = np.random.randn(num_data, layer_dims[0])
-    Y = np.random.randn(num_data, 1)
     model = build_deep_gp_2017(X, layer_dims, config)
-    _ = model((X, Y), training=True)
-    _ = model((X, Y), training=False)
+    _ = model(X, training=True)
+    _ = model(X, training=False)
     _ = model.predict_y(X)
