@@ -8,8 +8,11 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
+import math
 
 from gpflux.types import ShapeType
+
+from tensorflow_probability.distributions import MultivariateStudentTLinearOperator
 
 # Supported kernels for Random Fourier Features (RFF).
 # RFF can be built for stationary kernels (shift invariant) for which we can
@@ -82,9 +85,17 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
             # Sample student-t using "Implicit Reparameterization Gradients",
             # Figurnov et al.
             # TODO(VD): sample directly from Student-t using TFP.
-            normal_rvs = tf.random.normal(shape=shape, **kwargs)
-            gamma_rvs = tf.random.gamma(shape=shape, alpha=nu, beta=nu, **kwargs)
-            return tf.math.rsqrt(gamma_rvs) * normal_rvs
+            # normal_rvs = tf.random.normal(shape=shape, **kwargs)
+            # gamma_rvs = tf.random.gamma(shape=shape, alpha=nu, beta=nu, **kwargs)
+            # return tf.math.rsqrt(gamma_rvs) * normal_rvs
+
+            input_dim = self.kernel.lengthscales.shape[0]
+            scale = tf.linalg.diag(self.kernel.lengthscales)
+            location = tf.zeros([input_dim, 1])
+            dof = 2 * nu
+            normalizing_constant = self.kernel.variance * (tf.math.sqrt(2) * math.pi) ** input_dim
+            multivariate_t = MultivariateStudentTLinearOperator(dof, location, scale)
+            return normalizing_constant * multivariate_t.sample(shape)
 
     def call(self, inputs: TensorType) -> TensorType:
         """

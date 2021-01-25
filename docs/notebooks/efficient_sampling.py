@@ -46,12 +46,9 @@ Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
 num_rff = 1000
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
-eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
-eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-kernel2 = KernelWithMercerDecomposition(None, eigenfunctions, eigenvalues)
 
 layer = gpflux.layers.GPLayer(
-    kernel2,
+    kernel,
     inducing_variable,
     num_data,
     white=False,
@@ -76,20 +73,29 @@ history = model.fit(x=X, y=Y, batch_size=num_data, epochs=100, callbacks=callbac
 
 
 # %%
+eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
+eigenvalues = np.ones((num_rff, 1), dtype=default_float())
+kernel2 = KernelWithMercerDecomposition(None, eigenfunctions, eigenvalues)
+
 
 a, b = 5, 5
-X_test = np.linspace(X.min() - a, X.max() + b, 100).reshape(-1, 1)
+n_x = 1000
 spread = X.max() + b - (X.min() - a)
-X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
-X_test_2 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
+X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a), axis=0)
+X_test = np.linspace(X.min() - a, X.max() + b, n_x).reshape(-1, 1)
 
 f_dist = model.predict_f(X_test)
 m = f_dist.mean().numpy()
 v = f_dist.scale.diag.numpy()
 
-f_sample_prior = model.sample()
-plt.plot(X_test_1, f_sample_prior(X_test_1).numpy(), "C1.")
-plt.plot(X_test_2, f_sample_prior(X_test_2).numpy(), "C2.")
+# f_sample_posterior1 = model.sample()
+# f_sample_posterior2 = model.sample()
+# plt.plot(X_test_1, f_sample_posterior1(X_test_1).numpy(), "C1.")
+
+n_sim = 10
+for i in range(n_sim):
+    f_sample_post = model.sample()
+    plt.plot(X_test, f_sample_post(X_test).numpy())
 
 plt.plot(X_test, m, "C0")
 plt.plot(X_test, m + v ** 0.5, "C0--")
