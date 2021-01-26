@@ -68,8 +68,7 @@ def test_fourier_features_can_approximate_kernel_1D(lengthscale, kernel_class):
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
 
 
-def test_fourier_features_can_approximate_kernel_multidim(lengthscale, n_dims):
-    """Only SquaredExponential supports dimensionality > 1"""
+def test_fourier_features_can_approximate_kernel_multidim_SE(lengthscale, n_dims):
     n_features = 10000
     x_rows = 20
     y_rows = 30
@@ -89,6 +88,28 @@ def test_fourier_features_can_approximate_kernel_multidim(lengthscale, n_dims):
     actual_kernel_matrix = kernel.K(x, y)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
+
+
+def test_fourier_features_can_approximate_kernel_multidim_Matern(lengthscale, n_dims):
+    n_features = 100000
+    x_rows = 20
+    y_rows = 30
+
+    # ARD
+    lengthscales = np.random.rand((n_dims)) * lengthscale
+
+    kernel = gpflow.kernels.Matern52(lengthscales=lengthscales)
+    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
+
+    x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
+    y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
+
+    u = fourier_features(x)
+    v = fourier_features(y)
+    approx_kernel_matrix = inner_product(u, v)
+
+    actual_kernel_matrix = kernel.K(x, y)
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.02)
 
 
 def test_fourier_features_shapes(n_features, n_dims, batch_size):
@@ -126,7 +147,7 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
+        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True, },
         input_shape=(batch_size, 1),
         input_dtype="float64",
     )
@@ -138,7 +159,11 @@ def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
+        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True, },
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )
+
+
+if __name__ == "__main__":
+    test_fourier_features_can_approximate_kernel_multidim_Matern(.2, 4)
