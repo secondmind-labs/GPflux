@@ -40,7 +40,7 @@ X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 
 # %%
-kernel = gpflow.kernels.SquaredExponential()
+kernel = gpflow.kernels.Matern52()
 Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
 
 num_rff = 1000
@@ -88,9 +88,6 @@ f_dist = model.predict_f(X_test)
 m = f_dist.mean().numpy()
 v = f_dist.scale.diag.numpy()
 
-# f_sample_posterior1 = model.sample()
-# f_sample_posterior2 = model.sample()
-# plt.plot(X_test_1, f_sample_posterior1(X_test_1).numpy(), "C1.")
 
 n_sim = 10
 for i in range(n_sim):

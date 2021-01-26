@@ -163,7 +163,3 @@ def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )
-
-
-if __name__ == "__main__":
-    test_fourier_features_can_approximate_kernel_multidim_Matern(.2, 4)
