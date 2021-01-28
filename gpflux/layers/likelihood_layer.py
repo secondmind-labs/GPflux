@@ -3,19 +3,19 @@
 # Proprietary and confidential
 """A Keras Layer that wraps a likelihood, while containing the necessary operations
 for training"""
-from typing import Union, Tuple
+from typing import Tuple, Union
 from warnings import warn
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.base import TensorType
-
-from gpflow.likelihoods import Likelihood
-from gpflow import default_float
 from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
 
-from gpflux.layers import TrackableLayer
+from gpflow import default_float
+from gpflow.base import TensorType
+from gpflow.likelihoods import Likelihood
+
+from gpflux.layers.trackable_layer import TrackableLayer
 
 
 class LikelihoodLayer(TrackableLayer):

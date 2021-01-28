@@ -1,13 +1,13 @@
-import tensorflow as tf
 import numpy as np
 import pytest
+import tensorflow as tf
 
 from gpflow.kernels import Matern52
 from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson
 from gpflow.mean_functions import Zero
 
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.initializers import GivenZInitializer
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
 from gpflux.layers import GPLayer, LikelihoodLayer
 from gpflux.layers.likelihood_layer import LikelihoodLoss, LikelihoodOutputs
 

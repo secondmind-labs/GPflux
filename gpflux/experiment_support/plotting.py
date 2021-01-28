@@ -3,6 +3,7 @@
 # Proprietary and confidential
 import matplotlib.pyplot as plt
 import tensorflow as tf
+
 from gpflow.conditionals.util import sample_mvn
 
 

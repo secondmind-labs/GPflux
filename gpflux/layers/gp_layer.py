@@ -3,11 +3,12 @@
 # Proprietary and confidential
 """A Sparse Variational Multioutput Gaussian Process Keras Layer"""
 
-from typing import Any, Optional, Tuple, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from tensorflow_probability.python.layers import DistributionLambda
 
 from gpflow import Parameter, default_float, default_jitter
 from gpflow.base import TensorType
@@ -15,12 +16,11 @@ from gpflow.conditionals import conditional
 from gpflow.inducing_variables import MultioutputInducingVariables
 from gpflow.kernels import MultioutputKernel
 from gpflow.kullback_leiblers import prior_kl
-from gpflow.mean_functions import MeanFunction, Identity
+from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
-from tensorflow_probability.python.layers import DistributionLambda
 
-from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.exceptions import GPInitializationError
+from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.sampling.sample import Sample, efficient_sample
 from gpflux.types import ShapeType
 from gpflux.utils.runtime_checks import verify_compatibility
