@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'GPflux'
-copyright = '2020, Secondmind'
+copyright = '2021, Secondmind'
 author = 'Secondmind'
 
 # The full version, including alpha/beta/rc tags

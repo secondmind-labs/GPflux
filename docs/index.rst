@@ -5,6 +5,7 @@
    :hidden:
 
    GPflux <self>
+   Benchmarks <notebooks/benchmarks>
    Tutorials <tutorials>
    API Reference <_autosummary/gpflux>
 

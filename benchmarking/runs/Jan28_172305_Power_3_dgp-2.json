@@ -1,0 +1,15 @@
+{
+  "date": "Jan28_172305",
+  "dataset": "Power",
+  "split": 3,
+  "num_layers": 2,
+  "model_name": "dgp-2",
+  "num_inducing": 256,
+  "batch_size": 1024,
+  "num_epochs": 1000,
+  "seed": 5149783,
+  "rmse": 0.23380281474968131,
+  "mse": 0.0546637561848738,
+  "nlpd": -0.031335542603260665,
+  "commit": "1251726e88719b7970fa7c4e515c9c62d1f090a9"
+}

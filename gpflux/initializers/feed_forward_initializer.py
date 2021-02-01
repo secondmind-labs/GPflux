@@ -31,7 +31,11 @@ class FeedForwardInitializer(Initializer):
                 "FeedForwardInitializer requires `inputs` to be passed"
             )  # pragma: no cover
 
-        num_inducing = inducing_variable.num_inducing
+        # TODO(VD): Temporary ugly hack to get this code to work.
+        try:
+            num_inducing = len(inducing_variable)
+        except TypeError:
+            num_inducing = inducing_variable.num_inducing
         num_data = tf.shape(inputs)[0]
         input_dim = tf.shape(inputs)[1]
 
