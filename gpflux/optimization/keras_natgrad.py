@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 import tensorflow as tf
 from tensorflow.python.util.object_identity import ObjectIdentitySet
 
+import gpflow
 from gpflow import Parameter
 from gpflow.base import TensorType
 from gpflow.models.model import MeanAndVariance
@@ -27,9 +28,9 @@ class NatGradModel(tf.keras.Model):
     NaturalGradient optimizers for q(u) distributions in GP layers.
 
     model.compile() has to be passed a list of optimizers, which must be one
-        (Momentum)NaturalGradient optimizer instance per GPLayer, followed
-        by a regular optimizer (e.g. Adam) as the last element for all other
-        parameters (hyperparameters, inducing point locations).
+    `gpflow.optimizers.NaturalGradient` instance per `GPLayer`, followed
+    by a regular optimizer (e.g. `tf.optimizers.Adam`) as the last element for all other
+    parameters (hyperparameters, inducing point locations).
     """
 
     def __init__(self, *args: Any, other_loss_fn: Callable[[], tf.Tensor] = None, **kwargs: Any):
@@ -41,7 +42,7 @@ class NatGradModel(tf.keras.Model):
         self.other_loss_fn = other_loss_fn
 
     @property
-    def natgrad_optimizers(self) -> List[NaturalGradient]:
+    def natgrad_optimizers(self) -> List[gpflow.optimizers.NaturalGradient]:
         if not hasattr(self, "_all_optimizers"):
             raise AttributeError(
                 "natgrad_optimizers accessed before optimizer being set"
@@ -175,8 +176,8 @@ class NatGradModel(tf.keras.Model):
 
 class NatGradWrapper(NatGradModel):
     """
-    Wraps a class-based Keras model (e.g. gpflux.models.DeepGP) to make it
-    work with NaturalGradient optimizers. For more details, see NatGradModel.
+    Wraps a class-based Keras model (e.g. `gpflux.models.DeepGP`) to make it
+    work with `NaturalGradient` optimizers. For more details, see `NatGradModel`.
     """
 
     def __init__(self, base_model: tf.keras.Model, *args: Any, **kwargs: Any):
