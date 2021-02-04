@@ -39,15 +39,17 @@ docs:  ## Build the documentation
 	@echo "\n=== pip install doc requirements =============="
 	pip install -r docs/docs_requirements.txt
 	@echo "\n=== install pandoc =============="
-	ifeq ($(UNAME_S),Linux)
-		TEMP_DEB="$(mktemp)" && \
-		wget -O "$TEMP_DEB" 'https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb' && \
-		sudo dpkg -i "$TEMP_DEB"
-		rm -f "$TEMP_DEB"
-	endif
-	ifeq ($(UNAME_S),Darwin)
-		brew install pandoc
-	endif
+ifeq ("$(UNAME_S)", "Linux")
+	(dpkg -l | grep '^ii\s*pandoc\s') || ( \
+	  TEMP_DEB="$(mktemp)" && \
+	  wget -O "$TEMP_DEB" 'https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb' && \
+	  sudo dpkg -i "$TEMP_DEB" && \
+	  rm -f "$TEMP_DEB" \
+	)
+endif
+ifeq ($(UNAME_S),Darwin)
+	brew install pandoc
+endif
 	@echo "\n=== build docs =============="
 	(cd docs ; make html)
 	@echo "\n${SUCCESS}=== Docs are available at docs/_build/html/index.html ============== ${SUCCESS}"
