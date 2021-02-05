@@ -30,7 +30,7 @@ import gpflux
 from gpflow.config import default_float
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 
 tf.keras.backend.set_floatx("float64")
 
@@ -48,7 +48,7 @@ inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
 eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-kernel2 = KernelWithMercerDecomposition(None, eigenfunctions, eigenvalues)
+kernel2 = KernelWithFeatureDecomposition(None, eigenfunctions, eigenvalues)
 
 layer = gpflux.layers.GPLayer(
     kernel2,
