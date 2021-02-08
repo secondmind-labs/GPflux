@@ -68,7 +68,7 @@ class LikelihoodLoss(tf.keras.losses.Loss):
         prediction: Union[Tuple[TensorType, TensorType], "LikelihoodOutputs"],
     ) -> TensorType:
         if isinstance(prediction, LikelihoodOutputs):
-            F_mu, F_var = prediction.f_mu, prediction.f_var
+            F_mu, F_var = prediction.f_mean, prediction.f_var
             return -self._likelihood.variational_expectations(F_mu, F_var, y_true)
         else:
             # Note that y_pred is actually the f-samples. When sampling through the likelihood
@@ -88,10 +88,12 @@ class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
     necessary so it can be returned from the `DistributionLambda` Keras layer.
     """
 
-    def __init__(self, f_mu: TensorType, f_var: TensorType, y_mean: TensorType, y_var: TensorType):
+    def __init__(
+        self, f_mean: TensorType, f_var: TensorType, y_mean: TensorType, y_var: TensorType
+    ):
         super(LikelihoodOutputs, self).__init__(name="distribution_params")
 
-        self.f_mu = f_mu
+        self.f_mean = f_mean
         self.f_var = f_var
         self.y_mean = y_mean
         self.y_var = y_var
