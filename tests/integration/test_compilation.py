@@ -175,7 +175,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
 
     test_batch, _ = next(iter(train_dataset))
     output = deep_gp_model(test_batch)
-    mean, var = output.f_mu, output.f_var
+    mean, var = output.f_mean, output.f_var
 
     assert mean.shape == (batch, 1)
     assert var.shape == (batch, 1)

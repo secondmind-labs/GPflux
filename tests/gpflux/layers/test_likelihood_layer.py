@@ -106,10 +106,10 @@ def test_losses(GPFlowLikelihood):
 
 
 def test_tensor_coercible():
-    f_mu = tf.zeros([1, 2])
+    f_mean = tf.zeros([1, 2])
     f_var = tf.zeros([1, 2])
     y_mu = tf.ones([1, 2])
     y_var = tf.zeros([1, 2])
-    tensor_coercible = LikelihoodOutputs(f_mu, f_var, y_mu, y_var)
+    tensor_coercible = LikelihoodOutputs(f_mean, f_var, y_mu, y_var)
 
     np.testing.assert_array_equal(y_mu, tf.convert_to_tensor(tensor_coercible))
