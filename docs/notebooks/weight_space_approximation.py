@@ -40,9 +40,10 @@
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
+
 plt.rcParams["figure.figsize"] = (20, 7)
-plt.rc('text', usetex=True)
-plt.rcParams.update({'font.size': 20})
+plt.rc("text", usetex=True)
+plt.rcParams.update({"font.size": 20})
 import tensorflow as tf
 
 import gpflow as gpf
@@ -69,7 +70,9 @@ lengthscale = 0.1  # lengthscale for the kernel (which is not learned in all exp
 number_of_basis_functions = 2000  # number of basis functions for weight-space approximated kernels
 noise_variance = 1e-3  # noise variance of the likelihood (which is not learned in all experiments)
 number_of_test_samples = 1024  # number of evaluation points for prediction
-number_of_function_samples = 20  # number of function samples to be drawn from (approximate) posteriors
+number_of_function_samples = (
+    20  # number of function samples to be drawn from (approximate) posteriors
+)
 
 # experiment parameters that differ across both sets of experiments
 number_of_train_samples = [4, 1000]  # number of training points
@@ -92,7 +95,7 @@ X, y, X_star = [], [], []  # training points, training observations and test poi
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
 for i in range(2):
-    
+
     # training points
     X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]))
 
@@ -100,13 +103,15 @@ for i in range(2):
     kXX = kernel.K(X[i][..., None])
     kXX_plus_noise_var = tf.linalg.set_diag(kXX, tf.linalg.diag_part(kXX) + noise_variance)
     lXX = tf.linalg.cholesky(kXX_plus_noise_var)
-    y.append(tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[i].dtype))[..., 0])
+    y.append(
+        tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[i].dtype))[..., 0]
+    )
 
     # test points for evaluation
     X_star.append(np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples))
 
 # %% [markdown]
-# The for-loop below iterates through both experimental settings with few and many training examples respectively. In each iteration, the GPR model is built first (and its prediction is used as "ground truth" to copmare against for the remaining models) followed by the SVGP model (that requires optimization to identify internal parameters) and the WSA model. 
+# The for-loop below iterates through both experimental settings with few and many training examples respectively. In each iteration, the GPR model is built first (and its prediction is used as "ground truth" to copmare against for the remaining models) followed by the SVGP model (that requires optimization to identify internal parameters) and the WSA model.
 
 # %%
 # create subplot frame
@@ -119,72 +124,91 @@ fig, axs = plt.subplots(2, 3)
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
 for experiment in range(2):
 
-
     # subplot titles and axis labels
-    axs[experiment, 0].set_title('Exact GP $N=' + str(number_of_train_samples[experiment]) + '$')
-    axs[experiment, 1].set_title('Sparse GP $N=' + str(number_of_train_samples[experiment]) + '$')
-    axs[experiment, 2].set_title('Weight Space GP $N=' + str(number_of_train_samples[experiment]) + '$')
-    axs[experiment, 0].set_ylabel('$f(X)$')
+    axs[experiment, 0].set_title("Exact GP $N=" + str(number_of_train_samples[experiment]) + "$")
+    axs[experiment, 1].set_title("Sparse GP $N=" + str(number_of_train_samples[experiment]) + "$")
+    axs[experiment, 2].set_title(
+        "Weight Space GP $N=" + str(number_of_train_samples[experiment]) + "$"
+    )
+    axs[experiment, 0].set_ylabel("$f(X)$")
     if experiment == 1:
-        axs[experiment, 0].set_xlabel('$X$')
-        axs[experiment, 1].set_xlabel('$X$')
-        axs[experiment, 2].set_xlabel('$X$')
-
+        axs[experiment, 0].set_xlabel("$X$")
+        axs[experiment, 1].set_xlabel("$X$")
+        axs[experiment, 2].set_xlabel("$X$")
 
     # plot training point locations X and set axis limits
     for i in range(3):  # iterate through all three subplots (GPR, SVGP and WSA)
-        if experiment == 0:  # as vertical lines for the first set of experiments with few trainig samples
-            axs[experiment, i].vlines(X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors='lightgrey')
+        if (
+            experiment == 0
+        ):  # as vertical lines for the first set of experiments with few trainig samples
+            axs[experiment, i].vlines(
+                X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors="lightgrey"
+            )
         else:  # as fill plots for the second set of experiments with many training samples
-            axs[experiment, i].fill_between(X[experiment], y_lim[0], y_lim[1], color='gray', alpha=0.2)
+            axs[experiment, i].fill_between(
+                X[experiment], y_lim[0], y_lim[1], color="gray", alpha=0.2
+            )
         axs[experiment, i].set_xlim(x_lim)
         axs[experiment, i].set_ylim(y_lim)
-
 
     # create the GPR "ground-truth" model
     gpr_model = GPR(
         data=(X[experiment][..., None], y[experiment][..., None]),
         kernel=kernel_class(lengthscales=lengthscale),
-        noise_variance=noise_variance
+        noise_variance=noise_variance,
     )
 
     # predict function mean and variance, and draw function samples (without observation noise)
     f_mean, f_var = gpr_model.predict_f(X_star[experiment][..., None])
-    f_samples = gpr_model.predict_f_samples(X_star[experiment][..., None], num_samples=number_of_function_samples)
+    f_samples = gpr_model.predict_f_samples(
+        X_star[experiment][..., None], num_samples=number_of_function_samples
+    )
     f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
     f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
 
     # plot mean and std lines from the GPR model as "ground truth" in all three plots
     for i in range(3):
-        axs[experiment, i].plot(X_star[experiment], f_mean[..., 0], linestyle='--', color='black')
-        axs[experiment, i].plot(X_star[experiment], f_mean_minus_2std[..., 0], linestyle='--', color='black')
-        axs[experiment, i].plot(X_star[experiment], f_mean_plus_2std[..., 0], linestyle='--', color='black')
+        axs[experiment, i].plot(X_star[experiment], f_mean[..., 0], linestyle="--", color="black")
+        axs[experiment, i].plot(
+            X_star[experiment], f_mean_minus_2std[..., 0], linestyle="--", color="black"
+        )
+        axs[experiment, i].plot(
+            X_star[experiment], f_mean_plus_2std[..., 0], linestyle="--", color="black"
+        )
 
     # visualize GPR model predictions (mean +/- 2 * std and function samples) in the first column
     axs[experiment, 0].fill_between(
-        X_star[experiment], 
-        f_mean_minus_2std[..., 0], 
-        f_mean_plus_2std[..., 0], 
-        color='green', 
-        alpha=0.2
+        X_star[experiment],
+        f_mean_minus_2std[..., 0],
+        f_mean_plus_2std[..., 0],
+        color="green",
+        alpha=0.2,
     )
     for i in range(f_samples.shape[0]):
-        axs[experiment, 0].plot(X_star[experiment], f_samples[i, ..., 0], color='green', linewidth=0.2)
-
+        axs[experiment, 0].plot(
+            X_star[experiment], f_samples[i, ..., 0], color="green", linewidth=0.2
+        )
 
     # create the SVGP model
-    if experiment == 0:  # inducing points equal the training data for the first experiment with few train points
+    if (
+        experiment == 0
+    ):  # inducing points equal the training data for the first experiment with few train points
         Z = X[experiment].copy()[..., None]
     else:  # inducing points are randomly chosen for the second experiment with many training points
-        Z = np.linspace(X_interval[0], X_interval[1], number_of_inducing_points[experiment])[..., None]
+        Z = np.linspace(X_interval[0], X_interval[1], number_of_inducing_points[experiment])[
+            ..., None
+        ]
     svgp_model = SVGP(
         kernel=kernel_class(lengthscales=lengthscale),
         likelihood=Gaussian(variance=noise_variance),
-        inducing_variable=InducingPoints(Z=Z)
+        inducing_variable=InducingPoints(Z=Z),
     )
-    gpf.set_trainable(svgp_model.kernel, False)  # the training data has been sampled from a known kernel!
+    gpf.set_trainable(
+        svgp_model.kernel, False
+    )  # the training data has been sampled from a known kernel!
     gpf.set_trainable(svgp_model.likelihood, False)  # the likelihood variance is known!
     gpf.set_trainable(svgp_model.inducing_variable, False)  # inducing point locations are fixed!
+
     def optimize_model_with_scipy(model):
         optimizer = gpf.optimizers.Scipy()
         optimizer.minimize(
@@ -193,67 +217,75 @@ for experiment in range(2):
             method="l-bfgs-b",
             options={"disp": False, "maxiter": 10000},
         )
+
     optimize_model_with_scipy(svgp_model)
 
     # predict function mean and variance, and draw function samples (without observation noise)
     f_mean, f_var = svgp_model.predict_f(X_star[experiment][..., None])
-    f_samples = svgp_model.predict_f_samples(X_star[experiment][..., None], num_samples=number_of_function_samples)
+    f_samples = svgp_model.predict_f_samples(
+        X_star[experiment][..., None], num_samples=number_of_function_samples
+    )
     f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
     f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
 
     # visualize SVGP model predictions (mean +/- 2 * std and function samples) in the second column
     axs[experiment, 1].fill_between(
-        X_star[experiment], 
+        X_star[experiment],
         f_mean_minus_2std[..., 0],
-        f_mean_plus_2std[..., 0], 
-        color='purple',
-        alpha=0.2
+        f_mean_plus_2std[..., 0],
+        color="purple",
+        alpha=0.2,
     )
     for i in range(f_samples.shape[0]):
-        axs[experiment, 1].plot(X_star[experiment], f_samples[i, ..., 0], color='purple', linewidth=0.2)
-    axs[experiment, 1].plot(X_star[experiment], f_mean[..., 0], color='purple')
+        axs[experiment, 1].plot(
+            X_star[experiment], f_samples[i, ..., 0], color="purple", linewidth=0.2
+        )
+    axs[experiment, 1].plot(X_star[experiment], f_mean[..., 0], color="purple")
 
     # visualize predictions at inducing point locations (without observation noise)
     Z = svgp_model.inducing_variable.Z
     q_mu, _ = svgp_model.predict_f(Z)
-    axs[experiment, 1].plot(Z[..., 0], q_mu[..., 0], 'o', mfc='none', markeredgewidth=2, color='purple')
-
+    axs[experiment, 1].plot(
+        Z[..., 0], q_mu[..., 0], "o", mfc="none", markeredgewidth=2, color="purple"
+    )
 
     # create exact GPR model with weight-space approximated kernel (WSA model)
     feature_functions = RandomFourierFeatures(
         kernel=kernel_class(lengthscales=lengthscale),
         output_dim=number_of_basis_functions,
-        dtype=default_float()
+        dtype=default_float(),
     )
     feature_coefficients = np.ones((number_of_basis_functions, 1), dtype=default_float())
     kernel = KernelWithFeatureDecomposition(
-        kernel=None,
-        feature_functions=feature_functions,
-        feature_coefficients=feature_coefficients
+        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
     )
     gpr_model = GPR(
         data=(X[experiment][..., None], y[experiment][..., None]),
         kernel=kernel,
-        noise_variance=noise_variance
+        noise_variance=noise_variance,
     )
 
     # predict function mean and variance, and draw function samples (without observation noise)
     f_mean, f_var = gpr_model.predict_f(X_star[experiment][..., None])
-    f_samples = gpr_model.predict_f_samples(X_star[experiment][..., None], num_samples=number_of_function_samples)
+    f_samples = gpr_model.predict_f_samples(
+        X_star[experiment][..., None], num_samples=number_of_function_samples
+    )
     f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
     f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
 
     # visualize WSA model predictions (mean +/- 2 * std and function samples) in the third column
     axs[experiment, 2].fill_between(
-        X_star[experiment], 
+        X_star[experiment],
         f_mean_minus_2std[..., 0],
-        f_mean_plus_2std[..., 0], 
-        color='orange', 
-        alpha=0.2
+        f_mean_plus_2std[..., 0],
+        color="orange",
+        alpha=0.2,
     )
     for i in range(f_samples.shape[0]):
-        axs[experiment, 2].plot(X_star[experiment], f_samples[i, ..., 0], color='orange', linewidth=0.2)
-    axs[experiment, 2].plot(X_star[experiment], f_mean[..., 0], color='orange')
+        axs[experiment, 2].plot(
+            X_star[experiment], f_samples[i, ..., 0], color="orange", linewidth=0.2
+        )
+    axs[experiment, 2].plot(X_star[experiment], f_mean[..., 0], color="orange")
 
 
 # show the plot

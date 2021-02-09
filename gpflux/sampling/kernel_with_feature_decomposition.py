@@ -38,7 +38,9 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         else:
             phi2 = self._feature_functions(X2)  # [N2, L]
 
-        r = tf.matmul(phi, tf.transpose(self._feature_coefficients) * phi2, transpose_b=True)  # [N, N2]
+        r = tf.matmul(
+            phi, tf.transpose(self._feature_coefficients) * phi2, transpose_b=True
+        )  # [N, N2]
 
         N1, N2 = tf.shape(phi)[0], tf.shape(phi2)[0]
         tf.debugging.assert_equal(tf.shape(r), [N1, N2])
