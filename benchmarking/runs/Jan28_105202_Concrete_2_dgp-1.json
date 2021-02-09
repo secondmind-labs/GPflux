@@ -1,0 +1,15 @@
+{
+  "date": "Jan28_105202",
+  "dataset": "Concrete",
+  "split": 2,
+  "num_layers": 1,
+  "model_name": "dgp-1",
+  "num_inducing": 256,
+  "batch_size": 1024,
+  "num_epochs": 1000,
+  "seed": 764047740,
+  "rmse": 0.30061334618265445,
+  "mse": 0.09036838390313244,
+  "nlpd": 0.3466335901527876,
+  "commit": "f6592411902e35d5141664eb9de061dcb16d2cb8"
+}

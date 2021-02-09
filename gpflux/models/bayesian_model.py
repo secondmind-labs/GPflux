@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 """Module containing a Bayesian model."""
-from typing import Union, List, Dict, Any
+from typing import Any, Dict, List, Union
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -10,7 +10,7 @@ import tensorflow_probability as tfp
 from gpflow.base import TensorType
 from gpflow.models.training_mixins import InputData, RegressionData
 
-from gpflux.layers import LikelihoodLoss, LikelihoodLayer
+from gpflux.layers import LikelihoodLayer, LikelihoodLoss
 from gpflux.layers.likelihood_layer import LikelihoodOutputs
 
 

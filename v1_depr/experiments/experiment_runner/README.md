@@ -1,1 +1,0 @@
-See `examples` for how to run the experiments and collect the results.

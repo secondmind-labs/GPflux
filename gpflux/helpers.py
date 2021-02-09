@@ -8,7 +8,7 @@ from typing import List, Optional, Type, TypeVar, Union
 import numpy as np
 
 import gpflow
-from gpflow import default_float as dfloat
+from gpflow import default_float
 from gpflow.inducing_variables import (
     InducingPoints,
     SeparateIndependentInducingVariables,
@@ -52,23 +52,50 @@ def construct_basic_inducing_variables(
 
         inducing_variables = []
         for num_ind_var in num_inducing:
-            empty_array = np.zeros((num_ind_var, input_dim), dtype=dfloat())
+            empty_array = np.zeros((num_ind_var, input_dim), dtype=default_float())
             inducing_variables.append(InducingPoints(empty_array))
         return SeparateIndependentInducingVariables(inducing_variables)
 
     elif not share_variables:
         inducing_variables = []
         for _ in range(output_dim):
-            empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
+            empty_array = np.zeros((num_inducing, input_dim), dtype=default_float())
             inducing_variables.append(InducingPoints(empty_array))
         return SeparateIndependentInducingVariables(inducing_variables)
 
     else:
         # TODO: should we assert output_dim is None ?
 
-        empty_array = np.zeros((num_inducing, input_dim), dtype=dfloat())
+        empty_array = np.zeros((num_inducing, input_dim), dtype=default_float())
         shared_ip = InducingPoints(empty_array)
         return SharedIndependentInducingVariables(shared_ip)
+
+
+def construct_mean_function(
+    X: np.ndarray, D_in: int, D_out: int
+) -> gpflow.mean_functions.MeanFunction:
+    """
+    Returns Identity mean function when D_in and D_out are equal. Otherwise uses
+    the principal components in `X` to build a Linear mean function.
+
+    The returned mean function is set to be untrainable. To change this,
+    use `gpflow.set_trainable`.
+    """
+    assert X.shape[-1] == D_in
+    if D_in == D_out:
+        mean_function = gpflow.mean_functions.Identity()
+    else:
+        if D_in > D_out:
+            _, _, V = np.linalg.svd(X, full_matrices=False)
+            W = V[:D_out, :].T
+        else:
+            W = np.concatenate([np.eye(D_in), np.zeros((D_in, D_out - D_in))], axis=1)
+
+        assert W.shape == (D_in, D_out)
+        mean_function = gpflow.mean_functions.Linear(W)
+        gpflow.set_trainable(mean_function, False)
+
+    return mean_function
 
 
 def construct_gp_layer(
@@ -78,6 +105,7 @@ def construct_gp_layer(
     output_dim: int,
     kernel_class: Type[gpflow.kernels.Stationary] = gpflow.kernels.SquaredExponential,
     initializer: Optional[Initializer] = None,
+    name: Optional[str] = None,
 ) -> GPLayer:
     """
     Builds a vanilla GP layer with a single kernel shared among all outputs,
@@ -96,6 +124,7 @@ def construct_gp_layer(
     :param kernel_class: the kernel class used by the layer.
         Can be as simple as `gpflow.kernels.SquaredExponential`, or complexer
         as `lambda **_: gpflow.kernels.Linear() + gpflow.kernels.Periodic()`.
+    :param name: name for the GP layer
 
     :return: a preconfigured GPLayer.
     """
@@ -112,6 +141,7 @@ def construct_gp_layer(
         num_data=num_data,
         mean_function=gpflow.mean_functions.Zero(),
         initializer=initializer,
+        name=name,
     )
     return gp_layer
 

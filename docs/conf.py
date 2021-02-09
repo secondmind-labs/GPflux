@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'GPflux'
-copyright = '2020, Secondmind'
+copyright = '2021, Secondmind'
 author = 'Secondmind'
 
 # The full version, including alpha/beta/rc tags
@@ -47,10 +47,11 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     # Unfort. doesn't work yet! See https://github.com/mr-ubik/tensorflow-intersphinx/issues/1
-    "tensorflow": (
-        "https://www.tensorflow.org/api_docs/python",
-        "https://raw.githubusercontent.com/mr-ubik/tensorflow-intersphinx/master/tf2_py_objects.inv"
-    ),
+    #"tensorflow": (
+    #    "https://www.tensorflow.org/api_docs/python",
+    #    "tf2_py_objects.inv"
+    #),
+    "gpflow": ("https://gpflow.readthedocs.io/en/master/", None),
 }
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -84,3 +85,5 @@ html_css_files = ['pydata-custom.css']
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+default_role = "any"  # try and turn all `` into links

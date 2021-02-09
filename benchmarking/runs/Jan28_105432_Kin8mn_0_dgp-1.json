@@ -1,0 +1,15 @@
+{
+  "date": "Jan28_105432",
+  "dataset": "Kin8mn",
+  "split": 0,
+  "num_layers": 1,
+  "model_name": "dgp-1",
+  "num_inducing": 256,
+  "batch_size": 1024,
+  "num_epochs": 1000,
+  "seed": 875322006,
+  "rmse": 0.32198451913815945,
+  "mse": 0.10367403056463176,
+  "nlpd": 0.2739430769467973,
+  "commit": "f6592411902e35d5141664eb9de061dcb16d2cb8"
+}

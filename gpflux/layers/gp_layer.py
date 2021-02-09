@@ -3,11 +3,12 @@
 # Proprietary and confidential
 """A Sparse Variational Multioutput Gaussian Process Keras Layer"""
 
-from typing import Any, Optional, Tuple, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from tensorflow_probability.python.layers import DistributionLambda
 
 from gpflow import Parameter, default_float, default_jitter
 from gpflow.base import TensorType
@@ -15,12 +16,11 @@ from gpflow.conditionals import conditional
 from gpflow.inducing_variables import MultioutputInducingVariables
 from gpflow.kernels import MultioutputKernel
 from gpflow.kullback_leiblers import prior_kl
-from gpflow.mean_functions import MeanFunction, Identity
+from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
-from tensorflow_probability.python.layers import DistributionLambda
 
-from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.exceptions import GPInitializationError
+from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.sampling.sample import Sample, efficient_sample
 from gpflux.types import ShapeType
 from gpflux.utils.runtime_checks import verify_compatibility
@@ -43,6 +43,7 @@ class GPLayer(DistributionLambda):
         verify: bool = True,
         num_latent_gps: int = None,
         white: bool = True,
+        name: Optional[str] = None,
     ):
         """
         A sparse variational GP layer in whitened representation. This layer holds the
@@ -76,6 +77,7 @@ class GPLayer(DistributionLambda):
             make_distribution_fn=self._make_distribution_fn,
             convert_to_tensor_fn=self._convert_to_tensor_fn,
             dtype=default_float(),
+            name=name,
         )
 
         if initializer is None:
@@ -104,14 +106,16 @@ class GPLayer(DistributionLambda):
             )
 
         self.q_mu = Parameter(
-            np.zeros((self.num_inducing, self.num_latent_gps)), dtype=default_float(), name="q_mu",
+            np.zeros((self.num_inducing, self.num_latent_gps)),
+            dtype=default_float(),
+            name=f"{self.name}_q_mu" if self.name else "q_mu",
         )  # [num_inducing, output_dim]
 
         self.q_sqrt = Parameter(
             np.stack([np.eye(self.num_inducing) for _ in range(self.num_latent_gps)]),
             transform=triangular(),
             dtype=default_float(),
-            name="q_sqrt",
+            name=f"{self.name}_q_sqrt" if self.name else "q_sqrt",
         )  # [output_dim, num_inducing, num_inducing]
         self._initialized = False
 
@@ -193,9 +197,9 @@ class GPLayer(DistributionLambda):
         else:
             loss = tf.constant(0.0, dtype=default_float())
         loss_per_datapoint = loss / self.num_data
-
+        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
         self.add_loss(loss_per_datapoint)
-        self.add_metric(loss_per_datapoint, name="elbo_kl_gp", aggregation="mean")
+        self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
         return outputs
 
