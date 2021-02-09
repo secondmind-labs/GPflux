@@ -12,7 +12,9 @@ import math
 
 from gpflux.types import ShapeType
 
-from tensorflow_probability.python.distributions import MultivariateStudentTLinearOperator
+from tensorflow_probability.python.distributions import (
+    MultivariateStudentTLinearOperator,
+)
 
 # Supported kernels for Random Fourier Features (RFF).
 # RFF can be built for stationary kernels (shift invariant) for which we can
@@ -42,7 +44,9 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         https://people.eecs.berkeley.edu/~brecht/papers/07.rah.rec.nips.pdf
     """
 
-    def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
+    def __init__(
+        self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping
+    ):
         """
         :param kernel: kernel to approximate using a set of random features.
         :param output_dim: total number of basis functions used to approximate
@@ -82,10 +86,11 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
             # Sample student-t using "Implicit Reparameterization Gradients",
             # Figurnov et al.
             normal_rvs = tf.random.normal(shape=shape, **kwargs)
-            gamma_rvs = tf.tile(tf.random.gamma(alpha=nu, beta=nu, shape=shape[:-1] + [1], **kwargs), [1, shape[-1]])
+            gamma_rvs = tf.tile(
+                tf.random.gamma(alpha=nu, beta=nu, shape=shape[:-1] + [1], **kwargs),
+                [1, shape[-1]],
+            )
             return tf.math.rsqrt(gamma_rvs) * normal_rvs
-
-
 
     def call(self, inputs: TensorType) -> TensorType:
         """
@@ -97,7 +102,9 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         """
         c = tf.sqrt(2 * self.kernel.variance / self.output_dim)
         inputs = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
-        basis_functions = tf.cos(tf.matmul(inputs, self.W, transpose_b=True) + self.b)  # [N, M]
+        basis_functions = tf.cos(
+            tf.matmul(inputs, self.W, transpose_b=True) + self.b
+        )  # [N, M]
         output = c * basis_functions  # [N, M]
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
