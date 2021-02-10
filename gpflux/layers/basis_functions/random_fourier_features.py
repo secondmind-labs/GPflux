@@ -1,20 +1,17 @@
 #  Copyright (C) PROWLER.io 2020 - All Rights Reserved
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
+import math
 from typing import Mapping, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
+from tensorflow_probability.python.distributions import MultivariateStudentTLinearOperator
 
 import gpflow
 from gpflow.base import TensorType
-import math
 
 from gpflux.types import ShapeType
-
-from tensorflow_probability.python.distributions import (
-    MultivariateStudentTLinearOperator,
-)
 
 # Supported kernels for Random Fourier Features (RFF).
 # RFF can be built for stationary kernels (shift invariant) for which we can
@@ -44,9 +41,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         https://people.eecs.berkeley.edu/~brecht/papers/07.rah.rec.nips.pdf
     """
 
-    def __init__(
-        self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping
-    ):
+    def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of random features.
         :param output_dim: total number of basis functions used to approximate
@@ -102,9 +97,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         """
         c = tf.sqrt(2 * self.kernel.variance / self.output_dim)
         inputs = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
-        basis_functions = tf.cos(
-            tf.matmul(inputs, self.W, transpose_b=True) + self.b
-        )  # [N, M]
+        basis_functions = tf.cos(tf.matmul(inputs, self.W, transpose_b=True) + self.b)  # [N, M]
         output = c * basis_functions  # [N, M]
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
