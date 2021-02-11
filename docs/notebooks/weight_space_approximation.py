@@ -151,7 +151,7 @@ for experiment in range(2):
         axs[experiment, i].set_xlim(x_lim)
         axs[experiment, i].set_ylim(y_lim)
 
-    # create the GPR "ground-truth" model
+    # create the GPR "ground truth" model
     gpr_model = GPR(
         data=(X[experiment][..., None], y[experiment][..., None]),
         kernel=kernel_class(lengthscales=lengthscale),
