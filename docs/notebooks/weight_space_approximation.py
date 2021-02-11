@@ -19,19 +19,19 @@
 #
 # The basic idea is to approximate a stationary kernel $k(X,X^\prime)$ for one-dimensional inputs $X \in \mathbb{R}$ and $X^\prime \in \mathbb{R}$ according to Bochner's theorem:
 #
-# $$ k(X, X^\prime) \approx \sum_{d=1}^D \phi_d(X) \phi_d(X^\prime), $$
+# $$ k(X, X^\prime) \approx \sum_{i=1}^I \phi_i(X) \phi_i(X^\prime), $$
 #
-# with $D$ Fourier features $\phi_d$  following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007) defined as
+# with $I$ Fourier features $\phi_i$  following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007) defined as
 #
-# $$ \phi_d(X) = \sqrt{\frac{2 \sigma^2}{l}} \cos(\theta_d X + \tau_d), $$
+# $$ \phi_i(X) = \sqrt{\frac{2 \sigma^2}{l}} \cos(\theta_i X + \tau_i), $$
 #
-# where $\sigma^2$ refers to the kernel variance and $l$ to the kernel lengthscale. $\theta_d$ and $\tau_d$ are randomly drawn hyperparameters that determine each feature function $\phi_d$. The hyperparameter $\theta_d$ is randomly drawn from the kernel's spectral density. The spectral density of a stationary kernel is obtained by interpreting the kernel as a function of one argument only (i.e. the distance between $X$ and $X^\prime$) and performing a Fourier transform on that function, resulting in an unnormalised probability density (from which samples can be obtained). The hyperparameter $\tau_d$ is obtained by sampling from a uniform distribution $\tau_d \sim \mathcal{U}(0,2\pi)$. Note that both $\theta_d$ and $\tau_d$ are fixed and not optimised over. An interesting direction of future research is how to automatically identify those (but this is outside the scope of this notebook). If we drew infinitely many samples, i.e. $D \rightarrow \infty$, we would recover the true kernel perfectly.
+# where $\sigma^2$ refers to the kernel variance and $l$ to the kernel lengthscale. $\theta_i$ and $\tau_i$ are randomly drawn hyperparameters that determine each feature function $\phi_i$. The hyperparameter $\theta_i$ is randomly drawn from the kernel's spectral density. The spectral density of a stationary kernel is obtained by interpreting the kernel as a function of one argument only (i.e. the distance between $X$ and $X^\prime$) and performing a Fourier transform on that function, resulting in an unnormalised probability density (from which samples can be obtained). The hyperparameter $\tau_i$ is obtained by sampling from a uniform distribution $\tau_i \sim \mathcal{U}(0,2\pi)$. Note that both $\theta_i$ and $\tau_i$ are fixed and not optimised over. An interesting direction of future research is how to automatically identify those (but this is outside the scope of this notebook). If we drew infinitely many samples, i.e. $I \rightarrow \infty$, we would recover the true kernel perfectly.
 #
 # The kernel approximation specified above enables you to express a supervised inference problem with training data $\mathcal{D} = \{(X_n,y_n)\}_{n=1,...,N}$ in weight space view as
 #
 # $$p(\textbf{w} | \mathcal{D}) = \frac{\prod_{n=1}^N p(y_n| \textbf{w}^\intercal \boldsymbol{\phi}(X_n), \sigma_\epsilon^2) p(\textbf{w})}{p(\mathcal{D})},$$
 #
-# where we assume $p(\textbf{w})$ to be a standard normal multivariate prior and $p(y_n| \textbf{w}^\intercal \boldsymbol{\phi}(X_n), \sigma_\epsilon^2)$ to be a univariate Gaussian observation model of the i.i.d. likelihood with mean $\textbf{w}^\intercal \boldsymbol{\phi}(X_n)$ and noise variance $\sigma_\epsilon^2$. The boldface notation $\boldsymbol{\phi}(X_n)$ refers to the vector-valued feature function that evaluates all features from $1$ up to $D$ for one particular input $X_n$. Under these assumptions, the posterior $p(\textbf{w} | \mathcal{D})$ enjoys a closed form and is Gaussian. Predictions can readily be obtained by sampling $\textbf{w}$ and evaluating the function sample $\textbf{w}$ at new locations $\{X_{n^\star}^\star\}_{n^\star=1,...,N^\star}$ as $\{\textbf{w}^\intercal \boldsymbol{\phi}(X_{n^\star}^\star)\}_{n^\star=1,...,N^\star}$.
+# where we assume $p(\textbf{w})$ to be a standard normal multivariate prior and $p(y_n| \textbf{w}^\intercal \boldsymbol{\phi}(X_n), \sigma_\epsilon^2)$ to be a univariate Gaussian observation model of the i.i.d. likelihood with mean $\textbf{w}^\intercal \boldsymbol{\phi}(X_n)$ and noise variance $\sigma_\epsilon^2$. The boldface notation $\boldsymbol{\phi}(X_n)$ refers to the vector-valued feature function that evaluates all features from $1$ up to $I$ for one particular input $X_n$. Under these assumptions, the posterior $p(\textbf{w} | \mathcal{D})$ enjoys a closed form and is Gaussian. Predictions can readily be obtained by sampling $\textbf{w}$ and evaluating the function sample $\textbf{w}$ at new locations $\{X_{n^\star}^\star\}_{n^\star=1,...,N^\star}$ as $\{\textbf{w}^\intercal \boldsymbol{\phi}(X_{n^\star}^\star)\}_{n^\star=1,...,N^\star}$.
 #
 # The advantage of expressing a Gaussian process in weight space is that functions are represented as weight vectors $\textbf{w}$ (rather than actual functions $f(\cdot)$) from which samples can be obtained a priori without knowing where the function should be evaluated. When expressing a Gaussian process in function space view the latter is not possible, i.e. a function $f(\cdot)$ cannot be sampled without knowing where to evaluate the function, namely at $\{X_{n^\star}^\star\}_{n^\star=1,...,N^\star}$. Weight space approximated Gaussian processes therefore hold the potential to sample efficiently from Gaussian process posteriors, which is desirable in vanilla supervised learning but also in domains such as Bayesian optimisation or model-based reinforcement learning.
 #
@@ -94,14 +94,14 @@ kernel = kernel_class(lengthscales=lengthscale)  # kernel object to draw trainin
 X, y, X_star = [], [], []  # training points, training observations, and test points for evaluation
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
-for i in range(2):
+for i in range(len(number_of_train_samples)):
 
     # training points
     X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]))
 
     # training observations generated from a zero-mean GP corrupted with Gaussian noise
     kXX = kernel.K(X[i][..., None])
-    kXX_plus_noise_var = tf.linalg.set_diag(kXX, tf.linalg.diag_part(kXX) + noise_variance)
+    kXX_plus_noise_var = kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
     lXX = tf.linalg.cholesky(kXX_plus_noise_var)
     y.append(
         tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[i].dtype))[..., 0]
@@ -122,7 +122,7 @@ fig, axs = plt.subplots(2, 3)
 
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
-for experiment in range(2):
+for experiment in range(len(number_of_train_samples)):
 
     # subplot titles and axis labels
     axs[experiment, 0].set_title("Exact GP $N=" + str(number_of_train_samples[experiment]) + "$")
