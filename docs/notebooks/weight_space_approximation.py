@@ -86,7 +86,7 @@ x_lim = [0.0, 1.0]
 y_lim = [-3.5, 3.5]
 
 # %% [markdown]
-# We proceed by generating the training data for both experimental settings from a ground truth function which is a sample from a prior zero mean GP with a pre-defined kernel (in our case, we use a `Matern52` kernel but we could have also chosen an `RBF` kernel -- both of which are defined in `gpflow`).
+# We proceed by generating the training data for both experimental settings from a ground truth function which is a sample from a prior zero-mean GP with a predefined kernel (in our case, we use a `Matern52` kernel but we could have chosen an `RBF` kernel -- both of which are defined in `gpflow`).
 
 # %%
 # generate training data and evaluation points for both sets of experiments
