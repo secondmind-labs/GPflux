@@ -228,7 +228,7 @@ for experiment in range(2):
     f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
     f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
 
-    # visualize SVGP model predictions (mean +/- 2 * std and function samples) in the second column
+    # visualise SVGP model predictions (mean +/- 2 * std and function samples) in the second column
     axs[experiment, 1].fill_between(
         X_star[experiment],
         f_mean_minus_2std[..., 0],
