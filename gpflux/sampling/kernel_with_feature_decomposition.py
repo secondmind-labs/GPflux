@@ -23,7 +23,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         self, feature_functions: tf.keras.layers.Layer, feature_coefficients: TensorType,
     ):
         """
-        :param feature_functions: has a __call__ that computes L features for any
+        :param feature_functions: Has a __call__ that computes L features for any
             given inputs. For X [N, D] feature_functions(X) returns a tensor of shape [N, L]
         :param feature_coefficients: a list of L coefficients associated with the features.
         """
