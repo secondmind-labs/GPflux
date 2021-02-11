@@ -63,7 +63,7 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
     Fourier features with constant coefficients (Bochner).
 
     In certain cases, the analytical expression for the kernel is not available.
-    Passing `None` in that case is allowed and `K` and `K_diag` will be computed
+    In this case, passing `None` is allowed, and `K` and `K_diag` will be computed
     using the approximation provided by the feature decomposition.
     """
 
