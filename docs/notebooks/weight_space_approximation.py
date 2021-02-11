@@ -111,7 +111,7 @@ for i in range(2):
     X_star.append(np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples))
 
 # %% [markdown]
-# The for-loop below iterates through both experimental settings with few and many training examples respectively. In each iteration, the GPR model is built first (and its prediction is used as "ground truth" to copmare against for the remaining models) followed by the SVGP model (that requires optimization to identify internal parameters) and the WSA model.
+# The `for` loop below iterates through both experimental settings with few and many training examples respectively. In each iteration, the GPR model is built first (and its prediction is used as "ground truth" to compare with the remaining models) followed by the SVGP model (which requires optimisation to identify internal parameters) and the WSA model.
 
 # %%
 # create subplot frame
