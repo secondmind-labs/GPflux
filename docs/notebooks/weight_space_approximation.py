@@ -242,7 +242,7 @@ for experiment in range(2):
         )
     axs[experiment, 1].plot(X_star[experiment], f_mean[..., 0], color="purple")
 
-    # visualize predictions at inducing point locations (without observation noise)
+    # visualise predictions at inducing point locations (without observation noise)
     Z = svgp_model.inducing_variable.Z
     q_mu, _ = svgp_model.predict_f(Z)
     axs[experiment, 1].plot(
