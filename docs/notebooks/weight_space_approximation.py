@@ -91,7 +91,7 @@ y_lim = [-3.5, 3.5]
 # %%
 # generate training data and evaluation points for both sets of experiments
 kernel = kernel_class(lengthscales=lengthscale)  # kernel object to draw training dataset from
-X, y, X_star = [], [], []  # training points, training observations and test points for evaluation
+X, y, X_star = [], [], []  # training points, training observations, and test points for evaluation
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
 for i in range(2):
