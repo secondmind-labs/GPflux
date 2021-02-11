@@ -273,7 +273,7 @@ for experiment in range(2):
     f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
     f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
 
-    # visualize WSA model predictions (mean +/- 2 * std and function samples) in the third column
+    # visualise WSA model predictions (mean +/- 2 * std and function samples) in the third column
     axs[experiment, 2].fill_between(
         X_star[experiment],
         f_mean_minus_2std[..., 0],
