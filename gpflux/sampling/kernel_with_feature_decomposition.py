@@ -79,7 +79,7 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
             the feature decomposition.
         :param feature_functions: Has a __call__ that computes L features for any
             specified inputs. For X [N, D], `feature_functions(X)` returns a tensor of shape [N, L].
-        :param feature_coefficients: a list of L coefficients associated with the features.
+        :param feature_coefficients: A list of L coefficients associated with the features.
         """
         super().__init__()
 
