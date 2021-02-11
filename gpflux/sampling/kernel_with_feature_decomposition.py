@@ -24,7 +24,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
     ):
         """
         :param feature_functions: Has a __call__ that computes L features for any
-            given inputs. For X [N, D] feature_functions(X) returns a tensor of shape [N, L]
+            specified inputs. For X [N, D], `feature_functions(X)` returns a tensor of shape [N, L].
         :param feature_coefficients: a list of L coefficients associated with the features.
         """
         self._feature_functions = feature_functions
