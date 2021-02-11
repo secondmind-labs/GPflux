@@ -192,7 +192,7 @@ for experiment in range(2):
     # create the SVGP model
     if (
         experiment == 0
-    ):  # inducing points equal the training data for the first experiment with few train points
+    ):  # inducing points equal the training data for the first experiment with few training points
         Z = X[experiment].copy()[..., None]
     else:  # inducing points are randomly chosen for the second experiment with many training points
         Z = np.linspace(X_interval[0], X_interval[1], number_of_inducing_points[experiment])[
