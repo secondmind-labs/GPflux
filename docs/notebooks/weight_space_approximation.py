@@ -99,7 +99,7 @@ for i in range(2):
     # training points
     X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]))
 
-    # training obvervations generated from a zero-mean GP corrupted with Gaussian noise
+    # training observations generated from a zero-mean GP corrupted with Gaussian noise
     kXX = kernel.K(X[i][..., None])
     kXX_plus_noise_var = tf.linalg.set_diag(kXX, tf.linalg.diag_part(kXX) + noise_variance)
     lXX = tf.linalg.cholesky(kXX_plus_noise_var)
