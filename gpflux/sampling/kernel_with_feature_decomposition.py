@@ -47,7 +47,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         return r
 
     def K_diag(self, X: TensorType) -> TensorType:
-        """Approximates the true kernel by an inner product between feature functions"""
+        """ Approximate the true kernel by an inner product between feature functions. """
         phi_squared = self._feature_functions(X) ** 2  # [N, L]
         r = tf.reduce_sum(phi_squared * tf.transpose(self._feature_coefficients), axis=1)  # [N,]
         N = tf.shape(X)[0]
