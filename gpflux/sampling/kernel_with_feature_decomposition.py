@@ -59,7 +59,7 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
     r"""
     This class encapsulates a kernel with feature functions \phi_i(x) and coefficients \lambda_i, such that
     k(x, x') \approx \sum_i \lambda_i \phi_i(x) \phi_i(x') [e.g. Mercer or Bochner decomposition].
-    Feature-coefficient pairs could be e.g. eigenfunction-eigenvalue pairs (Mercer) or
+    Feature-coefficient pairs could be eigenfunction-eigenvalue pairs (Mercer) or
     Fourier features with constant coefficients (Bochner).
 
     In certain cases, the analytical expression for the kernel is not available.
