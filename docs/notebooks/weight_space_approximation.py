@@ -140,7 +140,7 @@ for experiment in range(2):
     for i in range(3):  # iterate through all three subplots (GPR, SVGP and WSA)
         if (
             experiment == 0
-        ):  # as vertical lines for the first set of experiments with few trainig samples
+        ):  # as vertical lines for the first set of experiments with few training samples
             axs[experiment, i].vlines(
                 X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors="lightgrey"
             )
