@@ -10,9 +10,9 @@ from bayesian_benchmarks import data as uci_datasets
 from bayesian_benchmarks.data import Dataset
 from sacred import Experiment
 from scipy.stats import norm
+from utils import ExperimentName, git_version
 
 from gpflux.architectures import Config, build_constant_input_dim_deep_gp
-from utils import ExperimentName, git_version
 
 tf.keras.backend.set_floatx("float64")
 

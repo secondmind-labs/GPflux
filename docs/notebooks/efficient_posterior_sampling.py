@@ -19,7 +19,7 @@
 #
 # $$ \textbf{f} = \boldsymbol{\mu} + \text{chol} (\boldsymbol{\Sigma}) \textbf{z}  \; \text{ where }  \; \textbf{z} \sim \mathcal{N}(\textbf{0}, \textbf{I}),$$
 #
-# with $\text{chol}$ referring to Cholesky decomposition. 
+# with $\text{chol}$ referring to Cholesky decomposition.
 #
 # Under certain assumptions, inference problems can have a posterior GP, for example, in a simple regression problem with real-valued labels, i.i.d. training data $\{(X_n, y_n)\}_{n=1,...,N}$ and a univariate Gaussian observation model of the form $p(y_n| f(X_n), \sigma_\epsilon^2)$ (with mean $f(X_n)$ and variance $\sigma_\epsilon^2$, and where $f(X_n)$ refers to evaluating a random GP function $f(\cdot)$ at $X_n$). Drawing a sample $\textbf{f}^\star$ from the posterior GP at $N^\star$ evaluation points $\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}$ can then be accomplished through
 #
@@ -39,7 +39,7 @@
 #            \textbf{K}_{\textbf{f}^\star_{\text{prior}} \textbf{f}^\star_{\text{prior}}} & \textbf{K}_{\textbf{f}^\star_{\text{prior}} \textbf{f}_{\text{prior}}} \\
 #            \textbf{K}_{\textbf{f}_{\text{prior}} \textbf{f}^\star_{\text{prior}}} & \textbf{K}_{\textbf{f}_{\text{prior}} \textbf{f}_{\text{prior}}}
 #          \end{pmatrix}\right), $$
-#      
+#
 # with $\textbf{f}_{\text{prior}}$ and $\textbf{f}^\star_{\text{prior}}$ referring to random samples obtained when jointly evaluating the prior GP at both training points $\{X_n\}_{n=1,...,N}$ and evaluation points $\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}$. Note that this way of obtaining samples from the posterior GP is not alleviating the computational complexity problem in any way since sampling $\textbf{f}_{\text{prior}}$ and $\textbf{f}^\star_{\text{prior}}$ from the prior GP has cubic complexity $\mathcal{O}((N + N^\star)^3)$.
 #
 # However, one can approximate a kernel $k(\cdot,\cdot^\prime)$ with a finite number of real-valued feature functions $\phi_d(\cdot)$ indexed with $d=1,...,D$ (e.g. through Mercer's or Bochner's theorem) as:
@@ -62,9 +62,10 @@
 
 # %%
 import matplotlib.pyplot as plt
+
 plt.rcParams["figure.figsize"] = (20, 3)
-plt.rc('text')
-plt.rcParams.update({'font.size': 16})
+plt.rc("text")
+plt.rcParams.update({"font.size": 16})
 
 import numpy as np
 import tensorflow as tf
@@ -90,7 +91,11 @@ num_experiment_runs = 32  # number of experiment repetitions (64 in the paper)
 num_input_dimensions = [2, 4, 8]  # number of input dimensions
 train_sample_exponents = [2, 4, 6, 8, 10]  # num_train_samples = 2 ** train_sample_exponents
 num_train_samples = [2 ** train_sample_exponent for train_sample_exponent in train_sample_exponents]
-num_features = [1024, 4096, 16384]  # the actual number of features is num_features += num_train_samples
+num_features = [
+    1024,
+    4096,
+    16384,
+]  # the actual number of features is num_features += num_train_samples
 
 
 # %% [markdown]
@@ -108,12 +113,12 @@ def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):
     :return: mean and covariance of the noise-free predictions of shape [N*] and [N* x N*] respectively
     """
     gpr_model = GPR(data=(X, y), kernel=kernel, noise_variance=noise_variance)
-    
+
     f_mean, f_var = gpr_model.predict_f(X_star, full_cov=True)
     f_mean, f_var = f_mean[..., 0], f_var[0]
     assert f_mean.shape == (X_star.shape[0],)
     assert f_var.shape == (X_star.shape[0], X_star.shape[0])
-    
+
     return f_mean, f_var
 
 
@@ -134,33 +139,33 @@ def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, nois
     """
     phi_star = approximate_kernel._eigenfunctions(X_star)
     assert phi_star.shape[0] == X_star.shape[0]
-    
+
     phi = approximate_kernel._eigenfunctions(X)
     assert phi.shape[0] == X.shape[0]
 
     kXstarX = exact_kernel.K(X_star, X)
     assert kXstarX.shape == (X_star.shape[0], X.shape[0])
-    
+
     KXX = exact_kernel.K(X)
     kXX_plus_noise_var = tf.linalg.set_diag(KXX, tf.linalg.diag_part(KXX) + noise_variance)
     assert kXX_plus_noise_var.shape == (X.shape[0], X.shape[0])
-    
+
     kXX_inv_mul_phi = tf.linalg.solve(kXX_plus_noise_var, phi)
     assert kXX_inv_mul_phi.shape[0] == X.shape[0]
-    
+
     kXX_inv_mul_y = tf.linalg.solve(kXX_plus_noise_var, y)
     assert kXX_inv_mul_y.shape[0] == X.shape[0]
 
     f_mean = kXstarX @ kXX_inv_mul_y
     f_mean = f_mean[..., 0]
     assert f_mean.shape[0] == X_star.shape[0]
-    
+
     f_var_sqrt = phi_star - kXstarX @ kXX_inv_mul_phi
     assert f_var_sqrt.shape[0] == X_star.shape[0]
-    
+
     f_var = f_var_sqrt @ tf.transpose(f_var_sqrt)
     assert f_var.shape == (X_star.shape[0], X_star.shape[0])
-    
+
     return f_mean, f_var
 
 
@@ -172,7 +177,9 @@ def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, nois
 # where $||\cdot||_2$ refers to the $L_2$ norm, $\text{trace}$ to the matrix trace operator and a power of $1/2$ to the matrix square root operation (i.e. for a square matrix $\textbf{M}$ it holds that $\textbf{M} = \textbf{M}^{1/2}\textbf{M}^{1/2}$).
 
 # %%
-def log10_Wasserstein_distance(mean, covariance, approximate_mean, approximate_covariance, jitter=1e-12):
+def log10_Wasserstein_distance(
+    mean, covariance, approximate_mean, approximate_covariance, jitter=1e-12
+):
     """
     Identify the decadic logarithm of the Wasserstein distance based on the means and covariance matrices.
     :param mean: analytic mean of shape [N*]
@@ -182,18 +189,20 @@ def log10_Wasserstein_distance(mean, covariance, approximate_mean, approximate_c
     :param jitter: jitter value for numerical robustness
     :return: a scalar log distance value
     """
-    squared_mean_distance = tf.norm(mean - approximate_mean) ** 2    
+    squared_mean_distance = tf.norm(mean - approximate_mean) ** 2
     square_root_covariance = tf.linalg.sqrtm(
         covariance + tf.eye(tf.shape(covariance)[0], dtype=covariance.dtype) * jitter
-    )    
+    )
     matrix_product = square_root_covariance @ approximate_covariance @ square_root_covariance
     square_root_matrix_product = tf.linalg.sqrtm(
         matrix_product + tf.eye(tf.shape(matrix_product)[0], dtype=matrix_product.dtype) * jitter
-    )    
-    term = covariance + approximate_covariance - 2 * square_root_matrix_product    
-    trace = tf.linalg.trace(term)    
+    )
+    term = covariance + approximate_covariance - 2 * square_root_matrix_product
+    trace = tf.linalg.trace(term)
     ws_distance = (squared_mean_distance + trace) ** 0.5
-    log10_ws_distance = tf.math.log(ws_distance) / tf.math.log(tf.constant(10.0, dtype=default_float()))
+    log10_ws_distance = tf.math.log(ws_distance) / tf.math.log(
+        tf.constant(10.0, dtype=default_float())
+    )
     return log10_ws_distance
 
 
@@ -210,7 +219,9 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     :param num_features: parameter to identify the number of feature functions
     :return: the log10 Wasserstein distances for both approximations
     """
-    lengthscale = (num_input_dimensions / 100.0) ** 0.5  # adjust kernel lengthscale to the number of input dims
+    lengthscale = (
+        num_input_dimensions / 100.0
+    ) ** 0.5  # adjust kernel lengthscale to the number of input dims
     num_features = num_train_samples + num_features
 
     # exact kernel
@@ -220,51 +231,45 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     feature_functions = RandomFourierFeatures(
         kernel=kernel_class(lengthscales=lengthscale),
         output_dim=num_features,
-        dtype=default_float()
+        dtype=default_float(),
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())
     approximate_kernel = KernelWithMercerDecomposition(
-        kernel=None,
-        eigenfunctions=feature_functions,
-        eigenvalues=feature_coefficients
+        kernel=None, eigenfunctions=feature_functions, eigenvalues=feature_coefficients
     )
 
-    # create training data set and test points for evaluation    
+    # create training data set and test points for evaluation
     X = []
     for i in range(num_input_dimensions):
         random_samples = np.random.uniform(low=0.15, high=0.85, size=(num_train_samples,))
         X.append(random_samples)
     X = np.array(X).transpose()
-    
+
     kXX = exact_kernel.K(X)
     kXX_plus_noise_var = tf.linalg.set_diag(kXX, tf.linalg.diag_part(kXX) + noise_variance)
     lXX = tf.linalg.cholesky(kXX_plus_noise_var)
     y = tf.matmul(lXX, tf.random.normal([num_train_samples, 1], dtype=X.dtype))
-    
-    X_star = []  # test data is created to lie within two intervals that partially overlap with the train data
+
+    X_star = (
+        []
+    )  # test data is created to lie within two intervals that partially overlap with the train data
     for i in range(num_input_dimensions):
         random_samples = np.random.uniform(low=0.0, high=0.3, size=(num_test_samples,))
         indices = np.random.uniform(size=(num_test_samples,)) < 0.5
-        random_samples[indices] = np.random.uniform(low=0.7, high=1.0, size=(num_test_samples,))[indices]
+        random_samples[indices] = np.random.uniform(low=0.7, high=1.0, size=(num_test_samples,))[
+            indices
+        ]
         X_star.append(random_samples)
     X_star = np.array(X_star).transpose()
 
     # identify mean and covariance of the analytic GPR posterior
     f_mean_exact, f_var_exact = compute_analytic_GP_predictions(
-        X=X,
-        y=y,
-        kernel=exact_kernel,
-        noise_variance=noise_variance,
-        X_star=X_star
+        X=X, y=y, kernel=exact_kernel, noise_variance=noise_variance, X_star=X_star
     )
 
     # identify mean and covariance of the analytic GPR posterior when using the weight space approximated kernel
     f_mean_weight, f_var_weight = compute_analytic_GP_predictions(
-        X=X,
-        y=y,
-        kernel=approximate_kernel,
-        noise_variance=noise_variance,
-        X_star=X_star
+        X=X, y=y, kernel=approximate_kernel, noise_variance=noise_variance, X_star=X_star
     )
 
     # identify mean and covariance using the hybrid approximation
@@ -274,23 +279,17 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
         exact_kernel=exact_kernel,
         approximate_kernel=approximate_kernel,
         noise_variance=noise_variance,
-        X_star=X_star
+        X_star=X_star,
     )
 
     # compute log10 Wasserstein distance between the exact solution and the weight space approximation
     log10_ws_dist_weight = log10_Wasserstein_distance(
-        f_mean_exact,
-        f_var_exact,
-        f_mean_weight,
-        f_var_weight
+        f_mean_exact, f_var_exact, f_mean_weight, f_var_weight
     )
 
     # compute log10 Wassertein distance between the exact solution and the hybrid approximation
     log10_ws_dist_hybrid = log10_Wasserstein_distance(
-        f_mean_exact,
-        f_var_exact,
-        f_mean_hybrid,
-        f_var_hybrid
+        f_mean_exact, f_var_exact, f_mean_hybrid, f_var_hybrid
     )
 
     # return the log Wasserstein distances for both approximations
@@ -311,13 +310,15 @@ def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples
     :param num_features: parameter to identify the number of feature functions
     :return: the quartiles of the log10 Wasserstein distance for both approximations
     """
-    list_of_log10_ws_dist_weight = []  # for the analytic solution using the weight space approximated kernel
+    list_of_log10_ws_dist_weight = (
+        []
+    )  # for the analytic solution using the weight space approximated kernel
     list_of_log10_ws_dist_hybrid = []  # for the hybrid-rule approximation
     for _ in range(num_experiment_runs):
         log10_ws_dist_weight, log10_ws_dist_hybrid = conduct_experiment(
             num_input_dimensions=num_input_dimensions,
             num_train_samples=num_train_samples,
-            num_features=num_features
+            num_features=num_features,
         )
         list_of_log10_ws_dist_weight.append(log10_ws_dist_weight)
         list_of_log10_ws_dist_hybrid.append(log10_ws_dist_hybrid)
@@ -338,17 +339,27 @@ def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_
     :param num_features: parameter to identify the number of feature functions
     :return: lists of quartiles of the log10 Wasserstein distance for both approximations
     """
-    list_log10_ws_dist_weight_quarts = []  # for the analytic solution using the weight space approximated kernel
+    list_log10_ws_dist_weight_quarts = (
+        []
+    )  # for the analytic solution using the weight space approximated kernel
     list_log10_ws_dist_hybrid_quarts = []  # for the hybrid-rule approximation
     for nts in num_train_samples:
-        log10_ws_dist_weight_quarts, log10_ws_dist_hybrid_quarts = conduct_experiment_for_multiple_runs(
+        (
+            log10_ws_dist_weight_quarts,
+            log10_ws_dist_hybrid_quarts,
+        ) = conduct_experiment_for_multiple_runs(
             num_input_dimensions=num_input_dimensions,
             num_train_samples=nts,
-            num_features=num_features
+            num_features=num_features,
         )
-        print('Completed for num input dims = ' + str(num_input_dimensions) + 
-              ' and feature param = ' + str(num_features) +
-              ' and num train samples = ' + str(nts))
+        print(
+            "Completed for num input dims = "
+            + str(num_input_dimensions)
+            + " and feature param = "
+            + str(num_features)
+            + " and num train samples = "
+            + str(nts)
+        )
         list_log10_ws_dist_weight_quarts.append(log10_ws_dist_weight_quarts)
         list_log10_ws_dist_hybrid_quarts.append(log10_ws_dist_hybrid_quarts)
 
@@ -368,12 +379,13 @@ def conduct_experiment_for_different_num_features(num_input_dimensions):
     :param num_input_dimensions: number of input dimensions
     :return: lists of lists of quartiles of the log10 Wasserstein distance for both approximations
     """
-    list_of_weight_results = []  # for the analytic solution using the weight space approximated kernel
+    list_of_weight_results = (
+        []
+    )  # for the analytic solution using the weight space approximated kernel
     list_of_hybrid_results = []  # for the hybrid-rule approximation
     for nf in num_features:
         weight_results, hybrid_results = conduct_experiment_for_different_train_data_sizes(
-            num_input_dimensions=num_input_dimensions,
-            num_features=nf
+            num_input_dimensions=num_input_dimensions, num_features=nf
         )
         print()
         list_of_weight_results.append(weight_results)
@@ -388,37 +400,39 @@ def conduct_experiment_for_different_num_features(num_input_dimensions):
 # create plots
 fig, axs = plt.subplots(1, len(num_input_dimensions))
 for i in range(len(num_input_dimensions)):
-    axs[i].set_title('Number of input dimensions $=' + str(num_input_dimensions[i]) + '$')
-    axs[i].set_xlabel('Number of training data points $N$')
-    axs[i].set_xscale('log')
-axs[0].set_ylabel('$\log_{10}$ Wasserstein distance')
+    axs[i].set_title("Number of input dimensions $=" + str(num_input_dimensions[i]) + "$")
+    axs[i].set_xlabel("Number of training data points $N$")
+    axs[i].set_xscale("log")
+axs[0].set_ylabel("$\log_{10}$ Wasserstein distance")
 
 # conduct experiments and plot results
-for i in range(len(num_input_dimensions)):  # iterate through the different number of input dimensions
+for i in range(
+    len(num_input_dimensions)
+):  # iterate through the different number of input dimensions
     weight_results, hybrid_results = conduct_experiment_for_different_num_features(
         num_input_dimensions=num_input_dimensions[i]
     )
-    
+
     # plot the results for the analytic solution using the weight space approximated kernel
-    colors = ['bisque', 'orange', 'peru']
-    assert len(colors) ==  len(num_features), "Number of colors must equal the number of features!"
+    colors = ["bisque", "orange", "peru"]
+    assert len(colors) == len(num_features), "Number of colors must equal the number of features!"
     for j in range(len(weight_results)):
         weight_result = weight_results[j]
         axs[i].fill_between(
             num_train_samples, weight_result[0], weight_result[2], color=colors[j], alpha=0.1
         )
-        axs[i].plot(num_train_samples, weight_result[1], 'o', color=colors[j])
+        axs[i].plot(num_train_samples, weight_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, weight_result[1], color=colors[j], linewidth=0.5)
 
     # plot the results for the hybrid-rule approximation
-    colors = ['lightblue', 'blue', 'darkblue']
-    assert len(colors) ==  len(num_features), "Number of colors must equal the number of features!"
+    colors = ["lightblue", "blue", "darkblue"]
+    assert len(colors) == len(num_features), "Number of colors must equal the number of features!"
     for j in range(len(hybrid_results)):
         hybrid_result = hybrid_results[j]
         axs[i].fill_between(
             num_train_samples, hybrid_result[0], hybrid_result[2], color=colors[j], alpha=0.1
         )
-        axs[i].plot(num_train_samples, hybrid_result[1], 'o', color=colors[j])
+        axs[i].plot(num_train_samples, hybrid_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, hybrid_result[1], color=colors[j], linewidth=0.5)
 
 # show plots
