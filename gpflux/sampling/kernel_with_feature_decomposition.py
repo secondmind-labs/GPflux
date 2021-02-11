@@ -31,7 +31,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         self._feature_coefficients = feature_coefficients  # [L, 1]
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> TensorType:
-        """Approximates the true kernel by an inner product between feature functions"""
+        """ Approximate the true kernel by an inner product between feature functions. """
         phi = self._feature_functions(X)  # [N, L]
         if X2 is None:
             phi2 = phi
