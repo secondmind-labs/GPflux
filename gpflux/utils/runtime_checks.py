@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from gpflow.inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
@@ -18,7 +18,7 @@ def verify_compatibility(
     kernel: MultioutputKernel,
     mean_function: MeanFunction,
     inducing_variable: MultioutputInducingVariables,
-):
+) -> Tuple[int, int]:
     """
     Provide error checking on shapes at layer construction. This method will be
     made simpler by having enhancements to GPflow: eg by adding foo.output_dim
