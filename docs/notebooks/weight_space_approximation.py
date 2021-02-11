@@ -59,7 +59,7 @@ from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureD
 # %% [markdown]
 # Our aim is to demonstrate the decrease in predictive quality of a WSA model when increasing the number of training points. To that end, we perform two sets of experiments: one with few and one with many training data points. Each experiment compares a WSA model to an exact GPR and to an approximate SVGP model, resulting in six plots all in all.
 #
-# We first define settings that remain the same accross the two sets of experiments, like the interval of the training points, aspects of the generative model (i.e. kernel variance and lengthscale as well as the variance of the observation model) and the number of feature functions of the WSA model.
+# We first define settings that remain the same across the two sets of experiments, like the interval of the training points, aspects of the generative model (i.e. kernel variance and lengthscale, and the variance of the observation model), and the number of feature functions of the WSA model.
 #
 # The only aspect that is different across both experimental settings is the number of training data points, and we also increase the number of inducing points for the SVGP model to cope with the latter.
 
