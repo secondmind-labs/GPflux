@@ -176,7 +176,7 @@ for experiment in range(2):
             X_star[experiment], f_mean_plus_2std[..., 0], linestyle="--", color="black"
         )
 
-    # visualize GPR model predictions (mean +/- 2 * std and function samples) in the first column
+    # visualise GPR model predictions (mean +/- 2 * std and function samples) in the first column
     axs[experiment, 0].fill_between(
         X_star[experiment],
         f_mean_minus_2std[..., 0],
