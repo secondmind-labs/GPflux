@@ -61,7 +61,7 @@ from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureD
 #
 # We first define settings that remain the same across the two sets of experiments, like the interval of the training points, aspects of the generative model (i.e. kernel variance and lengthscale, and the variance of the observation model), and the number of feature functions of the WSA model.
 #
-# The only aspect that is different across both experimental settings is the number of training data points, and we also increase the number of inducing points for the SVGP model to cope with the latter.
+# The only aspect that is different across both experimental settings is the number of training data points. We increase the number of inducing points for the SVGP model to cope with this.
 
 # %%
 # experiment parameters that are the same for both sets of experiments
