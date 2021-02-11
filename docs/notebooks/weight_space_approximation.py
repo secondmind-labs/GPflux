@@ -27,7 +27,7 @@
 #
 # where $\sigma^2$ refers to the kernel variance and $l$ to the kernel lengthscale. $\theta_d$ and $\tau_d$ are randomly drawn hyperparameters that determine each feature function $\phi_d$. The hyperparameter $\theta_d$ is randomly drawn from the kernel's spectral density. The spectral density of a stationary kernel is obtained by interpreting the kernel as a function of one argument only (i.e. the distance between $X$ and $X^\prime$) and performing a Fourier transform on that function, resulting in an unnormalised probability density (from which samples can be obtained). The hyperparameter $\tau_d$ is obtained by sampling from a uniform distribution $\tau_d \sim \mathcal{U}(0,2\pi)$. Note that both $\theta_d$ and $\tau_d$ are fixed and not optimised over. An interesting direction of future research is how to automatically identify those (but this is outside the scope of this notebook). If we drew infinitely many samples, i.e. $D \rightarrow \infty$, we would recover the true kernel perfectly.
 #
-# The kernel approximation specified above enables one to express a supervised inference problem with training data $\mathcal{D} = \{(X_n,y_n)\}_{n=1,...,N}$ in weight space view as
+# The kernel approximation specified above enables you to express a supervised inference problem with training data $\mathcal{D} = \{(X_n,y_n)\}_{n=1,...,N}$ in weight space view as
 #
 # $$p(\textbf{w} | \mathcal{D}) = \frac{\prod_{n=1}^N p(y_n| \textbf{w}^\intercal \boldsymbol{\phi}(X_n), \sigma_\epsilon^2) p(\textbf{w})}{p(\mathcal{D})},$$
 #
