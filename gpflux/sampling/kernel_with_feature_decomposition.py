@@ -77,7 +77,7 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
         :param kernel: Can be `None`, in which case there is no analytical expression
             associated with the infinite sum and we approximate the kernel based on
             the feature decomposition.
-        :param feature_functions: has a __call__ that computes L features for any
+        :param feature_functions: Has a __call__ that computes L features for any
             given inputs. For X [N, D] feature_functions(X) returns a tensor of shape [N, L]
         :param feature_coefficients: a list of L coefficients associated with the features.
         """
