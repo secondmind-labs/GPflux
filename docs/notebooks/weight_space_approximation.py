@@ -293,7 +293,7 @@ fig.tight_layout()
 plt.show()
 
 # %% [markdown]
-# The results are visualized in a 2 $\times$ 3 plot with 6 subplots. The first row refers to experiments with few training data points and the second row to experiments with many training data points. The first column depicts the exact GPR model in green, the second column the SVGP model in purple and the third column the WSA model in orange. In each plot, training data points are marked in grey (as vertical bars in the first row and fill plots in the second row). We also assume the GPR model's prediction as ground truth which is therefore plotted in all plots as black dashed lines (indicating mean +/- 2 * std).
+# The results are visualised in a 2 $\times$ 3 plot with 6 subplots. The first row refers to experiments with few training data points and the second row to experiments with many training data points. The first column depicts the exact GPR model in green, the second column the SVGP model in purple and the third column the WSA model in orange. In each plot, training data points are marked in grey (as vertical bars in the first row and fill plots in the second row). We also assume the GPR model's prediction as ground truth, which is therefore plotted in all plots as black dashed lines (indicating mean +/- 2 * std).
 #
 # In each plot, the model's prediction in terms of mean +/- 2 * std is plotted through fill plots, and function samples from the (approximate) posterior through thin solid lines (thick solid lines depict mean functions in the second and third column). Note that the coloured purple circles in the second column refer to predictions at the inducing point locations of the SVGP model.
 #
