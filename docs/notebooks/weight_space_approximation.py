@@ -42,7 +42,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = (20, 7)
-plt.rc("text", usetex=True)
+plt.rc("text")
 plt.rcParams.update({"font.size": 20})
 import tensorflow as tf
 
