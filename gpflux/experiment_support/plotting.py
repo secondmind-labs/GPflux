@@ -1,13 +1,22 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+
+from typing import List, Optional, Sequence, Tuple
+
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 
+from gpflow.base import TensorType
 from gpflow.conditionals.util import sample_mvn
 
+from gpflux.layers import GPLayer
 
-def all_layer_mean_var_samples(gp_layers, X):
+
+def all_layer_mean_var_samples(
+    gp_layers: Sequence[GPLayer], X: TensorType
+) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
     S = 5
     sample = X
     means, covs, samples = [], [], []
@@ -24,7 +33,14 @@ def all_layer_mean_var_samples(gp_layers, X):
     return means, covs, samples
 
 
-def plot_layer(X, m, v, s, idx, axes=None):
+def plot_layer(
+    X: TensorType,
+    m: List[TensorType],
+    v: List[TensorType],
+    s: List[TensorType],
+    idx: int,
+    axes: Optional[plt.Axes] = None,
+) -> None:
     """
     :param X: inputs of the DGP: N x 1
     :param means: array of num_layer elements of shape N x D
@@ -49,7 +65,7 @@ def plot_layer(X, m, v, s, idx, axes=None):
     ax3.plot(X, s[idx][:, :, 0].T)
 
 
-def plot_layers(X, gp_layers):
+def plot_layers(X: TensorType, gp_layers: Sequence[GPLayer]) -> None:
     L = len(gp_layers)
     m, v, s = all_layer_mean_var_samples(gp_layers, X)
     fig, axes = plt.subplots(3, L, figsize=(L * 3.33, 10))

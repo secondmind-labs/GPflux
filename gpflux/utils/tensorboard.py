@@ -25,7 +25,7 @@ def tensorboard_event_iterator(file_pattern: Union[str, List[str], tf.Tensor]) -
         pattern(s) that will be matched.
     """
 
-    def get_scalar_value(tensor):
+    def get_scalar_value(value: Any) -> Any:
         # Note(Vincent): I'm sorry this is messy...
         # Using `value.simple_value` returns 0.0 for
         # np.ndarray values, so we need to try `MakeNdarray`
@@ -44,5 +44,5 @@ def tensorboard_event_iterator(file_pattern: Union[str, List[str], tf.Tensor]) -
     for serialized_example in serialized_examples:
         event = event_pb2.Event.FromString(serialized_example.numpy())
         for value in event.summary.value:
-            v = get_scalar_value(value.tensor)
+            v = get_scalar_value(value)
             yield Event(tag=value.tag, step=event.step, value=v, dtype=type(v))

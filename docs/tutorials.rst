@@ -13,3 +13,4 @@ Tutorials
 
    notebooks/keras_integration
    notebooks/efficient_sampling
+   notebooks/weight_space_approximation
