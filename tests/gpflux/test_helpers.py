@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
 import numpy as np
+import pytest
 
 import gpflow
+from gpflow import mean_functions
 from gpflow.inducing_variables import (
     InducingPoints,
     MultioutputInducingVariables,
@@ -21,7 +23,9 @@ from gpflux.helpers import (
     construct_basic_inducing_variables,
     construct_basic_kernel,
     construct_gp_layer,
+    construct_mean_function,
     make_dataclass_from_class,
+    xavier_initialization_numpy,
 )
 
 
@@ -61,46 +65,77 @@ def test_construct_kernel_shared_independent_duplicates():
     assert mok.kernel is kernel
 
 
-def test_construct_inducing_separate_independent_custom_list():
+@pytest.mark.parametrize("z_init", [True, False])
+def test_construct_inducing_separate_independent_custom_list(z_init):
     num_inducing = [25, 35, 45]
     input_dim = 5
 
-    moiv = construct_basic_inducing_variables(num_inducing, input_dim)
+    if z_init:
+        z_init = [xavier_initialization_numpy(m, input_dim) for m in num_inducing]
+    else:
+        z_init = None
+
+    moiv = construct_basic_inducing_variables(num_inducing, input_dim, z_init=z_init)
 
     assert isinstance(moiv, SeparateIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
     for i, iv in enumerate(moiv.inducing_variable_list):
         assert len(iv) == num_inducing[i]
-        np.testing.assert_equal(iv.Z.numpy(), np.zeros((num_inducing[i], input_dim)))
 
 
-def test_construct_inducing_separate_independent_duplicates():
+@pytest.mark.parametrize("z_init", [True, False])
+def test_construct_inducing_separate_independent_duplicates(z_init):
     num_inducing = 25
     input_dim = 5
     output_dim = 7
 
-    moiv = construct_basic_inducing_variables(num_inducing, input_dim, output_dim=output_dim)
+    if z_init:
+        z_init = np.random.randn(output_dim, num_inducing, input_dim)
+    else:
+        z_init = None
+
+    moiv = construct_basic_inducing_variables(
+        num_inducing, input_dim, output_dim=output_dim, z_init=z_init
+    )
 
     assert isinstance(moiv, SeparateIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
     for iv in moiv.inducing_variable_list:
         assert len(iv) == num_inducing
-        np.testing.assert_equal(iv.Z.numpy(), np.zeros((num_inducing, input_dim)))
 
 
-def test_construct_inducing_shared_independent_duplicates():
+@pytest.mark.parametrize("z_init", [True, False])
+def test_construct_inducing_shared_independent_duplicates(z_init):
     num_inducing = 25
     input_dim = 5
     output_dim = 7
 
+    if z_init:
+        z_init = np.random.randn(num_inducing, input_dim)
+    else:
+        z_init = None
+
     moiv = construct_basic_inducing_variables(
-        num_inducing, input_dim, output_dim=output_dim, share_variables=True
+        num_inducing, input_dim, output_dim=output_dim, share_variables=True, z_init=z_init
     )
 
     assert isinstance(moiv, SharedIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
     assert len(moiv.inducing_variable) == num_inducing
-    np.testing.assert_equal(moiv.inducing_variable.Z.numpy(), np.zeros((num_inducing, input_dim)))
+
+
+def test_construct_mean_function_Identity():
+    num_data, input_dim, output_dim = 11, 5, 5
+    X = np.random.randn(num_data, input_dim)
+    mean_functions = construct_mean_function(X, input_dim, output_dim)
+    assert isinstance(mean_functions, gpflow.mean_functions.Identity)
+
+
+def test_construct_mean_function_Linear():
+    num_data, input_dim, output_dim = 11, 5, 7
+    X = np.random.randn(num_data, input_dim)
+    mean_functions = construct_mean_function(X, input_dim, output_dim)
+    assert isinstance(mean_functions, gpflow.mean_functions.Linear)
 
 
 def test_construct_gp_layer():

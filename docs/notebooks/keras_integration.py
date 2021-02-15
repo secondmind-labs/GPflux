@@ -52,17 +52,16 @@ plt.show()
 def create_layers():
     num_inducing = 13
     hidden_dim = 1
+    Z = np.linspace(X.min() - 0.1, X.max() + 0.1, num_inducing).reshape(-1, 1)
 
-    init_kmeans = gpflux.initializers.KmeansInitializer(X, num_inducing)
     layer1 = gpflux.helpers.construct_gp_layer(
-        num_data, num_inducing, input_dim, hidden_dim, initializer=init_kmeans
+        num_data, num_inducing, input_dim, hidden_dim, z_init=Z.copy()
     )
     layer1.mean_function = gpflow.mean_functions.Identity()  # TODO: pass layer_type instead
     layer1.q_sqrt.assign(layer1.q_sqrt * 0.01)
 
-    init_last_layer = gpflux.initializers.FeedForwardInitializer()
     layer2 = gpflux.helpers.construct_gp_layer(
-        num_data, num_inducing, hidden_dim, output_dim, initializer=init_last_layer,
+        num_data, num_inducing, hidden_dim, output_dim, z_init=Z.copy()
     )
 
     likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))

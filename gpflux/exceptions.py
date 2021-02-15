@@ -8,10 +8,5 @@ class ShapeIncompatibilityError(Exception):
     pass
 
 
-# Layer Errors
-class GPInitializationError(Exception):
-    pass
-
-
 class EncoderInitializationError(Exception):
     pass

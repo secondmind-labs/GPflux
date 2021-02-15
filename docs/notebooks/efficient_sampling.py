@@ -59,7 +59,6 @@ layer = gpflux.layers.GPLayer(
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )
-layer._initialized = True
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
 model = gpflux.models.DeepGP([layer], likelihood_layer)
 # %%

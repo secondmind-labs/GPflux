@@ -19,10 +19,7 @@ from gpflow.kullback_leiblers import prior_kl
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
 
-from gpflux.exceptions import GPInitializationError
-from gpflux.initializers import FeedForwardInitializer, Initializer
 from gpflux.sampling.sample import Sample, efficient_sample
-from gpflux.types import ShapeType
 from gpflux.utils.runtime_checks import verify_compatibility
 
 
@@ -34,7 +31,6 @@ class GPLayer(DistributionLambda):
         kernel: MultioutputKernel,
         inducing_variable: MultioutputInducingVariables,
         num_data: int,
-        initializer: Optional[Initializer] = None,
         mean_function: Optional[MeanFunction] = None,
         *,
         num_samples: Optional[int] = None,
@@ -51,8 +47,6 @@ class GPLayer(DistributionLambda):
 
         :param kernel: The multioutput kernel for the layer
         :param inducing_variable: The inducing features for the layer
-        :param initializer: the initializer for the inducing variables and variational
-            parameters. Default: FeedForwardInitializer
         :param mean_function: The mean function applied to the inputs. Default: Identity
 
         :param num_samples: the number of samples S to draw when converting the
@@ -70,7 +64,6 @@ class GPLayer(DistributionLambda):
             `inducing_variable`.
         :param white: determines the parameterisation of the inducing variables.
             If True: p(u) = N(0, I), else p(u) = N(0, Kuu).
-            TODO(VD): The initializer currently only support white = True.
         """
 
         super().__init__(
@@ -80,14 +73,11 @@ class GPLayer(DistributionLambda):
             name=name,
         )
 
-        if initializer is None:
-            initializer = FeedForwardInitializer()
         if mean_function is None:
             mean_function = Identity()
 
         self.kernel = kernel
         self.inducing_variable = inducing_variable
-        self.initializer = initializer
         self.mean_function = mean_function
 
         self.full_output_cov = full_output_cov
@@ -117,23 +107,7 @@ class GPLayer(DistributionLambda):
             dtype=default_float(),
             name=f"{self.name}_q_sqrt" if self.name else "q_sqrt",
         )  # [output_dim, num_inducing, num_inducing]
-        self._initialized = False
-
         self._num_samples = num_samples
-
-    def initialize_inducing_variables(self, **initializer_kwargs: Any) -> None:
-        if self._initialized:
-            raise GPInitializationError("Initializing twice!")
-
-        self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
-        self._initialized = True
-
-    def build(self, input_shape: ShapeType) -> None:
-        """Build the variables necessary on first call"""
-
-        super().build(input_shape)
-        if not self.initializer.init_at_predict:
-            self.initialize_inducing_variables()
 
     def predict(
         self,
@@ -156,13 +130,6 @@ class GPLayer(DistributionLambda):
             output dimension Q. Cov shape -> [N, Q]
         :param white:
         """
-        if (
-            inputs.shape[0] is not None  # do not initialize for symbolic tensors
-            and self.initializer.init_at_predict
-            and not self._initialized
-        ):
-            self.initialize_inducing_variables(inputs=inputs)
-
         mean_function = self.mean_function(inputs)
         mean_cond, cov = conditional(
             inputs,
