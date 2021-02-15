@@ -8,5 +8,9 @@ class ShapeIncompatibilityError(Exception):
     pass
 
 
+class GPLayerIncompatibilityException(Exception):
+    pass
+
+
 class EncoderInitializationError(Exception):
     pass

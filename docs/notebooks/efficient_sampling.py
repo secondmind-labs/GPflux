@@ -55,7 +55,6 @@ layer = gpflux.layers.GPLayer(
     inducing_variable,
     num_data,
     white=False,
-    verify=False,
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )

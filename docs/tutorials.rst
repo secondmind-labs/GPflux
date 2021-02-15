@@ -5,12 +5,13 @@ Tutorials
    :caption: Introductory
    :maxdepth: 1
 
-   notebooks/deep_gp_samples
+   notebooks/intro
+   notebooks/keras_integration
 
 .. toctree::
    :caption: Advanced
    :maxdepth: 1
 
-   notebooks/keras_integration
+   notebooks/deep_gp_samples
    notebooks/efficient_sampling
    notebooks/weight_space_approximation

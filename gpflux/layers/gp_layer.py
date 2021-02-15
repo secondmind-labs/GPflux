@@ -1,8 +1,9 @@
 # Copyright (C) PROWLER.io 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-"""A Sparse Variational Multioutput Gaussian Process Keras Layer"""
+""" A Sparse Variational Multioutput Gaussian Process Keras layer. """
 
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -19,6 +20,7 @@ from gpflow.kullback_leiblers import prior_kl
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
 
+from gpflux.exceptions import GPLayerIncompatibilityException
 from gpflux.sampling.sample import Sample, efficient_sample
 from gpflux.utils.runtime_checks import verify_compatibility
 
@@ -36,10 +38,10 @@ class GPLayer(DistributionLambda):
         num_samples: Optional[int] = None,
         full_output_cov: bool = False,
         full_cov: bool = False,
-        verify: bool = True,
         num_latent_gps: int = None,
         white: bool = True,
         name: Optional[str] = None,
+        verbose: bool = False,
     ):
         """
         A sparse variational GP layer in whitened representation. This layer holds the
@@ -52,18 +54,16 @@ class GPLayer(DistributionLambda):
         :param num_samples: the number of samples S to draw when converting the
             DistributionLambda into a tensor. By default, draw a single sample without prefixing
             sample shape (see tfp's Distribution.sample()).
-        :param full_cov: Use a full covariance in predictions, or just the diagonals
-        :param full_output_cov: Return a full output covariance
-        :param verify: if False, the call to `verify_compatibility` in the init is bypassed.
-            The user is then responsible for making sure `kernel`, `mean_function`
-            and `inducing_variable` are compatible and work togheter. It is also required
-            to specify `num_latent_gps`, as this will not be infered from the other objects.
-        :param num_latent_gps: number of (latent) GPs in the layer. Used to determine the size of
-            the variational parameters `q_mu` and `q_sqrt`. Only required to be passed when
-            `verify` is set to False, otherwise it is infered from the `kernel` and
+        :param full_cov: Use a full covariance in predictions, or just the diagonals.
+        :param full_output_cov: Return a full output covariance.
+        :param num_latent_gps: The number of (latent) GPs in the layer.
+            This parameter is used to determine the size of the variational parameters
+            `q_mu` and `q_sqrt`. If possible, it is inferred from the `kernel` and
             `inducing_variable`.
-        :param white: determines the parameterisation of the inducing variables.
+        :param white: Determines the parameterisation of the inducing variables.
             If True: p(u) = N(0, I), else p(u) = N(0, Kuu).
+        :param verbose: Verbosity mode.
+            `False` = silent, `True` = shows debug information.
         """
 
         super().__init__(
@@ -84,12 +84,25 @@ class GPLayer(DistributionLambda):
         self.full_cov = full_cov
         self.num_data = num_data
         self.white = white
+        self.verbose = verbose
 
-        if verify:
+        try:
             self.num_inducing, self.num_latent_gps = verify_compatibility(
                 kernel, mean_function, inducing_variable
             )
-        else:
+        except GPLayerIncompatibilityException as e:
+            if num_latent_gps is None:
+                raise e
+
+            msg = (
+                "Warning: Could not verify the compatibility of the `kernel`, `inducing_variable`"
+                "and `mean_function`. We advise using `gpflux.helpers.construct_*` to create"
+                "compatible kernels and inducing variables. However, given that `num_latent_gps`"
+                "has been specified the `q_mu` and `q_sqrt` parameters will be created using that."
+            )
+            if self.verbose:
+                warnings.warn(msg)
+
             self.num_inducing, self.num_latent_gps = (
                 len(inducing_variable),
                 num_latent_gps,
