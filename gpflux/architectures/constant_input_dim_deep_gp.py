@@ -17,7 +17,6 @@ from gpflux.helpers import (
     construct_basic_kernel,
     construct_mean_function,
 )
-from gpflux.initializers.z_initializer import GivenZInitializer
 from gpflux.layers.gp_layer import GPLayer
 from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.models import DeepGP
@@ -70,7 +69,7 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True,
+            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True, z_init=centroids
         )
 
         kernel = construct_basic_kernel(
@@ -89,15 +88,8 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
                 X_running = X_running.numpy()
             q_sqrt_scaling = config.inner_layer_qsqrt_factor
 
-        initializer = GivenZInitializer(centroids)
-
         layer = GPLayer(
-            kernel,
-            inducing_var,
-            num_data,
-            initializer,
-            mean_function=mean_function,
-            name=f"gp_{i_layer}",
+            kernel, inducing_var, num_data, mean_function=mean_function, name=f"gp_{i_layer}",
         )
         layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
         gp_layers.append(layer)

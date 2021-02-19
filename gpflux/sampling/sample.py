@@ -14,7 +14,7 @@ from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
 from gpflow.utilities import Dispatcher
 
-from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 from gpflux.sampling.utils import compute_A_inv_b, draw_conditional_sample
 
 efficient_sample = Dispatcher("efficient_sample")
@@ -98,10 +98,10 @@ def _efficient_sample_conditional_gaussian(
     return SampleConditional()
 
 
-@efficient_sample.register(InducingVariables, KernelWithMercerDecomposition, object)
+@efficient_sample.register(InducingVariables, KernelWithFeatureDecomposition, object)
 def _efficient_sample_matheron_rule(
     inducing_variable: InducingVariables,
-    kernel: KernelWithMercerDecomposition,
+    kernel: KernelWithFeatureDecomposition,
     q_mu: tf.Tensor,
     *,
     q_sqrt: Optional[TensorType] = None,
@@ -119,10 +119,10 @@ def _efficient_sample_matheron_rule(
     # Remember u = Luu v, with Kuu = Luu Luu^T and p(v) = N(0, I)
     # so that p(u) = N(0, Luu Luu^T) = N(0, Kuu).
     assert not white, "Currently only white=False is supported"
-    L = tf.shape(kernel.eigenvalues)[0]  # num eigenfunctions  # noqa: F841
+    L = tf.shape(kernel.feature_coefficients)[0]  # num eigenfunctions  # noqa: F841
 
-    prior_weights = tf.sqrt(kernel.eigenvalues) * tf.random.normal(
-        tf.shape(kernel.eigenvalues), dtype=default_float()
+    prior_weights = tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
+        tf.shape(kernel.feature_coefficients), dtype=default_float()
     )  # [L, 1]
 
     M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
@@ -132,7 +132,7 @@ def _efficient_sample_matheron_rule(
     u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     tf.debugging.assert_equal(tf.shape(Kmm), [M, M])
-    phi_Z = kernel.eigenfunctions(inducing_variable.Z)  # [M, L]
+    phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L]
     weight_space_prior_Z = phi_Z @ prior_weights  # [M, 1]
     diff = u_sample - weight_space_prior_Z  # [M, P] -- using implicit broadcasting
     v = compute_A_inv_b(Kmm, diff)  # [M, P]
@@ -145,7 +145,7 @@ def _efficient_sample_matheron_rule(
             :return: function value of sample [N, P]
             """
             N = tf.shape(X)[0]
-            phi_X = kernel.eigenfunctions(X)  # [N, L]
+            phi_X = kernel.feature_functions(X)  # [N, L]
             weight_space_prior_X = phi_X @ prior_weights  # [N, 1]
             Knm = tf.linalg.matrix_transpose(Kuf(inducing_variable, kernel, X))  # [N, M]
             function_space_update_X = Knm @ v  # [N, P]

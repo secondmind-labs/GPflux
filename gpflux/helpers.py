@@ -2,6 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 import inspect
+import warnings
 from dataclasses import fields
 from typing import List, Optional, Type, TypeVar, Union
 
@@ -17,7 +18,6 @@ from gpflow.inducing_variables import (
 from gpflow.kernels import SeparateIndependent, SharedIndependent
 from gpflow.utilities import deepcopy
 
-from gpflux.initializers import Initializer
 from gpflux.layers.gp_layer import GPLayer
 
 
@@ -37,11 +37,21 @@ def construct_basic_kernel(
 
 
 def construct_basic_inducing_variables(
-    num_inducing: int,
+    num_inducing: Union[int, List[int]],
     input_dim: int,
     output_dim: Optional[int] = None,
     share_variables: bool = False,
+    z_init: Optional[np.ndarray] = None,
 ) -> gpflow.inducing_variables.InducingVariables:
+
+    if z_init is None:
+        warnings.warn(
+            "No `z_init` has been specified in `construct_basic_inducing_variables`."
+            "Default initialization using random normal N(0, 1) will be used."
+        )
+
+    z_init_is_given = z_init is not None
+
     if isinstance(num_inducing, list):
         if output_dim is not None:
             # TODO: the following assert may clash with MixedMultiOutputFeatures
@@ -51,23 +61,40 @@ def construct_basic_inducing_variables(
         assert share_variables is False
 
         inducing_variables = []
-        for num_ind_var in num_inducing:
-            empty_array = np.zeros((num_ind_var, input_dim), dtype=default_float())
-            inducing_variables.append(InducingPoints(empty_array))
+        for i, num_ind_var in enumerate(num_inducing):
+            if z_init_is_given:
+                assert len(z_init[i]) == num_ind_var
+                z_init_i = z_init[i]
+            else:
+                z_init_i = np.random.randn(num_ind_var, input_dim).astype(dtype=default_float())
+            assert z_init_i.shape == (num_ind_var, input_dim)
+            inducing_variables.append(InducingPoints(z_init_i))
         return SeparateIndependentInducingVariables(inducing_variables)
 
     elif not share_variables:
         inducing_variables = []
-        for _ in range(output_dim):
-            empty_array = np.zeros((num_inducing, input_dim), dtype=default_float())
-            inducing_variables.append(InducingPoints(empty_array))
+        for o in range(output_dim):
+            if z_init_is_given:
+                if z_init.shape != (output_dim, num_inducing, input_dim):
+                    raise ValueError(
+                        "When not sharing variables, z_init must have shape"
+                        "[output_dim, num_inducing, input_dim]"
+                    )
+                z_init_o = z_init[o]
+            else:
+                z_init_o = np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
+            inducing_variables.append(InducingPoints(z_init_o))
         return SeparateIndependentInducingVariables(inducing_variables)
 
     else:
         # TODO: should we assert output_dim is None ?
 
-        empty_array = np.zeros((num_inducing, input_dim), dtype=default_float())
-        shared_ip = InducingPoints(empty_array)
+        z_init = (
+            z_init
+            if z_init_is_given
+            else np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
+        )
+        shared_ip = InducingPoints(z_init)
         return SharedIndependentInducingVariables(shared_ip)
 
 
@@ -104,7 +131,7 @@ def construct_gp_layer(
     input_dim: int,
     output_dim: int,
     kernel_class: Type[gpflow.kernels.Stationary] = gpflow.kernels.SquaredExponential,
-    initializer: Optional[Initializer] = None,
+    z_init: Optional[np.ndarray] = None,
     name: Optional[str] = None,
 ) -> GPLayer:
     """
@@ -124,7 +151,8 @@ def construct_gp_layer(
     :param kernel_class: the kernel class used by the layer.
         Can be as simple as `gpflow.kernels.SquaredExponential`, or complexer
         as `lambda **_: gpflow.kernels.Linear() + gpflow.kernels.Periodic()`.
-    :param name: name for the GP layer
+    :param z_init: initialisation for inducing variable inputs.
+    :param name: name for the GP layer.
 
     :return: a preconfigured GPLayer.
     """
@@ -133,14 +161,13 @@ def construct_gp_layer(
     base_kernel = kernel_class(lengthscales=np.full(input_dim, lengthscale))
     kernel = construct_basic_kernel(base_kernel, output_dim=output_dim, share_hyperparams=True)
     inducing_variable = construct_basic_inducing_variables(
-        num_inducing, input_dim, output_dim=output_dim, share_variables=True,
+        num_inducing, input_dim, output_dim=output_dim, share_variables=True, z_init=z_init,
     )
     gp_layer = GPLayer(
         kernel=kernel,
         inducing_variable=inducing_variable,
         num_data=num_data,
         mean_function=gpflow.mean_functions.Zero(),
-        initializer=initializer,
         name=name,
     )
     return gp_layer

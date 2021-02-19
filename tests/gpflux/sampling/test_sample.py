@@ -6,7 +6,7 @@ import gpflow
 from gpflow.config import default_float, default_jitter
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 from gpflux.sampling.sample import Sample, efficient_sample
 
 
@@ -60,7 +60,7 @@ def test_wilson_efficient_sample(kernel, inducing_variable):
     eigenfunctions = RandomFourierFeatures(kernel, 100, dtype=default_float())
     eigenvalues = np.ones((100, 1), dtype=default_float())
     # To apply Wilson sampling we require the features and eigenvalues of the kernel
-    kernel2 = KernelWithMercerDecomposition(kernel, eigenfunctions, eigenvalues)
+    kernel2 = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
     q_mu, q_sqrt = _get_qmu_qsqrt(kernel, inducing_variable)
 
     sample_func = efficient_sample(

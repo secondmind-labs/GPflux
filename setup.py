@@ -15,9 +15,10 @@ setup(
     name="gpflux",
     version="0.1",
     author="Secondmind Labs",
-    author_email="gpflux@prowler.io",
-    description="GPFlux: Deep GP library",
+    author_email="gpflux@secondmind.ai",
+    description="GPflux: Deep GP library",
     keywords="Deep-Gaussian-processes",
     install_requires=requirements,
     packages=find_namespace_packages(include=["gpflux*"]),
+    package_data={"gpflux": ["py.typed"]},
 )
