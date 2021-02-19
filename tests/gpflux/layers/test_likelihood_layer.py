@@ -1,13 +1,12 @@
-import tensorflow as tf
 import numpy as np
 import pytest
+import tensorflow as tf
 
 from gpflow.kernels import Matern52
 from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson
 from gpflow.mean_functions import Zero
 
-from gpflux.initializers import GivenZInitializer
-from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables
+from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.layers import GPLayer, LikelihoodLayer
 from gpflux.layers.likelihood_layer import LikelihoodLoss, LikelihoodOutputs
 
@@ -22,16 +21,10 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
 
     kernel = construct_basic_kernel(Matern52(), output_dim)
     inducing_vars = construct_basic_inducing_variables(num_inducing, input_dim, output_dim)
-    initializer = GivenZInitializer()
     mean_function = Zero(output_dim)
 
     gp_layer = GPLayer(
-        kernel,
-        inducing_vars,
-        num_data,
-        initializer=initializer,
-        mean_function=mean_function,
-        **gp_layer_kwargs
+        kernel, inducing_vars, num_data, mean_function=mean_function, **gp_layer_kwargs
     )
     return gp_layer, data
 
@@ -106,10 +99,10 @@ def test_losses(GPFlowLikelihood):
 
 
 def test_tensor_coercible():
-    f_mu = tf.zeros([1, 2])
+    f_mean = tf.zeros([1, 2])
     f_var = tf.zeros([1, 2])
     y_mu = tf.ones([1, 2])
     y_var = tf.zeros([1, 2])
-    tensor_coercible = LikelihoodOutputs(f_mu, f_var, y_mu, y_var)
+    tensor_coercible = LikelihoodOutputs(f_mean, f_var, y_mu, y_var)
 
     np.testing.assert_array_equal(y_mu, tf.convert_to_tensor(tensor_coercible))

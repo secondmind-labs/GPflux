@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.10.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -30,7 +30,7 @@ import gpflux
 from gpflow.config import default_float
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 
 tf.keras.backend.set_floatx("float64")
 
@@ -47,16 +47,18 @@ num_rff = 1000
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
 
+eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
+eigenvalues = np.ones((num_rff, 1), dtype=default_float())
+kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
+
 layer = gpflux.layers.GPLayer(
-    kernel,
+    kernel_with_features,
     inducing_variable,
     num_data,
     white=False,
-    verify=False,
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )
-layer._initialized = True
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
 model = gpflux.models.DeepGP([layer], likelihood_layer)
 # %%
@@ -73,11 +75,6 @@ history = model.fit(x=X, y=Y, batch_size=num_data, epochs=100, callbacks=callbac
 
 
 # %%
-eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
-eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-kernel2 = KernelWithMercerDecomposition(None, eigenfunctions, eigenvalues)
-
-
 a, b = 5, 5
 n_x = 1000
 spread = X.max() + b - (X.min() - a)

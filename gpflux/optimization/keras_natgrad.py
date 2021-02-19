@@ -7,6 +7,7 @@ from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 import tensorflow as tf
 from tensorflow.python.util.object_identity import ObjectIdentitySet
 
+import gpflow
 from gpflow import Parameter
 from gpflow.base import TensorType
 from gpflow.models.model import MeanAndVariance
@@ -27,9 +28,9 @@ class NatGradModel(tf.keras.Model):
     NaturalGradient optimizers for q(u) distributions in GP layers.
 
     model.compile() has to be passed a list of optimizers, which must be one
-        (Momentum)NaturalGradient optimizer instance per GPLayer, followed
-        by a regular optimizer (e.g. Adam) as the last element for all other
-        parameters (hyperparameters, inducing point locations).
+    `gpflow.optimizers.NaturalGradient` instance per `GPLayer`, followed
+    by a regular optimizer (e.g. `tf.optimizers.Adam`) as the last element for all other
+    parameters (hyperparameters, inducing point locations).
     """
 
     def __init__(self, *args: Any, other_loss_fn: Callable[[], tf.Tensor] = None, **kwargs: Any):
@@ -41,7 +42,7 @@ class NatGradModel(tf.keras.Model):
         self.other_loss_fn = other_loss_fn
 
     @property
-    def natgrad_optimizers(self) -> List[NaturalGradient]:
+    def natgrad_optimizers(self) -> List[gpflow.optimizers.NaturalGradient]:
         if not hasattr(self, "_all_optimizers"):
             raise AttributeError(
                 "natgrad_optimizers accessed before optimizer being set"
@@ -112,16 +113,12 @@ class NatGradModel(tf.keras.Model):
 
         return variational_params, other_vars
 
-    def _backwards(self, tape: tf.GradientTape, loss: tf.Tensor) -> None:
-        # TODO in TensorFlow 2.2, this method will be replaced by overwriting train_step() instead.
-        # The `_backwards` shim still exists independently in TF 2.2.
-
-        print("Calling _backwards")
+    def _apply_backwards_pass(self, loss: tf.Tensor, tape: tf.GradientTape) -> None:
+        print("Executing NatGradModel backwards pass")
         # TODO(Ti) This is to check tf.function() compilation works and this
         # won't be called repeatedly. Surprisingly, it gets called *twice*...
         # Leaving the print here until we've established why twice, or whether
-        # it's irrelevant, and that it all works correctly in practice with
-        # TensorFlow 2.2.
+        # it's irrelevant, and that it all works correctly in practice.
 
         variational_params, other_vars = self._split_natgrad_params_and_other_vars()
         variational_params_vars = [
@@ -153,30 +150,32 @@ class NatGradModel(tf.keras.Model):
 
         self.optimizer.apply_gradients(zip(other_grads, other_vars))
 
-    def train_step(self, data: Any) -> Mapping[str, Any]:  # pragma: no cover
-        """ For TensorFlow 2.2 """
-        # TODO(Ti) once moving to TensorFlow 2.2, we need to clean up this
-        # method and check it actually works
+    def train_step(self, data: Any) -> Mapping[str, Any]:
+        """
+        The logic for one training step.
+        See https://www.tensorflow.org/guide/keras/customizing_what_happens_in_fit
+        """
+        # TODO(Ti) check it actually works
 
         from tensorflow.python.keras.engine import data_adapter
 
+        data = data_adapter.expand_1d(data)
         x, y, sample_weight = data_adapter.unpack_x_y_sample_weight(data)
-        x, y, sample_weight = data_adapter.expand_1d((x, y, sample_weight))
 
         with tf.GradientTape() as tape:
             y_pred = self.__call__(x, training=True)
             loss = self.compiled_loss(y, y_pred, sample_weight, regularization_losses=self.losses)
+
+        self._apply_backwards_pass(loss, tape=tape)
+
         self.compiled_metrics.update_state(y, y_pred, sample_weight)
-
-        self._backwards(tape, loss)
-
         return {m.name: m.result() for m in self.metrics}
 
 
 class NatGradWrapper(NatGradModel):
     """
-    Wraps a class-based Keras model (e.g. gpflux.models.DeepGP) to make it
-    work with NaturalGradient optimizers. For more details, see NatGradModel.
+    Wraps a class-based Keras model (e.g. `gpflux.models.DeepGP`) to make it
+    work with `NaturalGradient` optimizers. For more details, see `NatGradModel`.
     """
 
     def __init__(self, base_model: tf.keras.Model, *args: Any, **kwargs: Any):

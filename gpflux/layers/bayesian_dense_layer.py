@@ -3,7 +3,7 @@
 # Proprietary and confidential
 """A Bayesian Dense Keras Layer"""
 
-from typing import Any, Callable, Optional, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -14,7 +14,6 @@ from gpflow.kullback_leiblers import gauss_kl
 from gpflow.models.model import MeanAndVariance
 from gpflow.utilities.bijectors import positive, triangular
 
-from gpflux.exceptions import GPInitializationError
 from gpflux.helpers import xavier_initialization_numpy
 from gpflux.layers.trackable_layer import TrackableLayer
 from gpflux.types import ShapeType
@@ -90,12 +89,7 @@ class BayesianDenseLayer(TrackableLayer):
             name="w_sqrt",
         )  # [dim, dim] or [dim]
 
-        self._initialized = False
-
-    def initialize_variational_distribution(self, **initializer_kwargs: Any) -> None:
-        if self._initialized:
-            raise GPInitializationError("Initializing twice!")  # pragma: no cover
-
+    def initialize_variational_distribution(self) -> None:
         if self.w_mu_ini is None:
             w = xavier_initialization_numpy(self.input_dim, self.output_dim)
             b = np.zeros((1, self.output_dim))
@@ -108,8 +102,6 @@ class BayesianDenseLayer(TrackableLayer):
             else:
                 self.w_sqrt_ini = 1e-5 * np.ones((self.dim,))
         self.w_sqrt.assign(self.w_sqrt_ini)
-
-        self._initialized = True
 
     def build(self, input_shape: ShapeType) -> None:
         """Build the variables necessary on first call"""

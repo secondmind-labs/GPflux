@@ -1,0 +1,2 @@
+sacred
+git+git://github.com/hughsalimbeni/bayesian_benchmarks@master

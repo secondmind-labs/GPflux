@@ -41,11 +41,7 @@ def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
     mok = gpflow.kernels.SharedIndependent(kernel, output_dim=1)
     moiv = gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable)
     gp_layer = gpflux.layers.GPLayer(
-        mok,
-        moiv,
-        num_data,
-        initializer=gpflux.initializers.GivenZInitializer(Z=inducing_variable.Z),
-        mean_function=gpflow.mean_functions.Zero(),
+        mok, moiv, num_data, mean_function=gpflow.mean_functions.Zero(),
     )
     likelihood_layer = gpflux.layers.LikelihoodLayer(likelihood)
     model = gpflux.models.DeepGP([gp_layer], likelihood_layer)

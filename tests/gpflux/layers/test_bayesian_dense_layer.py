@@ -53,7 +53,6 @@ def test_build(is_mean_field):
     output_dim = Y.shape[-1]
     num_data = X.shape[0]
     dim = (input_dim + 1) * output_dim
-    assert not bnn_layer._initialized
 
     bnn_layer.build(X.shape)
     assert bnn_layer.input_dim == input_dim
@@ -67,7 +66,6 @@ def test_build(is_mean_field):
         assert bnn_layer.w_sqrt.shape == (dim, dim)
     else:
         assert bnn_layer.w_sqrt.shape == (dim,)
-    assert bnn_layer._initialized
 
 
 @pytest.mark.parametrize("is_mean_field", [True, False])
@@ -151,13 +149,3 @@ def test_losses_are_added(is_mean_field):
     _ = bnn_layer(X, training=True)
     assert len(bnn_layer.losses) == 1
     assert bnn_layer.losses == [bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data]
-
-
-@pytest.mark.parametrize("is_mean_field", [True, False])
-@pytest.mark.parametrize("w_given", [True, False])
-def test_initialization(is_mean_field, w_given):
-    bnn_layer, (X, Y) = setup_bnn_layer_and_data(is_mean_field, w_given)
-    assert not bnn_layer._initialized
-
-    _ = bnn_layer(X)
-    assert bnn_layer._initialized

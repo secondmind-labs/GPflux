@@ -38,11 +38,15 @@ def model(data) -> tf.keras.models.Model:
     X, Y = data
     num_data, input_dim = X.shape
 
-    layer1 = construct_gp_layer(num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim)
+    layer1 = construct_gp_layer(
+        num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim, name="gp0"
+    )
     layer1.returns_samples = True
 
     output_dim = Y.shape[-1]
-    layer2 = construct_gp_layer(num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim)
+    layer2 = construct_gp_layer(
+        num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim, name="gp1"
+    )
     layer2.returns_samples = False
 
     likelihood_layer = gpflux.layers.LikelihoodLayer(
@@ -93,7 +97,8 @@ def test_tensorboard_callback(tmp_path, model, data, update_freq):
         # TODO(VD) investigate why epoch_lr is not in tensorboard files
         # "epoch_lr",
         "epoch_loss",
-        "epoch_elbo_kl_gp",
+        "epoch_gp0_prior_kl",
+        "epoch_gp1_prior_kl",
         "layers[1].kernel.kernel.lengthscales",
         "layers[1].kernel.kernel.variance",
         "layers[2].kernel.kernel.lengthscales[0]",
@@ -106,7 +111,8 @@ def test_tensorboard_callback(tmp_path, model, data, update_freq):
     if update_freq == "batch":
         expected_tags |= {
             "batch_loss",
-            "batch_elbo_kl_gp",
+            "batch_gp0_prior_kl",
+            "batch_gp1_prior_kl",
         }
 
     # Check all model variables, loss and lr are in tensorboard.

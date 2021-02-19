@@ -8,8 +8,7 @@ class ShapeIncompatibilityError(Exception):
     pass
 
 
-# Layer Errors
-class GPInitializationError(Exception):
+class GPLayerIncompatibilityException(Exception):
     pass
 
 

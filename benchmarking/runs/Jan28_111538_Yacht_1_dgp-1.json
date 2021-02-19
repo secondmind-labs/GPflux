@@ -1,0 +1,15 @@
+{
+  "date": "Jan28_111538",
+  "dataset": "Yacht",
+  "split": 1,
+  "num_layers": 1,
+  "model_name": "dgp-1",
+  "num_inducing": 256,
+  "batch_size": 1024,
+  "num_epochs": 1000,
+  "seed": 768727755,
+  "rmse": 0.05693725464170446,
+  "mse": 0.003241850966134296,
+  "nlpd": -0.9806749034471265,
+  "commit": "f6592411902e35d5141664eb9de061dcb16d2cb8"
+}

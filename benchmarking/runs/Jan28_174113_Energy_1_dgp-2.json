@@ -1,0 +1,15 @@
+{
+  "date": "Jan28_174113",
+  "dataset": "Energy",
+  "split": 1,
+  "num_layers": 2,
+  "model_name": "dgp-2",
+  "num_inducing": 256,
+  "batch_size": 1024,
+  "num_epochs": 1000,
+  "seed": 156249301,
+  "rmse": 0.04734681081617334,
+  "mse": 0.002241720494462509,
+  "nlpd": -1.144192416936825,
+  "commit": "1251726e88719b7970fa7c4e515c9c62d1f090a9"
+}
