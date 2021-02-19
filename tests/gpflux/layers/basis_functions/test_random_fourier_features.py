@@ -15,7 +15,7 @@ from gpflux.layers.basis_functions.random_fourier_features import (
 )
 
 
-@pytest.fixture(name="n_dims", params=[2, 3])
+@pytest.fixture(name="n_dims", params=[1, 2, 3])
 def _n_dims_fixture(request):
     return request.param
 
@@ -48,27 +48,6 @@ def test_throw_for_unsupported_kernel():
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-def test_fourier_features_can_approximate_kernel_1D(lengthscale, kernel_class):
-    n_features = 10000
-    x_rows = 20
-    y_rows = 30
-
-    kernel = kernel_class(lengthscales=lengthscale)
-    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
-
-    x = tf.random.uniform((x_rows, 1), dtype=tf.float64)
-    y = tf.random.uniform((y_rows, 1), dtype=tf.float64)
-
-    u = fourier_features(x)
-    v = fourier_features(y)
-    approx_kernel_matrix = inner_product(u, v)
-
-    actual_kernel_matrix = kernel.K(x, y)
-
-    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
-
-
-@pytest.mark.parameterize(name="kernel_class", params=RFF_SUPPORTED_KERNELS)
 def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthscale, n_dims):
     n_features = 10000
     x_rows = 20
