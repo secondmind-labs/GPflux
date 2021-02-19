@@ -70,7 +70,7 @@ def test_fourier_features_can_approximate_kernel_1D(lengthscale, kernel_class):
 
 @pytest.mark.parameterize(kernel_class, [Matern, SquaredExponential])
 def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthscale, n_dims):
-# TODO update body to use kernel_class
+    # TODO update body to use kernel_class
     n_features = 10000
     x_rows = 20
     y_rows = 30
