@@ -40,16 +40,18 @@ X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 
 # %%
-kernel = gpflow.kernels.Matern52()
 Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
-
-num_rff = 1000
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
+
+# %%
+kernel = gpflow.kernels.Matern52()
+num_rff = 1000
 eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
 kernel2 = KernelWithFeatureDecomposition(None, eigenfunctions, eigenvalues)
 
+# %%
 layer = gpflux.layers.GPLayer(
     kernel2,
     inducing_variable,
@@ -60,8 +62,6 @@ layer = gpflux.layers.GPLayer(
 )
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
 model = gpflux.models.DeepGP([layer], likelihood_layer)
-# %%
-
 model.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 callbacks = [
@@ -72,16 +72,15 @@ callbacks = [
 
 history = model.fit(x=X, y=Y, batch_size=num_data, epochs=100, callbacks=callbacks)
 
+# %%
 a, b = 5, 5
 n_x = 1000
 spread = X.max() + b - (X.min() - a)
-X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a), axis=0)
 X_test = np.linspace(X.min() - a, X.max() + b, n_x).reshape(-1, 1)
 
 f_dist = model.predict_f(X_test)
 m = f_dist.mean().numpy()
 v = f_dist.scale.diag.numpy()
-
 
 n_sim = 10
 for i in range(n_sim):
