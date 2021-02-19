@@ -68,16 +68,15 @@ def test_fourier_features_can_approximate_kernel_1D(lengthscale, kernel_class):
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
 
 
-@pytest.mark.parameterize(kernel_class, [Matern, SquaredExponential])
+@pytest.mark.parameterize(name="kernel_class", params=RFF_SUPPORTED_KERNELS)
 def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthscale, n_dims):
-    # TODO update body to use kernel_class
     n_features = 10000
     x_rows = 20
     y_rows = 30
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    kernel = gpflow.kernels.SquaredExponential(lengthscales=lengthscales)
+    kernel = kernel_class(lengthscales=lengthscales)
     fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
@@ -90,28 +89,6 @@ def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthsc
     actual_kernel_matrix = kernel.K(x, y)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
-
-
-def test_fourier_features_can_approximate_kernel_multidim_Matern(lengthscale, n_dims):
-    n_features = 100000
-    x_rows = 20
-    y_rows = 30
-
-    # ARD
-    lengthscales = np.random.rand((n_dims)) * lengthscale
-
-    kernel = gpflow.kernels.Matern52(lengthscales=lengthscales)
-    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
-
-    x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
-    y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
-
-    u = fourier_features(x)
-    v = fourier_features(y)
-    approx_kernel_matrix = inner_product(u, v)
-
-    actual_kernel_matrix = kernel.K(x, y)
-    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.02)
 
 
 def test_fourier_features_shapes(n_features, n_dims, batch_size):
