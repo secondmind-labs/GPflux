@@ -54,9 +54,6 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
     def build(self, input_shape: ShapeType) -> None:
         input_dim = input_shape[-1]
 
-        # if not isinstance(self.kernel, gpflow.kernels.SquaredExponential):
-        #     tf.assert_equal(input_dim, 1, "Matern kernels only support 1 dimensional inputs")
-
         shape_bias = [1, self.output_dim]
         self.b = self._sample_bias(shape_bias, dtype=self.dtype)
         shape_weights = [self.output_dim, input_dim]
@@ -81,7 +78,6 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
             # Sample student-t using "Implicit Reparameterization Gradients",
             # Figurnov et al.
-            # TODO(VD): sample directly from Student-t using TFP.
             normal_rvs = tf.random.normal(shape=shape, **kwargs)
             shape = tf.concat([shape, [1]], axis=0)
             gamma_rvs = tf.tile(tf.random.gamma(shape, alpha=nu, beta=nu, **kwargs), [1, shape[-1]])
