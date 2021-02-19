@@ -79,7 +79,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
             # Sample student-t using "Implicit Reparameterization Gradients",
             # Figurnov et al.
             normal_rvs = tf.random.normal(shape=shape, **kwargs)
-            shape = tf.concat([shape, [1]], axis=0)
+            shape = tf.concat([shape[:-1], [1]], axis=0)
             gamma_rvs = tf.tile(tf.random.gamma(shape, alpha=nu, beta=nu, **kwargs), [1, shape[-1]])
             return tf.math.rsqrt(gamma_rvs) * normal_rvs
 
