@@ -112,7 +112,7 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
 
 
 def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims, n_features):
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = kernel_class()
 
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
