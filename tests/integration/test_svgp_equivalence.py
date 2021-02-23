@@ -41,7 +41,10 @@ def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
     mok = gpflow.kernels.SharedIndependent(kernel, output_dim=1)
     moiv = gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable)
     gp_layer = gpflux.layers.GPLayer(
-        mok, moiv, num_data, mean_function=gpflow.mean_functions.Zero(),
+        mok,
+        moiv,
+        num_data,
+        mean_function=gpflow.mean_functions.Zero(),
     )
     likelihood_layer = gpflux.layers.LikelihoodLayer(likelihood)
     model = gpflux.models.DeepGP([gp_layer], likelihood_layer)
@@ -164,7 +167,9 @@ def keras_fit_natgrad(
     adam = tf.optimizers.Adam(adam_learning_rate)
     likelihood = base_model.likelihood
     model.compile(
-        optimizer=[natgrad, adam], loss=LikelihoodLoss(likelihood), run_eagerly=run_eagerly,
+        optimizer=[natgrad, adam],
+        loss=LikelihoodLoss(likelihood),
+        run_eagerly=run_eagerly,
     )
     X, Y = data
     dataset_tuple = (X, Y)
@@ -225,7 +230,8 @@ def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
 
 
 @pytest.mark.parametrize(
-    "sldgp_fitter", [fit_natgrad, keras_fit_natgrad],
+    "sldgp_fitter",
+    [fit_natgrad, keras_fit_natgrad],
 )
 def test_svgp_equivalence_with_natgrad(sldgp_fitter):
     maxiter = 10
@@ -278,7 +284,8 @@ def run_gpflow_svgp(data, optimizer, maxiter):
 
 
 @pytest.mark.parametrize(
-    "optimizer", ["natgrad", "adam", "scipy", "keras_adam", "keras_natgrad"],
+    "optimizer",
+    ["natgrad", "adam", "scipy", "keras_adam", "keras_natgrad"],
 )
 def test_run_gpflux_sldgp(optimizer):
     data = load_data()

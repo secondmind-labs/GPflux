@@ -91,7 +91,11 @@ dgp, dgp_likelihood = create_model(tf.keras.Model)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
+        monitor="loss",
+        patience=5,
+        factor=0.95,
+        verbose=1,
+        min_lr=1e-6,
     )
 ]
 
@@ -104,7 +108,11 @@ dgp_natgrad, dgp_natgrad_likelihood = create_model(gpflux.optimization.NatGradMo
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
+        monitor="loss",
+        patience=5,
+        factor=0.95,
+        verbose=1,
+        min_lr=1e-6,
     )
 ]
 

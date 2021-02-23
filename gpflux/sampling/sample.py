@@ -82,7 +82,13 @@ def _efficient_sample_conditional_gaussian(
                 self.X = tf.concat([self.X, X_new], axis=0)
 
             mean, cov = conditional(
-                self.X, inducing_variable, kernel, q_mu, q_sqrt=q_sqrt, white=white, full_cov=True,
+                self.X,
+                inducing_variable,
+                kernel,
+                q_mu,
+                q_sqrt=q_sqrt,
+                white=white,
+                full_cov=True,
             )  # mean: [N_old+N_new, P], cov: [P, N_old+N_new, N_old+N_new]
             mean = tf.linalg.matrix_transpose(mean)  # [P, N_old+N_new]
             f_old = tf.linalg.matrix_transpose(self.f)  # [P, N_old]
@@ -127,7 +133,8 @@ def _efficient_sample_matheron_rule(
 
     M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
     u_sample_noise = tf.matmul(
-        q_sqrt, tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
+        q_sqrt,
+        tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
     u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]

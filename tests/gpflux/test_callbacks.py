@@ -71,7 +71,11 @@ def test_tensorboard_callback(tmp_path, model, data, update_freq):
     model.compile(optimizer=optimizer)
     callbacks = [
         tf.keras.callbacks.ReduceLROnPlateau(
-            monitor="loss", patience=1, factor=0.95, verbose=1, min_lr=1e-6,
+            monitor="loss",
+            patience=1,
+            factor=0.95,
+            verbose=1,
+            min_lr=1e-6,
         ),
         # To write the LR to TensorBoard the `TensorBoard` callback needs to be
         # instantiated after the `ReduceLROnPlateau` callback.
