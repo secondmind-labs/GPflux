@@ -24,7 +24,9 @@ class LatentVariableLayer(TrackableLayer):
     """
 
     def __init__(
-        self, encoder: tf.keras.Model, prior: tfp.distributions.Distribution,
+        self,
+        encoder: tf.keras.Model,
+        prior: tfp.distributions.Distribution,
     ):
         """
         :param prior: A distribution representing the prior over the latent variable
@@ -81,7 +83,10 @@ class LatentVariableLayer(TrackableLayer):
         return self.prior.sample(sample_shape)
 
     def call(
-        self, recognition_data: TensorType, training: bool = False, seed: Optional[int] = None,
+        self,
+        recognition_data: TensorType,
+        training: bool = False,
+        seed: Optional[int] = None,
     ) -> TensorType:
         """
         When training: draw a sample of the latent variable from the posterior,

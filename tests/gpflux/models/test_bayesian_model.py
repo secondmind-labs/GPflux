@@ -50,7 +50,10 @@ def build_LVGPGP_Bayesian_Model(x_dim, w_dim, y_dim, num_data):
         f = gp(f)
 
     return BayesianModel(
-        X_input=[x, y], F_output=f, likelihood_layer=likelihood_layer, num_data=num_data,
+        X_input=[x, y],
+        F_output=f,
+        likelihood_layer=likelihood_layer,
+        num_data=num_data,
     )
 
 

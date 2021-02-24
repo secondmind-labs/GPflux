@@ -20,7 +20,9 @@ class ApproximateKernel(gpflow.kernels.Kernel):
     """
 
     def __init__(
-        self, feature_functions: tf.keras.layers.Layer, feature_coefficients: TensorType,
+        self,
+        feature_functions: tf.keras.layers.Layer,
+        feature_coefficients: TensorType,
     ):
         """
         :param feature_functions: Has a __call__ that computes L features for any

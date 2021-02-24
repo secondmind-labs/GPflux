@@ -61,7 +61,11 @@ class BayesianModel(tf.keras.Model):
         return self.__call__(X)
 
     def predict_f_samples(
-        self, X: InputData, num_samples: int, full_cov: bool = False, full_output_cov: bool = False,
+        self,
+        X: InputData,
+        num_samples: int,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> TensorType:
         if full_cov or full_output_cov:
             raise NotImplementedError

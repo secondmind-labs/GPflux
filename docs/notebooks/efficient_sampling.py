@@ -65,7 +65,11 @@ model.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
+        monitor="loss",
+        patience=5,
+        factor=0.95,
+        verbose=1,
+        min_lr=1e-6,
     )
 ]
 

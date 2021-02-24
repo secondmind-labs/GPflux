@@ -112,14 +112,14 @@ class GPLayer(DistributionLambda):
             np.zeros((self.num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name=f"{self.name}_q_mu" if self.name else "q_mu",
-        )  # [num_inducing, output_dim]
+        )  # [num_inducing, num_latent_gps]
 
         self.q_sqrt = Parameter(
             np.stack([np.eye(self.num_inducing) for _ in range(self.num_latent_gps)]),
             transform=triangular(),
             dtype=default_float(),
             name=f"{self.name}_q_sqrt" if self.name else "q_sqrt",
-        )  # [output_dim, num_inducing, num_inducing]
+        )  # [num_latent_gps, num_inducing, num_inducing]
         self._num_samples = num_samples
 
     def predict(
@@ -173,22 +173,25 @@ class GPLayer(DistributionLambda):
 
         # TF quirk: add_loss must add a tensor to compile
         if kwargs.get("training"):
-            loss = self.prior_kl(whiten=self.white)
+            loss_per_datapoint = self.prior_kl(whiten=self.white) / self.num_data
         else:
-            loss = tf.constant(0.0, dtype=default_float())
-        loss_per_datapoint = loss / self.num_data
-        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
+            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
         self.add_loss(loss_per_datapoint)
+
+        # Metric names should be unique; otherwise they get overwritten if you
+        # have multiple with the same name
+        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
         return outputs
 
     def prior_kl(self, whiten: bool = True) -> TensorType:
         """
-        The KL divergence from the variational distribution to the prior
+        The KL divergence from the prior p(u) to the variational distribution q(u)
+        where q(u) = N(q_mu, q_sqrt q_sqrt^T)
 
-        :param whiten:
-        :return: KL divergence from N(q_mu, q_sqrt) to N(0, I) independently for each GP
+        :param whiten: if True, p(u) = N(0, I); else, p(u) = N(0, K)
+        :return: KL[q(u)∥p(u)]
         """
         return prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=whiten)
 

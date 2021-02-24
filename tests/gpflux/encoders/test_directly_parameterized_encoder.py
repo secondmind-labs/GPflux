@@ -9,10 +9,12 @@ import tensorflow as tf
 from gpflux.encoders import DirectlyParameterizedNormalDiag
 from gpflux.exceptions import EncoderInitializationError
 
+num_data = 200
+latent_dim = 3
+
 
 def test_shapes():
     seed = 300
-    num_data, latent_dim = 200, 3
     np.random.seed(seed)
     dp_encoder = DirectlyParameterizedNormalDiag(num_data, latent_dim)
 
@@ -28,22 +30,20 @@ def test_shapes():
     np.testing.assert_allclose(dp_encoder.stds.numpy(), expected_stds, rtol=1e-11)
 
 
-def test_call():
-    num_data, latent_dim = 200, 3
-
-    means = np.random.randn(num_data, latent_dim)
+@pytest.mark.parametrize("means", [None, np.random.randn(num_data, latent_dim)])
+def test_call(means):
     dp_encoder = DirectlyParameterizedNormalDiag(num_data, latent_dim, means)
     encoder_means, encoder_std = dp_encoder(inputs=None)
 
-    assert np.all(tf.shape(encoder_means) == (num_data, latent_dim))
-    assert np.all(means == encoder_means)
     assert encoder_means is dp_encoder.means
     assert encoder_std is dp_encoder.stds
 
+    assert np.all(tf.shape(encoder_means) == (num_data, latent_dim))
+    if means is not None:
+        np.testing.assert_array_equal(encoder_means.numpy(), means)
+
 
 def test_bad_shapes():
-    num_data, latent_dim = 200, 3
-
     means = np.random.randn(num_data, latent_dim + 4)
     with pytest.raises(EncoderInitializationError):
         _ = DirectlyParameterizedNormalDiag(num_data, latent_dim, means)
