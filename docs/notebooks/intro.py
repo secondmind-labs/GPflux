@@ -26,8 +26,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-import tensorflow as tf
-
+tf.keras.backend.set_floatx("float64")
 tf.get_logger().setLevel("INFO")
 
 # %% [markdown]
@@ -95,7 +94,8 @@ We now pass our GP layer and likelihood layer into a GPflux `DeepGP` model. The 
 """
 
 # %%
-model = gpflux.models.DeepGP(gp_layers=[gp_layer], likelihood_layer=likelihood_layer)
+single_layer_dgp = gpflux.models.DeepGP([gp_layer], likelihood_layer)
+model = single_layer_dgp.as_training_model()
 model.compile(tf.optimizers.Adam(0.01))
 
 # %% [markdown]
@@ -104,7 +104,7 @@ We train the model by calling `fit`. Keras handles minibatching the data, and ke
 """
 
 # %%
-history = model.fit(X, Y, epochs=int(1e3), verbose=0)
+history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
 plt.plot(history.history["loss"])
 
 # %% [markdown]
@@ -114,7 +114,7 @@ We can now visualise the fit. We clearly see that a single layer GP with a simpl
 
 
 # %%
-def plot(model: gpflux.models.DeepGP, X, Y, ax=None):
+def plot(model, X, Y, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
 
@@ -136,7 +136,7 @@ def plot(model: gpflux.models.DeepGP, X, Y, ax=None):
     ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
 
 
-plot(model, X, Y)
+plot(single_layer_dgp.as_prediction_model(), X, Y)
 
 # %% [markdown]
 """
@@ -165,17 +165,18 @@ gp_layer2 = gpflux.layers.GPLayer(
 )
 
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))
-model = gpflux.models.DeepGP(gp_layers=[gp_layer1, gp_layer2], likelihood_layer=likelihood_layer)
+two_layer_dgp = gpflux.models.DeepGP([gp_layer1, gp_layer2], likelihood_layer)
+model = two_layer_dgp.as_training_model()
 model.compile(tf.optimizers.Adam(0.01))
 
 # %%
-history = model.fit(X, Y, epochs=int(1e3), verbose=0)
+history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
 
 # %%
 plt.plot(history.history["loss"])
 
 # %%
-plot(model, X, Y)
+plot(two_layer_dgp.as_prediction_model(), X, Y)
 
 # %% [markdown]
 """

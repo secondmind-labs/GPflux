@@ -16,7 +16,7 @@ class CONFIG:
     hidden_dim = 11
     num_inducing = 13
     num_data = 7
-    num_epochs = 29
+    num_epochs = 3
 
     # model setting:
     likelihood_variance = 0.05
@@ -24,14 +24,14 @@ class CONFIG:
 
 @pytest.fixture
 def data() -> Tuple[np.ndarray, np.ndarray]:
-    """Step function: f(x) = -1 for x <=0; elif 1 for x > 0."""
+    """ Step function: f(x) = -1 for x <= 0 and 1 for x > 0. """
     X = np.linspace(-1, 1, CONFIG.num_data)
-    Y = np.where(X > 0, np.ones_like(X), -1.0 * np.ones_like(X))
+    Y = np.where(X > 0, np.ones_like(X), -np.ones_like(X))
     return (X.reshape(-1, 1), Y.reshape(-1, 1))
 
 
 @pytest.fixture
-def model(data) -> tf.keras.models.Model:
+def model_and_loss(data) -> Tuple[tf.keras.models.Model, tf.keras.losses.Loss]:
     """
     Builds a two-layer deep GP model.
     """
@@ -41,34 +41,37 @@ def model(data) -> tf.keras.models.Model:
     layer1 = construct_gp_layer(
         num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim, name="gp0"
     )
-    layer1.returns_samples = True
 
     output_dim = Y.shape[-1]
     layer2 = construct_gp_layer(
         num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim, name="gp1"
     )
-    layer2.returns_samples = False
 
-    likelihood_layer = gpflux.layers.LikelihoodLayer(
-        gpflow.likelihoods.Gaussian(CONFIG.likelihood_variance)
-    )
-    gpflow.set_trainable(likelihood_layer.likelihood.variance, False)
+    likelihood = gpflow.likelihoods.Gaussian(CONFIG.likelihood_variance)
+    gpflow.set_trainable(likelihood.variance, False)
 
     X = tf.keras.Input((input_dim,))
     f1 = layer1(X)
     f2 = layer2(f1)
-    y = likelihood_layer(f2)
-    return tf.keras.Model(inputs=X, outputs=y)
+
+    # We add a dummy layer so that the likelihood variance is discovered as trainable:
+    likelihood_container = gpflux.layers.TrackableLayer()
+    likelihood_container.likelihood = likelihood
+    y = likelihood_container(f2)
+
+    loss = gpflux.losses.LikelihoodLoss(likelihood)
+    return tf.keras.Model(inputs=X, outputs=y), loss
 
 
 @pytest.mark.parametrize("update_freq", ["epoch", "batch"])
-def test_tensorboard_callback(tmp_path, model, data, update_freq):
+def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
     """Check the correct population of the TensorBoard event files"""
 
     tmp_path = str(tmp_path)
     dataset = tf.data.Dataset.from_tensor_slices(data).batch(CONFIG.num_data)
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
-    model.compile(optimizer=optimizer)
+    model, loss = model_and_loss
+    model.compile(optimizer=optimizer, loss=loss)
     callbacks = [
         tf.keras.callbacks.ReduceLROnPlateau(
             monitor="loss",

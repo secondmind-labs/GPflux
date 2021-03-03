@@ -31,6 +31,7 @@ from gpflow.config import default_float
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
 from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.models.deep_gp import sample_dgp
 
 tf.keras.backend.set_floatx("float64")
 
@@ -41,7 +42,7 @@ num_data, input_dim = X.shape
 
 # %%
 kernel = gpflow.kernels.SquaredExponential()
-Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
+Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1)
 
 num_rff = 1000
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
@@ -59,7 +60,8 @@ layer = gpflux.layers.GPLayer(
     mean_function=gpflow.mean_functions.Zero(),
 )
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
-model = gpflux.models.DeepGP([layer], likelihood_layer)
+dgp = gpflux.models.DeepGP([layer], likelihood_layer)
+model = dgp.as_training_model()
 # %%
 
 model.compile(tf.optimizers.Adam(learning_rate=0.1))
@@ -74,7 +76,9 @@ callbacks = [
     )
 ]
 
-history = model.fit(x=X, y=Y, batch_size=num_data, epochs=100, callbacks=callbacks)
+history = model.fit(
+    {"inputs": X, "targets": Y}, batch_size=num_data, epochs=100, callbacks=callbacks
+)
 
 
 # %%
@@ -85,17 +89,16 @@ spread = X.max() + b - (X.min() - a)
 X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
 X_test_2 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
 
-f_dist = model.predict_f(X_test)
-m = f_dist.mean().numpy()
-v = f_dist.scale.diag.numpy()
+f_mean, f_var = dgp.predict_f(X_test)
+f_scale = np.sqrt(f_var)
 
-f_sample_prior = model.sample()
-plt.plot(X_test_1, f_sample_prior(X_test_1).numpy(), "C1.")
-plt.plot(X_test_2, f_sample_prior(X_test_2).numpy(), "C2.")
+f_sample = sample_dgp(dgp)
+plt.plot(X_test_1, f_sample(X_test_1), "C1.")
+plt.plot(X_test_2, f_sample(X_test_2), "C2.")
 
-plt.plot(X_test, m, "C0")
-plt.plot(X_test, m + v ** 0.5, "C0--")
-plt.plot(X_test, m - v ** 0.5, "C0--")
+plt.plot(X_test, f_mean, "C0")
+plt.plot(X_test, f_mean + f_scale, "C0--")
+plt.plot(X_test, f_mean - f_scale, "C0--")
 plt.plot(X, Y, "kx")
 plt.xlim(X.min() - a, X.max() + b)
 plt.ylim(Y.min() - a, Y.max() + b)

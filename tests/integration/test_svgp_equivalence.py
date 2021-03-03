@@ -1,4 +1,5 @@
 import os
+from typing import Union
 
 import numpy as np
 import pytest
@@ -7,7 +8,6 @@ import tensorflow as tf
 import gpflow
 
 import gpflux
-from gpflux.layers import LikelihoodLoss
 
 tf.keras.backend.set_floatx("float64")
 
@@ -24,6 +24,13 @@ def get_num_data(data):
     return len(X)
 
 
+def make_dataset(data, as_dict=True):
+    X, Y = data
+    dataset_base = {"inputs": X, "targets": Y} if as_dict else (X, Y)
+    batch_size = get_num_data(data)
+    return tf.data.Dataset.from_tensor_slices(dataset_base).batch(batch_size)
+
+
 def make_kernel_likelihood_iv():
     kernel = gpflow.kernels.SquaredExponential(variance=0.7, lengthscales=0.6)
     likelihood = gpflow.likelihoods.Gaussian(variance=0.08)
@@ -37,31 +44,30 @@ def create_gpflow_svgp(kernel, likelihood, inducing_variable):
     return gpflow.models.SVGP(kernel, likelihood, inducing_variable)
 
 
-def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
+def create_gp_layer(kernel, inducing_variable, num_data):
     mok = gpflow.kernels.SharedIndependent(kernel, output_dim=1)
     moiv = gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable)
-    gp_layer = gpflux.layers.GPLayer(
-        mok,
-        moiv,
-        num_data,
-        mean_function=gpflow.mean_functions.Zero(),
-    )
+    return gpflux.layers.GPLayer(mok, moiv, num_data, mean_function=gpflow.mean_functions.Zero())
+
+
+def create_gpflux_sldgp(kernel, likelihood, inducing_variable, num_data):
+    gp_layer = create_gp_layer(kernel, inducing_variable, num_data)
     likelihood_layer = gpflux.layers.LikelihoodLayer(likelihood)
-    model = gpflux.models.DeepGP([gp_layer], likelihood_layer)
-    # The model must be compiled to add the loss function.
-    model.compile()
+    model = gpflux.models.DeepGP([gp_layer], likelihood_layer, num_data=num_data)
     return model
 
 
-def assign_svgp_to_sldgp(svgp, sldgp):
-    # NOTE: We need to call the prediction method first to make sure that the
-    # Keras layers have built and the initializers have been called already;
-    # otherwise the initializers would overwrite the assigned q_mu/q_sqrt!
-    _ = sldgp.predict_f(
-        svgp.inducing_variable.Z
-    )  # We cannot call .build() directly as the inputs to the model are (X, Y) tuple, not a float
+def create_gpflux_sequential_and_loss(kernel, likelihood, inducing_variable, num_data):
+    gp_layer = create_gp_layer(kernel, inducing_variable, num_data)
+    loss = gpflux.losses.LikelihoodLoss(likelihood)
+    likelihood_container = gpflux.layers.TrackableLayer()
+    likelihood_container.likelihood = likelihood  # for likelihood to be discovered as trainable
+    model = tf.keras.Sequential([gp_layer, likelihood_container])
+    return model, loss
 
-    gp = sldgp.gp_layers[0]
+
+def assign_svgp_to_sldgp(svgp, sldgp):
+    [gp] = sldgp.f_layers
     gp.q_mu.assign(svgp.q_mu)
     gp.q_sqrt.assign(svgp.q_sqrt)
     kernel = gp.kernel.kernel
@@ -69,7 +75,7 @@ def assign_svgp_to_sldgp(svgp, sldgp):
     kernel.lengthscales.assign(svgp.kernel.lengthscales)
     iv = gp.inducing_variable.inducing_variable
     iv.Z.assign(svgp.inducing_variable.Z)
-    sldgp.likelihood.variance.assign(svgp.likelihood.variance)
+    sldgp.likelihood_layer.likelihood.variance.assign(svgp.likelihood.variance)
 
 
 def fit_scipy(model, data, maxiter=100):
@@ -82,9 +88,8 @@ def fit_scipy(model, data, maxiter=100):
 
 def assert_equivalence(svgp, sldgp, data, **tol_kws):
     X, Y = data
-    np.testing.assert_allclose(svgp.elbo(data), sldgp.elbo(data), **tol_kws)
-    f_dist = sldgp.predict_f(X)
-    np.testing.assert_allclose(svgp.predict_f(X), (f_dist.mean(), f_dist.scale.diag), **tol_kws)
+    np.testing.assert_allclose(sldgp.elbo(data), svgp.elbo(data), **tol_kws)
+    np.testing.assert_allclose(sldgp.predict_f(X), svgp.predict_f(X), **tol_kws)
 
 
 def test_svgp_equivalence_after_assign():
@@ -96,7 +101,9 @@ def test_svgp_equivalence_after_assign():
     assert_equivalence(svgp, sldgp, data)
 
 
-def fit_adam(model, data, maxiter, adam_learning_rate=0.01):
+def fit_adam(
+    model: Union[gpflow.models.SVGP, gpflux.models.DeepGP], data, maxiter, adam_learning_rate=0.01
+):
     X, Y = data
     num_data = len(X)
 
@@ -122,67 +129,62 @@ def fit_adam(model, data, maxiter, adam_learning_rate=0.01):
         optimization_step()
 
 
-def keras_fit_adam(model, data, maxiter, adam_learning_rate=0.01):
+def _keras_fit_adam(model, dataset, maxiter, adam_learning_rate=0.01, loss=None):
+    model.compile(optimizer=tf.optimizers.Adam(adam_learning_rate), loss=loss)
+    model.fit(dataset, epochs=maxiter)
+
+
+def keras_fit_adam(sldgp: gpflux.models.DeepGP, data, maxiter, adam_learning_rate=0.01):
+    model = sldgp.as_training_model()
+    dataset = make_dataset(data)
+    _keras_fit_adam(model, dataset, maxiter, adam_learning_rate=adam_learning_rate)
+
+
+def _keras_fit_natgrad(
+    base_model,
+    dataset,
+    maxiter,
+    adam_learning_rate=0.01,
+    gamma=1.0,
+    loss=None,
+    run_eagerly=None,
+):
+    model = gpflux.optimization.NatGradWrapper(base_model)
+    natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
     adam = tf.optimizers.Adam(adam_learning_rate)
-    model.compile(optimizer=adam)
-    X, Y = data
-    dataset_tuple = (X, Y)
-    batch_size = len(X)
-    train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).batch(batch_size)
-    model.fit(train_dataset, epochs=maxiter)
-
-
-@pytest.mark.parametrize("sldgp_fitter", [fit_adam, keras_fit_adam])
-def test_svgp_equivalence_with_adam(sldgp_fitter, maxiter=500):
-    X, Y = data = load_data()
-
-    svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
-    fit_adam(svgp, data, maxiter=maxiter)
-
-    sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
-    sldgp_fitter(sldgp, data, maxiter=maxiter)
-
-    assert_equivalence(svgp, sldgp, data)
+    model.compile(
+        optimizer=[natgrad, adam],
+        loss=loss,
+        run_eagerly=run_eagerly,
+    )
+    model.fit(dataset, epochs=maxiter)
 
 
 def keras_fit_natgrad(
-    base_model,
+    sldgp,
     data,
-    gamma=1.0,
+    maxiter,
     adam_learning_rate=0.01,
-    maxiter=1000,
-    use_other_loss_fn=False,
+    gamma=1.0,
     run_eagerly=None,
 ):
-    if use_other_loss_fn:
-
-        def other_loss_fn():
-            return -base_model.elbo(data)
-
-    else:
-        other_loss_fn = None
-
-    model = gpflux.optimization.NatGradWrapper(base_model, other_loss_fn=other_loss_fn)
-    natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
-    adam = tf.optimizers.Adam(adam_learning_rate)
-    likelihood = base_model.likelihood
-    model.compile(
-        optimizer=[natgrad, adam],
-        loss=LikelihoodLoss(likelihood),
+    base_model = sldgp.as_training_model()
+    dataset = make_dataset(data)
+    _keras_fit_natgrad(
+        base_model,
+        dataset,
+        maxiter,
+        adam_learning_rate=adam_learning_rate,
+        gamma=gamma,
         run_eagerly=run_eagerly,
     )
-    X, Y = data
-    dataset_tuple = (X, Y)
-    batch_size = len(X)
-    train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).batch(batch_size)
-    model.fit(train_dataset, epochs=maxiter)
 
 
-def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
+def fit_natgrad(model, data, maxiter, adam_learning_rate=0.01, gamma=1.0):
     if isinstance(model, gpflow.models.SVGP):
         variational_params = [(model.q_mu, model.q_sqrt)]
     else:
-        layer = model.gp_layers[0]
+        [layer] = model.f_layers
         variational_params = [(layer.q_mu, layer.q_sqrt)]
 
     variational_params_vars = []
@@ -194,8 +196,7 @@ def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
         variational_params_vars.append(these_vars)
     hyperparam_variables = model.trainable_variables
 
-    X, Y = data
-    num_data = len(X)
+    num_data = get_num_data(data)
 
     @tf.function
     def training_loss():
@@ -230,21 +231,46 @@ def fit_natgrad(model, data, gamma=1.0, adam_learning_rate=0.01, maxiter=1000):
 
 
 @pytest.mark.parametrize(
-    "sldgp_fitter",
-    [fit_natgrad, keras_fit_natgrad],
+    "svgp_fitter, sldgp_fitter",
+    [
+        (fit_adam, fit_adam),
+        (fit_adam, keras_fit_adam),
+        (fit_natgrad, fit_natgrad),
+        (fit_natgrad, keras_fit_natgrad),
+    ],
 )
-def test_svgp_equivalence_with_natgrad(sldgp_fitter):
-    maxiter = 10
+def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
+    data = load_data()
+
+    svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
+    svgp_fitter(svgp, data, maxiter=maxiter)
+
+    sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
+    sldgp_fitter(sldgp, data, maxiter=maxiter)
+
+    assert_equivalence(svgp, sldgp, data)
+
+
+@pytest.mark.parametrize(
+    "svgp_fitter, keras_fitter, tol_kw",
+    [
+        (fit_adam, _keras_fit_adam, {}),
+        (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-8)),
+    ],
+)
+def test_svgp_equivalence_with_keras_sequential(svgp_fitter, keras_fitter, tol_kw, maxiter=10):
     X, Y = data = load_data()
 
     svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
-    fit_natgrad(svgp, data, maxiter=maxiter, gamma=1.0)
+    svgp_fitter(svgp, data, maxiter=maxiter)
 
-    sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
-    sldgp_fitter(sldgp, data, maxiter=maxiter, gamma=1.0)
+    keras_model, loss = create_gpflux_sequential_and_loss(
+        *make_kernel_likelihood_iv(), get_num_data(data)
+    )
+    keras_fitter(keras_model, make_dataset(data, as_dict=False), maxiter, loss=loss)
 
-    # Absolute tolerance was reduced as part of PR#139
-    assert_equivalence(svgp, sldgp, data, atol=1e-8)
+    f_dist = keras_model(X)
+    np.testing.assert_allclose((f_dist.loc, f_dist.scale.diag ** 2), svgp.predict_f(X), **tol_kw)
 
 
 def run_gpflux_sldgp(data, optimizer, maxiter):

@@ -101,4 +101,4 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
         gp_layers.append(layer)
 
     likelihood = Gaussian(config.likelihood_noise_variance)
-    return DeepGP(gp_layers=gp_layers, likelihood_layer=LikelihoodLayer(likelihood))
+    return DeepGP(gp_layers, LikelihoodLayer(likelihood))

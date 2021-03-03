@@ -224,7 +224,7 @@ class GPLayer(DistributionLambda):
                 loc=mean, scale_tril=_cholesky_with_jitter(cov)
             )
         else:
-            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=cov)
+            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
 
     def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> TensorType:
         """
