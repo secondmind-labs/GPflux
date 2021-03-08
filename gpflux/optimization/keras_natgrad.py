@@ -9,7 +9,6 @@ from tensorflow.python.util.object_identity import ObjectIdentitySet
 
 import gpflow
 from gpflow import Parameter
-from gpflow.base import TensorType
 from gpflow.models.model import MeanAndVariance
 from gpflow.optimizers import NaturalGradient
 
@@ -180,12 +179,10 @@ class NatGradWrapper(NatGradModel):
         else:
             return self.base_model.layers
 
-    def elbo(self, data: Any) -> TensorType:
+    def elbo(self, data: Any) -> tf.Tensor:
         # DeepGP-specific pass-through
         return self.base_model.elbo(data)
 
-    def call(
-        self, data: Any, training: Optional[bool] = None
-    ) -> Union[TensorType, MeanAndVariance]:
+    def call(self, data: Any, training: Optional[bool] = None) -> Union[tf.Tensor, MeanAndVariance]:
         # pass-through for model call
         return self.base_model.call(data, training=training)

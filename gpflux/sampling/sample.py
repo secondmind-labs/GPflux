@@ -31,7 +31,7 @@ class Sample(abc.ABC):
     """
 
     @abc.abstractmethod
-    def __call__(self, X: TensorType) -> TensorType:
+    def __call__(self, X: TensorType) -> tf.Tensor:
         """
         Returns f(X) for f ~ GP(0, k)
 
@@ -45,7 +45,7 @@ class Sample(abc.ABC):
         this = self.__call__
 
         class AddSample(Sample):
-            def __call__(self, X: TensorType) -> TensorType:
+            def __call__(self, X: TensorType) -> tf.Tensor:
                 return this(X) + other(X)
 
         return AddSample()
@@ -72,7 +72,7 @@ def _efficient_sample_conditional_gaussian(
         P = tf.shape(q_mu)[-1]  # num latent GPs
         f = tf.zeros((0, P), dtype=default_float())  # [N_old, P]
 
-        def __call__(self, X_new: TensorType) -> TensorType:
+        def __call__(self, X_new: TensorType) -> tf.Tensor:
             N_old = tf.shape(self.f)[0]
             N_new = tf.shape(X_new)[0]
 
@@ -146,7 +146,7 @@ def _efficient_sample_matheron_rule(
     tf.debugging.assert_equal(tf.shape(v), [M, P])
 
     class WilsonSample(Sample):
-        def __call__(self, X: TensorType) -> TensorType:
+        def __call__(self, X: TensorType) -> tf.Tensor:
             """
             :param X: evaluation points [N, D]
             :return: function value of sample [N, P]

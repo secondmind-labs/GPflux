@@ -119,7 +119,7 @@ class BayesianDenseLayer(TrackableLayer):
         full_output_cov: bool = False,
         full_cov: bool = False,
         white: bool = False,
-    ) -> TensorType:
+    ) -> tf.Tensor:
         """
         Make a sample predictions at N test inputs, with input_dim = D, output_dim = Q. Return a
         sample, and the conditional mean and covariance at these points.
@@ -163,7 +163,7 @@ class BayesianDenseLayer(TrackableLayer):
 
     def call(
         self, inputs: TensorType, training: Optional[bool] = False
-    ) -> Union[TensorType, MeanAndVariance]:
+    ) -> Union[tf.Tensor, MeanAndVariance]:
         """The default behaviour upon calling the BayesianDenseLayer()(X)"""
         sample = self.predict_samples(
             inputs,
@@ -188,7 +188,7 @@ class BayesianDenseLayer(TrackableLayer):
         # for output layers, return samples as mean with 0 cov
         return sample, tf.ones_like(sample) * 1e-10  # [N, Q], [N, Q]
 
-    def prior_kl(self) -> TensorType:
+    def prior_kl(self) -> tf.Tensor:
         """
         The KL divergence from the variational distribution to the prior
         :return: KL divergence from N(w_mu, w_sqrt) to N(0, I)

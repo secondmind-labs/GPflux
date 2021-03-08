@@ -52,7 +52,7 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
 
     def call(
         self, inputs: Optional[TensorType] = None, *args: Any, **kwargs: Any
-    ) -> Tuple[TensorType, TensorType]:
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
         if inputs is not None:
             tf.debugging.assert_shapes(
                 [(self.means, ["N", "W"]), (self.stds, ["N", "W"]), (inputs, ["N", "D"])]

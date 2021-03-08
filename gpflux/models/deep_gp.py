@@ -87,7 +87,7 @@ class DeepGP(Module):
         inputs: TensorType,
         targets: Optional[TensorType],
         training: Optional[bool] = None,
-    ) -> TensorType:
+    ) -> tf.Tensor:
         """
         Evaluates f(x) = fₙ(⋯ (f₂(f₁(x)))) on the `inputs`.
 
@@ -118,7 +118,7 @@ class DeepGP(Module):
         f_outputs: TensorType,
         targets: Optional[TensorType],
         training: Optional[bool] = None,
-    ) -> TensorType:
+    ) -> tf.Tensor:
         """
         Calls the `likelihood_layer` on `f_outputs`, which adds the
         corresponding layer loss when training.
@@ -130,12 +130,12 @@ class DeepGP(Module):
         inputs: TensorType,
         targets: Optional[TensorType] = None,
         training: Optional[bool] = None,
-    ) -> TensorType:
+    ) -> tf.Tensor:
         f_outputs = self._evaluate_deep_gp(inputs, targets=targets, training=training)
         y_outputs = self._evaluate_likelihood(f_outputs, targets=targets, training=training)
         return y_outputs
 
-    def predict_f(self, inputs: TensorType) -> Tuple[TensorType, TensorType]:
+    def predict_f(self, inputs: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Returns mean and variance (not scale!) of f for compatibility with GPflow models.
 
@@ -144,7 +144,7 @@ class DeepGP(Module):
         f_distribution = self._evaluate_deep_gp(inputs, targets=None)
         return f_distribution.loc, f_distribution.scale.diag ** 2
 
-    def elbo(self, data: Tuple[TensorType, TensorType]) -> TensorType:
+    def elbo(self, data: Tuple[TensorType, TensorType]) -> tf.Tensor:
         """
         Returns ELBO (not per-datapoint loss!) for compatibility with GPflow models.
         """
@@ -222,7 +222,7 @@ def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vani
     class ChainedSample(Sample):
         """Chains samples from consecutive layers."""
 
-        def __call__(self, X: TensorType) -> TensorType:
+        def __call__(self, X: TensorType) -> tf.Tensor:
             for f in function_draws:
                 X = f(X)
             return X

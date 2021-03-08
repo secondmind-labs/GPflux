@@ -44,7 +44,7 @@ class LikelihoodLoss(tf.keras.losses.Loss):
         self,
         y_true: TensorType,
         f_prediction: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
-    ) -> TensorType:
+    ) -> tf.Tensor:
         """
         Note that we deviate from the Keras Loss interface by calling the
         second argument `f_prediction` rather than `y_pred`.

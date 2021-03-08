@@ -129,7 +129,7 @@ class GPLayer(DistributionLambda):
         full_output_cov: bool = False,
         full_cov: bool = False,
         white: bool = True,
-    ) -> Tuple[TensorType, TensorType]:
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Make a prediction at N test inputs, with input_dim = D, output_dim = Q. Return the
         conditional mean and covariance at these points.
@@ -157,7 +157,7 @@ class GPLayer(DistributionLambda):
 
         return mean_cond + mean_function, cov
 
-    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> TensorType:
+    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tf.Tensor:
         """
         The default behaviour upon calling the GPLayer()(X).
 
@@ -185,7 +185,7 @@ class GPLayer(DistributionLambda):
 
         return outputs
 
-    def prior_kl(self, whiten: bool = True) -> TensorType:
+    def prior_kl(self, whiten: bool = True) -> tf.Tensor:
         """
         The KL divergence from the prior p(u) to the variational distribution q(u)
         where q(u) = N(q_mu, q_sqrt q_sqrt^T)
@@ -226,7 +226,7 @@ class GPLayer(DistributionLambda):
         else:
             return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
 
-    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> TensorType:
+    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> tf.Tensor:
         """
         This method converts the marginal distribution at the N input points to a tensor of (S)
         samples with output_dim Q from that distribution.
@@ -255,7 +255,7 @@ class GPLayer(DistributionLambda):
         )
 
 
-def _cholesky_with_jitter(cov: TensorType) -> TensorType:
+def _cholesky_with_jitter(cov: TensorType) -> tf.Tensor:
     """
     Compute the Cholesky of the covariance, adding jitter to the diagonal to improve stability.
 

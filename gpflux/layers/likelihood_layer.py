@@ -38,7 +38,7 @@ class LikelihoodLayer(TrackableLayer):
         inputs: tfp.distributions.MultivariateNormalDiag,
         targets: Optional[TensorType] = None,
         training: bool = None,
-    ) -> Union[TensorType, "LikelihoodOutputs"]:
+    ) -> Union[tf.Tensor, "LikelihoodOutputs"]:
         # TODO: add support for non-distribution inputs? or other distributions?
         assert isinstance(inputs, tfp.distributions.MultivariateNormalDiag)
         F_mean = inputs.loc
@@ -89,11 +89,11 @@ class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
 
     def _value(
         self, dtype: tf.dtypes.DType = None, name: str = None, as_ref: bool = False
-    ) -> TensorType:
+    ) -> tf.Tensor:
         return self.f_mean
 
     @property
-    def shape(self) -> TensorType:
+    def shape(self) -> tf.Tensor:
         return self.f_mean.shape
 
     @property

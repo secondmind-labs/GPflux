@@ -60,10 +60,10 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         self.W = self._sample_weights(shape_weights, dtype=self.dtype)
         super().build(input_shape)
 
-    def _sample_bias(self, shape: ShapeType, **kwargs: Mapping) -> TensorType:
+    def _sample_bias(self, shape: ShapeType, **kwargs: Mapping) -> tf.Tensor:
         return tf.random.uniform(shape=shape, maxval=2 * np.pi, **kwargs)
 
-    def _sample_weights(self, shape: ShapeType, **kwargs: Mapping) -> TensorType:
+    def _sample_weights(self, shape: ShapeType, **kwargs: Mapping) -> tf.Tensor:
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, **kwargs)
         else:
@@ -83,7 +83,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
             gamma_rvs = tf.tile(tf.random.gamma(shape, alpha=nu, beta=nu, **kwargs), [1, shape[-1]])
             return tf.math.rsqrt(gamma_rvs) * normal_rvs
 
-    def call(self, inputs: TensorType) -> TensorType:
+    def call(self, inputs: TensorType) -> tf.Tensor:
         """
         Evaluates the basis functions at `inputs`
 
