@@ -1,13 +1,14 @@
+import abc
+
 import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflow.kernels import RBF
 from gpflow.kullback_leiblers import gauss_kl
 
 from gpflux.encoders import DirectlyParameterizedNormalDiag
-from gpflux.layers import LatentVariableLayer
+from gpflux.layers import LatentVariableLayer, LayerWithObservations, TrackableLayer
 
 tf.keras.backend.set_floatx("float64")
 
@@ -16,19 +17,9 @@ tf.keras.backend.set_floatx("float64")
 ############
 
 
-@pytest.fixture
-def test_data():
-    x_dim, y_dim, w_dim = 2, 1, 2
-    points = 200
-    x_data = np.random.random((points, x_dim)) * 5
-    w_data = np.random.random((points, w_dim))
-    w_data[: (points // 2), :] = 0.2 * w_data[: (points // 2), :] + 5
-
-    input_data = np.concatenate([x_data, w_data], axis=1)
-    y_data = np.random.multivariate_normal(
-        mean=np.zeros(points), cov=RBF(variance=0.1).K(input_data), size=y_dim
-    ).T
-    return x_data[:, :x_dim], y_data
+def _zero_one_normal_prior(w_dim):
+    """ N(0, I) prior """
+    return tfp.distributions.MultivariateNormalDiag(loc=np.zeros(w_dim), scale_diag=np.ones(w_dim))
 
 
 def get_distributions_with_w_dim():
@@ -60,26 +51,6 @@ def test_latent_prior_sample(distribution, w_dim):
     assert lv.sample_prior(sample_shape).shape == sample_shape + (w_dim,)
 
 
-@pytest.mark.parametrize("w_dim", [1, 5])
-def test_latent_posterior_sample(test_data, w_dim):
-    x_data, y_data = test_data
-    num_data = len(x_data)
-
-    means = np.zeros((num_data, w_dim))
-    encoder = DirectlyParameterizedNormalDiag(num_data, w_dim, means)
-
-    mean = np.zeros(w_dim)
-    var = np.ones(w_dim)
-    mvn = tfp.distributions.MultivariateNormalDiag(mean, var)
-
-    lv = LatentVariableLayer(encoder=encoder, prior=mvn)
-
-    recog_data = np.concatenate([x_data, y_data], axis=-1)
-    w_data = lv(recog_data, training=False)
-
-    assert w_data.shape == (num_data, w_dim)
-
-
 @pytest.mark.parametrize("distribution, w_dim", get_distributions_with_w_dim())
 def test_local_kls(distribution, w_dim):
     lv = LatentVariableLayer(encoder=None, prior=distribution)
@@ -96,7 +67,7 @@ def test_local_kls(distribution, w_dim):
         for k, v in params.items()
         if isinstance(v, np.ndarray)
     }
-    posterior = lv.distribution(**posterior_params)
+    posterior = lv.distribution_class(**posterior_params)
     local_kls = lv.local_kls(posterior)
     assert np.all(local_kls > 0)
     assert local_kls.shape == (batch_size,)
@@ -108,13 +79,10 @@ def test_local_kl_gpflow_consistency(w_dim):
     means = np.random.randn(num_data, w_dim)
     encoder = DirectlyParameterizedNormalDiag(num_data, w_dim, means)
 
-    # Prior is N(0, I)
-    prior_mean = np.zeros(w_dim)
-    prior_var = np.ones(w_dim)
-    prior = tfp.distributions.MultivariateNormalDiag(prior_mean, prior_var)
-
-    lv = LatentVariableLayer(encoder=encoder, prior=prior)
-    samples, posteriors = lv.sample_posteriors(recognition_data=None)
+    lv = LatentVariableLayer(encoder=encoder, prior=_zero_one_normal_prior(w_dim))
+    _, posteriors = lv.samples_and_posteriors(
+        [np.random.randn(num_data, 3), np.random.randn(num_data, 2)]
+    )
 
     q_mu = posteriors.parameters["loc"]
     q_sqrt = posteriors.parameters["scale_diag"]
@@ -125,27 +93,96 @@ def test_local_kl_gpflow_consistency(w_dim):
     np.testing.assert_allclose(tfp_local_kls, gpflow_local_kls, rtol=1e-10)
 
 
-@pytest.mark.parametrize("w_dim", [1, 5])
-def test_add_losses(w_dim):
-    num_data = 400
-    x_dim = 3
-    means = np.random.randn(num_data, w_dim)
-    encoder = DirectlyParameterizedNormalDiag(num_data, w_dim, means)
+class ArrayMatcher:
+    def __init__(self, expected):
+        self.expected = expected
 
-    # Prior is N(0, I)
-    prior_mean = np.zeros(w_dim)
-    prior_var = np.ones(w_dim)
-    prior = tfp.distributions.MultivariateNormalDiag(prior_mean, prior_var)
+    def __eq__(self, actual):
+        return np.allclose(actual, self.expected, equal_nan=True)
+
+
+@pytest.mark.parametrize("w_dim", [1, 5])
+def test_latent_variable_layer_losses(mocker, w_dim):
+    num_data, x_dim, y_dim = 43, 3, 1
+
+    prior_shape = (w_dim,)
+    posteriors_shape = (num_data, w_dim)
+
+    prior = tfp.distributions.MultivariateNormalDiag(
+        loc=np.random.randn(*prior_shape),
+        scale_diag=np.random.randn(*prior_shape) ** 2,
+    )
+    posteriors = tfp.distributions.MultivariateNormalDiag(
+        loc=np.random.randn(*posteriors_shape),
+        scale_diag=np.random.randn(*posteriors_shape) ** 2,
+    )
+
+    encoder = mocker.Mock(return_value=(posteriors.loc, posteriors.scale.diag))
 
     lv = LatentVariableLayer(encoder=encoder, prior=prior)
 
-    inputs = tf.zeros((num_data, x_dim), dtype=tf.float64)
+    inputs = np.full((num_data, x_dim), np.nan)
+    targets = np.full((num_data, y_dim), np.nan)
+    observations = [inputs, targets]
+    encoder_inputs = np.concatenate(observations, axis=-1)
 
     _ = lv(inputs)
+    encoder.assert_not_called()
     assert lv.losses == [0.0]
 
-    _ = lv(inputs, training=True)
-    _, posteriors = lv.sample_posteriors(recognition_data=None)
-    local_kls = [tf.reduce_mean(lv.local_kls(posteriors))]
-    np.testing.assert_allclose(lv.losses, local_kls)
-    assert lv.losses > [0.0]
+    _ = lv(inputs, observations=observations, training=True)
+
+    # assert_called_once_with uses == for comparison which fails on arrays
+    encoder.assert_called_once_with(ArrayMatcher(encoder_inputs), training=True)
+
+    expected_loss = [tf.reduce_mean(posteriors.kl_divergence(prior))]
+    np.testing.assert_equal(lv.losses, expected_loss)  # also checks shapes match
+
+
+@pytest.mark.parametrize("w_dim", [1, 5])
+@pytest.mark.parametrize("seed2", [None, 42])
+def test_latent_variable_layer_samples(mocker, test_data, w_dim, seed2):
+    seed = 123
+
+    inputs, targets = test_data
+    num_data, x_dim = inputs.shape
+
+    prior_shape = (w_dim,)
+    posteriors_shape = (num_data, w_dim)
+
+    prior = tfp.distributions.MultivariateNormalDiag(
+        loc=np.random.randn(*prior_shape),
+        scale_diag=np.random.randn(*prior_shape) ** 2,
+    )
+    posteriors = tfp.distributions.MultivariateNormalDiag(
+        loc=np.random.randn(*posteriors_shape),
+        scale_diag=np.random.randn(*posteriors_shape) ** 2,
+    )
+
+    encoder = mocker.Mock(return_value=(posteriors.loc, posteriors.scale.diag))
+
+    lv = LatentVariableLayer(prior=prior, encoder=encoder)
+
+    tf.random.set_seed(seed)
+    sample_prior = lv(inputs, seed=seed2)
+    tf.random.set_seed(seed)
+    prior_expected = np.concatenate([inputs, prior.sample(num_data, seed=seed2)], axis=-1)
+    np.testing.assert_array_equal(sample_prior, prior_expected)
+
+    tf.random.set_seed(seed)
+    sample_posterior = lv(inputs, observations=[inputs, targets], training=True, seed=seed2)
+    tf.random.set_seed(seed)
+    posterior_expected = np.concatenate([inputs, posteriors.sample(seed=seed2)], axis=-1)
+    np.testing.assert_array_equal(sample_posterior, posterior_expected)
+
+
+def test_no_tensorflow_metaclass_overwritten():
+    """
+    LayerWithObservations is a subclass of tf.keras.layers.Layer (via TrackableLayer);
+    this test ensures that TrackableLayer does not have a metaclass, and hence by adding
+    the ABCMeta to LayerWithObservations we are not accidentally removing some required
+    TensorFlow magic metaclass.
+    """
+    assert LayerWithObservations.__bases__ == (TrackableLayer,)
+    assert type(TrackableLayer) is type
+    assert type(LayerWithObservations) is abc.ABCMeta

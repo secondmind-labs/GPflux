@@ -8,7 +8,8 @@ from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
-from gpflux.layers import GPLayer, LikelihoodLayer, LikelihoodLoss
+from gpflux.layers import GPLayer, LikelihoodLayer, TrackableLayer
+from gpflux.losses import LikelihoodLoss
 from gpflux.models import DeepGP
 
 tf.keras.backend.set_floatx("float64")
@@ -51,23 +52,26 @@ def build_gp_layers(layer_sizes, num_data):
 def build_keras_functional_deep_gp(layer_sizes, num_data):
     gp_layers = build_gp_layers(layer_sizes, num_data)
     likelihood = Gaussian()
-    likelihood_layer = LikelihoodLayer(likelihood)
 
     inputs = keras.Input(shape=(layer_sizes[0]))
     x = inputs
     for gp in gp_layers:
         x = gp(x)
 
-    mean_and_var = likelihood_layer(x)
+    container = TrackableLayer()
+    container.likelihood = likelihood
+    outputs = container(x)  # to track likelihood
 
-    return (
-        keras.Model(inputs=[inputs], outputs=mean_and_var, name="deep_gp_fp"),
-        likelihood,
-    )
+    model = tf.keras.Model(inputs=[inputs], outputs=outputs, name="deep_gp_fp")
+    loss = LikelihoodLoss(likelihood)
+    return model, loss
 
 
 def build_keras_objected_oriented_deep_gp(layer_sizes, num_data):
-    class KerasDeepGP(tf.keras.Model):
+    gp_layers = build_gp_layers(layer_sizes, num_data)
+    likelihood = Gaussian()
+
+    class KerasDeepGP(tf.keras.Model, TrackableLayer):
         def __init__(self, gp_layers, likelihood):
             super().__init__(name="deep_gp_oop")
             self.gp_layers = gp_layers
@@ -76,19 +80,20 @@ def build_keras_objected_oriented_deep_gp(layer_sizes, num_data):
         def call(self, data, training=None, mask=None):
             for gp in self.gp_layers:
                 data = gp(data)
-            return self.likelihood(data)
+            return data
 
-    gp_layers = build_gp_layers(layer_sizes, num_data)
-    likelihood = Gaussian()
-    likelihood_layer = LikelihoodLayer(likelihood)
-    return KerasDeepGP(gp_layers, likelihood_layer), likelihood
+    model = KerasDeepGP(gp_layers, likelihood)
+    loss = LikelihoodLoss(likelihood)
+    return model, loss
 
 
 def build_gpflux_deep_gp(layer_sizes, num_data):
     gp_layers = build_gp_layers(layer_sizes, num_data)
     likelihood = Gaussian()
+
     likelihood_layer = LikelihoodLayer(likelihood)
-    return DeepGP(gp_layers, likelihood_layer), likelihood
+    model = DeepGP(gp_layers, likelihood_layer).as_training_model()
+    return model, None
 
 
 #########################################
@@ -112,21 +117,34 @@ def test_model_compilation(deep_gp_model_builder):
     batch = 100
 
     (X, Y) = setup_dataset(layer_sizes[0], num_data)
-    deep_gp_model, likelihood = deep_gp_model_builder(layer_sizes, num_data)
+    deep_gp_model, loss = deep_gp_model_builder(layer_sizes, num_data)
 
-    train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)).batch(batch)
+    if loss is None:  # build_gpflux_deep_gp
+        dataset = {"inputs": X, "targets": Y}
+    else:
+        dataset = (X, Y)
+
+    train_dataset = tf.data.Dataset.from_tensor_slices(dataset).batch(batch)
 
     optimizer = tf.keras.optimizers.Adam()
 
-    deep_gp_model.compile(optimizer=optimizer, loss=LikelihoodLoss(likelihood))
+    deep_gp_model.compile(optimizer=optimizer, loss=loss)
+
     history = deep_gp_model.fit(train_dataset, epochs=10)
     assert 4.545 < history.history["loss"][0] < 4.558
-    assert 3.830 < history.history["loss"][-1] < 3.841
+    assert 3.829 < history.history["loss"][-1] < 3.841
 
-    test_batch, _ = next(iter(train_dataset))
+    # Check outputs
 
-    output = deep_gp_model(test_batch)
-    mean, var = output.y_mean, output.y_var
+    if loss is None:  # build_gpflux_deep_gp
+        test_batch_dict = next(iter(train_dataset))
+        test_batch_dict["targets"] = np.full_like(test_batch_dict["targets"].shape, np.nan)
+        output = deep_gp_model(test_batch_dict)
+        mean, var = output.f_mean, output.f_var
+    else:
+        test_batch, _ = next(iter(train_dataset))
+        output = deep_gp_model(test_batch)
+        mean, var = output.loc, output.scale.diag ** 2
 
     assert mean.shape == (batch, 1)
     assert var.shape == (batch, 1)
@@ -141,29 +159,45 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
     layer_sizes = [5, 5, 1]
     num_data = 200
     batch = 100
-    deep_gp_model, likelihood = deep_gp_model_builder(layer_sizes, num_data)
-    (X, Y) = setup_dataset(layer_sizes[0], num_data)
 
-    dataset_tuple = (X, Y)  # (inputs_to_model, targets_from_model)
-    train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).repeat().batch(batch)
+    (X, Y) = setup_dataset(layer_sizes[0], num_data)
+    deep_gp_model, loss = deep_gp_model_builder(layer_sizes, num_data)
+
+    if loss is None:  # build_gpflux_deep_gp
+        dataset = {"inputs": X, "targets": Y}
+    else:
+        dataset = (X, Y)
+
+    train_dataset = tf.data.Dataset.from_tensor_slices(dataset).repeat().batch(batch)
+
     optimizer = tf.keras.optimizers.Adam()
 
     train_dataset_iter = iter(train_dataset)
     test_mini_batch = next(train_dataset_iter)
 
-    deep_gp_model.compile(loss=LikelihoodLoss(likelihood))
+    deep_gp_model.compile(loss=loss)
 
-    def objective(data_minibatch):
-        predictions_minibatch = deep_gp_model(data_minibatch[0], training=True)
-        model_loss = deep_gp_model.loss(data_minibatch[1], predictions_minibatch)
-        return tf.reduce_sum(deep_gp_model.losses) + model_loss
+    if loss is None:
+
+        def objective(data_minibatch):
+            _ = deep_gp_model(data_minibatch, training=True)
+            return tf.reduce_sum(deep_gp_model.losses)
+
+    else:
+
+        def objective(data_minibatch):
+            predictions_minibatch = deep_gp_model(data_minibatch[0], training=True)
+            model_loss = deep_gp_model.loss(data_minibatch[1], predictions_minibatch)
+            return tf.reduce_sum(deep_gp_model.losses) + model_loss
+
+    if use_tf_function:
+        objective = tf.function(objective)
 
     def optimization_step(data_minibatch):
         optimizer.minimize(lambda: objective(data_minibatch), deep_gp_model.trainable_weights)
 
     if use_tf_function:
-        objective = tf.function(objective, autograph=False)
-        optimization_step = tf.function(optimization_step, autograph=False)
+        optimization_step = tf.function(optimization_step)
 
     # TO DO: investigate why the difference between OOP vs FP models, and tf.function
     assert 4.46 < objective(test_mini_batch) < 4.5902
@@ -173,37 +207,16 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
         optimization_step(data_mini_batch)
     assert 3.67 < objective(test_mini_batch) < 3.81
 
-    test_batch, _ = next(iter(train_dataset))
-    output = deep_gp_model(test_batch)
-    mean, var = output.f_mean, output.f_var
-
-    assert mean.shape == (batch, 1)
-    assert var.shape == (batch, 1)
-
-
-def test_deep_gp_model_default_loss():
-    tf.random.set_seed(0)
-    np.random.seed(0)
-
-    layer_sizes = [5, 5, 1]
-    num_data = 200
-    batch = 100
-    deep_gp_model, likelihood = build_gpflux_deep_gp(layer_sizes, num_data)
-
-    (X, Y) = setup_dataset(layer_sizes[0], num_data)
-    train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)).batch(batch)
-
-    optimizer = tf.keras.optimizers.Adam()
-
-    deep_gp_model.compile(optimizer=optimizer)
-    history = deep_gp_model.fit(train_dataset, epochs=10)
-    assert 4.545 < history.history["loss"][0] < 4.558
-    assert 3.830 < history.history["loss"][-1] < 3.841
-
-    test_batch, _ = next(iter(train_dataset))
-
-    output = deep_gp_model(test_batch)
-    mean, var = output.y_mean, output.y_var
+    # Check outputs
+    if loss is None:  # build_gpflux_deep_gp
+        test_batch_dict = next(iter(train_dataset))
+        test_batch_dict["targets"] = np.full_like(test_batch_dict["targets"].shape, np.nan)
+        output = deep_gp_model(test_batch_dict)
+        mean, var = output.f_mean, output.f_var
+    else:
+        test_batch, _ = next(iter(train_dataset))
+        output = deep_gp_model(test_batch)
+        mean, var = output.loc, output.scale.diag ** 2
 
     assert mean.shape == (batch, 1)
     assert var.shape == (batch, 1)

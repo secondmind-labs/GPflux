@@ -12,33 +12,14 @@ from gpflow.mean_functions import Zero
 
 from gpflux.encoders import DirectlyParameterizedNormalDiag
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
-from gpflux.layers import (
-    GPLayer,
-    LatentVariableAugmentationLayer,
-    LatentVariableLayer,
-    LikelihoodLayer,
-)
+from gpflux.layers import GPLayer, LatentVariableLayer, LikelihoodLayer
+from gpflux.models import DeepGP
 
 tf.keras.backend.set_floatx("float64")
 
 ############
 # Utilities
 ############
-
-
-@pytest.fixture
-def test_data():
-    x_dim, y_dim, w_dim = 2, 1, 2
-    points = 200
-    x_data = np.random.random((points, x_dim)) * 5
-    w_data = np.random.random((points, w_dim))
-    w_data[: (points // 2), :] = 0.2 * w_data[: (points // 2), :] + 5
-
-    input_data = np.concatenate([x_data, w_data], axis=1)
-    y_data = np.random.multivariate_normal(
-        mean=np.zeros(points), cov=RBF(variance=0.1).K(input_data), size=y_dim
-    ).T
-    return x_data[:, :x_dim], y_data
 
 
 def build_gp_layers(layer_sizes, num_data):
@@ -59,32 +40,36 @@ def build_gp_layers(layer_sizes, num_data):
 
 
 def train_model(x_data, y_data, model, use_keras_compile):
-    dataset_tuple = ((x_data, y_data), y_data)  # (inputs_to_model, targets_from_model)
+    dataset_dict = {"inputs": x_data, "targets": y_data}
     num_data = len(x_data)
-    train_dataset = tf.data.Dataset.from_tensor_slices(dataset_tuple).batch(num_data)
 
     optimizer = tf.keras.optimizers.Adam()
 
     epochs = 20
+
     if use_keras_compile:
         model.compile(optimizer=optimizer)
-        history = model.fit(train_dataset, epochs=epochs)
+        history = model.fit(dataset_dict, batch_size=num_data, epochs=epochs)
         loss = history.history["loss"]
+
     else:
-        train_dataset_iter = iter(train_dataset)
-        data_batch, _ = next(train_dataset_iter)
+        train_dataset = tf.data.Dataset.from_tensor_slices(dataset_dict)
+        dataset_iter = iter(train_dataset.repeat().batch(num_data))
 
         def objective(data_minibatch):
             _ = model(data_minibatch, training=True)
             return tf.reduce_sum(model.losses)
 
-        def optimization_step():
-            optimizer.minimize(lambda: objective(data_batch), model.trainable_weights)
-
         loss = []
-        for i in range(epochs):
+
+        def optimization_step():
+            data_batch = next(dataset_iter)
+            optimizer.minimize(lambda: objective(data_batch), model.trainable_weights)
             loss.append(objective(data_batch))
+
+        for _ in range(epochs):
             optimization_step()
+
     return loss
 
 
@@ -93,11 +78,9 @@ def train_model(x_data, y_data, model, use_keras_compile):
 ############
 
 
-@pytest.mark.parametrize(
-    "w_dim, use_keras_compile, do_augmentation",
-    itertools.product([1, 2], [True, False], [True, False]),
-)
-def test_cde_direct_parametrization(test_data, w_dim, use_keras_compile, do_augmentation):
+@pytest.mark.parametrize("w_dim", [1, 2])
+@pytest.mark.parametrize("use_keras_compile", [True, False])
+def test_cde_direct_parametrization(test_data, w_dim, use_keras_compile):
     """Test a directly parameterized CDE, using functional API, both eager or compiled.
     Test that the losses decrease."""
 
@@ -114,27 +97,13 @@ def test_cde_direct_parametrization(test_data, w_dim, use_keras_compile, do_augm
     encoder = DirectlyParameterizedNormalDiag(num_data, w_dim)
     prior = tfp.distributions.MultivariateNormalDiag(prior_means, prior_std)
 
-    if do_augmentation:
-        lv = LatentVariableAugmentationLayer(encoder, prior)
-    else:
-        lv = LatentVariableLayer(encoder, prior)
+    lv = LatentVariableLayer(prior, encoder)
     [gp] = build_gp_layers([x_dim + w_dim, 1], num_data)
-    likelihood = LikelihoodLayer(Gaussian())
+    likelihood_layer = LikelihoodLayer(Gaussian())
 
-    # 3. Build the model w functional API:
-    inputs = keras.Input(shape=(x_dim))
-    targets = keras.Input(shape=(1))
-
-    if do_augmentation:
-        x_and_w = lv([inputs, targets])
-    else:
-        encoder_data = tf.concat([inputs, targets], -1)
-        w = lv(encoder_data)
-        x_and_w = tf.concat([inputs, w], -1)
-    f = gp(x_and_w)
-    mean_and_var = likelihood(f)
-
-    model = tf.keras.Model(inputs=[inputs, targets], outputs=mean_and_var)
+    # 3. Build the model
+    dgp = DeepGP([lv, gp], likelihood_layer)
+    model = dgp.as_training_model()
 
     # 4. Train the model and check 2nd half of loss is lower than first
     loss_history = train_model(x_data, y_data, model, use_keras_compile)

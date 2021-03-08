@@ -29,8 +29,6 @@ from gpflow.ci_utils import ci_niter
 import matplotlib.pyplot as plt
 
 # %%
-from gpflux.layers import LikelihoodLoss
-
 tf.keras.backend.set_floatx("float64")
 
 # %%
@@ -71,15 +69,15 @@ def create_layers():
 
 # %%
 def create_model(model_class):
+    """
+    We pass in `model_class` to make it easy to use
+    `gpflux.optimization.NatGradModel`, which is required for combining
+    GPflow's `NaturalGradient` optimizer with Keras. `model_class` needs to be
+    a constructor that has the same semantics as `tf.keras.Model.__init__`.
+    """
     layer1, layer2, likelihood_layer = create_layers()
-
-    inputs = tf.keras.Input((input_dim,))
-    f1 = layer1(inputs)
-    f2 = layer2(f1)
-    outputs = likelihood_layer(f2)
-
-    model = model_class(inputs=inputs, outputs=outputs)
-    return model, likelihood_layer.likelihood
+    dgp = gpflux.models.DeepGP([layer1, layer2], likelihood_layer, default_model_class=model_class)
+    return dgp
 
 
 # %%
@@ -87,7 +85,7 @@ batch_size = 2
 num_epochs = ci_niter(200)
 
 # %%
-dgp, dgp_likelihood = create_model(tf.keras.Model)
+dgp = create_model(tf.keras.Model)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
@@ -99,12 +97,15 @@ callbacks = [
     )
 ]
 
-dgp.compile(tf.optimizers.Adam(learning_rate=0.1), loss=LikelihoodLoss(dgp_likelihood))
+dgp_train = dgp.as_training_model()
+dgp_train.compile(tf.optimizers.Adam(learning_rate=0.1))
 
-history = dgp.fit(x=X, y=Y, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks)
+history = dgp_train.fit(
+    {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+)
 
 # %%
-dgp_natgrad, dgp_natgrad_likelihood = create_model(gpflux.optimization.NatGradModel)
+dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
@@ -116,21 +117,22 @@ callbacks = [
     )
 ]
 
-dgp_natgrad.compile(
+dgp_natgrad_train = dgp_natgrad.as_training_model()
+dgp_natgrad_train.compile(
     [
         gpflow.optimizers.NaturalGradient(gamma=0.05),
         gpflow.optimizers.NaturalGradient(gamma=0.05),
         tf.optimizers.Adam(learning_rate=0.1),
-    ],
-    loss=LikelihoodLoss(dgp_natgrad_likelihood),
+    ]
 )
 
-history_natgrad = dgp_natgrad.fit(
-    x=X, y=Y, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+history_natgrad = dgp_natgrad_train.fit(
+    {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
 )
 
 # %%
-res = dgp(X)
+dgp_test = dgp.as_prediction_model()
+res = dgp_test(X)
 
 # %%
 plt.plot(X, Y, "x")

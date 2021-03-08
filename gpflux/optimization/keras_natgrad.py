@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
+from typing import Any, List, Mapping, Optional, Tuple, Union
 
 import tensorflow as tf
 from tensorflow.python.util.object_identity import ObjectIdentitySet
@@ -32,14 +32,6 @@ class NatGradModel(tf.keras.Model):
     by a regular optimizer (e.g. `tf.optimizers.Adam`) as the last element for all other
     parameters (hyperparameters, inducing point locations).
     """
-
-    def __init__(self, *args: Any, other_loss_fn: Callable[[], tf.Tensor] = None, **kwargs: Any):
-        """
-        :param other_loss_fn: experimental feature to allow specifying a
-            different loss closure for computing gradients for Adam optimizer.
-        """
-        super().__init__(*args, **kwargs)
-        self.other_loss_fn = other_loss_fn
 
     @property
     def natgrad_optimizers(self) -> List[gpflow.optimizers.NaturalGradient]:
@@ -142,11 +134,6 @@ class NatGradModel(tf.keras.Model):
             self.natgrad_optimizers, variational_params_grads, variational_params
         ):
             natgrad_optimizer._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt)
-
-        if self.other_loss_fn is not None:
-            with tf.GradientTape() as tape:
-                other_loss = self.other_loss_fn()
-            other_grads = tape.gradient(other_loss, other_vars)
 
         self.optimizer.apply_gradients(zip(other_grads, other_vars))
 

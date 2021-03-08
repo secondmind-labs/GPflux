@@ -7,8 +7,8 @@ requirements = [
     "gpflow>=2.1",
     "numpy",
     "scipy",
-    "tensorflow-probability>=0.11.0",
-    "tensorflow>=2.3.0",
+    "tensorflow-probability>=0.12.0",
+    "tensorflow>=2.4.0",
 ]
 
 setup(
