@@ -95,8 +95,8 @@ f_scale = np.sqrt(f_var)
 
 n_sim = 10
 for _ in range(n_sim):
-  f_sample = sample_dgp(dgp)
-  plt.plot(X_test, f_sample(X_test).numpy())
+    f_sample = sample_dgp(dgp)
+    plt.plot(X_test, f_sample(X_test).numpy())
 
 plt.plot(X_test, f_mean, "C0")
 plt.plot(X_test, f_mean + f_scale, "C0--")
