@@ -51,7 +51,7 @@ def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType
 
 def compute_A_inv_b(A: TensorType, b: TensorType) -> tf.Tensor:
     r"""
-    Computes `A^{-1} b` using the Cholesky of `A` instead of the explicit inverse,
+    Computes ``A⁻¹ b`` using the Cholesky of ``A`` instead of the explicit inverse,
     as this is often numerically more stable.
 
     :param A: [..., M, M], p.s.d matrix

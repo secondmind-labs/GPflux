@@ -135,7 +135,7 @@ class GPLayer(DistributionLambda):
         conditional mean and covariance at these points.
 
         :param inputs: the inputs to predict at. shape [N, D]
-        :param full_output_cov: If true: return the full covariance between Q ouput
+        :param full_output_cov: If true: return the full covariance between Q output
             dimensions. Cov shape: -> [N, Q, N, Q]. If false: return block diagonal
             covariances. Cov shape: -> [Q, N, N]
         :param full_cov: If true: return the full (NxN) covariance for each output
@@ -188,7 +188,7 @@ class GPLayer(DistributionLambda):
     def prior_kl(self, whiten: bool = True) -> tf.Tensor:
         """
         The KL divergence from the prior p(u) to the variational distribution q(u)
-        where q(u) = N(q_mu, q_sqrt q_sqrt^T)
+        where q(u) = N(q_mu, q_sqrt q_sqrtᵀ)
 
         :param whiten: if True, p(u) = N(0, I); else, p(u) = N(0, K)
         :return: KL[q(u)∥p(u)]

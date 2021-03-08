@@ -19,7 +19,7 @@ class DeepGP(Module):
     This class combines a sequential function model f(x) = fₙ(⋯ (f₂(f₁(x))))
     and a likelihood p(y|f). Layers may depend on both inputs x and targets y
     during training by inheriting from `LayerWithObservations`; those will
-    be passed the argument `observations=[inputs, targets]`.
+    be passed the argument ``observations=[inputs, targets]``.
 
     Note that this class is not a `tf.keras.Model` subclass itself; to access
     Keras features, create a `Model` instance by calling :meth:`as_training_model`
@@ -45,7 +45,7 @@ class DeepGP(Module):
             LikelihoodLayer can be provided explicitly.
         :param input_dim: input dimensionality
         :param target_dim: target dimensionality
-        :param default_model_class: `model_class` default for
+        :param default_model_class: ``model_class`` default for
             :meth:`as_training_model` and :meth:`as_prediction_model`
         :param num_data: number of data points (used by :meth:`elbo` to obtain
             correct scaling)
@@ -92,7 +92,7 @@ class DeepGP(Module):
         Evaluates f(x) = fₙ(⋯ (f₂(f₁(x)))) on the `inputs`.
 
         Layers that inherit from `LayerWithObservations` will be passed an
-        `observations` argument which is `[inputs, targets]` or `None`
+        `observations` argument which is ``[inputs, targets]`` or `None`
         depending on whether `targets` contains a value or `None`.
         """
         features = inputs
@@ -139,7 +139,7 @@ class DeepGP(Module):
         """
         Returns mean and variance (not scale!) of f for compatibility with GPflow models.
 
-        NOTE: Does not support `full_cov` or `full_output_cov`.
+        NOTE: Does not support ``full_cov`` or ``full_output_cov``.
         """
         f_distribution = self._evaluate_deep_gp(inputs, targets=None)
         return f_distribution.loc, f_distribution.scale.diag ** 2
@@ -166,27 +166,33 @@ class DeepGP(Module):
     def as_training_model(
         self, model_class: Optional[Type[tf.keras.Model]] = None
     ) -> tf.keras.Model:
-        """
-        Constructs a `tf.keras.Model` instance that requires both `inputs` and
-        `targets` to be provided to its call. This is required for training the
+        r"""
+        Constructs a `tf.keras.Model` instance that requires both ``inputs`` and
+        ``targets`` to be provided to its call. This is required for training the
         model, as the `likelihood_layer` (and `LayerWithObservations` instances
-        such as `LatentVariableLayer`s, if present) needs to be passed the
-        `targets`. When compiling the returned model, do NOT provide any
+        such as `LatentVariableLayer`\ s, if present) needs to be passed the
+        ``targets``. When compiling the returned model, do NOT provide any
         additional losses.
 
         Train with
-        ```
-        model.compile(optimizer)  # do NOT pass a loss here
-        model.fit({"inputs": X, "targets": Y}, ...)
-        ```
+
+        .. code-block:: python
+
+            model.compile(optimizer)  # do NOT pass a loss here
+            model.fit({"inputs": X, "targets": Y}, ...)
 
         See https://keras.io/examples/keras_recipes/endpoint_layer_pattern/ for
         more details on this pattern.
 
+        .. note::
+
+            Use `as_prediction_model` if you only want to predict and do not
+            want to pass in a dummy array for the targets.
+
         :param model_class: A class/constructor that has the same semantics as
             `tf.keras.Model.__init__`, accepting a list of inputs and an output.
-            E.g., `tf.keras.Model` itself or `gpflux.optimization.NatGradModel`,
-            but not `tf.keras.models.Sequential`.
+            E.g., `tf.keras.Model` itself or `gpflux.optimization.NatGradModel`
+            (but not `tf.keras.models.Sequential`).
         """
         model_class = self._get_model_class(model_class)
         outputs = self.call(self.inputs, self.targets)
@@ -196,19 +202,24 @@ class DeepGP(Module):
         self, model_class: Optional[Type[tf.keras.Model]] = None
     ) -> tf.keras.Model:
         """
-        Constructs a `tf.keras.Model` instance that only requires `inputs`,
-        which simplifies predictions.  Note that the returned model will not
-        support training; for that, use `as_training_model`.
+        Constructs a `tf.keras.Model` instance that only requires ``inputs``,
+        which simplifies predictions.
 
         Predict with
-        ```
-        model.predict(Xtest, ...)
-        ```
+
+        .. code-block:: python
+
+            model.predict(Xtest, ...)
+
+        .. note::
+
+            Note that the returned model will not support training; for that,
+            use `as_training_model`.
 
         :param model_class: A class/constructor that has the same semantics as
-            `tf.keras.Model.__init__`, accepting an input and an output.
-            E.g., `tf.keras.Model` itself or `gpflux.optimization.NatGradModel`,
-            but not `tf.keras.models.Sequential`.
+            `tf.keras.Model.__init__`, accepting a list of inputs and an output.
+            E.g., `tf.keras.Model` itself or `gpflux.optimization.NatGradModel`
+            (but not `tf.keras.models.Sequential`).
         """
         model_class = self._get_model_class(model_class)
         outputs = self.call(self.inputs)
