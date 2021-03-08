@@ -44,7 +44,7 @@ docs:  ## Build the documentation
 ifeq ("$(UNAME_S)", "Linux")
 	$(eval TEMP_DEB=$(shell mktemp))
 	@echo "Checking for pandoc installation..."
-	@(which pansdoc) || ( echo "\nPandoc not found." \
+	@(which pandoc) || ( echo "\nPandoc not found." \
 	  && echo "Trying to install automatically...\n" \
 	  && wget -O "$(TEMP_DEB)" $(PANDOC_DEB) \
 	  && echo "\nInstalling pandoc using dpkg -i from $(PANDOC_DEB)" \
