@@ -17,7 +17,9 @@
 """
 # Efficient sampling
 
-TODO: Some explanation...
+In this notebook we showcase how to efficiently draw samples from a GP using Random Fourier Features [1].
+
+[1] Rahimi, Ali, and Benjamin Recht. "Random Features for Large-Scale Kernel Machines." NIPS. Vol. 3. No. 4. 2007.
 """
 # %%
 import numpy as np
@@ -41,18 +43,20 @@ X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 
 # %%
-kernel = gpflow.kernels.SquaredExponential()
-Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1)
+kernel = gpflow.kernels.Matern52()
+Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
 
-num_rff = 1000
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
+
+num_rff = 1000
 eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-kernel2 = KernelWithFeatureDecomposition(None, eigenfunctions, eigenvalues)
+kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
 
+# %%
 layer = gpflux.layers.GPLayer(
-    kernel2,
+    kernel_with_features,
     inducing_variable,
     num_data,
     white=False,
@@ -80,21 +84,19 @@ history = model.fit(
     {"inputs": X, "targets": Y}, batch_size=num_data, epochs=100, callbacks=callbacks
 )
 
-
 # %%
-
 a, b = 5, 5
-X_test = np.linspace(X.min() - a, X.max() + b, 100).reshape(-1, 1)
+n_x = 1000
 spread = X.max() + b - (X.min() - a)
-X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
-X_test_2 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
+X_test = np.linspace(X.min() - a, X.max() + b, n_x).reshape(-1, 1)
 
 f_mean, f_var = dgp.predict_f(X_test)
 f_scale = np.sqrt(f_var)
 
-f_sample = sample_dgp(dgp)
-plt.plot(X_test_1, f_sample(X_test_1), "C1.")
-plt.plot(X_test_2, f_sample(X_test_2), "C2.")
+n_sim = 10
+for _ in range(n_sim):
+    f_sample = sample_dgp(dgp)
+    plt.plot(X_test, f_sample(X_test).numpy())
 
 plt.plot(X_test, f_mean, "C0")
 plt.plot(X_test, f_mean + f_scale, "C0--")
