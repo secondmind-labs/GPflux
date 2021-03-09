@@ -1,3 +1,6 @@
+"""
+TensorBoard event iterator
+"""
 from dataclasses import dataclass
 from typing import Any, Iterator, List, Type, Union
 

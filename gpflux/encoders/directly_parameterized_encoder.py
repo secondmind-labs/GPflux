@@ -1,6 +1,9 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+An "encoder" that parametrizes each datapoint. Does not work with mini-batching.
+"""
 
 from typing import Any, Optional, Tuple
 

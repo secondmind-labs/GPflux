@@ -1,6 +1,10 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+Helper functions, e.g. for constructing kernels, inducing variables, and GP
+layer objects.
+"""
 import inspect
 import warnings
 from dataclasses import fields

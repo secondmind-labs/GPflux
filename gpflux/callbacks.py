@@ -1,3 +1,7 @@
+"""
+Callback that enables GPflow's `gpflow.monitor.ModelToTensorBoard` to
+integrate with Keras's `tensorflow.keras.models.Model.fit` method.
+"""
 import re
 from typing import Any, Dict, List, Mapping, Optional
 

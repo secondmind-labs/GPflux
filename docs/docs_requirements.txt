@@ -2,7 +2,6 @@ sphinx
 ipython
 pandoc
 nbsphinx
-sphinx_rtd_theme
 jupytext
-sphinx-autodoc-typehints
 pydata-sphinx-theme
+sphinx-autoapi

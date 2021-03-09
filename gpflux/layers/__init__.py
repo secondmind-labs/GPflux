@@ -1,6 +1,9 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+Layers
+"""
 from gpflux.layers import basis_functions
 from gpflux.layers.bayesian_dense_layer import BayesianDenseLayer
 from gpflux.layers.gp_layer import GPLayer

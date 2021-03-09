@@ -1,6 +1,9 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+Support for the `gpflow.optimizers.NaturalGradient` optimizer within Keras models.
+"""
 
 from typing import Any, List, Mapping, Optional, Tuple, Union
 

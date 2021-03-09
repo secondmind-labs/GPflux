@@ -21,7 +21,7 @@
    GPflux <self>
    Benchmarks <notebooks/benchmarks>
    Tutorials <tutorials>
-   API Reference <_autosummary/gpflux>
+   API Reference <autoapi/gpflux/index>
 
 
 Welcome to GPflux
@@ -39,7 +39,7 @@ This combination leads to a framework that can be used for:
 Getting started
 ---------------
 
-We have provided multiple `Tutorials <tutorials>` showing the basic functionality of the toolbox, and have a comprehensive `API Reference <_autosummary/gpflux>`.
+We have provided multiple `Tutorials <tutorials>` showing the basic functionality of the toolbox, and have a comprehensive `API Reference <autoapi/gpflux/index>`.
 
 As a quick teaser, here's a snippet from the `intro notebook <notebooks/intro>` that demonstrates how a two-layer DGP is built and trained with GPflux for a simple one-dimensional dataset:
 
