@@ -99,7 +99,7 @@ num_features = [
 
 
 # %% [markdown]
-# The method below computes the mean and the covariance matrix of an exact GP posterior when evaluated at test point locations. Note that this method can also be used to analytically compute predictions of the Matherion weight space approximated posterior GP when passing a `KernelWithMercerDecomposition` object that approximates a kernel with feature functions.
+# The method below computes the mean and the covariance matrix of an exact GP posterior when evaluated at test point locations. Note that you can also use this method to analytically compute predictions of the Matheron weight space approximated posterior GP when passing a `KernelWithMercerDecomposition` object that approximates a kernel with feature functions.
 
 # %%
 def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):
