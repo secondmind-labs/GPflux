@@ -25,7 +25,7 @@
 #
 # $$ \textbf{f}^\star = \textbf{K}_{\textbf{f}^\star \textbf{f}} (\textbf{K}_{\textbf{f} \textbf{f}} + \sigma_\epsilon^2 \textbf{I})^{-1} \textbf{y} + \text{chol} (\textbf{K}_{\textbf{f}^\star \textbf{f}^\star} - \textbf{K}_{\textbf{f}^\star \textbf{f}} (\textbf{K}_{\textbf{f} \textbf{f}} + \sigma_\epsilon^2 \textbf{I})^{-1} \textbf{K}_{\textbf{f} \textbf{f}^\star}) \textbf{z}  \; \text{ where }  \; \textbf{z} \sim \mathcal{N}(\textbf{0}, \textbf{I}), $$
 #
-# when making use of the closed form expressions for the posterior mean and covariance (under the assumption of a zero mean prior GP for notational convenience). The terms $\textbf{K}_{\textbf{f} \textbf{f}}$, $\textbf{K}_{\textbf{f}^\star \textbf{f}}$ and $\textbf{K}_{\textbf{f} \textbf{f}^\star}$ refer to (cross-)covariance matrices when evaluating the kernel $k(\cdot, \cdot^\prime)$ at training points $\{X_n\}_{n=1,...,N}$ and test points $\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}$, and $\textbf{y}$ denotes all training targets $\{y_n\}_{n=1,...,N}$ in vectorized form.
+# when making use of the closed form expressions for the posterior mean and covariance (under the assumption of a zero mean prior GP for notational convenience). The terms $\textbf{K}_{\textbf{f} \textbf{f}}$, $\textbf{K}_{\textbf{f}^\star \textbf{f}}$ and $\textbf{K}_{\textbf{f} \textbf{f}^\star}$ refer to (cross-)covariance matrices when evaluating the kernel $k(\cdot, \cdot^\prime)$ at training points $\{X_n\}_{n=1,...,N}$ and test points $\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}$, and $\textbf{y}$ denotes all training targets $\{y_n\}_{n=1,...,N}$ in vectorised form.
 #
 # An alternative way of drawing samples from a posterior GP is by following Matheron's rule:
 #
