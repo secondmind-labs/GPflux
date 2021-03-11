@@ -184,7 +184,7 @@ def log10_Wasserstein_distance(
     Identify the decadic logarithm of the Wasserstein distance based on the means and covariance matrices.
     :param mean:The analytic mean, with a shape of [N*].
     :param covariance: The analytic covariance, with a shape of [N* x N*].
-    :param approximate_mean: approximate mean of shape [N*]
+    :param approximate_mean: The approximate mean, with a shape of [N*].
     :param approximate_covariance: approximate covariance of shape [N* x N*]
     :param jitter: jitter value for numerical robustness
     :return: a scalar log distance value
