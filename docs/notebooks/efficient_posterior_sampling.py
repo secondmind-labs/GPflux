@@ -217,7 +217,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     :param num_input_dimensions: The number of input dimensions.
     :param num_train_samples: The number of training samples.
     :param num_features: The number of feature functions.
-    :return: the log10 Wasserstein distances for both approximations
+    :return: The log10 Wasserstein distances for both approximations.
     """
     lengthscale = (
         num_input_dimensions / 100.0
