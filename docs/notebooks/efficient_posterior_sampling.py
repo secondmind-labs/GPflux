@@ -107,7 +107,7 @@ def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):
     Identify the mean and covariance of an analytic GPR posterior for test point locations.
     :param X: The train point locations, with a shape of [N x D].
     :param y: The train targets, with a shape of [N x 1].
-    :param kernel: kernel object
+    :param kernel: The kernel object.
     :param noise_variance: variance of the observation model
     :param X_star: test point locations of shape [N* x D]
     :return: mean and covariance of the noise-free predictions of shape [N*] and [N* x N*] respectively
