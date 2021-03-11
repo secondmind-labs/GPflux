@@ -129,7 +129,7 @@ def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):
 def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, noise_variance, X_star):
     """
     Identify the mean and covariance using the hybrid Matheron approximation of the exact posterior.
-    :param X: train point locations of shape [N x D]
+    :param X: The train point locations, with a shape of [N x D].
     :param y: train targets of shape [N x 1]
     :param exact_kernel: the exact kernel object
     :param approximate_kernel: the approximate kernel object based on feature functions
