@@ -17,7 +17,7 @@
 """
 # Efficient sampling
 
-TODO: Some explanation...
+In this notebook we showcase how to efficiently draw samples from a GP using Random Fourier Features <cite data-cite="rahimi2007random"/>.
 """
 # %%
 import numpy as np
@@ -31,6 +31,7 @@ from gpflow.config import default_float
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
 from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.models.deep_gp import sample_dgp
 
 tf.keras.backend.set_floatx("float64")
 
@@ -40,60 +41,68 @@ X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 
 # %%
-kernel = gpflow.kernels.SquaredExponential()
+kernel = gpflow.kernels.Matern52()
 Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
 
-num_rff = 1000
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
+
+num_rff = 1000
 eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-kernel2 = KernelWithFeatureDecomposition(None, eigenfunctions, eigenvalues)
+kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
 
+# %%
 layer = gpflux.layers.GPLayer(
-    kernel2,
+    kernel_with_features,
     inducing_variable,
     num_data,
     white=False,
-    verify=False,
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )
-layer._initialized = True
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
-model = gpflux.models.DeepGP([layer], likelihood_layer)
+dgp = gpflux.models.DeepGP([layer], likelihood_layer)
+model = dgp.as_training_model()
 # %%
 
 model.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
+        monitor="loss",
+        patience=5,
+        factor=0.95,
+        verbose=0,
+        min_lr=1e-6,
     )
 ]
 
-history = model.fit(x=X, y=Y, batch_size=num_data, epochs=100, callbacks=callbacks)
-
+history = model.fit(
+    {"inputs": X, "targets": Y},
+    batch_size=num_data,
+    epochs=100,
+    callbacks=callbacks,
+    verbose=0,
+)
 
 # %%
-
 a, b = 5, 5
-X_test = np.linspace(X.min() - a, X.max() + b, 100).reshape(-1, 1)
+n_x = 1000
 spread = X.max() + b - (X.min() - a)
-X_test_1 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
-X_test_2 = np.sort(np.random.rand(50, 1) * spread + (X.min() - a))
+X_test = np.linspace(X.min() - a, X.max() + b, n_x).reshape(-1, 1)
 
-f_dist = model.predict_f(X_test)
-m = f_dist.mean().numpy()
-v = f_dist.scale.diag.numpy()
+f_mean, f_var = dgp.predict_f(X_test)
+f_scale = np.sqrt(f_var)
 
-f_sample_prior = model.sample()
-plt.plot(X_test_1, f_sample_prior(X_test_1).numpy(), "C1.")
-plt.plot(X_test_2, f_sample_prior(X_test_2).numpy(), "C2.")
+n_sim = 10
+for _ in range(n_sim):
+    f_sample = sample_dgp(dgp)
+    plt.plot(X_test, f_sample(X_test).numpy())
 
-plt.plot(X_test, m, "C0")
-plt.plot(X_test, m + v ** 0.5, "C0--")
-plt.plot(X_test, m - v ** 0.5, "C0--")
+plt.plot(X_test, f_mean, "C0")
+plt.plot(X_test, f_mean + f_scale, "C0--")
+plt.plot(X_test, f_mean - f_scale, "C0--")
 plt.plot(X, Y, "kx")
 plt.xlim(X.min() - a, X.max() + b)
 plt.ylim(Y.min() - a, Y.max() + b)

@@ -43,7 +43,7 @@ def build_deep_gp(input_dim, num_data):
         GPLayer(l2_kernel, l2_inducing, num_data),
         GPLayer(l3_kernel, l3_inducing, num_data, mean_function=Zero()),
     ]
-    return DeepGP(gp_layers, likelihood_layer=LikelihoodLayer(Gaussian()))
+    return DeepGP(gp_layers, Gaussian(0.1))
 
 
 def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
@@ -55,10 +55,8 @@ def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval
 
     @tf.function
     def step():
-        optimizer.minimize(objective_closure, deep_gp.trainable_weights)
+        optimizer.minimize(objective_closure, deep_gp.trainable_variables)
 
-    # The model must be compiled to add the loss function:
-    deep_gp.compile(optimizer=optimizer)
     tq = tqdm.tqdm(range(maxiter))
     for i in tq:
         step()
@@ -109,11 +107,8 @@ def get_live_plotter(train_data, model):
     def plotter(*args, **kwargs):
         nonlocal contour_line
 
-        # turn distribution into sample:
-        ZZ_val = tf.convert_to_tensor(model.predict_f(sample_points))
-        if isinstance(ZZ_val, tuple):
-            ZZ_val = ZZ_val[0]
-        ZZ_hat = ZZ_val.numpy().reshape(XX.shape)
+        ZZ_mean, ZZ_var = model.predict_f(sample_points)
+        ZZ_hat = ZZ_mean.numpy().reshape(XX.shape)
         ax.collections.remove(contour_line)
         contour_line = ax.plot_wireframe(XX, YY, ZZ_hat, linewidth=0.5)
         plt.draw()
@@ -130,7 +125,11 @@ def run_demo(maxiter=int(80e3), plotter_interval=60):
     deep_gp = build_deep_gp(input_dim, num_data)
     fig, plotter = get_live_plotter(data, deep_gp)
     train_deep_gp(
-        deep_gp, data, maxiter=maxiter, plotter=plotter, plotter_interval=plotter_interval,
+        deep_gp,
+        data,
+        maxiter=maxiter,
+        plotter=plotter,
+        plotter_interval=plotter_interval,
     )
 
 

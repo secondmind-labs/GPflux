@@ -1,6 +1,9 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorised copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+Deep GP where each hidden layer has the same input dimensionality as the data.
+"""
 
 from dataclasses import dataclass
 
@@ -17,7 +20,6 @@ from gpflux.helpers import (
     construct_basic_kernel,
     construct_mean_function,
 )
-from gpflux.initializers.z_initializer import GivenZInitializer
 from gpflux.layers.gp_layer import GPLayer
 from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.models import DeepGP
@@ -70,11 +72,13 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True,
+            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True, z_init=centroids
         )
 
         kernel = construct_basic_kernel(
-            kernels=construct_kernel(D_in, is_last_layer), output_dim=D_out, share_hyperparams=True,
+            kernels=construct_kernel(D_in, is_last_layer),
+            output_dim=D_out,
+            share_hyperparams=True,
         )
 
         assert config.white is True, "non-whitened case not implemented yet"
@@ -89,13 +93,10 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
                 X_running = X_running.numpy()
             q_sqrt_scaling = config.inner_layer_qsqrt_factor
 
-        initializer = GivenZInitializer(centroids)
-
         layer = GPLayer(
             kernel,
             inducing_var,
             num_data,
-            initializer,
             mean_function=mean_function,
             name=f"gp_{i_layer}",
         )
@@ -103,4 +104,4 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
         gp_layers.append(layer)
 
     likelihood = Gaussian(config.likelihood_noise_variance)
-    return DeepGP(gp_layers=gp_layers, likelihood_layer=LikelihoodLayer(likelihood))
+    return DeepGP(gp_layers, LikelihoodLayer(likelihood))

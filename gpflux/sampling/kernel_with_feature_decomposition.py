@@ -1,6 +1,9 @@
 #  Copyright (C) PROWLER.io 2020 - All Rights Reserved
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
+"""
+Kernel with feature decomposition
+"""
 from typing import Optional, Union
 
 import tensorflow as tf
@@ -20,7 +23,9 @@ class ApproximateKernel(gpflow.kernels.Kernel):
     """
 
     def __init__(
-        self, feature_functions: tf.keras.layers.Layer, feature_coefficients: TensorType,
+        self,
+        feature_functions: tf.keras.layers.Layer,
+        feature_coefficients: TensorType,
     ):
         """
         :param feature_functions: Has a __call__ that computes L features for any
@@ -30,7 +35,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         self._feature_functions = feature_functions
         self._feature_coefficients = feature_coefficients  # [L, 1]
 
-    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> TensorType:
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         """ Approximate the true kernel by an inner product between feature functions. """
         phi = self._feature_functions(X)  # [N, L]
         if X2 is None:
@@ -46,7 +51,7 @@ class ApproximateKernel(gpflow.kernels.Kernel):
         tf.debugging.assert_equal(tf.shape(r), [N1, N2])
         return r
 
-    def K_diag(self, X: TensorType) -> TensorType:
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         """ Approximate the true kernel by an inner product between feature functions. """
         phi_squared = self._feature_functions(X) ** 2  # [N, L]
         r = tf.reduce_sum(phi_squared * tf.transpose(self._feature_coefficients), axis=1)  # [N,]
@@ -97,11 +102,11 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
         return self._feature_functions
 
     @property
-    def feature_coefficients(self) -> TensorType:
+    def feature_coefficients(self) -> tf.Tensor:
         return self._feature_coefficients
 
-    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> TensorType:
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return self._kernel.K(X, X2)
 
-    def K_diag(self, X: TensorType) -> TensorType:
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return self._kernel.K_diag(X)

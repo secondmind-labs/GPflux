@@ -1,6 +1,9 @@
 #  Copyright (C) PROWLER.io 2020 - All Rights Reserved
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
+"""
+Sampling utilities
+"""
 import tensorflow as tf
 
 from gpflow.base import TensorType
@@ -8,7 +11,7 @@ from gpflow.conditionals.util import sample_mvn
 from gpflow.config import default_float, default_jitter
 
 
-def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType) -> TensorType:
+def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType) -> tf.Tensor:
     r"""
     Draws a sample \tilde{f_new} from the conditional multivariate Gaussian p(f_new | f_old),
     where mean and cov are the mean and covariance matrix of the joint multivariate Gaussian
@@ -49,9 +52,9 @@ def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType
     return sample_mvn(mean_new, var_new, full_cov=True)
 
 
-def compute_A_inv_b(A: TensorType, b: TensorType) -> TensorType:
+def compute_A_inv_b(A: TensorType, b: TensorType) -> tf.Tensor:
     r"""
-    Computes `A^{-1} b` using the Cholesky of `A` instead of the explicit inverse,
+    Computes ``A⁻¹ b`` using the Cholesky of ``A`` instead of the explicit inverse,
     as this is often numerically more stable.
 
     :param A: [..., M, M], p.s.d matrix

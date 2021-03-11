@@ -15,75 +15,106 @@ import sys
 import warnings
 
 # Point to root source dir for API doc, relative to this file:
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 
-project = 'GPflux'
-copyright = '2021, Secondmind'
-author = 'Secondmind'
+project = "GPflux"
+copyright = (
+    "Copyright 2021 The GPflux Contributors\n"
+    "\n"
+    "Licensed under the Apache License, Version 2.0\n"
+)
+author = "The GPflux Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
+
+default_role = "any"  # try and turn all `` into links
+add_module_names = False  # Remove namespaces from class/method signatures
+
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',  # Core Sphinx library for auto html doc generation from docstrings
-    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
-    'sphinx.ext.intersphinx',  # Link to other project's documentation (see mapping below)
-    'sphinx.ext.mathjax',  # Render math via Javascript
-    'sphinx.ext.viewcode',  # Add a link to the Python source code for classes, functions etc.
-    'sphinx_autodoc_typehints', # Automatically document param types (less noise in class signature)
-    'nbsphinx',  # Integrate Jupyter Notebooks and Sphinx
-    'IPython.sphinxext.ipython_console_highlighting'
+    "sphinx.ext.viewcode",  # Add a link to the Python source code for classes, functions etc.
+    "sphinx.ext.mathjax",  # Render math via Javascript
+    "IPython.sphinxext.ipython_console_highlighting",  # syntax-highlighting ipython interactive sessions
 ]
+
+### Automatic API doc generation
+extensions.append("autoapi.extension")
+autoapi_dirs = ["../gpflux"]
+autoapi_add_toctree_entry = False
+autoapi_python_class_content = "both"
+autoapi_options = [
+    "members",
+    "private-members",
+    "special-members",
+    "imported-members",
+    "show-inheritance",
+]
+# autoapi_member_order = "bysource"  # default
+# autoapi_member_order = "groupwise"  # by type then alphabetically
+
+
+### intersphinx: Link to other project's documentation (see mapping below)
+extensions.append("sphinx.ext.intersphinx")
 
 # Mappings for sphinx.ext.intersphinx. Projects have to have Sphinx-generated doc (.inv file)
 intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
-    # Unfort. doesn't work yet! See https://github.com/mr-ubik/tensorflow-intersphinx/issues/1
-    #"tensorflow": (
+    # Unfortunately doesn't work yet! See https://github.com/mr-ubik/tensorflow-intersphinx/issues/1
+    # "tensorflow": (
     #    "https://www.tensorflow.org/api_docs/python",
     #    "tf2_py_objects.inv"
-    #),
+    # ),
     "gpflow": ("https://gpflow.readthedocs.io/en/master/", None),
 }
 
-autosummary_generate = True  # Turn on sphinx.ext.autosummary
-autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
-html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
-autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
-set_type_checking_flag = True  # Enable 'expensive' imports for sphinx_autodoc_typehints
+
+### nbsphinx: Integrate Jupyter Notebooks and Sphinx
+extensions.append("nbsphinx")
+
 nbsphinx_allow_errors = True  # Continue through Jupyter errors
-add_module_names = False # Remove namespaces from class/method signatures 
+
+### sphinxcontrib-bibtex
+extensions.append("sphinxcontrib.bibtex")
+
+bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain Jinja2 templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
-#https://sphinxguide.readthedocs.io/en/latest/sphinx_basics/settings.html
+# https://sphinxguide.readthedocs.io/en/latest/sphinx_basics/settings.html
 # -- Options for LaTeX -----------------------------------------------------
 latex_elements = {
-'preamble': r'''
+    "preamble": r"""
 \usepackage{amsmath,amsfonts,amssymb,amsthm}
-''',
+""",
 }
 
 # -- Options for HTML output -------------------------------------------------
 
 # Pydata theme
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/logo-company.png"
-html_theme_options = { "show_prev_next": False}
-html_css_files = ['pydata-custom.css']
+html_logo = "_static/logo.png"
+html_css_files = ["pydata-custom.css"]
+
+# theme-specific options. see theme docs for more info
+html_theme_options = {
+    "show_prev_next": False,
+    "github_url": "https://github.com/secondmind-labs/gpflux",
+}
+
+# If True, show link to rst source on rendered HTML pages
+html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
-
-default_role = "any"  # try and turn all `` into links
+html_static_path = ["_static"]

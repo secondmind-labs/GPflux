@@ -1,8 +1,9 @@
 # Copyright (C) PROWLER.io 2018 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-"""A Sparse Variational Multioutput Gaussian Process Keras Layer"""
+""" A Sparse Variational Multioutput Gaussian Process Keras layer. """
 
+import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -19,10 +20,8 @@ from gpflow.kullback_leiblers import prior_kl
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
 
-from gpflux.exceptions import GPInitializationError
-from gpflux.initializers import FeedForwardInitializer, Initializer
+from gpflux.exceptions import GPLayerIncompatibilityException
 from gpflux.sampling.sample import Sample, efficient_sample
-from gpflux.types import ShapeType
 from gpflux.utils.runtime_checks import verify_compatibility
 
 
@@ -34,16 +33,15 @@ class GPLayer(DistributionLambda):
         kernel: MultioutputKernel,
         inducing_variable: MultioutputInducingVariables,
         num_data: int,
-        initializer: Optional[Initializer] = None,
         mean_function: Optional[MeanFunction] = None,
         *,
         num_samples: Optional[int] = None,
         full_output_cov: bool = False,
         full_cov: bool = False,
-        verify: bool = True,
         num_latent_gps: int = None,
         white: bool = True,
         name: Optional[str] = None,
+        verbose: bool = False,
     ):
         """
         A sparse variational GP layer in whitened representation. This layer holds the
@@ -51,26 +49,21 @@ class GPLayer(DistributionLambda):
 
         :param kernel: The multioutput kernel for the layer
         :param inducing_variable: The inducing features for the layer
-        :param initializer: the initializer for the inducing variables and variational
-            parameters. Default: FeedForwardInitializer
         :param mean_function: The mean function applied to the inputs. Default: Identity
 
         :param num_samples: the number of samples S to draw when converting the
             DistributionLambda into a tensor. By default, draw a single sample without prefixing
             sample shape (see tfp's Distribution.sample()).
-        :param full_cov: Use a full covariance in predictions, or just the diagonals
-        :param full_output_cov: Return a full output covariance
-        :param verify: if False, the call to `verify_compatibility` in the init is bypassed.
-            The user is then responsible for making sure `kernel`, `mean_function`
-            and `inducing_variable` are compatible and work togheter. It is also required
-            to specify `num_latent_gps`, as this will not be infered from the other objects.
-        :param num_latent_gps: number of (latent) GPs in the layer. Used to determine the size of
-            the variational parameters `q_mu` and `q_sqrt`. Only required to be passed when
-            `verify` is set to False, otherwise it is infered from the `kernel` and
+        :param full_cov: Use a full covariance in predictions, or just the diagonals.
+        :param full_output_cov: Return a full output covariance.
+        :param num_latent_gps: The number of (latent) GPs in the layer.
+            This parameter is used to determine the size of the variational parameters
+            `q_mu` and `q_sqrt`. If possible, it is inferred from the `kernel` and
             `inducing_variable`.
-        :param white: determines the parameterisation of the inducing variables.
+        :param white: Determines the parameterisation of the inducing variables.
             If True: p(u) = N(0, I), else p(u) = N(0, Kuu).
-            TODO(VD): The initializer currently only support white = True.
+        :param verbose: Verbosity mode.
+            `False` = silent, `True` = shows debug information.
         """
 
         super().__init__(
@@ -80,26 +73,36 @@ class GPLayer(DistributionLambda):
             name=name,
         )
 
-        if initializer is None:
-            initializer = FeedForwardInitializer()
         if mean_function is None:
             mean_function = Identity()
 
         self.kernel = kernel
         self.inducing_variable = inducing_variable
-        self.initializer = initializer
         self.mean_function = mean_function
 
         self.full_output_cov = full_output_cov
         self.full_cov = full_cov
         self.num_data = num_data
         self.white = white
+        self.verbose = verbose
 
-        if verify:
+        try:
             self.num_inducing, self.num_latent_gps = verify_compatibility(
                 kernel, mean_function, inducing_variable
             )
-        else:
+        except GPLayerIncompatibilityException as e:
+            if num_latent_gps is None:
+                raise e
+
+            msg = (
+                "Warning: Could not verify the compatibility of the `kernel`, `inducing_variable`"
+                "and `mean_function`. We advise using `gpflux.helpers.construct_*` to create"
+                "compatible kernels and inducing variables. However, given that `num_latent_gps`"
+                "has been specified the `q_mu` and `q_sqrt` parameters will be created using that."
+            )
+            if self.verbose:
+                warnings.warn(msg)
+
             self.num_inducing, self.num_latent_gps = (
                 len(inducing_variable),
                 num_latent_gps,
@@ -109,31 +112,15 @@ class GPLayer(DistributionLambda):
             np.zeros((self.num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name=f"{self.name}_q_mu" if self.name else "q_mu",
-        )  # [num_inducing, output_dim]
+        )  # [num_inducing, num_latent_gps]
 
         self.q_sqrt = Parameter(
             np.stack([np.eye(self.num_inducing) for _ in range(self.num_latent_gps)]),
             transform=triangular(),
             dtype=default_float(),
             name=f"{self.name}_q_sqrt" if self.name else "q_sqrt",
-        )  # [output_dim, num_inducing, num_inducing]
-        self._initialized = False
-
+        )  # [num_latent_gps, num_inducing, num_inducing]
         self._num_samples = num_samples
-
-    def initialize_inducing_variables(self, **initializer_kwargs: Any) -> None:
-        if self._initialized:
-            raise GPInitializationError("Initializing twice!")
-
-        self.initializer.init_inducing_variable(self.inducing_variable, **initializer_kwargs)
-        self._initialized = True
-
-    def build(self, input_shape: ShapeType) -> None:
-        """Build the variables necessary on first call"""
-
-        super().build(input_shape)
-        if not self.initializer.init_at_predict:
-            self.initialize_inducing_variables()
 
     def predict(
         self,
@@ -142,13 +129,13 @@ class GPLayer(DistributionLambda):
         full_output_cov: bool = False,
         full_cov: bool = False,
         white: bool = True,
-    ) -> Tuple[TensorType, TensorType]:
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Make a prediction at N test inputs, with input_dim = D, output_dim = Q. Return the
         conditional mean and covariance at these points.
 
         :param inputs: the inputs to predict at. shape [N, D]
-        :param full_output_cov: If true: return the full covariance between Q ouput
+        :param full_output_cov: If true: return the full covariance between Q output
             dimensions. Cov shape: -> [N, Q, N, Q]. If false: return block diagonal
             covariances. Cov shape: -> [Q, N, N]
         :param full_cov: If true: return the full (NxN) covariance for each output
@@ -156,13 +143,6 @@ class GPLayer(DistributionLambda):
             output dimension Q. Cov shape -> [N, Q]
         :param white:
         """
-        if (
-            inputs.shape[0] is not None  # do not initialize for symbolic tensors
-            and self.initializer.init_at_predict
-            and not self._initialized
-        ):
-            self.initialize_inducing_variables(inputs=inputs)
-
         mean_function = self.mean_function(inputs)
         mean_cond, cov = conditional(
             inputs,
@@ -177,7 +157,7 @@ class GPLayer(DistributionLambda):
 
         return mean_cond + mean_function, cov
 
-    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> TensorType:
+    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tf.Tensor:
         """
         The default behaviour upon calling the GPLayer()(X).
 
@@ -193,22 +173,25 @@ class GPLayer(DistributionLambda):
 
         # TF quirk: add_loss must add a tensor to compile
         if kwargs.get("training"):
-            loss = self.prior_kl(whiten=self.white)
+            loss_per_datapoint = self.prior_kl(whiten=self.white) / self.num_data
         else:
-            loss = tf.constant(0.0, dtype=default_float())
-        loss_per_datapoint = loss / self.num_data
-        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
+            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
         self.add_loss(loss_per_datapoint)
+
+        # Metric names should be unique; otherwise they get overwritten if you
+        # have multiple with the same name
+        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
         return outputs
 
-    def prior_kl(self, whiten: bool = True) -> TensorType:
+    def prior_kl(self, whiten: bool = True) -> tf.Tensor:
         """
-        The KL divergence from the variational distribution to the prior
+        The KL divergence from the prior p(u) to the variational distribution q(u)
+        where q(u) = N(q_mu, q_sqrt q_sqrtᵀ)
 
-        :param whiten:
-        :return: KL divergence from N(q_mu, q_sqrt) to N(0, I) independently for each GP
+        :param whiten: if True, p(u) = N(0, I); else, p(u) = N(0, K)
+        :return: KL[q(u)∥p(u)]
         """
         return prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=whiten)
 
@@ -241,9 +224,9 @@ class GPLayer(DistributionLambda):
                 loc=mean, scale_tril=_cholesky_with_jitter(cov)
             )
         else:
-            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=cov)
+            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
 
-    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> TensorType:
+    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> tf.Tensor:
         """
         This method converts the marginal distribution at the N input points to a tensor of (S)
         samples with output_dim Q from that distribution.
@@ -272,7 +255,7 @@ class GPLayer(DistributionLambda):
         )
 
 
-def _cholesky_with_jitter(cov: TensorType) -> TensorType:
+def _cholesky_with_jitter(cov: TensorType) -> tf.Tensor:
     """
     Compute the Cholesky of the covariance, adding jitter to the diagonal to improve stability.
 

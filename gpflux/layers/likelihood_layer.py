@@ -3,10 +3,8 @@
 # Proprietary and confidential
 """A Keras Layer that wraps a likelihood, while containing the necessary operations
 for training"""
-from typing import Tuple, Union
-from warnings import warn
+from typing import Optional, Union
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
@@ -20,61 +18,48 @@ from gpflux.layers.trackable_layer import TrackableLayer
 
 class LikelihoodLayer(TrackableLayer):
     """
-    A layer which wraps a GPflow likelihood, while providing a clear interface to
-    help training.
-    """
+    Keras layer that wraps a GPflow likelihood. This layer expects a
+    MultivariateNormalDiag as its input, describing q(f). When training,
+    computes the negative variational expectation -E_{q(f)}[log p(y|f)] and
+    adds it as a layer loss. When not training, computes mean and variance
+    of y under q(f).
 
-    def __init__(self, likelihood: Likelihood, returns_samples: bool = False):
-        super().__init__(dtype=default_float())
-        self.likelihood = likelihood
-        self.returns_samples = returns_samples
-
-    def call(
-        self, inputs: TensorType, training: bool = False
-    ) -> Union[Tuple[TensorType, TensorType], "LikelihoodOutputs"]:
-        """
-        This function will either return F and y samples or the parameters of the likelihood
-        distribution.
-        """
-        if self.returns_samples:
-            warn("Not implemented - returning the F samples.")
-            f_samples = tf.convert_to_tensor(inputs)
-            return f_samples, tf.convert_to_tensor(np.nan, f_samples.dtype)
-        else:
-            assert isinstance(inputs, tfp.distributions.MultivariateNormalDiag)
-
-            F_mu = inputs.loc
-            F_var = inputs.scale.diag
-
-            Y_mean, Y_var = self.likelihood.predict_mean_and_var(F_mu, F_var)
-            return LikelihoodOutputs(F_mu, F_var, Y_mean, Y_var)
-
-
-class LikelihoodLoss(tf.keras.losses.Loss):
-    """
-    When training a Keras model using this loss function, the value of this loss is not logged
-    explicitly (the layer-specific losses are logged, as is the overall model loss). To output
-    this loss value explicitly, wrap this class in a `Metric` and add it to the model metrics.
+    NOTE: You should _either_ use this `LikelihoodLayer` (together with
+    `gpflux.models.DeepGP`) _or_ `LikelihoodLoss` (together with a
+    `tf.keras.models.Sequential` model). Do NOT use both at once.
     """
 
     def __init__(self, likelihood: Likelihood):
-        super().__init__()
-
-        self._likelihood = likelihood
+        super().__init__(dtype=default_float())
+        self.likelihood = likelihood
 
     def call(
         self,
-        y_true: TensorType,
-        prediction: Union[Tuple[TensorType, TensorType], "LikelihoodOutputs"],
-    ) -> TensorType:
-        if isinstance(prediction, LikelihoodOutputs):
-            F_mu, F_var = prediction.f_mean, prediction.f_var
-            return -self._likelihood.variational_expectations(F_mu, F_var, y_true)
+        inputs: tfp.distributions.MultivariateNormalDiag,
+        targets: Optional[TensorType] = None,
+        training: bool = None,
+    ) -> Union[tf.Tensor, "LikelihoodOutputs"]:
+        # TODO: add support for non-distribution inputs? or other distributions?
+        assert isinstance(inputs, tfp.distributions.MultivariateNormalDiag)
+        F_mean = inputs.loc
+        F_var = inputs.scale.diag ** 2
+
+        if training:
+            assert targets is not None
+            # TODO: re-use LikelihoodLoss to remove code duplication
+            loss_per_datapoint = tf.reduce_mean(
+                -self.likelihood.variational_expectations(F_mean, F_var, targets)
+            )
+            Y_mean = Y_var = None
         else:
-            # Note that y_pred is actually the f-samples. When sampling through the likelihood
-            # is implemented this should be changed (because y_pred will then be y-samples).
-            f_samples, _ = prediction
-            return -self._likelihood.log_prob(f_samples, y_true)
+            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
+            Y_mean, Y_var = self.likelihood.predict_mean_and_var(F_mean, F_var)
+
+        self.add_loss(loss_per_datapoint)
+
+        # TODO: turn this layer into a DistributionLambda as well and
+        # return correct distribution, not a mean/variance tuple
+        return LikelihoodOutputs(F_mean, F_var, Y_mean, Y_var)
 
 
 class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
@@ -89,9 +74,13 @@ class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
     """
 
     def __init__(
-        self, f_mean: TensorType, f_var: TensorType, y_mean: TensorType, y_var: TensorType
+        self,
+        f_mean: TensorType,
+        f_var: TensorType,
+        y_mean: Optional[TensorType],
+        y_var: Optional[TensorType],
     ):
-        super(LikelihoodOutputs, self).__init__(name="distribution_params")
+        super().__init__(name="likelihood_outputs")
 
         self.f_mean = f_mean
         self.f_var = f_var
@@ -100,13 +89,13 @@ class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
 
     def _value(
         self, dtype: tf.dtypes.DType = None, name: str = None, as_ref: bool = False
-    ) -> TensorType:
-        return self.y_mean
+    ) -> tf.Tensor:
+        return self.f_mean
 
     @property
-    def shape(self) -> TensorType:
-        return self.y_mean.shape
+    def shape(self) -> tf.Tensor:
+        return self.f_mean.shape
 
     @property
     def dtype(self) -> tf.dtypes.DType:
-        return self.y_mean.dtype
+        return self.f_mean.dtype

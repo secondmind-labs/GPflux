@@ -9,6 +9,8 @@ TYPE_NAMES = $(LIB_NAME)
 SUCCESS='\033[0;32m'
 UNAME_S = $(shell uname -s)
 
+PANDOC_DEB = https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb
+
 # the --per-file-ignores are to ignore "unused import" warnings in __init__.py files (F401)
 # the F403 ignore in gpflux/__init__.py allows the `from .<submodule> import *`
 LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
@@ -40,12 +42,16 @@ docs:  ## Build the documentation
 	pip install -r docs/docs_requirements.txt
 	@echo "\n=== install pandoc =============="
 ifeq ("$(UNAME_S)", "Linux")
-	(dpkg -l | grep '^ii\s*pandoc\s') || ( \
-	  TEMP_DEB="$(mktemp)" && \
-	  wget -O "$TEMP_DEB" 'https://github.com/jgm/pandoc/releases/download/2.10.1/pandoc-2.10.1-1-amd64.deb' && \
-	  sudo dpkg -i "$TEMP_DEB" && \
-	  rm -f "$TEMP_DEB" \
+	$(eval TEMP_DEB=$(shell mktemp))
+	@echo "Checking for pandoc installation..."
+	@(which pandoc) || ( echo "\nPandoc not found." \
+	  && echo "Trying to install automatically...\n" \
+	  && wget -O "$(TEMP_DEB)" $(PANDOC_DEB) \
+	  && echo "\nInstalling pandoc using dpkg -i from $(PANDOC_DEB)" \
+	  && echo "(If this step does not work, manually install pandoc, see http://pandoc.org/)\n" \
+	  && sudo dpkg -i "$(TEMP_DEB)" \
 	)
+	@rm -f "$(TEMP_DEB)"
 endif
 ifeq ($(UNAME_S),Darwin)
 	brew install pandoc

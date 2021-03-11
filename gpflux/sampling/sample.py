@@ -1,6 +1,9 @@
 #  Copyright (C) PROWLER.io 2020 - All Rights Reserved
 #  Unauthorised copying of this file, via any medium is strictly prohibited
 #  Proprietary and confidential
+"""
+Sampling functions
+"""
 import abc
 from typing import Callable, Optional, Union
 
@@ -31,7 +34,7 @@ class Sample(abc.ABC):
     """
 
     @abc.abstractmethod
-    def __call__(self, X: TensorType) -> TensorType:
+    def __call__(self, X: TensorType) -> tf.Tensor:
         """
         Returns f(X) for f ~ GP(0, k)
 
@@ -45,7 +48,7 @@ class Sample(abc.ABC):
         this = self.__call__
 
         class AddSample(Sample):
-            def __call__(self, X: TensorType) -> TensorType:
+            def __call__(self, X: TensorType) -> tf.Tensor:
                 return this(X) + other(X)
 
         return AddSample()
@@ -72,7 +75,7 @@ def _efficient_sample_conditional_gaussian(
         P = tf.shape(q_mu)[-1]  # num latent GPs
         f = tf.zeros((0, P), dtype=default_float())  # [N_old, P]
 
-        def __call__(self, X_new: TensorType) -> TensorType:
+        def __call__(self, X_new: TensorType) -> tf.Tensor:
             N_old = tf.shape(self.f)[0]
             N_new = tf.shape(X_new)[0]
 
@@ -82,7 +85,13 @@ def _efficient_sample_conditional_gaussian(
                 self.X = tf.concat([self.X, X_new], axis=0)
 
             mean, cov = conditional(
-                self.X, inducing_variable, kernel, q_mu, q_sqrt=q_sqrt, white=white, full_cov=True,
+                self.X,
+                inducing_variable,
+                kernel,
+                q_mu,
+                q_sqrt=q_sqrt,
+                white=white,
+                full_cov=True,
             )  # mean: [N_old+N_new, P], cov: [P, N_old+N_new, N_old+N_new]
             mean = tf.linalg.matrix_transpose(mean)  # [P, N_old+N_new]
             f_old = tf.linalg.matrix_transpose(self.f)  # [P, N_old]
@@ -127,7 +136,8 @@ def _efficient_sample_matheron_rule(
 
     M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
     u_sample_noise = tf.matmul(
-        q_sqrt, tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
+        q_sqrt,
+        tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
     u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
@@ -139,7 +149,7 @@ def _efficient_sample_matheron_rule(
     tf.debugging.assert_equal(tf.shape(v), [M, P])
 
     class WilsonSample(Sample):
-        def __call__(self, X: TensorType) -> TensorType:
+        def __call__(self, X: TensorType) -> tf.Tensor:
             """
             :param X: evaluation points [N, D]
             :return: function value of sample [N, P]

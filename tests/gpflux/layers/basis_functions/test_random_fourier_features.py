@@ -15,7 +15,7 @@ from gpflux.layers.basis_functions.random_fourier_features import (
 )
 
 
-@pytest.fixture(name="n_dims", params=[2, 3])
+@pytest.fixture(name="n_dims", params=[1, 2, 3])
 def _n_dims_fixture(request):
     return request.param
 
@@ -48,35 +48,14 @@ def test_throw_for_unsupported_kernel():
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-def test_fourier_features_can_approximate_kernel_1D(lengthscale, kernel_class):
-    n_features = 10000
-    x_rows = 20
-    y_rows = 30
-
-    kernel = kernel_class(lengthscales=lengthscale)
-    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
-
-    x = tf.random.uniform((x_rows, 1), dtype=tf.float64)
-    y = tf.random.uniform((y_rows, 1), dtype=tf.float64)
-
-    u = fourier_features(x)
-    v = fourier_features(y)
-    approx_kernel_matrix = inner_product(u, v)
-
-    actual_kernel_matrix = kernel.K(x, y)
-
-    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
-
-
-def test_fourier_features_can_approximate_kernel_multidim(lengthscale, n_dims):
-    """Only SquaredExponential supports dimensionality > 1"""
+def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthscale, n_dims):
     n_features = 10000
     x_rows = 20
     y_rows = 30
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    kernel = gpflow.kernels.SquaredExponential(lengthscales=lengthscales)
+    kernel = kernel_class(lengthscales=lengthscales)
     fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
@@ -126,19 +105,29 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
+        kwargs={
+            "kernel": kernel,
+            "output_dim": n_features,
+            "dtype": "float64",
+            "dynamic": True,
+        },
         input_shape=(batch_size, 1),
         input_dtype="float64",
     )
 
 
 def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims, n_features):
-    kernel = gpflow.kernels.SquaredExponential()
+    kernel = kernel_class()
 
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
+        kwargs={
+            "kernel": kernel,
+            "output_dim": n_features,
+            "dtype": "float64",
+            "dynamic": True,
+        },
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )

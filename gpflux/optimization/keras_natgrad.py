@@ -1,15 +1,17 @@
 # Copyright (C) PROWLER.io 2020 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
+"""
+Support for the `gpflow.optimizers.NaturalGradient` optimizer within Keras models.
+"""
 
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
+from typing import Any, List, Mapping, Optional, Tuple, Union
 
 import tensorflow as tf
 from tensorflow.python.util.object_identity import ObjectIdentitySet
 
 import gpflow
 from gpflow import Parameter
-from gpflow.base import TensorType
 from gpflow.models.model import MeanAndVariance
 from gpflow.optimizers import NaturalGradient
 
@@ -32,14 +34,6 @@ class NatGradModel(tf.keras.Model):
     by a regular optimizer (e.g. `tf.optimizers.Adam`) as the last element for all other
     parameters (hyperparameters, inducing point locations).
     """
-
-    def __init__(self, *args: Any, other_loss_fn: Callable[[], tf.Tensor] = None, **kwargs: Any):
-        """
-        :param other_loss_fn: experimental feature to allow specifying a
-            different loss closure for computing gradients for Adam optimizer.
-        """
-        super().__init__(*args, **kwargs)
-        self.other_loss_fn = other_loss_fn
 
     @property
     def natgrad_optimizers(self) -> List[gpflow.optimizers.NaturalGradient]:
@@ -143,11 +137,6 @@ class NatGradModel(tf.keras.Model):
         ):
             natgrad_optimizer._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt)
 
-        if self.other_loss_fn is not None:
-            with tf.GradientTape() as tape:
-                other_loss = self.other_loss_fn()
-            other_grads = tape.gradient(other_loss, other_vars)
-
         self.optimizer.apply_gradients(zip(other_grads, other_vars))
 
     def train_step(self, data: Any) -> Mapping[str, Any]:
@@ -193,12 +182,10 @@ class NatGradWrapper(NatGradModel):
         else:
             return self.base_model.layers
 
-    def elbo(self, data: Any) -> TensorType:
+    def elbo(self, data: Any) -> tf.Tensor:
         # DeepGP-specific pass-through
         return self.base_model.elbo(data)
 
-    def call(
-        self, data: Any, training: Optional[bool] = None
-    ) -> Union[TensorType, MeanAndVariance]:
+    def call(self, data: Any, training: Optional[bool] = None) -> Union[tf.Tensor, MeanAndVariance]:
         # pass-through for model call
         return self.base_model.call(data, training=training)
