@@ -207,7 +207,7 @@ def log10_Wasserstein_distance(
 
 
 # %% [markdown]
-# The core method of the notebook conducts an individual experiment for a given number of input dimensions, a given number of training points (that are automatically generated) and features (to approximate the exact kernel). Subsequently, both the weight space and the hybrid Matheron rule predictions are compared to predictions of an exact posterior GP at test points (that are also automatically generated) in terms of the logarithm of the Wasserstein distance.
+# The core method of the notebook conducts an individual experiment for a specified number of input dimensions, a specified number of training points (that are automatically generated) and features (to approximate the exact kernel). Subsequently, both the weight space and the hybrid Matheron rule predictions are compared to predictions of an exact posterior GP at test points (that are also automatically generated) in terms of the logarithm of the Wasserstein distance.
 
 # %%
 def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
