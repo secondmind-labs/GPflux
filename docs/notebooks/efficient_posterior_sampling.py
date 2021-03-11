@@ -214,7 +214,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     """
     Compute the log10 Wassertein distance between the weight space approximated GP and the exact GP,
     and between the hybrid-rule approximated GP and the exact GP.
-    :param num_input_dimensions: number of input dimensions
+    :param num_input_dimensions: The number of input dimensions.
     :param num_train_samples: number of training samples
     :param num_features: parameter to identify the number of feature functions
     :return: the log10 Wasserstein distances for both approximations
