@@ -58,7 +58,7 @@
 #
 # that combines both feature approximations and exact kernel evaluations from the Matheron function and weight space approximation formulas above.
 #
-# The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in `gpflux` are `RandomFourierFeatures`, to approximate a stationary kernel with finitely many random Fourier features $\phi_d(\cdot)$ according to Bochner's theorem and following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007), and `KernelWithMercerDecomposition`, to approximate a kernel with a specified set of feature functions.
+# The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in `gpflux` are `RandomFourierFeatures`, to approximate a stationary kernel with finitely many random Fourier features $\phi_d(\cdot)$ according to Bochner's theorem and following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007), and `KernelWithFeatureDecomposition`, to approximate a kernel with a specified set of feature functions.
 
 # %%
 import matplotlib.pyplot as plt
@@ -75,7 +75,7 @@ from gpflow.kernels import RBF, Matern52
 from gpflow.models import GPR
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_mercer_decomposition import KernelWithMercerDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 
 # %% [markdown]
 # The first set of parameters specifies settings that remain constant across different experiments. The second set of parameters refers to settings that change across individual experiments. Eventually, there are going to be three plots that compare the weight space approximated to the hybrid Matheron rule -- each plot refers to a different input domain, and the number of input dimensions increases across plots (from left to right). In each plot, the x-axis refers to the number of training examples and the y-axis refers to the $log_{10}$ Wasserstein distance to the exact posterior GP when evaluated at the test point locations. Within each plot, the weight space approximated Matheron results are indicated in orange and the hybrid Matheron results in blue. For each approximation type, three curves are shown with a differing number of Fourier features to approximate the exact kernel.
@@ -99,7 +99,7 @@ num_features = [
 
 
 # %% [markdown]
-# The method below computes the mean and the covariance matrix of an exact GP posterior when evaluated at test point locations. Note that you can also use this method to analytically compute predictions of the Matheron weight space approximated posterior GP when passing a `KernelWithMercerDecomposition` object that approximates a kernel with feature functions.
+# The method below computes the mean and the covariance matrix of an exact GP posterior when evaluated at test point locations. Note that you can also use this method to analytically compute predictions of the Matheron weight space approximated posterior GP when passing a `KernelWithFeatureDecomposition` object that approximates a kernel with feature functions.
 
 # %%
 def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):
@@ -234,8 +234,8 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
         dtype=default_float(),
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())
-    approximate_kernel = KernelWithMercerDecomposition(
-        kernel=None, eigenfunctions=feature_functions, eigenvalues=feature_coefficients
+    approximate_kernel = KernelWithFeatureDecomposition(
+        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
     )
 
     # create training data set and test points for evaluation
