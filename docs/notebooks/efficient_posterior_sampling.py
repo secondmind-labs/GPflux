@@ -337,7 +337,7 @@ def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_
     Conduct the experiment as specified above for different trainig data set sizes and store the results in lists.
     :param num_input_dimensions: number of input dimensions
     :param num_features: parameter to identify the number of feature functions
-    :return: lists of quartiles of the log10 Wasserstein distance for both approximations
+    :return: The quartiles of the log10 Wasserstein distance for both approximations
     """
     list_log10_ws_dist_weight_quarts = (
         []
