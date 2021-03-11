@@ -89,11 +89,7 @@ dgp = create_model(tf.keras.Model)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss",
-        patience=5,
-        factor=0.95,
-        verbose=1,
-        min_lr=1e-6,
+        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
     )
 ]
 
@@ -109,11 +105,7 @@ dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss",
-        patience=5,
-        factor=0.95,
-        verbose=1,
-        min_lr=1e-6,
+        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
     )
 ]
 

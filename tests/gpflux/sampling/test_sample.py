@@ -75,8 +75,7 @@ def test_wilson_efficient_sample(kernel, inducing_variable):
     # Check for consistency - i.e. evaluating the sample at the
     # same locations (X) returns the same value
     np.testing.assert_array_almost_equal(
-        sample_func(X),
-        sample_func(X),
+        sample_func(X), sample_func(X),
     )
 
 

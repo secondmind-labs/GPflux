@@ -105,12 +105,7 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={
-            "kernel": kernel,
-            "output_dim": n_features,
-            "dtype": "float64",
-            "dynamic": True,
-        },
+        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
         input_shape=(batch_size, 1),
         input_dtype="float64",
     )
@@ -122,12 +117,7 @@ def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
-        kwargs={
-            "kernel": kernel,
-            "output_dim": n_features,
-            "dtype": "float64",
-            "dynamic": True,
-        },
+        kwargs={"kernel": kernel, "output_dim": n_features, "dtype": "float64", "dynamic": True,},
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )

@@ -70,20 +70,12 @@ model.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss",
-        patience=5,
-        factor=0.95,
-        verbose=0,
-        min_lr=1e-6,
+        monitor="loss", patience=5, factor=0.95, verbose=0, min_lr=1e-6,
     )
 ]
 
 history = model.fit(
-    {"inputs": X, "targets": Y},
-    batch_size=num_data,
-    epochs=100,
-    callbacks=callbacks,
-    verbose=0,
+    {"inputs": X, "targets": Y}, batch_size=num_data, epochs=100, callbacks=callbacks, verbose=0,
 )
 
 # %%
