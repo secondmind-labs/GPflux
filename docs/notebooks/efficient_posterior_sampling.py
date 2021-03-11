@@ -297,7 +297,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
 
 
 # %% [markdown]
-# This helper functions repeats an individual experiment several times and returns the quartiles of the log Wasserstein distances between both approximations and the exact GP.
+# This helper function repeats an individual experiment several times and returns the quartiles of the log Wasserstein distances between both approximations and the exact GP.
 
 # %%
 def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples, num_features):
