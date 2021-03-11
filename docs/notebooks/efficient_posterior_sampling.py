@@ -377,7 +377,7 @@ def conduct_experiment_for_different_num_features(num_input_dimensions):
     Conduct the experiment as specified above for a different number of feature functions and store
     the results in lists of lists.
     :param num_input_dimensions: number of input dimensions
-    :return: lists of lists of quartiles of the log10 Wasserstein distance for both approximations
+    :return: Lists of lists of quartiles of the log10 Wasserstein distance for both approximations.
     """
     list_of_weight_results = (
         []
