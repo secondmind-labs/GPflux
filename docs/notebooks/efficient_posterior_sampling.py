@@ -58,7 +58,7 @@
 #
 # that combines both feature approximations and exact kernel evaluations from the Matheron function and weight space approximation formulas above.
 #
-# The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. The required classes in `gpflux` in order to conduct these experiments are `RandomFourierFeatures` to approximate a stationary kernel with finitely many random Fourier features $\phi_d(\cdot)$ according to Bochner's theorem and following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007), as well as `KernelWithMercerDecomposition` that approximates a kernel with a given set of feature functions.
+# The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in `gpflux` are `RandomFourierFeatures`, to approximate a stationary kernel with finitely many random Fourier features $\phi_d(\cdot)$ according to Bochner's theorem and following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007), and `KernelWithMercerDecomposition`, to approximate a kernel with a specified set of feature functions.
 
 # %%
 import matplotlib.pyplot as plt
