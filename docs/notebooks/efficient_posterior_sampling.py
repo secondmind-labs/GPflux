@@ -46,7 +46,7 @@
 #
 # $$k(X,X^\prime) \approx \sum_{d=1}^D \phi_d(X) \phi_d({X^\prime}).$$
 #
-# This enables one to approximate Matheron's rule with help of the weight space view:
+# This enables you to approximate Matheron's rule with help of the weight space view:
 #
 # $$\textbf{f}^\star \approx \boldsymbol{\Phi}^\star \textbf{w} + \boldsymbol{\Phi}^\star \boldsymbol{\Phi}^\intercal(\boldsymbol{\Phi} \boldsymbol{\Phi}^\intercal + \sigma_\epsilon^2 \textbf{I})^{-1}(\textbf{y} - \boldsymbol{\Phi} \textbf{w}) \; \text{ where } \; \textbf{w} \sim \mathcal{N}(\textbf{0}, \textbf{I}),$$
 #
