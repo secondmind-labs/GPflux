@@ -4,4 +4,5 @@ pandoc
 nbsphinx
 jupytext
 pydata-sphinx-theme
+sphinxcontrib-bibtex
 sphinx-autoapi

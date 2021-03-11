@@ -27,12 +27,12 @@
 Welcome to GPflux
 ==================
 
-GPflux is a research toolbox dedicated to Deep Gaussian processes (DGP), the hierarchical extension of Gaussian processes (GP) created by feeding the output of one GP into the next.
+GPflux is a research toolbox dedicated to Deep Gaussian processes (DGP) :cite:p:`damianou2013deep`, the hierarchical extension of Gaussian processes (GP) created by feeding the output of one GP into the next.
 
-GPflux uses the mathematical building blocks from `GPflow <http://www.gpflow.org/>`_ and marries these with the powerful layered deep learning API provided by `Keras <https://www.tensorflow.org/api_docs/python/tf/keras>`_. 
+GPflux uses the mathematical building blocks from `GPflow <http://www.gpflow.org/>`_ :cite:p:`gpflow2020` and marries these with the powerful layered deep learning API provided by `Keras <https://www.tensorflow.org/api_docs/python/tf/keras>`_.
 This combination leads to a framework that can be used for:
 
-- researching (deep) Gaussian process models, and
+- researching (deep) Gaussian process models (e.g., :cite:p:`salimbeni2017doubly, dutordoir2018`), and
 - building, training, evaluating and deploying (deep) Gaussian processes in a modern way, making use of the tools developed by the deep learning community.
 
 
@@ -121,3 +121,10 @@ Join the community
 GPflux is an open source project. We welcome contributions. To submit a pull request, file a bug report, or make a feature request, see the `contribution guidelines <https://github.com/secondmind-labs/gpflux/blob/develop/CONTRIBUTING.md>`_.
 
 We have a public  `Slack workspace <https://join.slack.com/t/secondmind-labs/shared_invite/zt-mjkavx5e-LfePbVegb9lXRA_ZUqTyMA>`_. Please use this invite link if you'd like to join, whether to ask short informal questions or to be involved in the discussion and future development of GPflux.
+
+
+Bibliography
+------------
+
+.. bibliography::
+   :all:

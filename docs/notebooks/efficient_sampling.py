@@ -17,9 +17,7 @@
 """
 # Efficient sampling
 
-In this notebook we showcase how to efficiently draw samples from a GP using Random Fourier Features [1].
-
-[1] Rahimi, Ali, and Benjamin Recht. "Random Features for Large-Scale Kernel Machines." NIPS. Vol. 3. No. 4. 2007.
+In this notebook we showcase how to efficiently draw samples from a GP using Random Fourier Features <cite data-cite="rahimi2007random"/>.
 """
 # %%
 import numpy as np
@@ -75,13 +73,17 @@ callbacks = [
         monitor="loss",
         patience=5,
         factor=0.95,
-        verbose=1,
+        verbose=0,
         min_lr=1e-6,
     )
 ]
 
 history = model.fit(
-    {"inputs": X, "targets": Y}, batch_size=num_data, epochs=100, callbacks=callbacks
+    {"inputs": X, "targets": Y},
+    batch_size=num_data,
+    epochs=100,
+    callbacks=callbacks,
+    verbose=0,
 )
 
 # %%

@@ -17,7 +17,7 @@
 """
 # Introduction to GPflux
 
-In this notebook we are going to cover the basics of Deep Gaussian processes (DGPs) with GPflux. We assume that the reader is familiar with the concepts of Gaussian processes and Deep Gaussian processes (see \[1, 2, 3\] for an in-depth overview).
+In this notebook we cover the basics of Deep Gaussian processes (DGPs) <cite data-cite="damianou2013deep"/> with GPflux. We assume that the reader is familiar with the concepts of Gaussian processes and Deep GPs (see <cite data-cite="rasmussen,gpflow2020"/> for an in-depth overview).
 """
 
 # %%
@@ -33,7 +33,7 @@ tf.get_logger().setLevel("INFO")
 """
 ## The motorcycle dataset
 
-We are going to model a one-dimensional dataset containing observations from a simulated motorcycle accident, used to test crash helmets \[4\]. The dataset has many interesting properties that we can use to showcase the power of DGPs as opposed to shallow (that is, single layer) GP models.
+We are going to model a one-dimensional dataset containing observations from a simulated motorcycle accident, used to test crash helmets \[1\]. The dataset has many interesting properties that we can use to showcase the power of DGPs as opposed to shallow (that is, single layer) GP models.
 """
 
 
@@ -55,8 +55,9 @@ plt.ylabel("Acceleration")
 """
 ## Single-layer GP
 
-We start this introduction by building a single-layer deep GP using GPflux. However, you'll notice that we are using a lot of [GPflow](www.github.com/GPflow/GPflow) objects to build our GPflux model. This is a conscious decision. GPflow contains well-tested and stable implementations of key GP building blocks, such as kernels, likelihoods, inducing variables, mean functions, and so on. By relying on GPflow for these elements, we can keep the GPflux code lean and focused on what is important for building deep GP models.  
-We are going to build a Sparse Variational Gaussian process (SVGP), for which we refer to \[2\] for an in-depth overview.
+We start this introduction by building a single-layer GP using GPflux. However, you'll notice that we rely a lot on [GPflow](www.github.com/GPflow/GPflow) objects to build our GPflux model. This is a conscious decision. GPflow contains well-tested and stable implementations of key GP building blocks, such as kernels, likelihoods, inducing variables, mean functions, and so on. By relying on GPflow for these elements, we can keep the GPflux code lean and focused on what is important for building deep GP models.  
+
+We are going to build a Sparse Variational Gaussian process (SVGP), for which we refer to <cite data-cite="gpflow2020"/> or <cite data-cite="leibfried2020tutorial"/> for an in-depth overview.
 """
 
 # %% [markdown]
@@ -143,7 +144,7 @@ plot(single_layer_dgp.as_prediction_model(), X, Y)
 ## Two-layer deep Gaussian process
 
 We repeat the exercise but now we build a two-layer model. The setup is very similar apart from the fact that we create two GP layers, and pass them to our `DeepGP` model as a list.
-We refer to \[2, 3\] for details on the deep GP model and variational stochastic inference method.
+We refer to <cite data-cite="salimbeni2017doubly"/> for details on the deep GP model and variational stochastic inference method.
 """
 
 # %%
@@ -187,8 +188,6 @@ From visual inspection we immediately notice that the two-layer model performs m
 """
 ## References
 
-\[1\] Rasmussen, C. and Williams, C. K. I. (2006) "Gaussian Processes for Machine Learning". _MIT Press_.
-\[2\] van der Wilk, M. et al. (2020) "A framework for interdomain and multioutput Gaussian processes." _arXiv preprint arXiv:2003.01115_.
-\[3\] Salimbeni, H., Deisenroth, M., et al. (2017) "Doubly Stochastic Variational Inference for Deep Gaussian processes" _Advances in Neural Information Processing Systems_.
-\[4\] Silverman, B. W. (1985) "Some aspects of the spline smoothing approach to non-parametric curve fitting". _Journal of the Royal Statistical Society_ series B 47, 1-52.
+[1] Silverman, B. W. (1985) "Some aspects of the spline smoothing approach to non-parametric curve fitting". _Journal of the Royal Statistical Society_ series B 47, 1-52.
+
 """

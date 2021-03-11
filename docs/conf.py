@@ -45,9 +45,7 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",  # syntax-highlighting ipython interactive sessions
 ]
 
-
 ### Automatic API doc generation
-
 extensions.append("autoapi.extension")
 autoapi_dirs = ["../gpflux"]
 autoapi_add_toctree_entry = False
@@ -84,6 +82,10 @@ extensions.append("nbsphinx")
 
 nbsphinx_allow_errors = True  # Continue through Jupyter errors
 
+### sphinxcontrib-bibtex
+extensions.append("sphinxcontrib.bibtex")
+
+bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain Jinja2 templates here, relative to this directory.
 templates_path = ["_templates"]
