@@ -187,7 +187,7 @@ def log10_Wasserstein_distance(
     :param approximate_mean: The approximate mean, with a shape of [N*].
     :param approximate_covariance: The approximate covariance, with a shape of [N* x N*].
     :param jitter: The jitter value for numerical robustness.
-    :return: a scalar log distance value
+    :return: A scalar log distance value.
     """
     squared_mean_distance = tf.norm(mean - approximate_mean) ** 2
     square_root_covariance = tf.linalg.sqrtm(
