@@ -305,7 +305,7 @@ def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples
     Conduct the experiment as specified above `num_experiment_runs` times and identify the quartiles for
     the log10 Wassertein distance between the weight space approximated GP and the exact GP, 
     and between the hybrid-rule approximated GP and the exact GP.
-    :param num_input_dimensions: number of input dimensions
+    :param num_input_dimensions: The number of input dimensions.
     :param num_train_samples: number of training samples
     :param num_features: parameter to identify the number of feature functions
     :return: the quartiles of the log10 Wasserstein distance for both approximations
