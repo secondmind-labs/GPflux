@@ -135,7 +135,7 @@ def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, nois
     :param approximate_kernel: The approximate kernel object based on feature functions.
     :param noise_variance: The variance of the observation model.
     :param X_star: The test point locations, with a shape of [N* x D].
-    :return: mean and covariance of the noise-free predictions of shape [N*] and [N* x N*] respectively
+    :return: The mean and covariance of the noise-free predictions, with a shape of [N*] and [N* x N*] respectively.
     """
     phi_star = approximate_kernel._eigenfunctions(X_star)
     assert phi_star.shape[0] == X_star.shape[0]
