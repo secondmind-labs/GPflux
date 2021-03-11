@@ -86,7 +86,10 @@ class DeepGP(Module):
         return num_data
 
     def _evaluate_deep_gp(
-        self, inputs: TensorType, targets: Optional[TensorType], training: Optional[bool] = None,
+        self,
+        inputs: TensorType,
+        targets: Optional[TensorType],
+        training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
         Evaluates f(x) = fₙ(⋯ (f₂(f₁(x)))) on the `inputs`.
@@ -114,7 +117,10 @@ class DeepGP(Module):
         return features
 
     def _evaluate_likelihood(
-        self, f_outputs: TensorType, targets: Optional[TensorType], training: Optional[bool] = None,
+        self,
+        f_outputs: TensorType,
+        targets: Optional[TensorType],
+        training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
         Calls the `likelihood_layer` on `f_outputs`, which adds the

@@ -27,7 +27,8 @@ def make_kernels(num_latent_k):
 def make_inducing_variables(num_latent_iv):
     return [
         construct_basic_inducing_variables(
-            num_inducing=[num_inducing for _ in range(num_latent_iv)], input_dim=input_dim,
+            num_inducing=[num_inducing for _ in range(num_latent_iv)],
+            input_dim=input_dim,
         ),
         construct_basic_inducing_variables(
             num_inducing=num_inducing, input_dim=input_dim, output_dim=num_latent_iv

@@ -12,7 +12,8 @@ import tensorflow as tf
 
 
 def extend_and_filter(
-    extend_method: Callable[..., Sequence], filter_method: Optional[Callable[..., Sequence]] = None,
+    extend_method: Callable[..., Sequence],
+    filter_method: Optional[Callable[..., Sequence]] = None,
 ) -> Callable[[Any], Any]:
     """
     This decorator calls a decorated method, and extends the result with another method

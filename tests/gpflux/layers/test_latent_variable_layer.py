@@ -109,10 +109,12 @@ def test_latent_variable_layer_losses(mocker, w_dim):
     posteriors_shape = (num_data, w_dim)
 
     prior = tfp.distributions.MultivariateNormalDiag(
-        loc=np.random.randn(*prior_shape), scale_diag=np.random.randn(*prior_shape) ** 2,
+        loc=np.random.randn(*prior_shape),
+        scale_diag=np.random.randn(*prior_shape) ** 2,
     )
     posteriors = tfp.distributions.MultivariateNormalDiag(
-        loc=np.random.randn(*posteriors_shape), scale_diag=np.random.randn(*posteriors_shape) ** 2,
+        loc=np.random.randn(*posteriors_shape),
+        scale_diag=np.random.randn(*posteriors_shape) ** 2,
     )
 
     encoder = mocker.Mock(return_value=(posteriors.loc, posteriors.scale.diag))
@@ -149,10 +151,12 @@ def test_latent_variable_layer_samples(mocker, test_data, w_dim, seed2):
     posteriors_shape = (num_data, w_dim)
 
     prior = tfp.distributions.MultivariateNormalDiag(
-        loc=np.random.randn(*prior_shape), scale_diag=np.random.randn(*prior_shape) ** 2,
+        loc=np.random.randn(*prior_shape),
+        scale_diag=np.random.randn(*prior_shape) ** 2,
     )
     posteriors = tfp.distributions.MultivariateNormalDiag(
-        loc=np.random.randn(*posteriors_shape), scale_diag=np.random.randn(*posteriors_shape) ** 2,
+        loc=np.random.randn(*posteriors_shape),
+        scale_diag=np.random.randn(*posteriors_shape) ** 2,
     )
 
     encoder = mocker.Mock(return_value=(posteriors.loc, posteriors.scale.diag))
