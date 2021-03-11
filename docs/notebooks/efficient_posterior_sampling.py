@@ -131,7 +131,7 @@ def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, nois
     Identify the mean and covariance using the hybrid Matheron approximation of the exact posterior.
     :param X: The train point locations, with a shape of [N x D].
     :param y: The train targets, with a shape of [N x 1].
-    :param exact_kernel: the exact kernel object
+    :param exact_kernel: The exact kernel object.
     :param approximate_kernel: the approximate kernel object based on feature functions
     :param noise_variance: variance of the observation model
     :param X_star: test point locations of shape [N* x D]
