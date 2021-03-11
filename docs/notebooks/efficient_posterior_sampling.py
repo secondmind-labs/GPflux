@@ -42,7 +42,7 @@
 #
 # with $\textbf{f}_{\text{prior}}$ and $\textbf{f}^\star_{\text{prior}}$ referring to random samples obtained when jointly evaluating the prior GP at both training points $\{X_n\}_{n=1,...,N}$ and evaluation points $\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}$. Note that this way of obtaining samples from the posterior GP does not alleviate the computational complexity problem in any way, because sampling $\textbf{f}_{\text{prior}}$ and $\textbf{f}^\star_{\text{prior}}$ from the prior GP has cubic complexity $\mathcal{O}((N + N^\star)^3)$.
 #
-# However, one can approximate a kernel $k(\cdot,\cdot^\prime)$ with a finite number of real-valued feature functions $\phi_d(\cdot)$ indexed with $d=1,...,D$ (e.g. through Mercer's or Bochner's theorem) as:
+# However, you can approximate a kernel $k(\cdot,\cdot^\prime)$ with a finite number of real-valued feature functions $\phi_d(\cdot)$ indexed with $d=1,...,D$ (e.g. through Mercer's or Bochner's theorem) as:
 #
 # $$k(X,X^\prime) \approx \sum_{d=1}^D \phi_d(X) \phi_d({X^\prime}).$$
 #
