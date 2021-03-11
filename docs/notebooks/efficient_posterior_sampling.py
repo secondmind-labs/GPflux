@@ -110,7 +110,7 @@ def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):
     :param kernel: The kernel object.
     :param noise_variance: The variance of the observation model.
     :param X_star: The test point locations, with a shape of [N* x D].
-    :return: mean and covariance of the noise-free predictions of shape [N*] and [N* x N*] respectively
+    :return: The mean and covariance of the noise-free predictions, with a shape of [N*] and [N* x N*] respectively.
     """
     gpr_model = GPR(data=(X, y), kernel=kernel, noise_variance=noise_variance)
 
