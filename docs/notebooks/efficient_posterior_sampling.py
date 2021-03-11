@@ -137,10 +137,10 @@ def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, nois
     :param X_star: The test point locations, with a shape of [N* x D].
     :return: The mean and covariance of the noise-free predictions, with a shape of [N*] and [N* x N*] respectively.
     """
-    phi_star = approximate_kernel._eigenfunctions(X_star)
+    phi_star = approximate_kernel._feature_functions(X_star)
     assert phi_star.shape[0] == X_star.shape[0]
 
-    phi = approximate_kernel._eigenfunctions(X)
+    phi = approximate_kernel._feature_functions(X)
     assert phi.shape[0] == X.shape[0]
 
     kXstarX = exact_kernel.K(X_star, X)
