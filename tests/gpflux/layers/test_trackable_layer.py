@@ -1,5 +1,6 @@
 from typing import List
 
+import pytest
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
@@ -158,6 +159,25 @@ def test_variables():
     ) = setup_layer_modules_variables()
     all_vars = variables + module_variables
     assert to_tensor_set(trackable_layer.variables) == to_tensor_set(all_vars)
+
+
+@pytest.mark.parametrize(
+    "composite_class",
+    [CompositeModule, pytest.param(UntrackableCompositeLayer, marks=pytest.mark.xfail)],
+)
+def test_tensorflow_classes_trackable(composite_class):
+    composite_object = composite_class([Matern52()])
+    assert len(composite_object.trainable_variables) == 2
+
+
+def test_if_trackable_layer_workaround_still_required():
+    """
+    With the release of TensorFlow 2.5, our TrackableLayer workaround is no
+    longer needed. Remove trackable_layer module, tests and references to it.
+    See https://github.com/Prowler-io/gpflux/issues/189
+    """
+    layer = UntrackableCompositeLayer([Matern52()])
+    assert len(layer.trainable_variables) == 0
 
 
 if __name__ == "__main__":

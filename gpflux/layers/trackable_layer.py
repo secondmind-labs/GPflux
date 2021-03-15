@@ -54,6 +54,9 @@ class TrackableLayer(tf.keras.layers.Layer):
     tf.Layer inherits from tf.Module, they cannot track the tf.Variables of
     their attributes that are generic tf.Modules. This seems to be an issue
     that the TensorFlow authors seem to want to fix in the future.
+
+    .. todo:: Once TensorFlow 2.5 is released, this class will be removed.
+        See https://github.com/Prowler-io/gpflux/issues/189
     """
 
     @property
