@@ -1,7 +1,7 @@
 # Copyright (C) PROWLER.io 2019 - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-"""A base Keras Layer that tracks variables and weights in GPflux"""
+"""Utility layer that tracks variables in :class:`tf.Module`."""
 
 
 import itertools
@@ -16,18 +16,17 @@ def extend_and_filter(
     filter_method: Optional[Callable[..., Sequence]] = None,
 ) -> Callable[[Any], Any]:
     """
-    This decorator calls a decorated method, and extends the result with another method
-    on the same class. This method is called after the decorated function, with the same
-    arguments as the decorated function. If specified, a second filter method can be applied
-    to the extended list. Filter method should also be a method from the class.
+    Decorator that extends and optionally filters the output of a function.
+    Both ``extend_method`` and ``filter_method`` need to be members of the same
+    class as the decorated method.
 
-    :param extend_method: Callable
-        Accepts the same argument as the decorated method.
-        The returned list from `extend_method` will be added to the
-        decorated method's returned list.
-    :param filter_method: Callable
+    :param extend_method:
+        Accepts the same arguments as the decorated function.
+        The returned list from ``extend_method`` will be added to the
+        decorated function's returned list.
+    :param filter_method:
         Takes in the extended list and filters it.
-        Defaults to no filtering for `filter_method` equal to `None`.
+        Defaults to no filtering when set to `None`.
     """
 
     def decorator(f: Callable) -> Callable:
@@ -44,16 +43,8 @@ def extend_and_filter(
 
 
 class TrackableLayer(tf.keras.layers.Layer):
-    """
-    A tf.Layer that implements tracking of tf.Variables on the class's
-    attributes that are tf.Modules.
-
-    Currently, tf.Modules track the tf.Variables of their attributes that are
-    also tf.Modules.  Similarly, tf.Layers track the tf.Variables of their
-    attributes that are also tf.Layers.  However, despite the fact that
-    tf.Layer inherits from tf.Module, they cannot track the tf.Variables of
-    their attributes that are generic tf.Modules. This seems to be an issue
-    that the TensorFlow authors seem to want to fix in the future.
+    r"""
+    A :class:`tf.Layer` that tracks variables in :class:`tf.Module`\ s.
 
     .. todo:: Once TensorFlow 2.5 is released, this class will be removed.
         See https://github.com/Prowler-io/gpflux/issues/189
@@ -61,8 +52,10 @@ class TrackableLayer(tf.keras.layers.Layer):
 
     @property
     def _submodules(self) -> Sequence[tf.Module]:
-        """Return a list of tf.Module instances that are attributes on the class. Note
-        this also include list or tuples of tf.Modules"""
+        """
+        :return: list of :class:`tf.Module` instances that are attributes on the class.
+        This also includes instances within lists or tuples.
+        """
 
         submodules = []
 
