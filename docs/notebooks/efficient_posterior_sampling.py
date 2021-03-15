@@ -84,8 +84,8 @@ from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureD
 # settings that are fixed across experiments
 kernel_class = RBF  # choose alternatively kernel_class = Matern52
 noise_variance = 1e-3  # variance of the observation model
-num_test_samples = 256  # number of test samples for evaluation (1024 in the paper)
-num_experiment_runs = 32  # number of experiment repetitions (64 in the paper)
+num_test_samples = 64  # number of test samples for evaluation (1024 in the paper)
+num_experiment_runs = 4  # number of experiment repetitions (64 in the paper)
 
 # settings that vary across experiments
 num_input_dimensions = [2, 4, 8]  # number of input dimensions
