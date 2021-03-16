@@ -28,6 +28,12 @@ from gpflux.utils.runtime_checks import verify_compatibility
 class GPLayer(DistributionLambda):
     """A sparse variational multioutput GP layer"""
 
+    num_data: int
+    """
+    Number of points in the dataset; used to obtain correct scaling between
+    data-fit and KL term in the ELBO
+    """
+
     def __init__(
         self,
         kernel: MultioutputKernel,

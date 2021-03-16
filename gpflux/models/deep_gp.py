@@ -2,7 +2,7 @@
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
 """
-DeepGP class
+Base implementation for DeepGP models
 """
 
 import itertools
@@ -13,6 +13,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import Module, TensorType
 
+import gpflux
 from gpflux.layers import LayerWithObservations, LikelihoodLayer
 from gpflux.sampling.sample import Sample
 
@@ -20,20 +21,48 @@ from gpflux.sampling.sample import Sample
 class DeepGP(Module):
     """
     This class combines a sequential function model f(x) = fₙ(⋯ (f₂(f₁(x))))
-    and a likelihood p(y|f). Layers may depend on both inputs x and targets y
-    during training by inheriting from `LayerWithObservations`; those will
+    and a likelihood p(y|f).
+
+    Layers may depend on both inputs x and targets y during training by
+    inheriting from :class:`~gpflux.layers.LayerWithObservations`; those will
     be passed the argument ``observations=[inputs, targets]``.
 
-    Note that this class is not a `tf.keras.Model` subclass itself; to access
-    Keras features, create a `Model` instance by calling :meth:`as_training_model`
-    or :meth:`as_prediction_model` depending on the use-case; see their method
-    doc strings for details.
+    Note that this class is *not* a `tf.keras.Model` subclass itself; to access
+    Keras features, create a `tf.keras.Model` instance by calling
+    :meth:`as_training_model` or :meth:`as_prediction_model` depending on the
+    use-case; see their method doc strings for details.
+    """
+
+    inputs: tf.keras.Input
+    targets: tf.keras.Input
+
+    f_layers: List[tf.keras.layers.Layer]
+    """ List of all layers in this DeepGP (just :attr:`likelihood_layer` is separate) """
+
+    likelihood_layer: gpflux.layers.LikelihoodLayer
+    """ Likelihood layer """
+
+    default_model_class: Type[tf.keras.Model]
+    """
+    Default for *model_class* argument of :meth:`as_training_model` and
+    :meth:`as_prediction_model`. Must have same semantics as `tf.keras.Model`,
+    i.e. accepting a list of inputs and an output. This could be
+    `tf.keras.Model` itself or `gpflux.optimization.NatGradModel` (but not, for
+    example, `tf.keras.Sequential`).
+    """
+
+    num_data: int
+    """
+    Number of points in the dataset; used to obtain correct scaling between
+    data-fit and KL term in the ELBO (:meth:`elbo`).
     """
 
     def __init__(
         self,
         f_layers: List[tf.keras.layers.Layer],
-        likelihood: Union[LikelihoodLayer, gpflow.likelihoods.Likelihood],
+        likelihood: Union[
+            gpflux.layers.LikelihoodLayer, gpflow.likelihoods.Likelihood
+        ],  # fully-qualified for autoapi
         *,
         input_dim: Optional[int] = None,
         target_dim: Optional[int] = None,
@@ -44,14 +73,15 @@ class DeepGP(Module):
         :param f_layers: the layers [f₁, f₂, …, fₙ] describing the latent
             function f(x) = fₙ(⋯ (f₂(f₁(x)))).
         :param likelihood: the layer for the likelihood p(y|f); if this is a
-            GPflow likelihood, will be wrapped in a LikelihoodLayer, or a
-            LikelihoodLayer can be provided explicitly.
+            GPflow likelihood, will be wrapped in a :class:`~gpflux.layers.LikelihoodLayer`,
+            or a :class:`~gpflux.layers.LikelihoodLayer` can be provided explicitly.
         :param input_dim: input dimensionality
         :param target_dim: target dimensionality
-        :param default_model_class: ``model_class`` default for
-            :meth:`as_training_model` and :meth:`as_prediction_model`
-        :param num_data: number of data points (used by :meth:`elbo` to obtain
-            correct scaling)
+        :param default_model_class: default for *model_class* argument of
+            :meth:`as_training_model` and :meth:`as_prediction_model`;
+            see :attr:`default_model_class` attribute.
+        :param num_data: number of data points; see :attr:`num_data` attribute.
+            Will be auto-detected from GP layers if not given explicitly.
         """
         self.inputs = tf.keras.Input((input_dim,), name="inputs")
         self.targets = tf.keras.Input((target_dim,), name="targets")
@@ -68,9 +98,11 @@ class DeepGP(Module):
         f_layers: List[tf.keras.layers.Layer], num_data: Optional[int] = None
     ) -> int:
         """
-        Checks that the `num_data` attributes of all layers in `f_layers` are
-        consistent with each other and with the (optional) `num_data` argument.
-        :return: the validated number of data points
+        Checks that the :attr:`~gpflux.layers.gp_layer.GPLayer.num_data`
+        attributes of all layers in *f_layers* are consistent with each other
+        and with the (optional) *num_data* argument.
+
+        :returns: the validated number of data points
         """
         for i, layer in enumerate(f_layers):
             layer_num_data = getattr(layer, "num_data", None)
@@ -92,11 +124,12 @@ class DeepGP(Module):
         training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
-        Evaluates f(x) = fₙ(⋯ (f₂(f₁(x)))) on the `inputs`.
+        Evaluates f(x) = fₙ(⋯ (f₂(f₁(x)))) on the *inputs* argument.
 
-        Layers that inherit from `LayerWithObservations` will be passed an
-        `observations` argument which is ``[inputs, targets]`` or `None`
-        depending on whether `targets` contains a value or `None`.
+        Layers that inherit from :class:`~gpflux.layers.LayerWithObservations`
+        will be passed the additional keyword argument ``observations=[inputs,
+        targets]`` if *targets* contains a value, or ``observations=None`` when
+        *targets* is `None`.
         """
         features = inputs
 
@@ -123,7 +156,7 @@ class DeepGP(Module):
         training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
-        Calls the `likelihood_layer` on `f_outputs`, which adds the
+        Calls the `likelihood_layer` on *f_outputs*, which adds the
         corresponding layer loss when training.
         """
         return self.likelihood_layer(f_outputs, targets=targets, training=training)
@@ -140,16 +173,16 @@ class DeepGP(Module):
 
     def predict_f(self, inputs: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         """
-        Returns mean and variance (not scale!) of f for compatibility with GPflow models.
+        :Returns: mean and variance (not scale!) of f for compatibility with GPflow models.
 
-        NOTE: Does not support ``full_cov`` or ``full_output_cov``.
+        .. note:: Does *not* support ``full_cov`` or ``full_output_cov``.
         """
         f_distribution = self._evaluate_deep_gp(inputs, targets=None)
         return f_distribution.loc, f_distribution.scale.diag ** 2
 
     def elbo(self, data: Tuple[TensorType, TensorType]) -> tf.Tensor:
         """
-        Returns ELBO (not per-datapoint loss!) for compatibility with GPflow models.
+        :Returns: ELBO (not per-datapoint loss!) for compatibility with GPflow models.
         """
         X, Y = data
         _ = self.call(X, Y, training=True)
@@ -170,12 +203,15 @@ class DeepGP(Module):
         self, model_class: Optional[Type[tf.keras.Model]] = None
     ) -> tf.keras.Model:
         r"""
-        Constructs a `tf.keras.Model` instance that requires both ``inputs`` and
-        ``targets`` to be provided to its call. This is required for training the
-        model, as the `likelihood_layer` (and `LayerWithObservations` instances
-        such as `LatentVariableLayer`\ s, if present) needs to be passed the
-        ``targets``. When compiling the returned model, do NOT provide any
-        additional losses.
+        Constructs a `tf.keras.Model` instance that requires both ``inputs``
+        and ``targets`` to be provided to its call. This is required for
+        training the model, as the `likelihood_layer` (and
+        :class:`~gpflux.layers.LayerWithObservations` instances such as
+        :class:`~gpflux.layers.LatentVariableLayer`\ s, if present) needs to be
+        passed the ``targets``.
+
+        When compiling the returned model, do NOT provide any additional
+        losses (this will be handled by the :attr:`likelihood_layer`).
 
         Train with
 
@@ -184,18 +220,16 @@ class DeepGP(Module):
             model.compile(optimizer)  # do NOT pass a loss here
             model.fit({"inputs": X, "targets": Y}, ...)
 
-        See https://keras.io/examples/keras_recipes/endpoint_layer_pattern/ for
-        more details on this pattern.
+        See `Keras's Endpoint layer pattern
+        <https://keras.io/examples/keras_recipes/endpoint_layer_pattern/>`_
+        for more details.
 
         .. note::
 
             Use `as_prediction_model` if you only want to predict and do not
             want to pass in a dummy array for the targets.
 
-        :param model_class: A class/constructor that has the same semantics as
-            `tf.keras.Model.__init__`, accepting a list of inputs and an output.
-            E.g., `tf.keras.Model` itself or `gpflux.optimization.NatGradModel`
-            (but not `tf.keras.models.Sequential`).
+        :param model_class: overrides :attr:`default_model_class`
         """
         model_class = self._get_model_class(model_class)
         outputs = self.call(self.inputs, self.targets)
@@ -219,10 +253,7 @@ class DeepGP(Module):
             Note that the returned model will not support training; for that,
             use `as_training_model`.
 
-        :param model_class: A class/constructor that has the same semantics as
-            `tf.keras.Model.__init__`, accepting a list of inputs and an output.
-            E.g., `tf.keras.Model` itself or `gpflux.optimization.NatGradModel`
-            (but not `tf.keras.models.Sequential`).
+        :param model_class: overrides `default_model_class`
         """
         model_class = self._get_model_class(model_class)
         outputs = self.call(self.inputs)
