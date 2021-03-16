@@ -14,4 +14,5 @@ Tutorials
 
    notebooks/deep_gp_samples
    notebooks/efficient_sampling
+   notebooks/efficient_posterior_sampling
    notebooks/weight_space_approximation
