@@ -45,6 +45,7 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",  # syntax-highlighting ipython interactive sessions
 ]
 
+
 ### Automatic API doc generation
 extensions.append("autoapi.extension")
 autoapi_dirs = ["../gpflux"]
@@ -63,29 +64,29 @@ autoapi_options = [
 
 ### intersphinx: Link to other project's documentation (see mapping below)
 extensions.append("sphinx.ext.intersphinx")
-
-# Mappings for sphinx.ext.intersphinx. Projects have to have Sphinx-generated doc (.inv file)
 intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
-    # Unfortunately doesn't work yet! See https://github.com/mr-ubik/tensorflow-intersphinx/issues/1
-    # "tensorflow": (
-    #    "https://www.tensorflow.org/api_docs/python",
-    #    "tf2_py_objects.inv"
-    # ),
+    "tensorflow": (
+       "https://www.tensorflow.org/api_docs/python",
+       "tf2_py_objects.inv"
+    ),
+    "tensorflow_probability": (
+       "https://www.tensorflow.org/probability/api_docs/python",
+       "tfp_py_objects.inv"
+    ),
     "gpflow": ("https://gpflow.readthedocs.io/en/master/", None),
 }
 
 
 ### nbsphinx: Integrate Jupyter Notebooks and Sphinx
 extensions.append("nbsphinx")
-
 nbsphinx_allow_errors = True  # Continue through Jupyter errors
 
 ### sphinxcontrib-bibtex
 extensions.append("sphinxcontrib.bibtex")
-
 bibtex_bibfiles = ["refs.bib"]
+
 
 # Add any paths that contain Jinja2 templates here, relative to this directory.
 templates_path = ["_templates"]

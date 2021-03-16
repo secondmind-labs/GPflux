@@ -106,8 +106,8 @@ def construct_mean_function(
     X: np.ndarray, D_in: int, D_out: int
 ) -> gpflow.mean_functions.MeanFunction:
     """
-    Returns Identity mean function when D_in and D_out are equal. Otherwise uses
-    the principal components in `X` to build a Linear mean function.
+    Returns Identity mean function when *D_in* and *D_out* are equal. Otherwise uses
+    the principal components in *X* to build a Linear mean function.
 
     The returned mean function is set to be untrainable. To change this,
     use `gpflow.set_trainable`.
@@ -142,19 +142,19 @@ def construct_gp_layer(
     Builds a vanilla GP layer with a single kernel shared among all outputs,
         shared inducing point variables and zero mean function.
 
-    :param num_data: total number of datapoints in the dataset, `N`.
-        Typically corresponds to `X.shape[0] == len(X)`.
-    :param num_inducing: total number of inducing variables, `M`.
+    :param num_data: total number of datapoints in the dataset, *N*.
+        Typically corresponds to ``X.shape[0] == len(X)``.
+    :param num_inducing: total number of inducing variables, *M*.
         This parameter can be freely chosen by the user. General advice
-        is to pick it as high as possible, but smaller than `N`.
-        The computational complexity of the layer is cubic in `M`.
-    :param input_dim: dimensionality of the input data (or features) `X`.
-        Typically corresponds to `X.shape[1]`.
-    :param output_dim: dimensionality of the outputs (or targets) `Y`.
-        Typically corresponds to `Y.shape[1]`.
+        is to pick it as high as possible, but smaller than *N*.
+        The computational complexity of the layer is cubic in *M*.
+    :param input_dim: dimensionality of the input data (or features) X.
+        Typically corresponds to ``X.shape[-1]``.
+    :param output_dim: dimensionality of the outputs (or targets) Y.
+        Typically corresponds to ``Y.shape[-1]``.
     :param kernel_class: the kernel class used by the layer.
         Can be as simple as `gpflow.kernels.SquaredExponential`, or complexer
-        as `lambda **_: gpflow.kernels.Linear() + gpflow.kernels.Periodic()`.
+        as ``lambda **_: gpflow.kernels.Linear() + gpflow.kernels.Periodic()``.
     :param z_init: initialisation for inducing variable inputs.
     :param name: name for the GP layer.
 
@@ -186,10 +186,10 @@ T = TypeVar("T")
 
 def make_dataclass_from_class(dataclass: Type[T], instance: object, **updates: object) -> T:
     """
-    Takes a regular object `instance` with a superset of fields for a
-    `dataclass` (`@dataclass`-decorated class), i.e. it has all of the
+    Takes a regular object *instance* with a superset of fields for a
+    `dataclasses.dataclass` (``@dataclass``-decorated class), i.e. it has all of the
     dataclass's fields but may also have more, as well as additional key=value
-    keyword arguments (`**updates`), and returns an instance of the dataclass.
+    keyword arguments (``**updates``), and returns an instance of the dataclass.
     """
     dataclass_keys = [f.name for f in fields(dataclass)]
     field_dict = {k: v for k, v in inspect.getmembers(instance) if k in dataclass_keys}

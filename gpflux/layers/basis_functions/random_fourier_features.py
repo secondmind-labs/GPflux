@@ -23,20 +23,22 @@ RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
 
 
 class RandomFourierFeatures(tf.keras.layers.Layer):
-    """
+    r"""
     Random Fourier Features (RFF) is a method for approximating kernels. The essential
-    element of the RFF approach [1] is the realization that Bochner's theorem
+    element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
     for stationary kernels can be approximated by a Monte Carlo sum.
 
-    We will approximate the kernel k(x, x′) by ϕ(x)ᵀϕ(x′) where ϕ: χ → ℝˡ is a finite dimensional
-    feature map. Each feature is defined as:
-        ϕ(x) = √(2σ² / ℓ) · cos(θᵀx + 𝜏)
-    where σ² is the kernel variance. The features are parameterised by random weights:
-    * θ - sampled proportional to the kernel's spectral density
-    * 𝜏 ∼ 𝒰(0, 2π)
+    We will approximate the kernel :math:`k(x, x')` by :math:`\Phi(x)^\top \Phi(x')`
+    where :math:`Phi: x \to \mathbb{R}` is a finite-dimensional feature map.
+    Each feature is defined as:
 
-    [1] Random Features for Large-Scale Kernel Machines, Ali Rahimi and Ben Recht
-        https://people.eecs.berkeley.edu/~brecht/papers/07.rah.rec.nips.pdf
+    .. math:: \Phi(x) = \sqrt{2 \sigma^2 / \ell) \cos(\theta^\top x + \tau)
+
+    where :math:`\sigma^2` is the kernel variance.
+
+    The features are parameterised by random weights:
+    * :math:`\theta`, sampled proportional to the kernel's spectral density
+    * :math:`\tau \sim \mathcal{U}(0, 2\pi)`
     """
 
     def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
@@ -52,6 +54,11 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         self.output_dim = output_dim  # M
 
     def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
         input_dim = input_shape[-1]
 
         shape_bias = [1, self.output_dim]
@@ -85,7 +92,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
     def call(self, inputs: TensorType) -> tf.Tensor:
         """
-        Evaluates the basis functions at `inputs`
+        Evaluates the basis functions at *inputs*
 
         :param inputs: evaluation points [N, D]
 
@@ -99,10 +106,22 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         return output
 
     def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
+        """
+        Computes the output shape of the layer.
+        See `tf.keras.layers.Layer.compute_output_shape()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#compute_output_shape>`_.
+        """
+        # TODO: Keras docs say "If the layer has not been built, this method
+        # will call `build` on the layer." -- do we need to do so?
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
         return tensor_shape[:-1].concatenate(self.output_dim)
 
     def get_config(self) -> Mapping:
+        """
+        Returns the config of the layer.
+        See `tf.keras.layers.Layer.get_config()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
+        """
         config = super().get_config()
         config.update({"kernel": self.kernel, "output_dim": self.output_dim})
 

@@ -64,7 +64,7 @@ class TrackableLayer(tf.keras.layers.Layer):
                 if isinstance(o, tf.Module):
                     submodules.append(o)
 
-        for key, obj in self.__dict__.items():
+        for obj in self.__dict__.values():
             if isinstance(obj, tf.Module):
                 submodules.append(obj)
             elif isinstance(obj, (list, tuple)):

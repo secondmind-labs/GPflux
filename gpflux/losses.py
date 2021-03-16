@@ -22,11 +22,11 @@ class LikelihoodLoss(tf.keras.losses.Loss):
     When training a Keras model using this loss function, the value of this
     loss is not logged explicitly (the layer-specific losses are logged, as is
     the overall model loss). To output this loss value explicitly, wrap this
-    class in a `Metric` and add it to the model metrics.
+    class in a `tf.keras.metrics.Metric` and add it to the model metrics.
 
     NOTE: You should _either_ use this `LikelihoodLoss` (together with a
-    `tf.keras.models.Sequential` model) _or_ `LikelihoodLayer` (together with
-    `gpflux.models.DeepGP`). Do NOT use both at once.
+    `tf.keras.Sequential` model) _or_ :class:`~gpflux.layers.LikelihoodLayer`
+    (together with `gpflux.models.DeepGP`). Do NOT use both at once.
     """
 
     def __init__(self, likelihood: gpflow.likelihoods.Likelihood):
@@ -47,7 +47,7 @@ class LikelihoodLoss(tf.keras.losses.Loss):
     ) -> tf.Tensor:
         """
         Note that we deviate from the Keras Loss interface by calling the
-        second argument `f_prediction` rather than `y_pred`.
+        second argument *f_prediction* rather than *y_pred*.
         """
         if isinstance(f_prediction, tfp.distributions.MultivariateNormalDiag):
 

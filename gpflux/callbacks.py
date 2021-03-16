@@ -1,9 +1,10 @@
-"""
+r"""
 Callback that enables GPflow's `gpflow.monitor.ModelToTensorBoard` to
-integrate with Keras's `tensorflow.keras.models.Model.fit` method.
+integrate with Keras's `tf.keras.Model`\ 's `fit
+<https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit>`_ method.
 """
 import re
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, Sequence
 
 import tensorflow as tf
 
@@ -16,14 +17,14 @@ __all__ = ["TensorBoard"]
 class TensorBoard(tf.keras.callbacks.TensorBoard):
     """
     Thin wrapper around Keras' TensorBoard callback that also
-    calls GPflow's `ModelToTensorBoard` monitoring task.
+    calls GPflow's `gpflow.monitor.ModelToTensorBoard` monitoring task.
     """
 
     def __init__(
         self,
         log_dir: str = "logs",
         *,
-        keywords_to_monitor: List[str] = ["kernel", "mean_function", "likelihood"],
+        keywords_to_monitor: Sequence[str] = ("kernel", "mean_function", "likelihood"),
         max_size: int = 3,
         histogram_freq: int = 0,
         write_graph: bool = True,
@@ -68,7 +69,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
             log_dir=self.log_dir + "/train",
             model=self.model,
             max_size=self.max_size,
-            keywords_to_monitor=self.keywords_to_monitor,
+            keywords_to_monitor=list(self.keywords_to_monitor),
             left_strip_character="._",
         )
 

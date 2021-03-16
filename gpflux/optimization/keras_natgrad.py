@@ -30,8 +30,8 @@ class NatGradModel(tf.keras.Model):
     NaturalGradient optimizers for q(u) distributions in GP layers.
 
     model.compile() has to be passed a list of optimizers, which must be one
-    `gpflow.optimizers.NaturalGradient` instance per `GPLayer`, followed
-    by a regular optimizer (e.g. `tf.optimizers.Adam`) as the last element for all other
+    `gpflow.optimizers.NaturalGradient` instance per :class:`~gpflux.layers.GPLayer`, followed
+    by a regular optimizer (e.g. `tf.keras.optimizers.Adam`) as the last element for all other
     parameters (hyperparameters, inducing point locations).
     """
 
@@ -164,7 +164,7 @@ class NatGradModel(tf.keras.Model):
 class NatGradWrapper(NatGradModel):
     """
     Wraps a class-based Keras model (e.g. `gpflux.models.DeepGP`) to make it
-    work with `NaturalGradient` optimizers. For more details, see `NatGradModel`.
+    work with `gpflow.optimizers.NaturalGradient` optimizers. For more details, see `NatGradModel`.
     """
 
     def __init__(self, base_model: tf.keras.Model, *args: Any, **kwargs: Any):
@@ -182,10 +182,8 @@ class NatGradWrapper(NatGradModel):
         else:
             return self.base_model.layers
 
-    def elbo(self, data: Any) -> tf.Tensor:
-        # DeepGP-specific pass-through
-        return self.base_model.elbo(data)
-
     def call(self, data: Any, training: Optional[bool] = None) -> Union[tf.Tensor, MeanAndVariance]:
-        # pass-through for model call
+        """
+        Calls the model on new inputs. Simply passes through to the :attr:`base_model`.
+        """
         return self.base_model.call(data, training=training)

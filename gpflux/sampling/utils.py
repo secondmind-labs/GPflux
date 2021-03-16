@@ -19,18 +19,26 @@ def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType
 
     :param mean: is a mean vector [..., D, N+M]
         2x1 block matrix of the following form, for each [..., D]
-       |---------------|
-       | mean(old) [N] |
-       |---------------|
-       | mean(new) [M] |
-       |---------------|
+
+        .. code-block::
+
+            |---------------|
+            | mean(old) [N] |
+            |---------------|
+            | mean(new) [M] |
+            |---------------|
+
     :param cov: is a covariance matrix [..., D, N+M, N+M]
         2x2 block matrix of the following form, for each [..., D]
-        |----------------------------------------------|
-        |  Cov(old, old) [N, N] | Cov(old, new) [N, M] |
-        |----------------------------------------------|
-        |  Cov(new, old) [M, N] | Cov(new, new) [M, M] |
-        |----------------------------------------------|
+
+        .. code-block::
+
+            |----------------------------------------------|
+            |  Cov(old, old) [N, N] | Cov(old, new) [N, M] |
+            |----------------------------------------------|
+            |  Cov(new, old) [M, N] | Cov(new, new) [M, M] |
+            |----------------------------------------------|
+
     :param f_old: are the observations [..., D, N]
 
     :return: sample from p(f_new | f_old) of shape [..., D, M]

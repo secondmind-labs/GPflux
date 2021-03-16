@@ -19,14 +19,14 @@ from gpflux.layers.trackable_layer import TrackableLayer
 class LikelihoodLayer(TrackableLayer):
     """
     Keras layer that wraps a GPflow likelihood. This layer expects a
-    MultivariateNormalDiag as its input, describing q(f). When training,
-    computes the negative variational expectation -E_{q(f)}[log p(y|f)] and
-    adds it as a layer loss. When not training, computes mean and variance
-    of y under q(f).
+    `tfp.distributions.MultivariateNormalDiag` as its input, describing q(f).
+    When training, computes the negative variational expectation
+    -E_{q(f)}[log p(y|f)] and adds it as a layer loss.
+    When not training, computes mean and variance of y under q(f).
 
     NOTE: You should _either_ use this `LikelihoodLayer` (together with
     `gpflux.models.DeepGP`) _or_ `LikelihoodLoss` (together with a
-    `tf.keras.models.Sequential` model). Do NOT use both at once.
+    `tf.keras.Sequential` model). Do NOT use both at once.
     """
 
     def __init__(self, likelihood: Likelihood):
@@ -39,6 +39,10 @@ class LikelihoodLayer(TrackableLayer):
         targets: Optional[TensorType] = None,
         training: bool = None,
     ) -> Union[tf.Tensor, "LikelihoodOutputs"]:
+        """
+        When training: computes variational expectations (data-fit loss).
+        When testing: computes Y mean and variance.
+        """
         # TODO: add support for non-distribution inputs? or other distributions?
         assert isinstance(inputs, tfp.distributions.MultivariateNormalDiag)
         F_mean = inputs.loc
@@ -69,8 +73,8 @@ class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
     This class contains the mean and variance of the marginal distribution of the final latent
     GP layer, as well as the mean and variance of the likelihood.
 
-    This class includes the `TensorMetaClass` to make objects behave as a tf.Tensor. This is
-    necessary so it can be returned from the `DistributionLambda` Keras layer.
+    This class includes the ``TensorMetaClass`` to make objects behave as a `tf.Tensor`. This is
+    necessary so it can be returned from the `tfp.layers.DistributionLambda` Keras layer.
     """
 
     def __init__(

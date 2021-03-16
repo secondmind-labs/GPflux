@@ -58,8 +58,8 @@ class GPLayer(DistributionLambda):
         :param full_output_cov: Return a full output covariance.
         :param num_latent_gps: The number of (latent) GPs in the layer.
             This parameter is used to determine the size of the variational parameters
-            `q_mu` and `q_sqrt`. If possible, it is inferred from the `kernel` and
-            `inducing_variable`.
+            ``q_mu`` and ``q_sqrt``. If possible, it is inferred from the *kernel* and
+            *inducing_variable*.
         :param white: Determines the parameterisation of the inducing variables.
             If True: p(u) = N(0, I), else p(u) = N(0, Kuu).
         :param verbose: Verbosity mode.
@@ -161,10 +161,11 @@ class GPLayer(DistributionLambda):
         """
         The default behaviour upon calling the GPLayer()(X).
 
-        This method calls the `DistributionLambda` super-class `call` method, which will construct
-        a TensorFlow Probability distribution for the marginal distributions at the input points.
-        This distribution can be passed to `tf.convert_to_tensor`, which will return samples from
-        the distribution.
+        This method calls the `tfp.layers.DistributionLambda` super-class
+        `call` method, which will construct a TensorFlow Probability
+        distribution for the marginal distributions at the input points.  This
+        distribution can be passed to `tf.convert_to_tensor`, which will return
+        samples from the distribution.
 
         This method also adds a layer-specific loss function, given by the KL divergence between
         this layer and the GP prior.
