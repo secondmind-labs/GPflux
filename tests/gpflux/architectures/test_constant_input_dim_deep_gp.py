@@ -13,7 +13,7 @@ class DemoConfig:
     inner_layer_qsqrt_factor = 1e-3
     between_layer_noise_variance = 1e-3
     likelihood_noise_variance = 1e-2
-    white = True
+    whiten = True
 
 
 @pytest.mark.parametrize("input_dim", [7])

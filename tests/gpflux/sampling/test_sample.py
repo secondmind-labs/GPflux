@@ -39,7 +39,7 @@ def test_conditional_sample(kernel, inducing_variable):
         kernel,
         q_mu,
         q_sqrt=1e-3 * tf.convert_to_tensor(q_sqrt[np.newaxis]),
-        white=False,
+        whiten=False,
     )
 
     X = np.linspace(-1, 1, 100).reshape(-1, 1)
@@ -68,7 +68,7 @@ def test_wilson_efficient_sample(kernel, inducing_variable):
         kernel2,
         q_mu,
         q_sqrt=1e-3 * tf.convert_to_tensor(q_sqrt[np.newaxis]),
-        white=False,
+        whiten=False,
     )
 
     X = np.linspace(-1, 0, 100).reshape(-1, 1)

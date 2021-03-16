@@ -118,7 +118,7 @@ class BayesianDenseLayer(TrackableLayer):
         num_samples: Optional[int] = None,
         full_output_cov: bool = False,
         full_cov: bool = False,
-        white: bool = False,
+        whiten: bool = False,
     ) -> tf.Tensor:
         """
         Make a sample predictions at N test inputs, with input_dim = D, output_dim = Q. Return a
@@ -129,11 +129,11 @@ class BayesianDenseLayer(TrackableLayer):
             shape [S, N, Q] if S is not None else [N, Q].
         :param full_output_cov: assert to False since not supported for now
         :param full_cov: assert to False since not supported for now
-        :param white: assert to False since not sensible in Bayesian neural nets
+        :param whiten: assert to False since not sensible in Bayesian neural nets
         """
         assert full_output_cov is False
         assert full_cov is False
-        assert white is False
+        assert whiten is False
 
         _num_samples = num_samples or 1
         z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]

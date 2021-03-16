@@ -39,7 +39,7 @@ class GPLayer(DistributionLambda):
         full_output_cov: bool = False,
         full_cov: bool = False,
         num_latent_gps: int = None,
-        white: bool = True,
+        whiten: bool = True,
         name: Optional[str] = None,
         verbose: bool = False,
     ):
@@ -60,7 +60,7 @@ class GPLayer(DistributionLambda):
             This parameter is used to determine the size of the variational parameters
             ``q_mu`` and ``q_sqrt``. If possible, it is inferred from the *kernel* and
             *inducing_variable*.
-        :param white: Determines the parameterisation of the inducing variables.
+        :param whiten: Determines the parameterisation of the inducing variables.
             If True: p(u) = N(0, I), else p(u) = N(0, Kuu).
         :param verbose: Verbosity mode.
             `False` = silent, `True` = shows debug information.
@@ -83,7 +83,7 @@ class GPLayer(DistributionLambda):
         self.full_output_cov = full_output_cov
         self.full_cov = full_cov
         self.num_data = num_data
-        self.white = white
+        self.whiten = whiten
         self.verbose = verbose
 
         try:
@@ -128,7 +128,7 @@ class GPLayer(DistributionLambda):
         *,
         full_output_cov: bool = False,
         full_cov: bool = False,
-        white: bool = True,
+        whiten: bool = True,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Make a prediction at N test inputs, with input_dim = D, output_dim = Q. Return the
@@ -141,7 +141,7 @@ class GPLayer(DistributionLambda):
         :param full_cov: If true: return the full (NxN) covariance for each output
             dimension Q.  Cov shape -> [Q, N, N]. If false: return variance (N) at each
             output dimension Q. Cov shape -> [N, Q]
-        :param white:
+        :param whiten:
         """
         mean_function = self.mean_function(inputs)
         mean_cond, cov = conditional(
@@ -152,7 +152,7 @@ class GPLayer(DistributionLambda):
             q_sqrt=self.q_sqrt,
             full_cov=full_cov,
             full_output_cov=full_output_cov,
-            white=white,
+            white=whiten,
         )
 
         return mean_cond + mean_function, cov
@@ -174,7 +174,7 @@ class GPLayer(DistributionLambda):
 
         # TF quirk: add_loss must add a tensor to compile
         if kwargs.get("training"):
-            loss_per_datapoint = self.prior_kl(whiten=self.white) / self.num_data
+            loss_per_datapoint = self.prior_kl(whiten=self.whiten) / self.num_data
         else:
             loss_per_datapoint = tf.constant(0.0, dtype=default_float())
         self.add_loss(loss_per_datapoint)
@@ -213,7 +213,7 @@ class GPLayer(DistributionLambda):
             previous_layer_outputs,
             full_cov=self.full_cov,
             full_output_cov=self.full_output_cov,
-            white=self.white,
+            whiten=self.whiten,
         )
 
         if self.full_cov:
@@ -249,7 +249,7 @@ class GPLayer(DistributionLambda):
                 self.kernel,
                 self.q_mu,
                 q_sqrt=self.q_sqrt,
-                white=self.white,
+                whiten=self.whiten,
             )
             # Makes use of the magic __add__ of the Sample class
             + self.mean_function

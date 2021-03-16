@@ -31,7 +31,7 @@ class Config:
     inner_layer_qsqrt_factor: float
     between_layer_noise_variance: float
     likelihood_noise_variance: float
-    white: bool = True
+    whiten: bool = True
 
 
 def construct_kernel(dim: int, is_last_layer: bool) -> SquaredExponential:
@@ -81,7 +81,7 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
             share_hyperparams=True,
         )
 
-        assert config.white is True, "non-whitened case not implemented yet"
+        assert config.whiten is True, "non-whitened case not implemented yet"
 
         if is_last_layer:
             mean_function = gpflow.mean_functions.Zero()

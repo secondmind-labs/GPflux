@@ -61,13 +61,13 @@ def _efficient_sample_conditional_gaussian(
     q_mu: tf.Tensor,
     *,
     q_sqrt: Optional[TensorType] = None,
-    white: bool = False,
+    whiten: bool = False,
 ) -> Sample:
     """
     Most costly implementation for obtaining a consistent GP sample.
     However, this method can be used for any kernel.
     """
-    assert not white, "Currently only white=False is supported"
+    assert not whiten, "Currently only whiten=False is supported"
 
     class SampleConditional(Sample):
         # N_old is 0 at first, we then start keeping track of past evaluation points.
@@ -90,7 +90,7 @@ def _efficient_sample_conditional_gaussian(
                 kernel,
                 q_mu,
                 q_sqrt=q_sqrt,
-                white=white,
+                white=whiten,
                 full_cov=True,
             )  # mean: [N_old+N_new, P], cov: [P, N_old+N_new, N_old+N_new]
             mean = tf.linalg.matrix_transpose(mean)  # [P, N_old+N_new]
@@ -114,7 +114,7 @@ def _efficient_sample_matheron_rule(
     q_mu: tf.Tensor,
     *,
     q_sqrt: Optional[TensorType] = None,
-    white: bool = False,
+    whiten: bool = False,
 ) -> Sample:
     """
     :param q_mu: [M, P]
@@ -124,10 +124,10 @@ def _efficient_sample_matheron_rule(
     "Efficiently Sampling Functions from Gaussian Process Posteriors"
     (Wilson et al, 2020).
     """
-    # TODO(VD): allow for both white=True and False, currently only support False.
+    # TODO(VD): allow for both whiten=True and False, currently only support False.
     # Remember u = Luu v, with Kuu = Luu Luu^T and p(v) = N(0, I)
     # so that p(u) = N(0, Luu Luu^T) = N(0, Kuu).
-    assert not white, "Currently only white=False is supported"
+    assert not whiten, "Currently only whiten=False is supported"
     L = tf.shape(kernel.feature_coefficients)[0]  # num eigenfunctions  # noqa: F841
 
     prior_weights = tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
