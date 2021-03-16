@@ -32,7 +32,7 @@ GPflux is a research toolbox dedicated to Deep Gaussian processes (DGP) :cite:p:
 GPflux uses the mathematical building blocks from `GPflow <http://www.gpflow.org/>`_ :cite:p:`gpflow2020` and marries these with the powerful layered deep learning API provided by `Keras <https://www.tensorflow.org/api_docs/python/tf/keras>`_.
 This combination leads to a framework that can be used for:
 
-- researching (deep) Gaussian process models (e.g., :cite:p:`salimbeni2017doubly, dutordoir2018`), and
+- researching (deep) Gaussian process models (e.g., :cite:p:`salimbeni2017doubly, dutordoir2018cde, salimbeni2019iwvi`), and
 - building, training, evaluating and deploying (deep) Gaussian processes in a modern way, making use of the tools developed by the deep learning community.
 
 

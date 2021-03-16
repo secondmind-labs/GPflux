@@ -78,6 +78,9 @@ intersphinx_mapping = {
     "gpflow": ("https://gpflow.readthedocs.io/en/master/", None),
 }
 
+### todo: to-do notes
+extensions.append("sphinx.ext.todo")
+todo_include_todos = True  # pre-1.0, it's worth actually including todos in the docs
 
 ### nbsphinx: Integrate Jupyter Notebooks and Sphinx
 extensions.append("nbsphinx")

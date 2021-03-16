@@ -53,7 +53,7 @@ class TrackableLayer(tf.keras.layers.Layer):
     @property
     def _submodules(self) -> Sequence[tf.Module]:
         """
-        :return: list of :class:`tf.Module` instances that are attributes on the class.
+        Returns list of :class:`tf.Module` instances that are attributes on the class.
         This also includes instances within lists or tuples.
         """
 
@@ -75,15 +75,22 @@ class TrackableLayer(tf.keras.layers.Layer):
         return list(dict.fromkeys(submodules))  # remove duplicates, maintaining order (dict 3.6)
 
     def submodule_variables(self) -> Sequence[tf.Variable]:
-        """Return flat iterable of variables from the attributes that are tf.Modules"""
+        r"""
+        Return flat iterable of variables from all attributes that contain `tf.Module`\ s
+        """
         return list(itertools.chain(*[module.variables for module in self._submodules]))
 
     def submodule_trainable_variables(self) -> Sequence[tf.Variable]:
-        """Return flat iterable of trainable variables from attributes that are tf.Modules"""
+        r"""
+        Return flat iterable of trainable variables from all attributes that contain `tf.Module`\ s
+        """
         return list(itertools.chain(*[module.trainable_variables for module in self._submodules]))
 
     def submodule_non_trainable_variables(self) -> Sequence[tf.Variable]:
-        """Return flat iterable of non trainable variables from attributes that are tf.Modules"""
+        r"""
+        Return flat iterable of non-trainable variables from all
+        attributes that contain `tf.Module`\ s
+        """
         return [v for module in self._submodules for v in module.variables if not v.trainable]
 
     def _dedup_weights(self, weights):  # type: ignore
@@ -95,19 +102,43 @@ class TrackableLayer(tf.keras.layers.Layer):
     @property  # type: ignore
     @extend_and_filter(submodule_trainable_variables, _dedup_weights)
     def trainable_weights(self) -> Sequence[tf.Variable]:
+        r"""
+        List of all trainable weights tracked by this layer.
+
+        Unlike `tf.keras.layers.Layer`, this *will* track the weights of
+        nested `tf.Module`\ s that are not themselves Keras layers.
+        """
         return super().trainable_weights
 
     @property  # type: ignore
     @extend_and_filter(submodule_non_trainable_variables, _dedup_weights)
     def non_trainable_weights(self) -> Sequence[tf.Variable]:
+        r"""
+        List of all non-trainable weights tracked by this layer.
+
+        Unlike `tf.keras.layers.Layer`, this *will* track the weights of
+        nested `tf.Module`\ s that are not themselves Keras layers.
+        """
         return super().non_trainable_weights
 
     @property  # type: ignore
     @extend_and_filter(submodule_trainable_variables, _dedup_weights)
     def trainable_variables(self) -> Sequence[tf.Variable]:
+        r"""
+        Sequence of trainable variables owned by this module and its submodules.
+
+        Unlike `tf.keras.layers.Layer`, this *will* track the weights of
+        nested `tf.Module`\ s that are not themselves Keras layers.
+        """
         return super().trainable_variables
 
     @property  # type: ignore
     @extend_and_filter(submodule_variables, _dedup_weights)
     def variables(self) -> Sequence[tf.Variable]:
+        r"""
+        Returns the list of all layer variables/weights.
+
+        Unlike `tf.keras.layers.Layer`, this *will* track the weights of
+        nested `tf.Module`\ s that are not themselves Keras layers.
+        """
         return super().variables

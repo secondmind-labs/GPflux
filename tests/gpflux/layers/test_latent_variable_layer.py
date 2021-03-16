@@ -44,20 +44,12 @@ def get_distributions_with_w_dim():
 
 
 @pytest.mark.parametrize("distribution, w_dim", get_distributions_with_w_dim())
-def test_latent_prior_sample(distribution, w_dim):
-    lv = LatentVariableLayer(encoder=None, prior=distribution)
-
-    sample_shape = (500, 2)
-    assert lv.sample_prior(sample_shape).shape == sample_shape + (w_dim,)
-
-
-@pytest.mark.parametrize("distribution, w_dim", get_distributions_with_w_dim())
 def test_local_kls(distribution, w_dim):
     lv = LatentVariableLayer(encoder=None, prior=distribution)
 
     # test kl is 0 when posteriors == priors
     posterior = distribution
-    assert lv.local_kls(posterior) == 0
+    assert lv._local_kls(posterior) == 0
 
     # test kl > 0 when posteriors != priors
     batch_size = 10
@@ -68,7 +60,7 @@ def test_local_kls(distribution, w_dim):
         if isinstance(v, np.ndarray)
     }
     posterior = lv.distribution_class(**posterior_params)
-    local_kls = lv.local_kls(posterior)
+    local_kls = lv._local_kls(posterior)
     assert np.all(local_kls > 0)
     assert local_kls.shape == (batch_size,)
 
@@ -80,7 +72,7 @@ def test_local_kl_gpflow_consistency(w_dim):
     encoder = DirectlyParameterizedNormalDiag(num_data, w_dim, means)
 
     lv = LatentVariableLayer(encoder=encoder, prior=_zero_one_normal_prior(w_dim))
-    _, posteriors = lv.samples_and_posteriors(
+    posteriors = lv._inference_posteriors(
         [np.random.randn(num_data, 3), np.random.randn(num_data, 2)]
     )
 
@@ -88,7 +80,7 @@ def test_local_kl_gpflow_consistency(w_dim):
     q_sqrt = posteriors.parameters["scale_diag"]
 
     gpflow_local_kls = gauss_kl(q_mu, q_sqrt)
-    tfp_local_kls = tf.reduce_sum(lv.local_kls(posteriors))
+    tfp_local_kls = tf.reduce_sum(lv._local_kls(posteriors))
 
     np.testing.assert_allclose(tfp_local_kls, gpflow_local_kls, rtol=1e-10)
 
