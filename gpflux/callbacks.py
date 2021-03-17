@@ -16,7 +16,7 @@ __all__ = ["TensorBoard"]
 
 class TensorBoard(tf.keras.callbacks.TensorBoard):
     """
-    Thin wrapper around Keras' TensorBoard callback that also
+    Thin wrapper around Keras's TensorBoard callback that also
     calls GPflow's `gpflow.monitor.ModelToTensorBoard` monitoring task.
     """
 

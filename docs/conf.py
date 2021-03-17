@@ -68,12 +68,12 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "python": ("https://docs.python.org/3/", None),
     "tensorflow": (
-       "https://www.tensorflow.org/api_docs/python",
-       "tf2_py_objects.inv"
+        "https://www.tensorflow.org/api_docs/python",
+        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tf2_py_objects.inv"
     ),
     "tensorflow_probability": (
-       "https://www.tensorflow.org/probability/api_docs/python",
-       "tfp_py_objects.inv"
+        "https://www.tensorflow.org/probability/api_docs/python",
+        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tfp_py_objects.inv"
     ),
     "gpflow": ("https://gpflow.readthedocs.io/en/master/", None),
 }

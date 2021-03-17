@@ -25,13 +25,14 @@ __all__ = [
 
 class NatGradModel(tf.keras.Model):
     """
-    This is a drop-in replacement for tf.keras.Model when constructing GPflux
+    This is a drop-in replacement for `tf.keras.Model` when constructing GPflux
     models using the functional Keras style, to make it work with the
     NaturalGradient optimizers for q(u) distributions in GP layers.
 
-    model.compile() has to be passed a list of optimizers, which must be one
-    `gpflow.optimizers.NaturalGradient` instance per :class:`~gpflux.layers.GPLayer`, followed
-    by a regular optimizer (e.g. `tf.keras.optimizers.Adam`) as the last element for all other
+    This model's :meth:`compile` method has to be passed a list of optimizers, which
+    must be one `gpflow.optimizers.NaturalGradient` instance per
+    :class:`~gpflux.layers.GPLayer`, followed by a regular optimizer (e.g.
+    `tf.keras.optimizers.Adam`) as the last element to handle all other
     parameters (hyperparameters, inducing point locations).
     """
 
@@ -48,8 +49,11 @@ class NatGradModel(tf.keras.Model):
     @property
     def optimizer(self) -> tf.optimizers.Optimizer:
         """
-        HACK to cope with Keras's callbacks such as ReduceLROnPlateau and
-        LearningRateSchedule having been hardcoded for a single optimizer.
+        HACK to cope with Keras's callbacks such as
+        :class:`~tf.keras.callbacks.ReduceLROnPlateau`
+        and
+        :class:`~tf.keras.callbacks.LearningRateScheduler`
+        having been hardcoded for a single optimizer.
         """
         if not hasattr(self, "_all_optimizers"):
             raise AttributeError("optimizer accessed before being set")
@@ -141,11 +145,11 @@ class NatGradModel(tf.keras.Model):
 
     def train_step(self, data: Any) -> Mapping[str, Any]:
         """
-        The logic for one training step.
-        See https://www.tensorflow.org/guide/keras/customizing_what_happens_in_fit
+        The logic for one training step. For more details of the
+        implementation, see TensorFlow's documentation of how to
+        `customize what happens in Model.fit
+        <https://www.tensorflow.org/guide/keras/customizing_what_happens_in_fit>`_.
         """
-        # TODO(Ti) check it actually works
-
         from tensorflow.python.keras.engine import data_adapter
 
         data = data_adapter.expand_1d(data)
@@ -163,8 +167,19 @@ class NatGradModel(tf.keras.Model):
 
 class NatGradWrapper(NatGradModel):
     """
-    Wraps a class-based Keras model (e.g. `gpflux.models.DeepGP`) to make it
-    work with `gpflow.optimizers.NaturalGradient` optimizers. For more details, see `NatGradModel`.
+    Wraps a class-based Keras model (e.g. the return value of
+    `gpflux.models.DeepGP.as_training_model`) to make it work with
+    `gpflow.optimizers.NaturalGradient` optimizers. For more details, see
+    `NatGradModel`.
+
+    (Note that you can also directly pass `NatGradModel` to the
+    :class:`~gpflux.models.DeepGP`'s
+    :attr:`~gpflux.models.DeepGP.default_model_class` or
+    :meth:`~gpflux.models.DeepGP.as_training_model`'s *model_class* arguments.)
+
+    .. todo::
+
+        This class will probably be removed in the future.
     """
 
     def __init__(self, base_model: tf.keras.Model, *args: Any, **kwargs: Any):
@@ -184,6 +199,6 @@ class NatGradWrapper(NatGradModel):
 
     def call(self, data: Any, training: Optional[bool] = None) -> Union[tf.Tensor, MeanAndVariance]:
         """
-        Calls the model on new inputs. Simply passes through to the :attr:`base_model`.
+        Calls the model on new inputs. Simply passes through to the ``base_model``.
         """
         return self.base_model.call(data, training=training)
