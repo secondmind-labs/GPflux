@@ -7,7 +7,9 @@
 [![Docs build](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yaml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yaml)
 [![Slack Status](https://img.shields.io/badge/slack-GPflux-green.svg?logo=Slack)](https://join.slack.com/t/secondmind-labs/shared_invite/zt-oevvuosg-HMJeTtIIQUkNtpBu40wKvg)
 
-[Documentation](https://sturdy-succotash-b048173d.pages.github.io/index.html)
+[Documentation](https://sturdy-succotash-b048173d.pages.github.io/index.html) |
+[Tutorials](https://sturdy-succotash-b048173d.pages.github.io/tutorials.html) |
+[API reference](https://sturdy-succotash-b048173d.pages.github.io/autoapi/gpflux/index.html)
 
 ## What does GPflux do?
 
