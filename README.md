@@ -3,21 +3,21 @@
 <!-- TODO: -->
 <!-- [![PyPI version](https://badge.fury.io/py/gpflux.svg)](https://badge.fury.io/py/bellman) -->
 <!-- [![Coverage Status](https://codecov.io/gh/Bellman-devs/bellman/branch/develop/graph/badge.svg?token=WAKSITJQWK)](https://codecov.io/gh/Bellman-devs/bellman) -->
-[![Quality checks and Tests](https://github.com/secondmind-labs/GPflux/actions/workflows/quality-check.yml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/quality-check.yml)
-[![Docs build](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yml)
+[![Quality checks and Tests](https://github.com/secondmind-labs/GPflux/actions/workflows/quality-check.yaml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/quality-check.yaml)
+[![Docs build](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yaml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yaml)
 [![Slack Status](https://img.shields.io/badge/slack-GPflux-green.svg?logo=Slack)](https://join.slack.com/t/secondmind-labs/shared_invite/zt-oevvuosg-HMJeTtIIQUkNtpBu40wKvg)
 
 [Documentation](https://sturdy-succotash-b048173d.pages.github.io/index.html)
 
 ## What does GPflux do?
 
-GPflux is a research toolbox dedicated to Deep Gaussian processes (DGP), the hierarchical extension of Gaussian processes (GP).
+GPflux is a toolbox dedicated to Deep Gaussian processes (DGP), the hierarchical extension of Gaussian processes (GP).
 
 GPflux uses the mathematical building blocks from [GPflow](http://www.gpflow.org/) and marries these with the powerful layered deep learning API provided by [Keras](https://www.tensorflow.org/api_docs/python/tf/keras).
 This combination leads to a framework that can be used for:
 
 - researching new (deep) Gaussian process models, and
-- building, training, evaluating and deploying (deep) Gaussian processes in a modern way, making use of the tools developed by the deep learning community.
+- building, training, evaluating and deploying (deep) Gaussian processes in a modern way — making use of the tools developed by the deep learning community.
 
 
 ## Getting started
@@ -85,15 +85,17 @@ It is now actively maintained by (in alphabetical order)
 
 GPflux is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The Secondmind Labs Community" section](#the-secondmind-labs-community) below).
 
-we are very grateful to our Secondmind Labs colleagues, maintainers of [GPflow](https://github.com/GPflow/GPflow), [Trieste](https://github.com/secondmind-labs/trieste) and [Bellman](https://github.com/Bellman-devs/bellman), for their help with creating contributing guidelines, instructions for users and open-sourcing in general.
+We are very grateful to our Secondmind Labs colleagues, maintainers of [GPflow](https://github.com/GPflow/GPflow), [Trieste](https://github.com/secondmind-labs/trieste) and [Bellman](https://github.com/Bellman-devs/bellman), for their help with creating contributing guidelines, instructions for users and open-sourcing in general.
 
-### Citing GPflux
+
+## Citing GPflux
 
 To cite GPflux, please reference our [arXiv paper](https://arxiv.org/abs/xxxx.xxxx) where we review the framework and describe the design. Sample Bibtex is given below:
 
 ```
 @article{dutordoir2021gpflux,
-    author = {Dutordoir, Vincent and Artemev, Artem and van der Wilk, Mark and Salimbeni, Hugh and Hambro, Eric and McLeod, John and Leibfried, Felix and Hensman, James and John, ST},
+    author = {Dutordoir, Vincent and Artemev, Artem and van der Wilk, Mark and Salimbeni,
+        Hugh and Hambro, Eric and McLeod, John and Leibfried, Felix and Hensman, James and John, ST},
     title = {GPflux: A library for deep Gaussian processes},
     year = {2021},
     journal = {arXiv:xxxx.xxxx},
@@ -101,6 +103,7 @@ To cite GPflux, please reference our [arXiv paper](https://arxiv.org/abs/xxxx.xx
 }
 ```
 
-### License
+
+## License
 
 [Apache License 2.0](LICENSE)
