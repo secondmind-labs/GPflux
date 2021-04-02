@@ -13,9 +13,12 @@
 # ---
 
 # %% [markdown]
-r"""
+"""
 # Efficient Posterior Gaussian Process Sampling
+"""
 
+# %% [markdown]
+r"""
 The aim of this notebook is to demonstrate how to efficiently draw samples from a posterior Gaussian process (GP) following Figure 3 from  Wilson et al. <cite data-cite="wilson2020efficiently"/>. The problem of sampling naively from any GP is that it requires the generation of samples from a multivariate Gaussian as a consequence of evaluating the GP at a certain number $N^\star$ of evaluation points. However, sampling from a multivariate Gaussian with dimension $N^\star$ scales cubically with $N^\star$ because it requires a Cholesky decomposition of the $N^\star \times N^\star$ covariance matrix. More formally, drawing a sample $\textbf{f}$ from a multivariate Gaussian $\mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma})$ with mean $\boldsymbol{\mu}$ and covariance $\boldsymbol{\Sigma}$ can be accomplished via
 
 $$ \textbf{f} = \boldsymbol{\mu} + \text{chol} (\boldsymbol{\Sigma}) \textbf{z}  \; \text{ where }  \; \textbf{z} \sim \mathcal{N}(\textbf{0}, \textbf{I}),$$

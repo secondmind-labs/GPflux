@@ -6,6 +6,7 @@ Tutorials
    :maxdepth: 1
 
    notebooks/intro
+   notebooks/gpflux_features
    notebooks/keras_integration
 
 .. toctree::
