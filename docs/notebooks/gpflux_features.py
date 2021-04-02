@@ -50,9 +50,9 @@ def motorcycle_data():
 
 
 X, Y = motorcycle_data()
-plt.plot(X, Y, "kx");
-plt.xlabel("time");
-plt.ylabel("Acceleration");
+plt.plot(X, Y, "kx")
+plt.xlabel("time")
+plt.ylabel("Acceleration")
 
 # %% [markdown]
 """
@@ -68,10 +68,7 @@ from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 from gpflux.models import DeepGP
 
 config = Config(
-    num_inducing=25,
-    inner_layer_qsqrt_factor=1e-5,
-    likelihood_noise_variance=1e-2,
-    whiten=True
+    num_inducing=25, inner_layer_qsqrt_factor=1e-5, likelihood_noise_variance=1e-2, whiten=True
 )
 deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, 1, config=config)
 
@@ -92,14 +89,11 @@ training_model.compile(optimizer=tf.optimizers.Adam(0.01))
 
 callbacks = [
     # Create callback that reduces the learning rate every time the ELBO plateaus
-    tf.keras.callbacks.ReduceLROnPlateau(
-        'loss', factor=0.95, patience=3, min_lr=1e-6, verbose=0
-    ),
+    tf.keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0),
     # Create a callback that writes logs (e.g., hyperparameters, KLs, etc.) to TensorBoard
     gpflux.callbacks.TensorBoard(),
     # Create a callback that saves the model's weights
-    tf.keras.callbacks.ModelCheckpoint(
-        filepath="ckpts/", save_weights_only=True, verbose=0)
+    tf.keras.callbacks.ModelCheckpoint(filepath="ckpts/", save_weights_only=True, verbose=0),
 ]
 
 history = training_model.fit(
@@ -117,13 +111,13 @@ Keras' fit returns a `history` object contains some information like the loss an
 
 # %%
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 3))
-ax1.plot(history.history["loss"]);
-ax1.set_xlabel("Iteration");
-ax1.set_ylabel("Objective = neg. ELBO");
+ax1.plot(history.history["loss"])
+ax1.set_xlabel("Iteration")
+ax1.set_ylabel("Objective = neg. ELBO")
 
-ax2.plot(history.history["lr"]);
-ax2.set_xlabel("Iteration");
-ax2.set_ylabel("Learning rate");
+ax2.plot(history.history["lr"])
+ax2.set_xlabel("Iteration")
+ax2.set_ylabel("Learning rate")
 
 # %% [markdown]
 """
@@ -155,6 +149,7 @@ def plot(model, X, Y, ax=None):
     ax.plot(X_test, mu, "C1")
 
     ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
+
 
 prediction_model = deep_gp.as_prediction_model()
 plot(prediction_model, X, Y)
