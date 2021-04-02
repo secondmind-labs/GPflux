@@ -15,9 +15,11 @@
 
 # %% [markdown]
 """
-# Efficient sampling
+# Efficient sampling using Random Fourier Features
 
-In this notebook we showcase how to efficiently draw samples from a GP using Random Fourier Features <cite data-cite="rahimi2007random"/>.
+In this notebook we showcase how to efficiently draw samples from a GP using Random Fourier Features <cite data-cite="rahimi2007random"/>. The main idea is to group a kernel (e.g., `gpflow.kernels.Matern52`) with its RFF decomposition using `gpflux.sampling.KernelWithFeatureDecomposition`)
+
+TODO: link to other notebooks
 """
 # %%
 import numpy as np
@@ -30,7 +32,7 @@ import gpflux
 from gpflow.config import default_float
 
 from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.sampling import KernelWithFeatureDecomposition
 from gpflux.models.deep_gp import sample_dgp
 
 tf.keras.backend.set_floatx("float64")
@@ -39,6 +41,17 @@ tf.keras.backend.set_floatx("float64")
 d = np.load("../../tests/snelson1d.npz")
 X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
+
+# %% [markdown]
+r"""
+## Setting up the kernel and its feature decomposition
+
+The `KernelWithFeatureDecomposition` instance represents a kernel together with its finite feature decomposition. Such that:
+$$
+k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
+$$
+where $\lambda_i$ and $\phi_i(\cdot)$ are the coefficients and features, respectively.
+"""
 
 # %%
 kernel = gpflow.kernels.Matern52()
@@ -52,6 +65,10 @@ eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
 kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
 
+# %% [markdown]
+r"""
+## Building and training the single-layer GP
+"""
 # %%
 layer = gpflux.layers.GPLayer(
     kernel_with_features,
@@ -85,6 +102,12 @@ history = model.fit(
     callbacks=callbacks,
     verbose=0,
 )
+# %% [markdown]
+r"""
+## Drawing samples
+
+Now that the model is trained we can draw consistent samples from the posterior GP.
+"""
 
 # %%
 a, b = 5, 5
