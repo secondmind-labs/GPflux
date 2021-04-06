@@ -17,7 +17,7 @@
 """
 # Why GPflux is a modern (deep) GP library
 
-In this notebook we go over some of the features that make GPflux a modern GP library, such as out-of-the-box support for monitoring the optimisation and saving & serving (deep) GP models. Compared to [GPflow](https://www.gpflow.org), which GPflux relies on for most of the mathematical routines, the API is more high-level. This simplifies typical machine learning tasks like mini-batching training and testing datasets, using learning rate schedulers, connecting your optimisation to TensorBoard, etc.
+In this notebook we go over some of the features that make GPflux a powerful, deep-learning-style GP library. We demonstrate the out-of-the-box support for monitoring during the course of optimisation, adapting the learning rate, and saving & serving (deep) GP models.
 """
 
 # %% [markdown]
@@ -70,7 +70,7 @@ from gpflux.models import DeepGP
 config = Config(
     num_inducing=25, inner_layer_qsqrt_factor=1e-5, likelihood_noise_variance=1e-2, whiten=True
 )
-deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, num_layers=1, config=config)
+deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, num_layers=2, config=config)
 
 # %% [markdown]
 """
@@ -99,7 +99,7 @@ callbacks = [
 history = training_model.fit(
     {"inputs": X, "targets": Y},
     batch_size=12,
-    epochs=150,
+    epochs=200,
     callbacks=callbacks,
     verbose=0,
 )
@@ -165,7 +165,9 @@ We can store the weights and reload them afterwards.
 prediction_model.save_weights("weights")
 
 # %%
-prediction_model_new = build_constant_input_dim_deep_gp(X, num_layers=1, config=config).as_prediction_model()
+prediction_model_new = build_constant_input_dim_deep_gp(
+    X, num_layers=2, config=config
+).as_prediction_model()
 prediction_model_new.load_weights("weights")
 
 # %%
