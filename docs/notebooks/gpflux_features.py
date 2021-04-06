@@ -17,7 +17,7 @@
 """
 # Why GPflux is a modern (deep) GP library
 
-In this notebook we go over some of the features that make GPflux a modern GP library, such as out-of-the-box support for monitoring the optimisation and saving & serving (deep) GP models. Compared to [GPflow](www.gpflow.org), which GPflux relies on for most of the mathemetical routines, the API is more high-level. This makes typical machine learning tasks like mini-batching training and tests data, using learning rate schedulers, connecting your optimisation to TensorBoard, etc. easier.
+In this notebook we go over some of the features that make GPflux a modern GP library, such as out-of-the-box support for monitoring the optimisation and saving & serving (deep) GP models. Compared to [GPflow](https://www.gpflow.org), which GPflux relies on for most of the mathematical routines, the API is more high-level. This simplifies typical machine learning tasks like mini-batching training and testing datasets, using learning rate schedulers, connecting your optimisation to TensorBoard, etc.
 """
 
 # %% [markdown]
@@ -33,15 +33,15 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-tf.keras.backend.set_floatx("float64")
+tf.keras.backend.set_floatx("float64")  # we want to carry out GP calculations in 64 bit
 tf.get_logger().setLevel("INFO")
 
 
 # %%
 def motorcycle_data():
     """
-    The motorcycle dataset where the target are normalised to be N(0,1) distributed.
-    :return: Input features with shape ``[N, 1]`` and corresponding targets with shape ``[N, 1]``.
+    The motorcycle dataset where the targets are normalised to zero mean and unit variance.
+    Returns a tuple of input features with shape [N, 1] and corresponding targets with shape [N, 1].
     """
     df = pd.read_csv("./data/motor.csv", index_col=0)
     X, Y = df["times"].values.reshape(-1, 1), df["accel"].values.reshape(-1, 1)
@@ -58,7 +58,7 @@ plt.ylabel("Acceleration")
 """
 ### Two-layer deep GP
 
-To keep this notebook focussed we are going to use a predefined deep GP architecture `gpflux.architectures.build_constant_input_dim_deep_gp` for create our simple two-layer model.
+To keep this notebook focussed we are going to use a predefined deep GP architecture `gpflux.architectures.build_constant_input_dim_deep_gp` for creating our simple two-layer model.
 """
 
 # %%
@@ -70,13 +70,13 @@ from gpflux.models import DeepGP
 config = Config(
     num_inducing=25, inner_layer_qsqrt_factor=1e-5, likelihood_noise_variance=1e-2, whiten=True
 )
-deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, 1, config=config)
+deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, num_layers=1, config=config)
 
 # %% [markdown]
 """
 ## Training: mini-batching, callbacks, checkpoints and monitoring
 
-When training a model, GPflux takes care of minibatching the dataset and accepts a range of callbacks that make modifying the learning rate or monitoring the optimisation, for example, very simple. 
+When training a model, GPflux takes care of minibatching the dataset and accepts a range of callbacks that make it very simple to, for example, modify the learning rate or monitor the optimisation. 
 """
 
 # %%
@@ -85,7 +85,7 @@ training_model: tf.keras.Model = deep_gp.as_training_model()
 
 # Following the Keras procedure we need to compile and pass a optimizer,
 # before fitting the model to data
-training_model.compile(optimizer=tf.optimizers.Adam(0.01))
+training_model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.01))
 
 callbacks = [
     # Create callback that reduces the learning rate every time the ELBO plateaus
@@ -106,7 +106,7 @@ history = training_model.fit(
 
 # %% [markdown]
 """
-Keras' fit returns a `history` object contains some information like the loss and the learning rate
+The call to fit() returns a `history` object that contains information like the loss and the learning rate over the course of optimisation.
 """
 
 # %%
@@ -121,7 +121,7 @@ ax2.set_ylabel("Learning rate")
 
 # %% [markdown]
 """
-More insightful, however, are the TensorBoard logs. They contain the the objective and hyperparameters in the course of optimisation. This can be very handy to find out why things work or don't :D. The logs can be viewed in TensorBoard by running in the command line
+More insightful, however, are the TensorBoard logs. They contain the objective and hyperparameters over the course of optimisation. This can be very handy to find out why things work or don't :D. The logs can be viewed in TensorBoard by running in the command line
 ```
 $ tensorboard --logdir logs
 ```
@@ -133,9 +133,9 @@ def plot(model, X, Y, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
 
-    a = 1.0
+    x_margin = 1.0
     N_test = 100
-    X_test = np.linspace(X.min() - a, X.max() + a, N_test).reshape(-1, 1)
+    X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, N_test).reshape(-1, 1)
     out = model(X_test)
 
     mu = out.f_mean.numpy().squeeze()
@@ -156,7 +156,7 @@ plot(prediction_model, X, Y)
 
 # %% [markdown]
 """
-## Post-training: saving and serving the model
+## Post-training: saving, loading, and serving the model
 
 We can store the weights and reload them afterwards.
 """
@@ -165,7 +165,7 @@ We can store the weights and reload them afterwards.
 prediction_model.save_weights("weights")
 
 # %%
-prediction_model_new = build_constant_input_dim_deep_gp(X, 1, config=config).as_prediction_model()
+prediction_model_new = build_constant_input_dim_deep_gp(X, num_layers=1, config=config).as_prediction_model()
 prediction_model_new.load_weights("weights")
 
 # %%
