@@ -13,6 +13,7 @@ Tutorials
    :maxdepth: 1
 
    notebooks/deep_gp_samples
+   notebooks/gpflux_with_keras_layers
    notebooks/efficient_sampling
    notebooks/efficient_posterior_sampling
    notebooks/weight_space_approximation
