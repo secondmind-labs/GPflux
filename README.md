@@ -69,22 +69,10 @@ All constructive input is very much welcome. For detailed information, see the [
 
 ### Maintainers
 
-GPflux was originally created by (in alphabetical order) 
-[Artem Artemev](https://github.com/awav/), 
-[Marc Deisenroth](https://deisenroth.cc/),
-[Vincent Dutordoir](https://vdutor.github.io/), 
-[Eric Hambro](https://erichambro.com), 
-[James Hensman](http://jameshensman.github.io/), 
-[ST John](http://www.infinitecuriosity.org/about/), 
-[Felix Leibfried](https://github.com/fleibfried), 
-[John A. McLeod](https://github.com/johnamcleod), 
-[Hugh Salimbeni](https://github.com/hughsalimbeni), 
-[Mark van der Wilk](https://markvdw.github.io/), 
-at [Secondmind Labs](https://www.secondmind.ai/labs/). 
-
-It is now actively maintained by (in alphabetical order)
+GPflux was originally created at [Secondmind Labs](https://www.secondmind.ai/labs/) and is now actively maintained by (in alphabetical order)
 [Vincent Dutordoir](https://vdutor.github.io/) and
-[ST John](http://www.infinitecuriosity.org/about/), 
+[ST John](http://www.infinitecuriosity.org/about/).
+**We are grateful to [all contributors](CONTRIBUTORS.md) who have helped shape GPflux.**
 
 GPflux is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The Secondmind Labs Community" section](#the-secondmind-labs-community) above).
 
@@ -97,8 +85,8 @@ To cite GPflux, please reference our [arXiv paper](https://arxiv.org/abs/xxxx.xx
 
 ```
 @article{dutordoir2021gpflux,
-    author = {Dutordoir, Vincent and Artemev, Artem and van der Wilk, Mark and Salimbeni, Hugh and Deisenroth, 
-            Marc and Hambro, Eric and McLeod, John and Leibfried, Felix and Hensman, James and John, ST},
+    author = {Dutordoir, Vincent and Artemev, Artem and van der Wilk, Mark and Salimbeni, Hugh
+        and Hambro, Eric and McLeod, John and Leibfried, Felix and Hensman, James and John, ST},
     title = {GPflux: A library for deep Gaussian processes},
     year = {2021},
     journal = {arXiv:xxxx.xxxx},
