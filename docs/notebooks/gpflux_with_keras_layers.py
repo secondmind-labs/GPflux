@@ -15,7 +15,7 @@
 
 # %% [markdown]
 """
-# Hybrid Deep GP models: combining GP and Neural net Layers
+# Hybrid Deep GP models: combining GP and Neural Network layers
 
 In this notebook we show how to combine `gpflux.layers.GPLayer` layers with plain Keras neural network layers. This allows one to build hybrid deep GP models. Compared to the other tutorials, we are also going to use Keras's `Sequential` model to build our hierarchical model and use a `gpflux.losses.LikelihoodLoss` instead of a `gpflux.layers.LikelihoodLayer`.
 """
