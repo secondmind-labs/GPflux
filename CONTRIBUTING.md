@@ -2,7 +2,7 @@
 
 ### Who are we?
 
-*Maintainers* (ST John, John McLeod, Felix Leibfried and Vincent Dutordoir) steer the project, keep the community thriving, and manage contributions.
+*Maintainers* (ST John and Vincent Dutordoir) steer the project, keep the community thriving, and manage contributions.
 
 *Contributors* (you?) submit issues, make pull requests, answer questions on Slack, and more.
 
@@ -12,17 +12,17 @@ Community is important to us, and we want everyone to feel welcome and be able t
 
 Finding and fixing bugs helps us provide robust functionality to all users. You can either submit a bug report or, if you know how to fix the bug yourself, you can submit a bug fix. We gladly welcome either, but a fix is likely to be released sooner, simply because others may not have time to quickly implement a fix themselves. If you're interested in implementing it, but would like help in doing so, ask in the [community Slack workspace](https://secondmind-labs.slack.com).
 
-We use GitHub issues for bug reports. You can use the TODO: [issue template](XXX) to start writing yours. Once you've submitted it, the maintainers will take a look as soon as possible, ideally within the week, and get back to you about how to proceed. If it's a small easy fix, they may implement it then and there. For fixes that are more involved, they will discuss with you about how urgent the fix is, with the aim of providing some timeline of when you can expect to see it.
+We use GitHub issues for bug reports. You can use the [issue template](https://github.com/secondmind-labs/GPflux/issues/new?assignees=&labels=bug&template=bug_report.md&title=) to start writing yours. Once you've submitted it, the maintainers will take a look as soon as possible, ideally within the week, and get back to you about how to proceed. If it's a small easy fix, they may implement it then and there. For fixes that are more involved, they will discuss with you about how urgent the fix is, with the aim of providing some timeline of when you can expect to see it.
 
-If you'd like to submit a bug fix, the TODO: [pull request templates](XXX) are a good place to start. We recommend you discuss your changes with the community before you begin working on them, so that questions and suggestions can be made early on.
+If you'd like to submit a bug fix, the [pull request templates](https://github.com/secondmind-labs/GPflux/compare) are a good place to start. We recommend you discuss your changes with the community before you begin working on them, so that questions and suggestions can be made early on.
 
 ### Requesting a feature
 
 GPflux is built on features added and improved by the community. You can submit a feature request either as an issue or, if you can implement the change yourself, as a pull request. We gladly welcome either, but a pull request is likely to be released sooner, simply because others may not have time to quickly implement it themselves. If you're interested in implementing it, but would like help in doing so, ask in the [community Slack workspace](https://secondmind-labs.slack.com).
 
-We use GitHub issues for feature requests. You can use the TODO: [issue template](XXX) to start writing yours. Once you've submitted it, the maintainers will take a look as soon as possible, ideally within the week, and get back to you about how to proceed. If it's a small easy feature that is backwards compatible, they may implement it then and there. For features that are more involved, they will discuss with you about a timeline for implementing it. Features that are not backwards compatible are likely to take longer to reach a release. It may become apparent during discussions that a feature doesn't lie within the scope of Trieste, in which case we will discuss alternative options with you, such as adding it as a notebook or an external extension to Trieste.
+We use GitHub issues for feature requests. You can use the [issue template](https://github.com/secondmind-labs/GPflux/issues/new?assignees=&labels=&template=feature_request.md&title=) to start writing yours. Once you've submitted it, the maintainers will take a look as soon as possible, ideally within the week, and get back to you about how to proceed. If it's a small easy feature that is backwards compatible, they may implement it then and there. For features that are more involved, they will discuss with you about a timeline for implementing it. Features that are not backwards compatible are likely to take longer to reach a release. It may become apparent during discussions that a feature doesn't lie within the scope of GPflux, in which case we will discuss alternative options with you, such as adding it as a notebook or an external extension to GPflux.
 
-If you'd like to submit a pull request, the TODO:[pull request templates](XXX) are a good place to start. We recommend you discuss your changes with the community before you begin working on them, so that questions and suggestions can be made early on.
+If you'd like to submit a pull request, the [pull request templates](https://github.com/secondmind-labs/GPflux/compare) are a good place to start. We recommend you discuss your changes with the community before you begin working on them, so that questions and suggestions can be made early on.
 
 ### Pull request guidelines
 
