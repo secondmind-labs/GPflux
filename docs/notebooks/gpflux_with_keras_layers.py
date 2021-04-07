@@ -124,7 +124,7 @@ def plot(model, X, Y, ax=None):
 
     ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)
     ax.plot(X, Y, "kx", alpha=0.5)
-    ax.plot(X_test, mu, "C1")
+    ax.plot(X_test, mean, "C1")
 
     ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
 
