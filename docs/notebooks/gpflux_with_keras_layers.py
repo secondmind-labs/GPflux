@@ -17,7 +17,7 @@
 """
 # Hybrid Deep GP models: combining GP and Neural net Layers
 
-In this notebook we show how to combine `gpflux.layers.GPLayer` layers with plain keras neural network layers. This allows one to build hybrid deep GP models. Compared to the other tutorials, we are also going to use keras' `Sequential` model to build our hierarchical model and use a `gpflux.losses.LikelihoodLoss` instead of a `gpflux.layers.LikelihoodLayer`.
+In this notebook we show how to combine `gpflux.layers.GPLayer` layers with plain Keras neural network layers. This allows one to build hybrid deep GP models. Compared to the other tutorials, we are also going to use Keras's `Sequential` model to build our hierarchical model and use a `gpflux.losses.LikelihoodLoss` instead of a `gpflux.layers.LikelihoodLayer`.
 """
 
 # %%
@@ -73,22 +73,26 @@ We construct a model that consists of three `tf.keras.layers.Dense` layers and a
 """
 
 # %%
+likelihood = gpflow.likelihoods.Gaussian(0.001)
+
+# So that Keras can track the likelihood variance, we need to provide the likelihood as part of a "dummy" layer:
+likelihood_container = gpflux.layers.TrackableLayer()
+likelihood_container.likelihood = likelihood
+
 model = tf.keras.Sequential(
     [
         tf.keras.layers.Dense(100, activation="relu"),
         tf.keras.layers.Dense(100, activation="relu"),
         tf.keras.layers.Dense(1, activation="linear"),
         gp_layer,
+        likelihood_container,  # no-op, for discovering trainable likelihood parameters
     ]
 )
-loss = gpflux.losses.LikelihoodLoss(gpflow.likelihoods.Gaussian(0.001))
-
-# TODO: How do we track the variables in the likelihoodloss?
-# model = gpflux.layers.TrackableLayer(loss)
+loss = gpflux.losses.LikelihoodLoss(likelihood)
 
 # %% [markdown]
 """
-We compile our model by specifying the loss and the optimizer to use. Once this is done, we fit the data and plot the trajectory of the loss:
+We compile our model by specifying the loss and the optimizer to use. After this is done, we fit the data and plot the trajectory of the loss:
 """
 
 # %%
@@ -107,23 +111,22 @@ def plot(model, X, Y, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
 
-    a = 1.0
+    x_margin = 1.0
     N_test = 100
-    X_test = np.linspace(X.min() - a, X.max() + a, N_test).reshape(-1, 1)
-    out = model(X_test)
+    X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, N_test).reshape(-1, 1)
+    f_distribution = model(X_test)
 
-    mu = out.mean().numpy().squeeze()
-    var = out.variance().numpy().squeeze()
+    mean = f_distribution.mean().numpy().squeeze()
+    var = f_distribution.variance().numpy().squeeze()
     X_test = X_test.squeeze()
-    lower = mu - 2 * np.sqrt(var)
-    upper = mu + 2 * np.sqrt(var)
+    lower = mean - 2 * np.sqrt(var)
+    upper = mean + 2 * np.sqrt(var)
 
     ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)
     ax.plot(X, Y, "kx", alpha=0.5)
     ax.plot(X_test, mu, "C1")
 
     ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
-    return out
 
 
-o = plot(model, X, Y)
+plot(model, X, Y)
