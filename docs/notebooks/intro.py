@@ -189,5 +189,4 @@ From visual inspection we immediately notice that the two-layer model performs m
 ## References
 
 [1] Silverman, B. W. (1985) "Some aspects of the spline smoothing approach to non-parametric curve fitting". _Journal of the Royal Statistical Society_ series B 47, 1-52.
-
 """

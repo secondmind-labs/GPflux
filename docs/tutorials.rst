@@ -7,13 +7,13 @@ Tutorials
 
    notebooks/intro
    notebooks/gpflux_features
-   notebooks/keras_integration
 
 .. toctree::
    :caption: Advanced
    :maxdepth: 1
 
    notebooks/deep_gp_samples
+   notebooks/gpflux_with_keras_layers
 
 .. toctree::
    :caption: Sampling
