@@ -17,14 +17,14 @@
 
 # %% [markdown]
 """
-# Efficient sampling with GPs and Random Fourier Features
+# Efficient sampling with Gaussian processes and Random Fourier Features
 
 Gaussian processes (GPs) provide a mathematically elegant framework for learning unknown functions from data. They are robust to overfitting, allow to incorporate prior assumptions into the model and provide calibrated uncertainty estimates for their predictions. This makes them prime candidates in settings where data is scarce, noisy or very costly to obtain, and are natural tools in applications such as Bayesian optimisation (BO).
 
 Despite their favorable properties, the use of GPs still has practical limitations. One of them is the computational complexity to draw predictive samples from the model, which quickly becomes prohibitive as the sample size grows, and creates a well-known bottleneck for GP-based Thompson sampling (GP-TS) for instance. 
 Recent work <cite data-cite="wilson2020efficiently"/> proposes to combine GP’s weight-space and function-space views to draw samples more efficiently from (approximate) posterior GPs with encouraging results in low-dimensional regimes.
 
-In GPflux, this functionality is unlocked by grouping a kernel (e.g., `gpflow.kernels.Matern52`) with its feature decomposition using `gpflux.sampling.KernelWithFeatureDecomposition`). See the notebooks on [weight space approximation](weight_space_approximation.ipynb) and [efficient posterior sampling](efficient_posterior_sampling.ipynb) for a thorough explanation.
+In GPflux, this functionality is unlocked by grouping a kernel (e.g., `gpflow.kernels.Matern52`) with its feature decomposition using `gpflux.sampling.KernelWithFeatureDecomposition`. See the notebooks on [weight space approximation](weight_space_approximation.ipynb) and [efficient posterior sampling](efficient_posterior_sampling.ipynb) for a thorough explanation.
 """
 # %%
 import numpy as np
@@ -56,11 +56,11 @@ num_data, input_dim = X.shape
 r"""
 # Setting up the kernel and its feature decomposition
 
-The `KernelWithFeatureDecomposition` instance represents a kernel together with its finite feature decomposition. Such that:
+The `KernelWithFeatureDecomposition` instance represents a kernel together with its finite feature decomposition,
 $$
 k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
 $$
-where $\lambda_i$ and $\phi_i(\cdot)$ are the coefficients and features, respectively. See [the notebook on weight space approximation](weight_space_approximation.ipynb) for a detailed explanation on how to construct this decomposition using Random Fourier Features (RFF).
+where $\lambda_i$ and $\phi_i(\cdot)$ are the coefficients (eigenvalues) and features (eigenfunctions), respectively, and $L$ is the finite cutoff. See [the notebook on weight space approximation](weight_space_approximation.ipynb) for a detailed explanation of how to construct this decomposition using Random Fourier Features (RFF).
 """
 
 # %%
@@ -80,7 +80,7 @@ kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, ei
 # Building and training the single-layer GP
 
 ## Initialise the single-layer GP
-Because `KernelWithFeatureDecomposition` is just a `gpflow.kernels.Kernel` we can construct a GP layer with it.
+Because `KernelWithFeatureDecomposition` is just a `gpflow.kernels.Kernel`, we can construct a GP layer with it.
 """
 # %%
 layer = gpflux.layers.GPLayer(
@@ -131,7 +131,6 @@ from typing import Callable
 
 x_margin = 5
 n_x = 1000
-spread = X.max() + x_margin - (X.min() - x_margin)
 X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, n_x).reshape(-1, 1)
 
 f_mean, f_var = dgp.predict_f(X_test)
@@ -144,7 +143,7 @@ for _ in range(n_sim):
     f_sample: Callable[[tf.Tensor], tf.Tensor] = sample_dgp(dgp)
     plt.plot(X_test, f_sample(X_test).numpy())
 
-# Plot data and GP mean and uncertainty intervals
+# Plot GP mean and uncertainty intervals and data
 plt.plot(X_test, f_mean, "C0")
 plt.plot(X_test, f_mean + f_scale, "C0--")
 plt.plot(X_test, f_mean - f_scale, "C0--")
@@ -152,5 +151,3 @@ plt.plot(X, Y, "kx", alpha=0.2)
 plt.xlim(X.min() - x_margin, X.max() + x_margin)
 plt.ylim(Y.min() - x_margin, Y.max() + x_margin)
 plt.show()
-
-# %%
