@@ -1,3 +1,5 @@
+name: Quality-and-Tests
+
 on: [push]
 
 jobs:
