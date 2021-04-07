@@ -1,2 +1,2 @@
 sacred
-git+git://github.com/hughsalimbeni/bayesian_benchmarks@master
+git+git://github.com/secondmind-labs/bayesian_benchmarks@master
