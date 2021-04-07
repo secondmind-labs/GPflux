@@ -71,7 +71,7 @@ All constructive input is very much welcome. For detailed information, see the [
 
 GPflux was originally created at [Secondmind Labs](https://www.secondmind.ai/labs/) and is now actively maintained by (in alphabetical order)
 [Vincent Dutordoir](https://vdutor.github.io/) and
-[ST John](http://www.infinitecuriosity.org/about/).
+[ST John](https://github.com/st--/).
 **We are grateful to [all contributors](CONTRIBUTORS.md) who have helped shape GPflux.**
 
 GPflux is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The Secondmind Labs Community" section](#the-secondmind-labs-community) above).
