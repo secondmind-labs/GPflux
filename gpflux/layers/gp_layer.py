@@ -111,7 +111,7 @@ class GPLayer(DistributionLambda):
 
             self.num_inducing, self.num_latent_gps = (
                 len(inducing_variable),
-                num_latent_gps,
+                num_latent_gps
             )
 
         self.q_mu = Parameter(
