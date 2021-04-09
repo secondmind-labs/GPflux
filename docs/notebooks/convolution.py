@@ -175,4 +175,4 @@ error
 
 
 #%% [markdown]
-# In this notebook we showed how to use GPflux to build and train shallow convolutional Gaussian processes using Keras. More advanced models like deep convolutional GPs require multi-output convoluitonal kernels and dispatch extentions in :mod:`~gpflow.conditionals` and in :mod:`~gpflow.covariances`.
+# In this notebook we showed how to use GPflux to build and train shallow convolutional Gaussian processes using Keras. More advanced models like deep convolutional GPs require multi-output convoluitonal kernels and extensions in dispatchers of :mod:`~gpflow.conditionals` and in :mod:`~gpflow.covariances`.
