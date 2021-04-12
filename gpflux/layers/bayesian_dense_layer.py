@@ -13,7 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""A Bayesian Dense Keras Layer"""
+"""
+This module provides :class:`BayesianDenseLayer`, which implements a
+variational Bayesian dense (fully-connected) neural network layer as a Keras
+:class:`~tf.keras.layers.Layer`.
+"""
 
 from typing import Callable, Optional, Union
 
@@ -32,7 +36,13 @@ from gpflux.types import ShapeType
 
 
 class BayesianDenseLayer(TrackableLayer):
-    """A Bayesian dense layer for variational Bayesian neural networks"""
+    """
+    A dense (fully-connected) layer for variational Bayesian neural networks.
+
+    This layer holds the mean and square-root of the variance of the
+    distribution over the weights. This layer also has a temperature for
+    cooling (or heating) the posterior.
+    """
 
     def __init__(
         self,
@@ -43,23 +53,24 @@ class BayesianDenseLayer(TrackableLayer):
         w_sqrt: Optional[np.ndarray] = None,
         activation: Optional[Callable] = None,
         is_mean_field: bool = True,
-        temperature: float = 1e-4,
-        returns_samples: bool = True,
+        temperature: float = 1e-4,  # TODO is this intentional?
     ):
         """
-        A Bayesian dense layer for variational Bayesian neural nets. This layer holds the
-        weight mean and sqrt as well as the temperature for cooling (or heating) the posterior.
-
-        :param input_dim: The layer's input dimension (excluding bias)
-        :param output_dim: The layer's output dimension
-        :param num_data: number of data points
-        :param w_mu: Initial value of the variational mean (weights + bias)
-        :param w_sqrt: Initial value of the variational Cholesky (covering weights + bias)
-        :param activation: The type of activation function (None is linear)
-        :param is_mean_field: Determines mean field approximation of the weight posterior
-        :param temperature: For cooling or heating the posterior
-        :param returns_samples: If True, return samples on calling the layer,
-             Else return mean and variance
+        :param input_dim: The input dimension (excluding bias) of this layer.
+        :param output_dim: The output dimension of this layer.
+        :param num_data: The number of points in the training dataset (used for
+            scaling the KL regulariser).
+        :param w_mu: Initial value of the variational mean for weights + bias.
+            If not specified, this defaults to `xavier_initialization_numpy`
+            for the weights and zero for the bias.
+        :param w_sqrt: Initial value of the variational Cholesky of the
+            (co)variance for weights + bias. If not specified, this defaults to
+            1e-5 * Identity.
+        :param activation: The activation function. If not specified, this defaults to the identity.
+        :param is_mean_field: Determines whether the approximation to the
+            weight posterior is mean field. Must be consistent with the shape
+            of ``w_sqrt``, if specified.
+        :param temperature: For cooling (< 1.0) or heating (> 1.0) the posterior.
         """
 
         super().__init__(dtype=default_float())
@@ -67,6 +78,7 @@ class BayesianDenseLayer(TrackableLayer):
         assert input_dim >= 1
         assert output_dim >= 1
         assert num_data >= 1
+
         if w_mu is not None:  # add + 1 for the bias
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
@@ -89,7 +101,6 @@ class BayesianDenseLayer(TrackableLayer):
         self.activation = activation
         self.is_mean_field = is_mean_field
         self.temperature = temperature
-        self.returns_samples = returns_samples
 
         self.dim = (input_dim + 1) * output_dim
         self.full_output_cov = False
@@ -128,25 +139,14 @@ class BayesianDenseLayer(TrackableLayer):
         inputs: TensorType,
         *,
         num_samples: Optional[int] = None,
-        full_output_cov: bool = False,
-        full_cov: bool = False,
-        whiten: bool = False,
     ) -> tf.Tensor:
         """
-        Make a sample predictions at N test inputs, with input_dim = D, output_dim = Q. Return a
-        sample, and the conditional mean and covariance at these points.
+        Samples from the approximate posterior at N test inputs, with input_dim = D, output_dim = Q.
 
-        :param inputs: the inputs to predict at. shape [N, D]
-        :param num_samples: the number of samples S, to draw.
-            shape [S, N, Q] if S is not None else [N, Q].
-        :param full_output_cov: assert to False since not supported for now
-        :param full_cov: assert to False since not supported for now
-        :param whiten: assert to False since not sensible in Bayesian neural nets
+        :param inputs: The inputs to predict at; shape ``[N, D]``.
+        :param num_samples: The number of samples S, to draw.
+        :returns: Samples, shape ``[S, N, Q]`` if S is not None else ``[N, Q]``.
         """
-        assert full_output_cov is False
-        assert full_cov is False
-        assert whiten is False
-
         _num_samples = num_samples or 1
         z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
         if not self.is_mean_field:
@@ -176,7 +176,9 @@ class BayesianDenseLayer(TrackableLayer):
     def call(
         self, inputs: TensorType, training: Optional[bool] = False
     ) -> Union[tf.Tensor, MeanAndVariance]:
-        """The default behaviour upon calling the BayesianDenseLayer()(X)"""
+        """
+        The default behaviour upon calling this layer.
+        """
         sample = self.predict_samples(
             inputs,
             num_samples=None,
@@ -194,16 +196,12 @@ class BayesianDenseLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
-        # for latent layers, return samples
-        if self.returns_samples:
-            return sample  # [N, Q]
-        # for output layers, return samples as mean with 0 cov
-        return sample, tf.ones_like(sample) * 1e-10  # [N, Q], [N, Q]
+        return sample  # [N, Q]
 
     def prior_kl(self) -> tf.Tensor:
         """
-        The KL divergence from the variational distribution to the prior
-        :return: KL divergence from N(w_mu, w_sqrt) to N(0, I)
+        Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u) = N(0, I)`` to
+        the variational distribution ``q(u) = N(w_mu, w_sqrt²)``.
         """
         return gauss_kl(
             self.w_mu[:, None],
