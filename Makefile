@@ -32,12 +32,13 @@ help: ## Shows this help message
 
 
 install:  ## Install repo for developement
-	@echo "\n=== pip install package with requirements =============="
-	pip install -e .
-	@echo "\n=== pip install dev requirements ======================"
-	pip install -r requirements.txt
-	@echo "\n=== pip install test requirements ======================"
-	pip install -r tests_requirements.txt
+	@echo "\n=== pip install package with dev requirements =============="
+	pip install --upgrade --upgrade-strategy eager \
+		-r notebook_requirements.txt \
+		-r tests_requirements.txt \
+		tensorflow${VERSION_TF} \
+		tensorflow_probability${VERSION_TFP} \
+		-e .
 
 docs:  ## Build the documentation
 	@echo "\n=== pip install doc requirements =============="
