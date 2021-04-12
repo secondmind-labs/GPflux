@@ -14,6 +14,7 @@ Tutorials
 
    notebooks/deep_gp_samples
    notebooks/gpflux_with_keras_layers
+   notebooks/latent_variables
 
 .. toctree::
    :caption: Sampling
