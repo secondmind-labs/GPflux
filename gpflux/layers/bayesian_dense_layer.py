@@ -182,8 +182,6 @@ class BayesianDenseLayer(TrackableLayer):
         sample = self.predict_samples(
             inputs,
             num_samples=None,
-            full_output_cov=self.full_output_cov,
-            full_cov=self.full_cov,
         )
 
         # TF quirk: add_loss must add a tensor to compile
