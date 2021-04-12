@@ -1,15 +1,32 @@
-name: Quality-and-Tests
+name: Tests
 
 on: [push]
 
 jobs:
   check-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python-version: 3.7
+            tensorflow: "~=2.4"
+            tensorflow_probability: "~=0.12"
+          - python-version: 3.8
+            tensorflow: ""
+            tensorflow_probability: ""
+    name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }} tensorflow_probability${{ matrix.tensorflow_probability }}
+    env:
+      VERSION_TF: ${{ matrix.tensorflow }}
+      VERSION_TFP: ${{ matrix.tensorflow_probability }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: ${{ matrix.python-version }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py') }}-${{ hashFiles('notebook_requirements.txt') }}-${{ hashFiles('tests_requirements.txt') }}
     - name: Install dependencies
       run: make install
     - name: Run checks

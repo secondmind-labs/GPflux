@@ -1,6 +1,4 @@
 jupyter
 matplotlib
-numpy
 scikit-learn
-scipy
 pandas
