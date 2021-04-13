@@ -5,11 +5,11 @@
 <!-- [![Coverage Status](https://codecov.io/gh/secondmind-labs/GPflux/branch/develop/graph/badge.svg?token=<token>)](https://codecov.io/gh/secondmind-labs/GPflux) -->
 [![Quality checks and Tests](https://github.com/secondmind-labs/GPflux/actions/workflows/quality-check.yaml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/quality-check.yaml)
 [![Docs build](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yaml/badge.svg)](https://github.com/secondmind-labs/GPflux/actions/workflows/deploy.yaml)
-[![Slack Status](https://img.shields.io/badge/slack-GPflux-green.svg?logo=Slack)](https://join.slack.com/t/secondmind-labs/shared_invite/zt-oevvuosg-HMJeTtIIQUkNtpBu40wKvg)
 
-[Documentation](https://sturdy-succotash-b048173d.pages.github.io/index.html) |
-[Tutorials](https://sturdy-succotash-b048173d.pages.github.io/tutorials.html) |
-[API reference](https://sturdy-succotash-b048173d.pages.github.io/autoapi/gpflux/index.html)
+[Documentation](https://secondmind-labs.github.io/GPflux/) |
+[Tutorials](https://secondmind-labs.github.io/GPflux/tutorials.html) |
+[API reference](https://secondmind-labs.github.io/GPflux/autoapi/gpflux/index.html) |
+[Slack](https://join.slack.com/t/secondmind-labs/shared_invite/zt-oevvuosg-HMJeTtIIQUkNtpBu40wKvg)
 
 ## What does GPflux do?
 
@@ -24,7 +24,7 @@ This combination leads to a framework that can be used for:
 
 ## Getting started
 
-In the [Documentation](https://sturdy-succotash-b048173d.pages.github.io/index.html), we have multiple [Tutorials](https://sturdy-succotash-b048173d.pages.github.io/tutorials.html) showing the basic functionality of the toolbox, a [benchmark implementation](https://sturdy-succotash-b048173d.pages.github.io/tutorials.html) and a comprehensive [API reference](https://sturdy-succotash-b048173d.pages.github.io/autoapi/gpflux/index.html).
+In the [Documentation](https://secondmind-labs.github.io/GPflux/), we have multiple [Tutorials](https://secondmind-labs.github.io/GPflux/tutorials.html) showing the basic functionality of the toolbox, a [benchmark implementation](https://secondmind-labs.github.io/GPflux/notebooks/benchmarks.html) and a comprehensive [API reference](https://secondmind-labs.github.io/GPflux/autoapi/gpflux/index.html).
 
 
 ## Install GPflux
@@ -81,16 +81,17 @@ We are very grateful to our Secondmind Labs colleagues, maintainers of [GPflow](
 
 ## Citing GPflux
 
-To cite GPflux, please reference our [arXiv paper](https://arxiv.org/abs/xxxx.xxxx) where we review the framework and describe the design. Sample Bibtex is given below:
+To cite GPflux, please reference our [arXiv paper](https://arxiv.org/abs/2104.05674) where we review the framework and describe the design. Sample Bibtex is given below:
 
 ```
 @article{dutordoir2021gpflux,
-    author = {Dutordoir, Vincent and Artemev, Artem and van der Wilk, Mark and Salimbeni, Hugh
-        and Hambro, Eric and McLeod, John and Leibfried, Felix and Hensman, James and John, ST},
-    title = {GPflux: A library for deep Gaussian processes},
+    author = {Dutordoir, Vincent and Salimbeni, Hugh and Hambro, Eric and McLeod, John and
+        Leibfried, Felix and Artemev, Artem and van der Wilk, Mark and Deisenroth, Marc P.
+        and Hensman, James and John, ST},
+    title = {GPflux: A library for Deep Gaussian Processes},
     year = {2021},
-    journal = {arXiv:xxxx.xxxx},
-    url = {https://arxiv.org/abs/xxxx.xxxx}
+    journal = {arXiv:2104.05674},
+    url = {https://arxiv.org/abs/2104.05674}
 }
 ```
 
