@@ -1,6 +1,6 @@
 # GPflux documentation
 
-The API reference (generated from docstrings) and Jupyter Notebook tutorials are automatically built by a Github action (see .github/workflows/deploy.yaml) on commit to `develop` and published to [https://prowler-io.github.io/gpflux/index.html](https://prowler-io.github.io/gpflux/index.html). TODO: update URL!
+The API reference (generated from docstrings) and Jupyter Notebook tutorials are automatically built by a Github action (see .github/workflows/deploy.yaml) on commit to `develop` and published to [https://secondmind-labs.github.io/GPflux/](https://secondmind-labs.github.io/GPflux/).
 
 ## Jupyter Notebooks
 
