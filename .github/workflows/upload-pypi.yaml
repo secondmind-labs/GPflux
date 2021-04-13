@@ -48,4 +48,4 @@ jobs:
           python setup.py bdist_wheel sdist
       - name: Upload to PyPI
         run: |
-          twine upload dist/*
+          python -m twine upload dist/*
