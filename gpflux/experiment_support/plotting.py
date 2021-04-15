@@ -25,25 +25,6 @@ from gpflow.conditionals.util import sample_mvn
 from gpflux.layers import GPLayer
 
 
-def all_layer_mean_var_samples(
-    gp_layers: Sequence[GPLayer], X: TensorType
-) -> Tuple[List[np.ndarray], List[np.ndarray], List[np.ndarray]]:
-    S = 5
-    sample = X
-    means, covs, samples = [], [], []
-    for layer in gp_layers:
-        mean, cov = layer.predict(sample, full_output_cov=False, full_cov=True)  # [N, D], [D, N, N]
-        all_samples = sample_mvn(tf.linalg.adjoint(mean), cov, full_cov=True, num_samples=S)
-        all_samples = tf.linalg.adjoint(all_samples)
-        sample = all_samples[0]
-
-        means.append(mean.numpy())
-        covs.append(cov.numpy())
-        samples.append(all_samples.numpy())
-
-    return means, covs, samples
-
-
 def plot_layer(
     X: TensorType,
     m: List[TensorType],
