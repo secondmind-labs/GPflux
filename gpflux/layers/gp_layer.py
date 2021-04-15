@@ -67,31 +67,25 @@ class GPLayer(tfp.layers.DistributionLambda):
     prior on ``u`` is ``p(u) = N(0, Kuu)``.
     """
 
-    @property
-    def num_samples(self) -> Optional[int]:
-        """
-        The number of samples drawn when coercing the output distribution of
-        this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)
-        """
-        return self._num_samples
+    num_samples: Optional[int]
+    """
+    The number of samples drawn when coercing the output distribution of
+    this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)
+    """
 
-    @property
-    def full_cov(self) -> bool:
-        """
-        This parameter determines the behaviour of calling this layer. If `False`, only
-        predict or sample marginals (diagonal of covariance) with respect to inputs.
-        If `True`, predict or sample with the full covariance over the inputs.
-        """
-        return self._full_cov
+    full_cov: bool
+    """
+    This parameter determines the behaviour of calling this layer. If `False`, only
+    predict or sample marginals (diagonal of covariance) with respect to inputs.
+    If `True`, predict or sample with the full covariance over the inputs.
+    """
 
-    @property
-    def full_output_cov(self) -> bool:
-        """
-        This parameter determines the behaviour of calling this layer. If `False`, only
-        predict or sample marginals (diagonal of covariance) with respect to outputs.
-        If `True`, predict or sample with the full covariance over the outputs.
-        """
-        return self._full_output_cov
+    full_output_cov: bool
+    """
+    This parameter determines the behaviour of calling this layer. If `False`, only
+    predict or sample marginals (diagonal of covariance) with respect to outputs.
+    If `True`, predict or sample with the full covariance over the outputs.
+    """
 
     q_mu: Parameter
     r"""
@@ -179,10 +173,8 @@ class GPLayer(tfp.layers.DistributionLambda):
             mean_function = Identity()
         self.mean_function = mean_function
 
-        self._full_output_cov = full_output_cov
-        self._full_cov = full_cov
-        self._num_samples = num_samples
-
+        self.full_output_cov = full_output_cov
+        self.full_cov = full_cov
         self.whiten = whiten
         self.verbose = verbose
 
@@ -221,6 +213,8 @@ class GPLayer(tfp.layers.DistributionLambda):
             dtype=default_float(),
             name=f"{self.name}_q_sqrt" if self.name else "q_sqrt",
         )  # [num_latent_gps, num_inducing, num_inducing]
+
+        self.num_samples = num_samples
 
     def predict(
         self,
