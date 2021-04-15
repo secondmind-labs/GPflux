@@ -56,7 +56,7 @@ def plot_layer(
     :param X: inputs of the DGP: N x 1
     :param means: array of num_layer elements of shape N x D
     :param variances: array of num_layer elements of shape D x N x N
-    :param samples: array of num_layer elements of shape N x D x S
+    :param samples: array of num_layer elements of shape S x N x D
     """
     if axes is None:
         fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(3, 10))
