@@ -13,16 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
-import numpy as np
-import tensorflow as tf
 
 from gpflow.base import TensorType
-from gpflow.conditionals.util import sample_mvn
-
-from gpflux.layers import GPLayer
 
 
 def plot_layer(
@@ -57,9 +52,10 @@ def plot_layer(
     ax3.plot(X, s[idx][:, :, 0].T)
 
 
-def plot_layers(X: TensorType, gp_layers: Sequence[GPLayer]) -> None:  # pragma: no cover
-    L = len(gp_layers)
-    m, v, s = all_layer_mean_var_samples(gp_layers, X)
+def plot_layers(
+    X: TensorType, means: List[TensorType], covs: List[TensorType], samples: List[TensorType]
+) -> None:
+    L = len(means)
     fig, axes = plt.subplots(3, L, figsize=(L * 3.33, 10))
     for i in range(L):
-        plot_layer(X, m, v, s, i, axes[:, i])
+        plot_layer(X, means, covs, samples, i, axes[:, i])
