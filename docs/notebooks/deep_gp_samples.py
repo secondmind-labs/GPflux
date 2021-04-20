@@ -118,4 +118,5 @@ num_layers = len(gp_layers)
 fig, axes = plt.subplots(3, num_layers, figsize=(num_layers * 3.33, 10))
 
 for i in range(num_layers):
-    plot_layer(X, means, covs, samples, i, axes[:, i])
+    layer_input = X if i == 0 else samples[i - 1][0]
+    plot_layer(X, layer_input, means[i], covs[i], samples[i], i, axes[:, i])
