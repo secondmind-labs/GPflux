@@ -15,6 +15,7 @@
 #
 from typing import List, Optional, Sequence
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 from gpflow.base import TensorType
