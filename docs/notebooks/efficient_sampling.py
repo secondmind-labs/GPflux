@@ -44,7 +44,7 @@ tf.keras.backend.set_floatx("float64")
 
 # %% [markdown]
 """
-# Load Snelson dataset
+## Load Snelson dataset
 """
 
 # %%
@@ -54,7 +54,7 @@ num_data, input_dim = X.shape
 
 # %% [markdown]
 r"""
-# Setting up the kernel and its feature decomposition
+## Setting up the kernel and its feature decomposition
 
 The `KernelWithFeatureDecomposition` instance represents a kernel together with its finite feature decomposition,
 $$
@@ -77,9 +77,9 @@ kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, ei
 
 # %% [markdown]
 """
-# Building and training the single-layer GP
+## Building and training the single-layer GP
 
-## Initialise the single-layer GP
+### Initialise the single-layer GP
 Because `KernelWithFeatureDecomposition` is just a `gpflow.kernels.Kernel`, we can construct a GP layer with it.
 """
 # %%
@@ -96,7 +96,7 @@ dgp = gpflux.models.DeepGP([layer], likelihood_layer)
 model = dgp.as_training_model()
 # %% [markdown]
 """
-## Fit model to data
+### Fit model to data
 """
 
 # %%
@@ -121,7 +121,7 @@ history = model.fit(
 )
 # %% [markdown]
 """
-# Drawing samples
+## Drawing samples
 
 Now that the model is trained we can draw efficient and consistent samples from the posterior GP. By "consistent" we mean that the `sample_dgp` function returns a function object that can be evaluated multiple times at different locations, but importantly, the returned function values will come from the same GP sample. This functionality is implemented by the `gpflux.sampling.efficient_sample` function.
 """
