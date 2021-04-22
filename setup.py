@@ -15,7 +15,7 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 with open("VERSION", "r") as file:
-    version = file.read()
+    version = file.read().strip()
 
 setup(
     name="gpflux",
@@ -36,7 +36,9 @@ setup(
     },
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
