@@ -22,9 +22,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.7
+          - python-version: 3.6
             tensorflow: "~=2.4"
             tensorflow_probability: "~=0.12"
+          - python-version: 3.7
+            tensorflow: ""
+            tensorflow_probability: ""
           - python-version: 3.8
             tensorflow: ""
             tensorflow_probability: ""
