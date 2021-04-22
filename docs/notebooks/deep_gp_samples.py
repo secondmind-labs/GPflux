@@ -38,10 +38,12 @@ a, b = 0, 1
 X = np.linspace(a, b, num_data).reshape(-1, 1)
 
 # %% [markdown]
-# ## Constructing the layers
-#
-# Note that we give the `full_cov=True` argument to `GPLayer` so that we obtain correlated samples.
-# We give the last layer a `gpflow.mean_functions.Zero` mean function (the GPflux default is an Identity mean function).
+"""
+## Constructing the layers
+
+Note that we give the `full_cov=True` argument to `GPLayer` so that we obtain correlated samples.
+We give the last layer a `gpflow.mean_functions.Zero` mean function (the GPflux default is an Identity mean function).
+"""
 
 # %%
 num_samples = 5
@@ -87,7 +89,9 @@ layer3 = GPLayer(
 gp_layers = [layer1, layer2, layer3]
 
 # %% [markdown]
-# ## Propagating samples through the layers
+"""
+## Propagating samples through the layers
+"""
 
 # %%
 layer_input = X
@@ -109,9 +113,11 @@ for layer in gp_layers:
     samples.append(sample.numpy())
 
 # %% [markdown]
-# ## Visualising samples
-#
-# From top to bottom we plot the input to a layer, the covariance of outputs of that layer, and samples from the layer's output.
+"""
+## Visualising samples
+
+From top to bottom we plot the input to a layer, the covariance of outputs of that layer, and samples from the layer's output.
+"""
 
 # %%
 num_layers = len(gp_layers)
