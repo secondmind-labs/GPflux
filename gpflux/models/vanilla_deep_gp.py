@@ -24,12 +24,13 @@ from typing import List, Optional, Tuple, Type, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
 from gpflow.base import TensorType
 
 from gpflux.experiment_support.plotting import plot_layers
-from gpflux.layers import GPLayer, LikelihoodLayer
+from gpflux.layers import GPLayer, LikelihoodLayer, TrackableLayer
 from gpflux.models.deep_gp import DeepGP
 from gpflux.sampling.sample import Sample
 
@@ -78,6 +79,30 @@ class VanillaDeepGP(DeepGP):
             default_model_class=default_model_class,
             num_data=num_data,
         )
+    
+    def as_dnn_model(self):
+        """
+        Creates a Neural Network equivalent of the Deep GP model
+        """
+        outputs = self.inputs
+        for layer in self.f_layers:
+            original_convert_to_tensor = layer._convert_to_tensor_fn
+            layer._convert_to_tensor_fn = tfp.distributions.Distribution.mean,
+            outputs = tf.convert_to_tensor(layer(outputs, training=False))
+            layer._convert_to_tensor_fn = original_convert_to_tensor
+
+        model = tf.keras.Model(inputs=self.inputs, outputs=outputs)
+        return model
+
+        # likelihood = self.likelihood_layer.likelihood
+        # likelihood_container = TrackableLayer()
+        # likelihood_container.likelihood = likelihood
+        # y = likelihood
+        # model = tf.keras.model.Model(=self.inputs, f)
+        # return model
+        # loss = gpflux.losses.LikelihoodLoss(likelihood)
+        # model.compile(loss=loss, optimizer="adam")
+        # outputs = self.call(self.inputs)
 
     def fit(
         self,
@@ -154,8 +179,10 @@ class VanillaDeepGP(DeepGP):
             """ This class chains samples from consecutive layers. """
 
             def __call__(self, X: TensorType) -> tf.Tensor:
+                self.inner_layers = []
                 for f in function_draws:
                     X = f(X)
+                    self.inner_layers.append(X)
                 return X
 
         return ChainedSample()
