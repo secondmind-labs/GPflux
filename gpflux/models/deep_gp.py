@@ -25,7 +25,6 @@ from gpflow.base import Module, TensorType
 
 import gpflux
 from gpflux.layers import LayerWithObservations, LikelihoodLayer
-from gpflux.sampling.sample import Sample
 
 
 class DeepGP(Module):
@@ -267,18 +266,3 @@ class DeepGP(Module):
         model_class = self._get_model_class(model_class)
         outputs = self.call(self.inputs)
         return model_class(self.inputs, outputs)
-
-
-def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
-    function_draws = [layer.sample() for layer in model.f_layers]
-    # TODO: error check that all layers implement .sample()?
-
-    class ChainedSample(Sample):
-        """ This class chains samples from consecutive layers. """
-
-        def __call__(self, X: TensorType) -> tf.Tensor:
-            for f in function_draws:
-                X = f(X)
-            return X
-
-    return ChainedSample()
