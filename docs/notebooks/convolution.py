@@ -1,4 +1,6 @@
 # %% [markdown]
+# ## 
+
 # In this notebook we revisit the Convolutional Gaussian Processes (ConvGP), <cite data-cite="van2017convolutional"/>. Similarly to convolutional neural networks, ConvGP suits very well to model image processing tasks. As well as CNN, the ConvGP is endowed with translation invariant property. ConvGP imposes stronger and structured prior on a image response function $f(\cdot)$, using patch response function $g(\cdot) \sim GP(0, k_g(\cdot, \cdot))$. The image response function is a sum of patch responses for all (overlapping) patches in the image $f(\mathbb{x}) = \sum_{p=1}^{P}g(\mathbb{x}^{[p]})$, where $p$ is an index of a patch of image, and therefore $f(\cdot) \sim GP(0, \sum_p \sum_{p'} k_g(x^{[p]}, x^{[p']}))$. In a way, the patch response kernel can be viewed as an equivalent to a convolutional kernel of CNN.
 #
 # <img src="./convgp.png" alt="convgp" width="400px"/>
