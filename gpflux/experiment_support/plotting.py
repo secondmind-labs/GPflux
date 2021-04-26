@@ -15,8 +15,8 @@
 #
 from typing import List, Optional, Sequence
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from gpflow.base import TensorType
 

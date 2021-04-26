@@ -95,7 +95,6 @@ def _efficient_sample_conditional_gaussian(
     Most costly implementation for obtaining a consistent GP sample.
     However, this method can be used for any kernel.
     """
-    assert not whiten, "Currently only whiten=False is supported"
 
     class SampleConditional(Sample):
         # N_old is 0 at first, we then start keeping track of past evaluation points.
@@ -155,13 +154,7 @@ def _efficient_sample_matheron_rule(
     :param q_mu: A tensor with the shape ``[M, P]``.
     :param q_sqrt: A tensor with the shape ``[P, M, M]``.
     :param whiten: Determines the parameterisation of the inducing variables.
-        If True, ``p(u) = N(0, I)``, otherwise ``p(u) = N(0, Kuu)``.
-        .. note:: Currenly, only *whiten* equals ``False`` is supported.
     """
-    # TODO(VD): allow for both whiten=True and False, currently only support False.
-    # Remember u = Luu v, with Kuu = Luu Luu^T and p(v) = N(0, I)
-    # so that p(u) = N(0, Luu Luu^T) = N(0, Kuu).
-    assert not whiten, "Currently only whiten=False is supported"
     L = tf.shape(kernel.feature_coefficients)[0]  # num eigenfunctions  # noqa: F841
 
     prior_weights = tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
@@ -173,9 +166,14 @@ def _efficient_sample_matheron_rule(
         q_sqrt,
         tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
-    u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     tf.debugging.assert_equal(tf.shape(Kmm), [M, M])
+    u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
+
+    if whiten:
+        Luu = tf.linalg.cholesky(Kmm)  # [M, M]
+        u_sample = tf.matmul(Luu, u_sample)  # [M, P]
+
     phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L]
     weight_space_prior_Z = phi_Z @ prior_weights  # [M, 1]
     diff = u_sample - weight_space_prior_Z  # [M, P] -- using implicit broadcasting
