@@ -36,6 +36,11 @@ def _inducing_variable_fixture():
     return gpflow.inducing_variables.InducingPoints(Z)
 
 
+@pytest.fixture(name="whiten", params=[True, False])
+def _whiten_fixture(request):
+    return request.param
+
+
 def _get_qmu_qsqrt(kernel, inducing_variable):
     """Returns q_mu and q_sqrt for a kernel and inducing_variable"""
     Z = inducing_variable.Z.numpy()
@@ -45,7 +50,7 @@ def _get_qmu_qsqrt(kernel, inducing_variable):
     return q_mu, q_sqrt
 
 
-def test_conditional_sample(kernel, inducing_variable):
+def test_conditional_sample(kernel, inducing_variable, whiten):
     """Smoke and consistency test for efficient sampling using MVN Conditioning"""
     q_mu, q_sqrt = _get_qmu_qsqrt(kernel, inducing_variable)
 
@@ -54,7 +59,7 @@ def test_conditional_sample(kernel, inducing_variable):
         kernel,
         q_mu,
         q_sqrt=1e-3 * tf.convert_to_tensor(q_sqrt[np.newaxis]),
-        whiten=False,
+        whiten=whiten,
     )
 
     X = np.linspace(-1, 1, 100).reshape(-1, 1)
@@ -70,7 +75,7 @@ def test_conditional_sample(kernel, inducing_variable):
     )
 
 
-def test_wilson_efficient_sample(kernel, inducing_variable):
+def test_wilson_efficient_sample(kernel, inducing_variable, whiten):
     """Smoke and consistency test for efficient sampling using Wilson"""
     eigenfunctions = RandomFourierFeatures(kernel, 100, dtype=default_float())
     eigenvalues = np.ones((100, 1), dtype=default_float())
@@ -83,7 +88,7 @@ def test_wilson_efficient_sample(kernel, inducing_variable):
         kernel2,
         q_mu,
         q_sqrt=1e-3 * tf.convert_to_tensor(q_sqrt[np.newaxis]),
-        whiten=False,
+        whiten=whiten,
     )
 
     X = np.linspace(-1, 0, 100).reshape(-1, 1)
