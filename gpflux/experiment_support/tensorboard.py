@@ -38,7 +38,7 @@ def tensorboard_event_iterator(file_pattern: Union[str, List[str], tf.Tensor]) -
     """
     Iterator yielding preprocessed tensorboard Events.
 
-    :param file_pattern: A string, a list of strings, or a tf.Tensor of string type
+    :param file_pattern: A string, a list of strings, or a `tf.Tensor` of string type
         (scalar or vector), representing the filename glob (i.e. shell wildcard)
         pattern(s) that will be matched.
     """

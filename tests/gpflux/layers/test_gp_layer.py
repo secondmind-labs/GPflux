@@ -94,7 +94,6 @@ def test_call_shapes():
     samples = tf.convert_to_tensor(gp_layer(X, training=False))
     assert samples.shape == (batch_size, output_dim)
 
-    gp_layer.returns_samples = False
     assert not gp_layer.full_cov and not gp_layer.full_output_cov
 
     distribution = gp_layer(X, training=False)

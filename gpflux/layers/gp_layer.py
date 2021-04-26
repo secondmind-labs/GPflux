@@ -317,14 +317,17 @@ class GPLayer(tfp.layers.DistributionLambda):
         )
 
         if self.full_cov and not self.full_output_cov:
+            # mean: [N, Q], cov: [Q, N, N]
             return tfp.distributions.MultivariateNormalTriL(
                 loc=tf.linalg.adjoint(mean), scale_tril=_cholesky_with_jitter(cov)
-            )
+            )  # loc: [Q, N], scale: [Q, N, N]
         elif self.full_output_cov and not self.full_cov:
+            # mean: [N, Q], cov: [N, Q, Q]
             return tfp.distributions.MultivariateNormalTriL(
                 loc=mean, scale_tril=_cholesky_with_jitter(cov)
-            )
+            )  # loc: [N, Q], scale: [N, Q, Q]
         elif not self.full_cov and not self.full_output_cov:
+            # mean: [N, Q], cov: [N, Q]
             return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
         else:
             raise NotImplementedError(
@@ -345,12 +348,12 @@ class GPLayer(tfp.layers.DistributionLambda):
         if self.num_samples is not None:
             samples = distribution.sample(
                 (self.num_samples,)
-            )  # [S, N, Q], or [S, Q, N] if full_cov
+            )  # [S, Q, N] if full_cov else [S, N, Q]
         else:
-            samples = distribution.sample()  # [N, Q], or [Q, N] if full_cov
+            samples = distribution.sample()  # [Q, N] if full_cov else [N, Q]
 
         if self.full_cov:
-            samples = tf.linalg.adjoint(samples)  # [(S,) N, Q]
+            samples = tf.linalg.adjoint(samples)  # [S, N, Q] or [N, Q]
 
         return samples
 

@@ -32,14 +32,18 @@ def verify_compatibility(
     inducing_variable: MultioutputInducingVariables,
 ) -> Tuple[int, int]:
     """
-    Provide error checking on shapes at layer construction. This method will be
-    made simpler by having enhancements to GPflow: eg by adding foo.output_dim
-    attribute, where foo is a MultioutputInducingVariable
+    Checks that the arguments are all compatible with each other for use in a `GPLayer`.
 
-    :param kernel: The multioutput kernel for the layer
-    :param inducing_variable: The inducing features for the layer
+    :param kernel: The multioutput kernel for the layer.
+    :param inducing_variable: The inducing features for the layer.
     :param mean_function: The mean function applied to the inputs.
+    :raises GPLayerIncompatibilityException: If an incompatibility is detected.
+    :returns: number of inducing variables and number of latent GPs
     """
+    # TODO: This function could be simplified by upstream enhancements to
+    # GPflow: e.g. by adding an `output_dim` attribute to
+    # MultioutputInducingVariable subclasses
+
     if not isinstance(inducing_variable, MultioutputInducingVariables):
         raise GPLayerIncompatibilityException(
             "`inducing_variable` must be a `gpflow.inducing_variables.MultioutputInducingVariables`"
