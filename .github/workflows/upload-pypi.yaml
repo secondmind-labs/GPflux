@@ -1,0 +1,53 @@
+# Copyright 2021 The GPflux Contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Upload-PyPI
+
+on:
+  workflow_dispatch:
+  push:
+    # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+    tags: v[0-9]+.[0-9]+.[0-9]+*
+
+jobs:
+  upload-pypi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Verify git tag vs. VERSION
+        run: |
+          VERSION="v$(cat VERSION | tr -d '\t\r\n ')"
+          TAG="${GITHUB_REF/refs\/tags\//}"
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "The package version ($VERSION) and the latest tag version ($TAG) are different"
+            exit 1
+          fi
+      - name: Install twine
+        run: |
+          pip install twine
+      - name: Init .pypirc
+        run: |
+          echo -e "[pypi]" >> ~/.pypirc
+          echo -e "username = __token__" >> ~/.pypirc
+          echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+          # https://github.com/secondmind-labs/GPflux/settings/secrets/actions
+      - name: Create pip package
+        run: |
+          python setup.py bdist_wheel sdist
+      - name: Upload to PyPI
+        run: |
+          python -m twine upload dist/*

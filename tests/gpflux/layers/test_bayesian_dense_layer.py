@@ -117,13 +117,6 @@ def test_call_shapes(is_mean_field):
     samples = bnn_layer(X, training=False)
     assert samples.shape == (batch_size, output_dim)
 
-    bnn_layer.returns_samples = False
-    assert not bnn_layer.full_cov and not bnn_layer.full_output_cov
-
-    mean, cov = bnn_layer(X, training=False)
-    assert mean.shape == (batch_size, output_dim)
-    assert cov.shape == (batch_size, output_dim)
-
 
 @pytest.mark.parametrize("is_mean_field", [True, False])
 def test_predict_shapes(is_mean_field):
