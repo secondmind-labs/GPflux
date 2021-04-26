@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from typing import Sequence
+from gpflow import inducing_variables
+from gpflow.kernels.multioutput.kernels import MultioutputKernel
 import numpy as np
 import gpflow
-from gpflow.kernels import Convolutional
+from gpflow.base import TensorLike
+from gpflow.covariances import Kuf, Kuu
+from gpflow.inducing_variables import InducingPatches
+from gpflow.conditionals import conditionals
 import tensorflow as tf
 
 
@@ -87,6 +92,10 @@ class ImagePatchShapes:
         return self.image_shape[-1]
 
     @property
+    def patch_size(self) -> int:
+        return self.patch_shape[0]
+
+    @property
     def num_patches(self) -> int:
         return self.out_size ** 2
 
@@ -104,7 +113,6 @@ class MultioutputConvolutionalKernel(gpflow.kernels.MultioutputKernel):
         patch_shape: Shape,
         num_output: int,
         pooling: int = 1,
-        patch_handler: PatchHandler = None,
     ):
         """
         :param base_kernel: gpflow.Kernel that operates on the vectors of length :math:`w * h`,
@@ -118,9 +126,6 @@ class MultioutputConvolutionalKernel(gpflow.kernels.MultioutputKernel):
 
         shapes = ImagePatchShapes(image_shape, patch_shape, pooling=pooling)
         self.shapes = shapes
-
-        is_handler = isinstance(patch_handler, PatchHandler)
-        self.patch_handler = ExtractPatchHandler(config) if not is_handler else patch_handler
         self.base_kernel = base_kernel
 
     def K(self, X, X2=None, full_output_cov=False):
@@ -130,31 +135,30 @@ class MultioutputConvolutionalKernel(gpflow.kernels.MultioutputKernel):
         """
         raise NotImplementedError
 
-    def Kdiag(self, X, full_output_cov=False):
+    def Kdiag(self, image: Image, full_output_cov=False):
 
         shapes = self.shapes
-        K = _K_image_symm(self.base_kernel, image, self.shapes, full_output_cov=full_output_cov)
+        K = _apply_kernel_on_image(
+            self.base_kernel,
+            image,
+            shapes,
+            full_output_cov=full_output_cov,
+        )
 
-        if full_output_cov and cfg.pooling > 1:
+        if full_output_cov and shapes.pooling > 1:
             # K is [N, P, P]
 
-            HpWp = (shapes.out_size, shapes.pooling, shapes.out_size, shape.pooling)
-            K = tf.reshape(K, [-1, *HpWp, *HpWp])
+            hpwp = (shapes.out_size, shapes.pooling, shapes.out_size, shapes.pooling)
+            K = tf.reshape(K, [-1, *hpwp, *hpwp])
             K = tf.reduce_sum(K, axis=[2, 4, 6, 8])  # TODO(awav): how to make it less obscure?
-            HW = shapes.out_size ** 2
-            K = tf.reshape(K, [-1, HW, HW])  # [N, P', P']
-        elif not full_output_cov and cfg.pooling > 1:  # K \in [N, P]
+            hw = shapes.out_size ** 2
+            K = tf.reshape(K, [-1, hw, hw])  # [N, P', P']
+
+        elif not full_output_cov and shapes.pooling > 1:  # K \in [N, P]
             msg = "Pooling is not implemented in ConvKernel.Kdiag() for `full_output_cov` False."
             raise NotImplementedError(msg)
 
         return K
-
-    def _setup_indices(self):
-        # IJ: Nx2, cartesian product of output indices
-        cfg = self.patch_handler.config
-        grid = np.meshgrid(np.arange(cfg.Hout), np.arange(cfg.Wout))
-        IJ = np.vstack([x.flatten() for x in grid]).T  # Px2
-        self.IJ = IJ.astype(settings.float_type)  # (H_out * W_out)x2 = Px2
 
 
 def _image_patches_inner_product(image_patches: Image) -> Tensor:
@@ -212,7 +216,7 @@ def _image_patches_inducing_patches_inner_product(
     )  # [N, P*C, M]
 
 
-def _image_patches_square_dist(image: Image) -> Tensor:
+def _image_patches_square_dist(image_patches: Image) -> Tensor:
     """
     Calculates the squared distance between every patch in each image of `X`
     ```
@@ -223,22 +227,41 @@ def _image_patches_square_dist(image: Image) -> Tensor:
     :param X: Tensor of shape [N, H, W, C]
     :return: Tensor of shape [N, P, P].
     """
-    image_patches
-    Xp1tXp2 = patch_handler.image_patches_inner_product(image, back_prop=False)  # [N, P, P]
-    Xp_squared = patch_handler.image_patches_squared_norm(image)  # [N, P]
+    Xp1tXp2 = _image_patches_inner_product(image_patches)  # [N, P, P]
+    Xp_squared = _image_patches_squared_norm(image_patches)  # [N, P]
     return Xp_squared[:, :, None] + Xp_squared[:, None, :] - 2 * Xp1tXp2  # [N, P, P]
 
 
-def _get_patches(image: Image, shapes: ImagePatchShapes):
+def _apply_kernel_to_image_inducing_patches(
+    kernel: gpflow.kernels.IsotropicStationary, image_patches: Image, inducing_patches: Image
+) -> Tensor:
+    """
+    Calculates the squared distance between patches in X image and Z patch
+    ```
+        ret[i,p,r] = ||Xᵢ⁽ᵖ⁾ - Zᵣ||² = Xᵢ⁽ᵖ⁾ᵀ Xᵢ⁽ᵖ⁾ + Zᵣᵀ Zᵣ - 2 Xᵢ⁽ᵖ⁾ᵀ Zᵣ
+    ```
+    and every inducing patch in `Z`.
+    :param X: Tensor of shape [N, H, W, C]
+    :param Z: Tensor of shape [N, h*w]
+    :return: Tensor of shape [N, P, M].
+    """
+
+    Xp_squared = _image_patches_squared_norm(image_patches)  # [N, P]
+    Zm_squared = _inducing_patches_squared_norm(inducing_patches)  # M
+    XptZm = _image_patches_inducing_patches_inner_product(
+        image_patches, inducing_patches
+    )  # [N, P, M]
+    dist = Xp_squared[:, :, None] + Zm_squared[None, None, :] - 2 * XptZm
+    dist /= kernel.lengthscales ** 2
+    return kernel.K_r2(dist)  # [N, P, M]
+
+
+def _get_patches(image: Image, shapes: ImagePatchShapes) -> Tensor:
     """
     Extracts patches from the images X. Patches are extracted separately for each of the colour channels.
     :param X: (N x input_dim)
     :return: Patches (N, num_patches, patch_shape)
     """
-    # Roll the colour channel to the front, so it appears to
-    # `tf.extract_image_patches()` as separate images. Then extract patches
-    # and reshape to have the first axis the same as the number of images.
-    # The separate patches will then be in the second axis.
     pad = [1, 1, 1, 1]
     num_data = tf.shape(image)[0]
     image_cast = tf.transpose(tf.reshape(image, [num_data, -1, shapes.channel_size]), [0, 2, 1])
@@ -251,7 +274,7 @@ def _get_patches(image: Image, shapes: ImagePatchShapes):
         pad,
         "VALID",
     )
-    patches_shape = tf.shape(patches)  # img x out_rows x out_cols
+    patches_shape = tf.shape(patches)
     out_shape = (
         num_data,
         shapes.channel_size * patches_shape[1] * patches_shape[2],
@@ -261,13 +284,17 @@ def _get_patches(image: Image, shapes: ImagePatchShapes):
     return gpflow.utilities.to_default_float(reshaped_patches)
 
 
-def _K_image_symm(kernel: gpflow.kernels.Stationary, image: Image, full_output_cov=False):
+def _apply_kernel_on_image(
+    kernel: gpflow.kernels.IsotropicStationary,
+    image: Image,
+    shapes: ImagePatchShapes,
+    full_output_cov: bool = False,
+) -> Tensor:
     """:return: Tensor [N, P]. If full_output_cov is `True` then tensor with [N, P, P]
     shape returned."""
 
-    patches = _get_patches(image)
-
     if full_output_cov:
+        patches = _get_patches(image, shapes)
         dist = _image_patches_square_dist(patches)  # [N, P, P]
         dist /= kernel.lengthscales ** 2  # Dividing after computing distances
         # helps to avoid unnecessary backpropagation.
@@ -275,3 +302,39 @@ def _K_image_symm(kernel: gpflow.kernels.Stationary, image: Image, full_output_c
     else:
         P = shapes.num_patches
         return kernel.variance * tf.ones([tf.shape(image)[0], P], dtype=image.dtype)  # [N, P]
+
+
+@Kuf.register(InducingPatches, MultioutputConvolutionalKernel, TensorLike)
+def _Kuf(inducing_variable: InducingPatches, kernel: MultioutputConvolutionalKernel, Xnew):
+    """
+    :param Xnew: NxWH
+    :return:  MxLxNxP
+    """
+    M = len(inducing_variable)
+    N = tf.shape(Xnew)[0]
+
+    Knm = _apply_kernel_to_image_inducing_patches(
+        kernel.base_kernel, Xnew, inducing_variable.Z
+    )  # [N, P, M]
+    Kmn = tf.transpose(Knm, [2, 0, 1])  # [M, N, P]
+
+    shapes = kernel.shapes
+    if shapes.pooling > 1:
+        new_shape = (M, N, shapes.out_size, shapes.pooling, shapes.out_size, shapes.pooling)
+        Kmn = tf.reshape(Kmn, new_shape)
+        Kmn = tf.reduce_sum(Kmn, axis=[3, 5])  # [M, N, P']
+
+    return tf.reshape(Kmn, [M, 1, N, shapes.num_patches])  # [M, L|1, N, P]  TODO: add L
+
+
+@Kuu.register(InducingPatches, MultioutputConvolutionalKernel)
+def _Kuu(
+    inducing_variable: InducingPatches,
+    kernel: MultioutputConvolutionalKernel,
+    *,
+    jitter: float = 0.0,
+):
+    M = len(inducing_variable)
+    Kmm = kernel.base_kernel.K(inducing_variable.Z)  # [M, M]
+    jittermat = jitter * tf.eye(M, dtype=Kmm.dtype)  # [M, M]
+    return (Kmm + jittermat)[None, :, :]  # [L|1, M, M]  TODO: add L
