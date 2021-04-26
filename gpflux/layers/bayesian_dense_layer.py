@@ -53,7 +53,7 @@ class BayesianDenseLayer(TrackableLayer):
         w_sqrt: Optional[np.ndarray] = None,
         activation: Optional[Callable] = None,
         is_mean_field: bool = True,
-        temperature: float = 1e-4,  # TODO is this intentional?
+        temperature: float = 1e-4,
     ):
         """
         :param input_dim: The input dimension (excluding bias) of this layer.
@@ -70,7 +70,12 @@ class BayesianDenseLayer(TrackableLayer):
         :param is_mean_field: Determines whether the approximation to the
             weight posterior is mean field. Must be consistent with the shape
             of ``w_sqrt``, if specified.
-        :param temperature: For cooling (< 1.0) or heating (> 1.0) the posterior.
+        :param temperature: The KL loss will be scaled by this factor.
+            Can be used for cooling (< 1.0) or heating (> 1.0) the posterior.
+            As suggested in `"How Good is the Bayes Posterior in Deep Neural
+            Networks Really?" by Wenzel et al. (2020)
+            <http://proceedings.mlr.press/v119/wenzel20a>`_ the default value
+            is a cold ``1e-4``.
         """
 
         super().__init__(dtype=default_float())
@@ -186,7 +191,6 @@ class BayesianDenseLayer(TrackableLayer):
 
         # TF quirk: add_loss must add a tensor to compile
         if training:
-            # Wenzel et al. 2020: How good is the Bayes posterior in DNNs really?
             loss = self.temperature * self.prior_kl()
         else:
             loss = tf.constant(0.0, dtype=default_float())
