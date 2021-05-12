@@ -16,7 +16,7 @@
 """ This module provides the base implementation for DeepGP models. """
 
 import itertools
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union, Sequence
 
 import tensorflow as tf
 
@@ -25,6 +25,7 @@ from gpflow.base import Module, TensorType
 
 import gpflux
 from gpflux.layers import LayerWithObservations, LikelihoodLayer
+from tensorflow.python.framework.ops import inside_function
 
 
 class DeepGP(Module):
@@ -74,7 +75,7 @@ class DeepGP(Module):
             gpflux.layers.LikelihoodLayer, gpflow.likelihoods.Likelihood
         ],  # fully-qualified for autoapi
         *,
-        input_dim: Optional[int] = None,
+        input_dim: Optional[Union[int, Sequence[int]]] = None,
         target_dim: Optional[int] = None,
         default_model_class: Type[tf.keras.Model] = tf.keras.Model,
         num_data: Optional[int] = None,
@@ -95,7 +96,11 @@ class DeepGP(Module):
             If you do not specify a value for this parameter explicitly, it is automatically
             detected from the :attr:`~gpflux.layers.GPLayer.num_data` attribute in the GP layers.
         """
-        self.inputs = tf.keras.Input((input_dim,), name="inputs")
+        if isinstance(input_dim, int):
+            self.inputs = tf.keras.Input((input_dim,), name="inputs")
+        else:
+            self.inputs = tf.keras.Input(input_dim, name="inputs")
+
         self.targets = tf.keras.Input((target_dim,), name="targets")
         self.f_layers = f_layers
         if isinstance(likelihood, gpflow.likelihoods.Likelihood):

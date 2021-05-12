@@ -19,7 +19,7 @@ By "Vanilla" we refer to a model that can only contain standard :class:`GPLayer`
 this model does not support keras layers, latent variable layers, etc.
 """
 
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Sequence, Tuple, Type, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,7 +43,7 @@ class VanillaDeepGP(DeepGP):
             LikelihoodLayer, gpflow.likelihoods.Likelihood
         ],  # fully-qualified for autoapi
         *,
-        input_dim: Optional[int] = None,
+        input_dim: Optional[Union[int, Sequence[int]]] = None,
         target_dim: Optional[int] = None,
         default_model_class: Type[tf.keras.Model] = tf.keras.Model,
         num_data: Optional[int] = None,
@@ -64,12 +64,12 @@ class VanillaDeepGP(DeepGP):
             If you do not specify a value for this parameter explicitly, it is automatically
             detected from the :attr:`~gpflux.layers.GPLayer.num_data` attribute in the GP layers.
         """
-        if not all([isinstance(layer, GPLayer) for layer in gp_layers]):
-            raise ValueError(
-                "`VanillaDeepGP` can only be build out of `GPLayer`s. "
-                "Use `DeepGP` for a hybrid model with, for example, keras layers, "
-                "latent variable layers and GP layers."
-            )
+        # if not all([isinstance(layer, GPLayer) for layer in gp_layers]):
+        #     raise ValueError(
+        #         "`VanillaDeepGP` can only be build out of `GPLayer`s. "
+        #         "Use `DeepGP` for a hybrid model with, for example, keras layers, "
+        #         "latent variable layers and GP layers."
+        #     )
 
         super().__init__(
             gp_layers,
