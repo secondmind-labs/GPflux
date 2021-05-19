@@ -86,17 +86,21 @@ def _size_q_mu(num_inducing, output_dim):
 
 
 _MODEL_PARAMS_AND_SIZE = {
-    "._layers[1].kernel.kernel.variance": 1,
-    "._layers[1].kernel.kernel.lengthscales": CONFIG.input_dim,
-    "._layers[1].inducing_variable.inducing_variable.Z": (CONFIG.num_inducing * CONFIG.input_dim),
-    "._layers[1].q_mu": _size_q_mu(CONFIG.num_inducing, CONFIG.hidden_dim),
-    "._layers[1].q_sqrt": _size_q_sqrt(CONFIG.num_inducing, CONFIG.hidden_dim),
-    "._layers[2].kernel.kernel.variance": 1,
-    "._layers[2].kernel.kernel.lengthscales": CONFIG.hidden_dim,
-    "._layers[2].inducing_variable.inducing_variable.Z": (CONFIG.num_inducing * CONFIG.hidden_dim),
-    "._layers[2].q_mu": _size_q_mu(CONFIG.num_inducing, CONFIG.output_dim),
-    "._layers[2].q_sqrt": _size_q_sqrt(CONFIG.num_inducing, CONFIG.output_dim),
-    "._layers[3].likelihood.variance": 1,
+    "._self_tracked_trackables[1].kernel.kernel.variance": 1,
+    "._self_tracked_trackables[1].kernel.kernel.lengthscales": CONFIG.input_dim,
+    "._self_tracked_trackables[1].inducing_variable.inducing_variable.Z": (
+        CONFIG.num_inducing * CONFIG.input_dim
+    ),
+    "._self_tracked_trackables[1].q_mu": _size_q_mu(CONFIG.num_inducing, CONFIG.hidden_dim),
+    "._self_tracked_trackables[1].q_sqrt": _size_q_sqrt(CONFIG.num_inducing, CONFIG.hidden_dim),
+    "._self_tracked_trackables[2].kernel.kernel.variance": 1,
+    "._self_tracked_trackables[2].kernel.kernel.lengthscales": CONFIG.hidden_dim,
+    "._self_tracked_trackables[2].inducing_variable.inducing_variable.Z": (
+        CONFIG.num_inducing * CONFIG.hidden_dim
+    ),
+    "._self_tracked_trackables[2].q_mu": _size_q_mu(CONFIG.num_inducing, CONFIG.output_dim),
+    "._self_tracked_trackables[2].q_sqrt": _size_q_sqrt(CONFIG.num_inducing, CONFIG.output_dim),
+    "._self_tracked_trackables[3].likelihood.variance": 1,
 }
 
 
