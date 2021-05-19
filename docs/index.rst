@@ -120,7 +120,7 @@ Join the community
 
 GPflux is an open source project. We welcome contributions. To submit a pull request, file a bug report, or make a feature request, see the `contribution guidelines <https://github.com/secondmind-labs/gpflux/blob/develop/CONTRIBUTING.md>`_.
 
-We have a public  `Slack workspace <https://join.slack.com/t/secondmind-labs/shared_invite/zt-mjkavx5e-LfePbVegb9lXRA_ZUqTyMA>`_. Please use this invite link if you'd like to join, whether to ask short informal questions or to be involved in the discussion and future development of GPflux.
+We have a public `Slack workspace <https://join.slack.com/t/secondmind-labs/shared_invite/zt-ph07nuie-gMlkle__tjvXBay4FNSLkw>`_. Please use this invite link if you'd like to join, whether to ask short informal questions or to be involved in the discussion and future development of GPflux.
 
 
 Bibliography
