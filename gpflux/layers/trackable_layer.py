@@ -16,10 +16,6 @@
 """Utility layer that tracks variables in :class:`tf.Module`."""
 
 
-import itertools
-from functools import wraps
-from typing import Any, Callable, Optional, Sequence
-
 import tensorflow as tf
 
 
