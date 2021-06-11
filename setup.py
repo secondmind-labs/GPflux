@@ -7,8 +7,8 @@ requirements = [
     "gpflow>=2.1",
     "numpy",
     "scipy",
-    "tensorflow-probability>=0.12.0",
-    "tensorflow>=2.4.0",
+    "tensorflow-probability>=0.10.1",
+    "tensorflow>=2.2.0",
 ]
 
 with open("README.md", "r") as file:

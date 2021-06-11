@@ -23,7 +23,16 @@ jobs:
       matrix:
         include:
           - python-version: 3.6
+            tensorflow: "~=2.2"
+            tensorflow_probability: "~=0.10"
+          - python-version: 3.6
+            tensorflow: "~=2.3"
+            tensorflow_probability: "~=0.11"
+          - python-version: 3.6
             tensorflow: "~=2.4"
+            tensorflow_probability: "~=0.12"
+          - python-version: 3.6
+            tensorflow: "~=2.5"
             tensorflow_probability: "~=0.12"
           - python-version: 3.7
             tensorflow: ""
