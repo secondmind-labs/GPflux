@@ -31,9 +31,6 @@ jobs:
           - python-version: 3.6
             tensorflow: "~=2.4"
             tensorflow_probability: "~=0.12"
-          - python-version: 3.6
-            tensorflow: "~=2.5"
-            tensorflow_probability: "~=0.12"
           - python-version: 3.7
             tensorflow: ""
             tensorflow_probability: ""
