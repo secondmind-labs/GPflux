@@ -16,6 +16,7 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 from tensorflow import keras
 
 from gpflow.kernels import RBF
@@ -117,8 +118,10 @@ def build_gpflux_deep_gp(layer_sizes, num_data):
 MODEL_BUILDERS = [
     build_keras_functional_deep_gp,
     build_keras_objected_oriented_deep_gp,
-    build_gpflux_deep_gp,
 ]
+
+if Version(tf.__version__) >= Version("2.3"):
+    MODEL_BUILDERS.append(build_gpflux_deep_gp)
 
 
 @pytest.mark.parametrize("deep_gp_model_builder", MODEL_BUILDERS)

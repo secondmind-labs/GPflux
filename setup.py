@@ -5,7 +5,7 @@ from setuptools import find_namespace_packages, setup
 
 requirements = [
     "gpflow>=2.1",
-    "numpy",
+    "numpy<1.20",  # numpy 1.20 does not handle symbolic tensors correctly (c.f. https://github.com/tensorflow/models/issues/9706).
     "scipy",
     "tensorflow-probability>=0.10.1",
     "tensorflow>=2.2.0",
