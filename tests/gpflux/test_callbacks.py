@@ -19,9 +19,9 @@ from typing import Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
-from packaging.version import Version
 
 import gpflux
 from gpflux.experiment_support.tensorboard import tensorboard_event_iterator
