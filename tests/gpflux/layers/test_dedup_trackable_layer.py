@@ -18,6 +18,7 @@ from typing import Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 from tensorflow.python.ops.resource_variable_ops import ResourceVariable
 from tensorflow.python.util import object_identity
 
@@ -100,6 +101,7 @@ _MODEL_PARAMS_AND_SIZE = {
 }
 
 
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
 def test_count_weights(model):
     """
     We build a relatively complex two-layer deep GP model and check
@@ -109,6 +111,7 @@ def test_count_weights(model):
     assert count_params(model) == int(sum(_MODEL_PARAMS_AND_SIZE.values()))
 
 
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
 def test_parameter_names(model):
     """
     Check that the parameter names returned by `gpflow.utilities.parameter_dict`
@@ -125,10 +128,12 @@ def test_parameter_names(model):
     assert set(_MODEL_PARAMS_AND_SIZE.keys()).issubset(set(params.keys()))
 
 
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
 def test_number_of_parameters(model):
     assert len(_MODEL_PARAMS_AND_SIZE) == len(model.trainable_weights)
 
 
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
 def test_weights_equals_deduplicated_parameter_dict(model):
     """
     Checks GPflux's `model.trainable_weights` elements equals deduplicated

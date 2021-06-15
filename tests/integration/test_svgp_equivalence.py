@@ -21,6 +21,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from packaging.version import Version
 
 import gpflux
 
@@ -245,6 +246,7 @@ def fit_natgrad(model, data, maxiter, adam_learning_rate=0.01, gamma=1.0):
         optimization_step()
 
 
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
 @pytest.mark.parametrize(
     "svgp_fitter, sldgp_fitter",
     [
@@ -274,6 +276,9 @@ def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
     ],
 )
 def test_svgp_equivalence_with_keras_sequential(svgp_fitter, keras_fitter, tol_kw, maxiter=10):
+    if svgp_fitter == fit_natgrad and Version(tf.__version__) <= Version("2.3"):
+        pytest.skip("Do not run with TF-2.2")
+
     X, Y = data = load_data()
 
     svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
@@ -329,6 +334,9 @@ def run_gpflow_svgp(data, optimizer, maxiter):
     ["natgrad", "adam", "scipy", "keras_adam", "keras_natgrad"],
 )
 def test_run_gpflux_sldgp(optimizer):
+    if optimizer == "keras_natgrad" and Version(tf.__version__) <= Version("2.3"):
+        pytest.skip("Do not run with TF-2.2")
+
     data = load_data()
     _ = run_gpflux_sldgp(data, optimizer, maxiter=10)
 
