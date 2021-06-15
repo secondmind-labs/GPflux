@@ -21,6 +21,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from packaging.version import Version
 
 import gpflux
 from gpflux.experiment_support.tensorboard import tensorboard_event_iterator
@@ -116,8 +117,6 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
     del records["batch_2"]
 
     expected_tags = {
-        # TODO(VD) investigate why epoch_lr is not in tensorboard files
-        # "epoch_lr",
         "epoch_loss",
         "epoch_gp0_prior_kl",
         "epoch_gp1_prior_kl",
@@ -129,6 +128,9 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
         "layers[2].kernel.kernel.variance",
         "layers[3].likelihood.variance",
     }
+    if Version(tf.__version__) <= Version("2.3"):
+        # TODO(VD) investigate why epoch_lr is not in tensorboard files in later versions
+        expected_tags.add("epoch_lr")
 
     if update_freq == "batch":
         expected_tags |= {

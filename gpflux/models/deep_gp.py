@@ -223,6 +223,9 @@ class DeepGP(Module):
         to :class:`~gpflux.layers.LayerWithObservations` instances such as
         :class:`~gpflux.layers.LatentVariableLayer`\ s, if present).
 
+        .. note:: Do not use this approach for training a model when using TensorFlow versions older
+           than 2.3.X.; the loss values are not computed correctly by the Keras backend.
+
         When compiling the returned model, do **not** provide any additional
         losses (this is handled by the :attr:`likelihood_layer`).
 
