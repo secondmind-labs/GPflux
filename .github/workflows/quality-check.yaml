@@ -32,11 +32,11 @@ jobs:
             tensorflow: "~=2.4.0"
             tensorflow_probability: "~=0.12.0"
           - python-version: 3.7
-            tensorflow: ""
-            tensorflow_probability: ""
+            tensorflow: "~=2.4.0"  # temporarily restrict to TensorFlow 2.4.0
+            tensorflow_probability: "~=0.12.0"
           - python-version: 3.8
-            tensorflow: ""
-            tensorflow_probability: ""
+            tensorflow: "~=2.4.0"  # temporarily restrict to TensorFlow 2.4.0
+            tensorflow_probability: "~=0.12.0"
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }} tensorflow_probability${{ matrix.tensorflow_probability }}
     env:
       VERSION_TF: ${{ matrix.tensorflow }}
