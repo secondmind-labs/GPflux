@@ -19,9 +19,9 @@ from typing import Union
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
-from packaging.version import Version
 
 import gpflux
 
