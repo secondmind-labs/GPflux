@@ -18,4 +18,3 @@ nbconvert
 jupyter_client
 ipykernel
 tornado
-pydata-sphinx-theme
