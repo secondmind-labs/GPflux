@@ -148,7 +148,8 @@ class KerasModelToTensorBoard(gpflow.monitor.ModelToTensorBoard):
     :attr:`parameter_dict`.
     """
 
-    # Keras automatically saves all layers in `self._self_tracked_trackables[\d]` attribute of the model.
+    # Keras automatically saves all layers in the `self._self_tracked_trackables`
+    # attribute of the model, which is a list of sub-modules.
     _LAYER_PARAMETER_REGEXP = re.compile(r"\._self_tracked_trackables\[\d+\]\.")
 
     def _parameter_of_interest(self, match: str) -> bool:
