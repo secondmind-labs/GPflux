@@ -116,8 +116,7 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
     del records["batch_2"]
 
     expected_tags = {
-        # TODO(VD) investigate why epoch_lr is not in tensorboard files
-        # "epoch_lr",
+        "epoch_lr",
         "epoch_loss",
         "epoch_gp0_prior_kl",
         "epoch_gp1_prior_kl",
