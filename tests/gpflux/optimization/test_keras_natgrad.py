@@ -16,14 +16,14 @@
 """
 Unit tests for the `gpflow.optimizers.NaturalGradient` optimizer within Keras models.
 """
-import gpflow
-import pytest
 import numpy as np
+import pytest
 import tensorflow as tf
+
+import gpflow
 
 import gpflux
 from gpflux.layers.likelihood_layer import LikelihoodOutputs
-
 
 tf.keras.backend.set_floatx("float64")
 
@@ -37,7 +37,9 @@ def _base_model_fixture():
 
     mok = gpflow.kernels.SharedIndependent(kernel, output_dim=1)
     moiv = gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable)
-    gp_layer = gpflux.layers.GPLayer(mok, moiv, num_data, mean_function=gpflow.mean_functions.Zero())
+    gp_layer = gpflux.layers.GPLayer(
+        mok, moiv, num_data, mean_function=gpflow.mean_functions.Zero()
+    )
     likelihood_layer = gpflux.layers.LikelihoodLayer(likelihood)
     return gpflux.models.DeepGP([gp_layer], likelihood_layer, input_dim=1, num_data=num_data)
 
@@ -46,9 +48,9 @@ def test_smoke_nat_grad_model_train_step(base_model):
     train_model = base_model.as_training_model()
     wrapper = gpflux.optimization.NatGradWrapper(train_model)
     wrapper.compile(optimizer=[gpflow.optimizers.NaturalGradient(1), tf.optimizers.Adam()])
-    output = wrapper.train_step({'inputs': np.ones((1, 1)), 'targets': np.ones((1, 1))})
+    output = wrapper.train_step({"inputs": np.ones((1, 1)), "targets": np.ones((1, 1))})
 
-    assert list(output.keys()) == ['loss', 'gp_layer_prior_kl']
+    assert list(output.keys()) == ["loss", "gp_layer_prior_kl"]
 
 
 def test_nat_grad_wrapper_layers(base_model):
