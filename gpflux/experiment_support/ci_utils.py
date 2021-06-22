@@ -38,21 +38,3 @@ def notebook_niter(n: int, test_n: int = 2) -> int:
     otherwise return ``n``.
     """
     return test_n if is_continuous_integration() else n
-
-
-def notebook_range(n: int, test_n: int = 2) -> range:
-    """
-    Return a typically shorter `range` (of the length specified by ``test_n``) if
-    code is running on CI machines (see :func:`is_continuous_integration`),
-    otherwise return a `range` of the length specified by ``n``.
-    """
-    return range(notebook_niter(n, test_n))
-
-
-def notebook_list(lst: list, test_n: int = 2) -> list:
-    """
-    Return a subset of the length specified by ``test_n`` from a list ``lst`` if the code
-    is running on CI machines (see :func:`is_continuous_integration`),
-    otherwise return the complete list ``lst``.
-    """
-    return lst[:test_n] if is_continuous_integration() else lst
