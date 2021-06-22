@@ -49,7 +49,9 @@ def test_likelihood_loss_from_distribution(f_dist):
     likelihood_loss = LikelihoodLoss(likelihood)
     actual_loss = likelihood_loss.call(targets, f_dist)
 
-    expected_loss = -likelihood.variational_expectations(f_dist.loc, f_dist.scale.diag ** 2, targets)
+    expected_loss = -likelihood.variational_expectations(
+        f_dist.loc, f_dist.scale.diag ** 2, targets
+    )
 
     np.testing.assert_allclose(actual_loss, expected_loss)
 
