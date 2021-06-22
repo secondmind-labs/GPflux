@@ -50,7 +50,9 @@ def test_smoke_nat_grad_model_train_step(base_model):
     wrapper.compile(optimizer=[gpflow.optimizers.NaturalGradient(1), tf.optimizers.Adam()])
     output = wrapper.train_step({"inputs": np.ones((1, 1)), "targets": np.ones((1, 1))})
 
-    assert list(output.keys()) == ["loss", "gp_layer_prior_kl"]
+    output_keys = list(output.keys())
+    assert output_keys[0] == "loss"
+    assert output_keys[1].startswith("gp_layer") and output_keys[1].endswith("prior_kl")
 
 
 def test_nat_grad_wrapper_layers(base_model):
