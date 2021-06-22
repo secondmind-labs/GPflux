@@ -111,7 +111,7 @@ def test_count_weights(model):
     assert count_params(model) == int(sum(_MODEL_PARAMS_AND_SIZE.values()))
 
 
-@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.4"), reason="Do not run with TF-2.2 or TF-2.3")
 def test_parameter_names(model):
     """
     Check that the parameter names returned by `gpflow.utilities.parameter_dict`
@@ -133,7 +133,7 @@ def test_number_of_parameters(model):
     assert len(_MODEL_PARAMS_AND_SIZE) == len(model.trainable_weights)
 
 
-@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.4"), reason="Do not run with TF-2.2 or TF-2.3")
 def test_weights_equals_deduplicated_parameter_dict(model):
     """
     Checks GPflux's `model.trainable_weights` elements equals deduplicated
