@@ -101,7 +101,7 @@ _MODEL_PARAMS_AND_SIZE = {
 }
 
 
-@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2")
+@pytest.mark.skipif(Version(tf.__version__) <= Version("2.3"), reason="Do not run with TF-2.2 and TF-2.3")
 def test_count_weights(model):
     """
     We build a relatively complex two-layer deep GP model and check
