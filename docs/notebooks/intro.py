@@ -22,6 +22,7 @@ In this notebook we cover the basics of Deep Gaussian processes (DGPs) <cite dat
 
 # %%
 import matplotlib.pyplot as plt
+plt.ion()
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -47,9 +48,9 @@ def motorcycle_data():
 
 
 X, Y = motorcycle_data()
-plt.plot(X, Y, "kx")
-plt.xlabel("time")
-plt.ylabel("Acceleration")
+# plt.plot(X, Y, "kx")
+# plt.xlabel("time")
+# plt.ylabel("Acceleration")
 
 # %% [markdown]
 """
@@ -70,15 +71,17 @@ import gpflow
 import gpflux
 
 num_data = len(X)
-num_inducing = 10
+num_inducing = 20
 output_dim = Y.shape[1]
+EPOCHS = int(1e3)
 
-kernel = gpflow.kernels.SquaredExponential()
+kernel = gpflow.kernels.SquaredExponential(lengthscales=3)
 inducing_variable = gpflow.inducing_variables.InducingPoints(
     np.linspace(X.min(), X.max(), num_inducing).reshape(-1, 1)
 )
+gpflow.utilities.set_trainable(inducing_variable, False)
 gp_layer = gpflux.layers.GPLayer(
-    kernel, inducing_variable, num_data=num_data, num_latent_gps=output_dim
+    kernel, inducing_variable, num_data=num_data, num_latent_gps=output_dim, mean_function=gpflow.mean_functions.Zero()
 )
 
 # %% [markdown]
@@ -87,7 +90,7 @@ We now create a `LikelihoodLayer` which encapsulates a `Likelihood` from GPflow.
 """
 
 # %%
-likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))
+likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.2))
 
 # %% [markdown]
 """
@@ -105,8 +108,18 @@ We train the model by calling `fit`. Keras handles minibatching the data, and ke
 """
 
 # %%
-history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
-plt.plot(history.history["loss"])
+# history = model.fit({"inputs": X, "targets": Y}, epochs=EPOCHS, verbose=1)
+
+def plot_history(history, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots()
+    
+    ax.plot(history)
+    ax.set_xlabel("Epochs")
+
+fig, (ax1, ax2) = plt.subplots(1, 2)
+fig.suptitle("Objecitive single layer GP")
+# plot_history(history.history["loss"], ax=ax1)
 
 # %% [markdown]
 """
@@ -119,25 +132,26 @@ def plot(model, X, Y, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
 
-    a = 1.0
-    N_test = 100
+    a = 20
+    N_test = 200
     X_test = np.linspace(X.min() - a, X.max() + a, N_test).reshape(-1, 1)
     out = model(X_test)
-
-    mu = out.f_mean.numpy().squeeze()
-    var = out.f_var.numpy().squeeze()
     X_test = X_test.squeeze()
-    lower = mu - 2 * np.sqrt(var)
-    upper = mu + 2 * np.sqrt(var)
 
-    ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)
+    for mu, var in [(out.y_mean, out.y_var), (out.f_mean, out.f_var)]:
+        mu = mu.numpy().squeeze()
+        var = var.numpy().squeeze()
+        lower = mu - 2 * np.sqrt(var)
+        upper = mu + 2 * np.sqrt(var)
+
+        ax.plot(X_test, mu, "C1")
+        ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
+
     ax.plot(X, Y, "kx", alpha=0.5)
-    ax.plot(X_test, mu, "C1")
-
-    ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
+    ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)
 
 
-plot(single_layer_dgp.as_prediction_model(), X, Y)
+plot(single_layer_dgp.as_prediction_model(), X, Y, ax=ax2)
 
 # %% [markdown]
 """
@@ -149,14 +163,19 @@ We refer to <cite data-cite="salimbeni2017doubly"/> for details on the deep GP m
 
 # %%
 Z = np.linspace(X.min(), X.max(), num_inducing).reshape(-1, 1)
-kernel1 = gpflow.kernels.SquaredExponential()
+kernel1 = gpflow.kernels.SquaredExponential(lengthscales=5., variance=2.) + gpflow.kernels.White(1.0)
 inducing_variable1 = gpflow.inducing_variables.InducingPoints(Z.copy())
+# gpflow.utilities.set_trainable(inducing_variable1, False)
+gpflow.utilities.set_trainable(kernel1, False)
 gp_layer1 = gpflux.layers.GPLayer(
-    kernel1, inducing_variable1, num_data=num_data, num_latent_gps=output_dim
+    kernel1, inducing_variable1, num_data=num_data, num_latent_gps=1,
+    mean_function=gpflow.mean_functions.Zero(),
 )
 
-kernel2 = gpflow.kernels.SquaredExponential()
-inducing_variable2 = gpflow.inducing_variables.InducingPoints(Z.copy())
+
+kernel2 = gpflow.kernels.SquaredExponential(lengthscales=3.)
+# inducing_variable2 = gpflow.inducing_variables.InducingPoints(np.linspace(-5, 5, num_inducing).reshape(-1, 1))
+inducing_variable2 = gpflow.inducing_variables.InducingPoints(np.random.randn(num_inducing, 1))
 gp_layer2 = gpflux.layers.GPLayer(
     kernel2,
     inducing_variable2,
@@ -165,19 +184,33 @@ gp_layer2 = gpflux.layers.GPLayer(
     mean_function=gpflow.mean_functions.Zero(),
 )
 
-likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))
+likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.03))
+gpflow.utilities.set_trainable(likelihood_layer, False)
+
+# gpflow.utilities.set_trainable(gp_layer, False)
 two_layer_dgp = gpflux.models.DeepGP([gp_layer1, gp_layer2], likelihood_layer)
 model = two_layer_dgp.as_training_model()
 model.compile(tf.optimizers.Adam(0.01))
 
 # %%
-history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
+cbs = [tf.keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=10, min_lr=1e-4, verbose=1),]
+history = model.fit({"inputs": X, "targets": Y}, epochs=EPOCHS, verbose=1, callbacks=cbs)
 
 # %%
-plt.plot(history.history["loss"])
+fig, (ax1, ax2) = plt.subplots(1, 2)
+fig.suptitle("Objective two layer GP")
+plot_history(history.history["loss"], ax=ax1)
+
+
+# gpflow.utilities.set_trainable(two_layer_dgp.f_layers[0], True)
+# model = two_layer_dgp.as_training_model()
+# model.compile(tf.optimizers.Adam(0.01))
+# cbs = [tf.keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=5, min_lr=1e-6, verbose=1),]
+# history = model.fit({"inputs": X, "targets": Y}, epochs=EPOCHS, verbose=1, callbacks=cbs)
 
 # %%
-plot(two_layer_dgp.as_prediction_model(), X, Y)
+plot(two_layer_dgp.as_prediction_model(), X, Y, ax=ax2)
+# plt.show()
 
 # %% [markdown]
 """
@@ -190,3 +223,114 @@ From visual inspection we immediately notice that the two-layer model performs m
 
 [1] Silverman, B. W. (1985) "Some aspects of the spline smoothing approach to non-parametric curve fitting". _Journal of the Royal Statistical Society_ series B 47, 1-52.
 """
+
+
+###################################################################
+
+
+import tensorflow as tf
+from gpflux.sampling.sample import Sample
+from gpflux.experiment_support.plotting import plot_layers
+
+
+
+def f_sample(deep_gp) -> Sample:
+    function_draws = [layer.sample() for layer in deep_gp.f_layers]
+
+    class ChainedSample(Sample):
+        """ This class chains samples from consecutive layers. """
+
+        def __call__(self, X) -> tf.Tensor:
+            self.inner_layers = []
+            for f in function_draws:
+                X = f(X)
+                self.inner_layers.append(X)
+            return X
+
+    return ChainedSample()
+
+
+def y_sample(deep_gp) -> Sample:
+    f = f_sample(deep_gp)
+    var = deep_gp.likelihood_layer.likelihood.variance
+
+    class _Sample(Sample):
+        """ This class chains samples from consecutive layers. """
+        def __call__(self, X) -> tf.Tensor:
+            f_eval = f(X)
+            return f_eval + tf.random.normal(tf.shape(f_eval), dtype=f_eval.dtype) * var ** 0.5
+    return _Sample()
+
+
+def plot2(
+    deep_gp, X, Y, num_test_points: int = 100, x_margin: float = 3.0
+):
+
+    if X.shape[1] != 1:
+        raise NotImplementedError("DeepGP plotting is only supported for 1D models.")
+
+    means, covs, samples = [], [], []
+
+    X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, num_test_points).reshape(-1, 1)
+    layer_input = X_test
+
+    for layer in deep_gp.f_layers:
+        layer.full_cov = True
+        layer.num_samples = 5
+        layer_output = layer(layer_input)
+
+        mean = layer_output.mean()
+        cov = layer_output.covariance()
+        sample = tf.convert_to_tensor(layer_output)  # generates num_samples samples...
+
+        # print(mean.shape)
+        # print(cov.shape)
+        # print(sample.shape)
+
+        layer_input = sample[0]  # for the next layer
+
+        means.append(mean.numpy().T)  # transpose to go from [1, N] to [N, 1]
+        covs.append(cov.numpy())
+        samples.append(sample.numpy())
+
+    fig, axes = plot_layers(X_test, means, covs, samples)
+
+    if axes.ndim == 1:
+        axes[-1].plot(X, Y, "kx")
+    elif axes.ndim == 2:
+        axes[-1, -1].plot(X, Y, "kx")
+
+    return fig, axes
+
+
+plot2(two_layer_dgp, X, Y, x_margin=10)
+fig, ax = plt.subplots()
+
+X_test = np.linspace(-20, 80, 100).reshape(-1, 1)
+ax.plot(X, Y, "kx")
+for _ in range(10):
+    f = f_sample(two_layer_dgp)
+    y = y_sample(two_layer_dgp)
+    ax.plot(X_test, f(X_test).numpy(), "C0", alpha=.2)
+    ax.plot(X_test, y(X_test).numpy(), "C1.", alpha=.2)
+
+
+def plot_hidden_layers(deep_gp):
+    def sample_fs():
+        return [layer.sample() for layer in deep_gp.f_layers]
+
+    fig, axs = plt.subplots(1, len(deep_gp.f_layers))
+
+    X_tests = []
+    X_tests.append(np.linspace(-20, 80, 100).reshape(-1, 1))
+    for i, f in enumerate(sample_fs()):
+        out = f(X_tests[i]).numpy()
+        X_tests.append(np.linspace(np.min(out) - 2, np.max(out) + 2, 101).reshape(-1, 1))
+
+    for _ in range(10):
+        for i, f in enumerate(sample_fs()):
+            axs[i].plot(X_tests[i], f(X_tests[i]).numpy())
+
+
+plot_hidden_layers(two_layer_dgp)
+plt.show()

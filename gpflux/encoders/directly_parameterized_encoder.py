@@ -85,7 +85,7 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
         super().__init__()
         if means is None:
             # break the symmetry in the means:
-            means = 0.01 * np.random.randn(num_data, latent_dim)
+            means = 0.0 * np.random.randn(num_data, latent_dim)
         else:
             if np.any(means.shape != (num_data, latent_dim)):
                 raise EncoderInitializationError(
@@ -95,7 +95,7 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
 
         # initialise distribution with a small standard deviation, as this has
         # been observed to help fitting:
-        stds = 1e-5 * np.ones_like(means)
+        stds = 1e-2 * np.ones_like(means)
 
         # TODO: Rename to `scale` and `loc` to match tfp.distributions
         self.means = Parameter(means, dtype=default_float(), name="w_means")

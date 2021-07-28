@@ -60,6 +60,11 @@ def plot_layer(
     # samples
     ax3.set_title("Samples")
     ax3.plot(X, np.squeeze(sample, axis=-1).T)
+    ax3.plot(X, mean, "k")
+    print(mean.shape)
+    print(cov.shape)
+    ax3.plot(X, mean + 2 * np.sqrt(np.diag(cov[0])).reshape(-1, 1), "k--")
+    ax3.plot(X, mean - 2 * np.sqrt(np.diag(cov[0])).reshape(-1, 1), "k--")
 
 
 def plot_layers(
@@ -69,4 +74,6 @@ def plot_layers(
     fig, axes = plt.subplots(3, L, figsize=(L * 3.33, 10))
     for i in range(L):
         layer_input = X if i == 0 else samples[i - 1][0]
-        plot_layer(X, layer_input, means[i], covs[i], samples[i], i, axes[:, i])
+        axs = axes[:, i] if L > 1 else axes
+        plot_layer(X, layer_input, means[i], covs[i], samples[i], i, axs)
+    return fig, axes
