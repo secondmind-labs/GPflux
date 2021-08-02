@@ -106,9 +106,8 @@ We train the model by calling `fit`. Keras handles minibatching the data, and ke
 """
 
 # %%
-history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=1)
+history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
 plt.plot(history.history["loss"])
-plt.savefig("single_layer.png")
 
 # %% [markdown]
 """
@@ -140,7 +139,6 @@ def plot(model, X, Y, ax=None):
 
 
 plot(single_layer_dgp.as_prediction_model(), X, Y)
-plt.savefig("single_layer_fit.png")
 
 # %% [markdown]
 """
@@ -174,15 +172,13 @@ model = two_layer_dgp.as_training_model()
 model.compile(tf.optimizers.Adam(0.01))
 
 # %%
-history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=1)
+history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
 
 # %%
 plt.plot(history.history["loss"])
-plt.savefig("two_layer.png")
 
 # %%
 plot(two_layer_dgp.as_prediction_model(), X, Y)
-plt.savefig("two_layer_fit.png")
 
 # %% [markdown]
 """
