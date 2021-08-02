@@ -11,6 +11,10 @@ from sklearn.neighbors import KernelDensity
 
 tf.keras.backend.set_floatx("float64")
 
+"""
+In this notebook we explore the use of Deep Gaussian processes and Latent Variables to model a dataset with heteroscedastic noise.
+"""
+
 ####################### data
 
 Ns = 200
@@ -28,25 +32,7 @@ def motorcycle_data():
 
 
 X, Y = motorcycle_data()
-
-# def f(X):
-#     f0 = lambda x: np.exp(-(x - 1)**2) + np.exp(-(x + 1)**2) - 0.1 * np.exp(np.random.randn(*x.shape)) + 1
-#     f1 = lambda x: np.exp(-(x - 1)**2) + np.exp(-(x + 1)**2) + 0.1 * np.exp(np.random.randn(*x.shape))
-#     f2 = lambda x: np.exp(-(x - 1)**2) + np.random.uniform(low=-0.1, high=0.1, size=x.shape)
-
-#     ind = np.random.choice([True, False], size=X.shape, p=(0.6, 0.4))
-#     Y = np.empty(X.shape)
-#     Y[ind] = f1(X[ind])
-#     Y[np.invert(ind)] = f2(X[np.invert(ind)])
-#     return Y
-
-
-# np.random.seed(0)
-# x1 = np.random.uniform(low=-3, high=-0.5, size=(100, 1))
-# x3 = np.random.uniform(low=1, high=3, size=(100, 1))
-# X = np.concatenate([x1, x3], 0)
 N, d_xim = X.shape
-# Y = f(X)
 
 fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 ax.scatter(X, Y, marker='x', color='k')
@@ -168,7 +154,7 @@ def plot_density(axes, N_samples=5_000, samples=None):
     return samples
 
 
-def plot_mean_and_var(ax, samples=None, N_samples=10_000):
+def plot_mean_and_var(ax, samples=None, N_samples=1_000):
     if samples is None:
         samples = predict_y_samples(dgp.as_prediction_model(), Xs, N_samples).numpy().T
 
@@ -202,4 +188,9 @@ plt.close()
 fig, ax = plt.subplots()
 plot_density(ax, samples=samples)
 plt.savefig("cde2.png")
+plt.close()
+
+fig, ax = plt.subplots()
+plot_mean_and_var(ax, samples=samples)
+plt.savefig("cde3.png")
 plt.close()
