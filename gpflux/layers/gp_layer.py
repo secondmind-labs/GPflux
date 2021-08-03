@@ -112,7 +112,7 @@ class GPLayer(tfp.layers.DistributionLambda):
         num_latent_gps: int = None,
         whiten: bool = True,
         name: Optional[str] = None,
-        verbose: bool = False,
+        verbose: bool = True,
     ):
         """
         :param kernel: The multioutput kernel for this layer.
@@ -171,6 +171,12 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         if mean_function is None:
             mean_function = Identity()
+            warnings.warn(
+                "Beware, no mean function was specified in the construction of the `GPLayer` "
+                "so the default `gpflow.mean_functions.Identity` is being used. "
+                "This mean function will only work if the input dimensionality "
+                "matches the number of latent gaussian processes in the layer."
+            )
         self.mean_function = mean_function
 
         self.full_output_cov = full_output_cov
