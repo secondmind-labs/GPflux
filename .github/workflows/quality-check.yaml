@@ -26,11 +26,11 @@ jobs:
             tensorflow: "~=2.4"
             tensorflow_probability: "~=0.12"
           - python-version: 3.7
-            tensorflow: ""
-            tensorflow_probability: ""
+            tensorflow: "~=2.4"
+            tensorflow_probability: "~=0.12"
           - python-version: 3.8
-            tensorflow: ""
-            tensorflow_probability: ""
+            tensorflow: "~=2.4"
+            tensorflow_probability: "~=0.12"
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }} tensorflow_probability${{ matrix.tensorflow_probability }}
     env:
       VERSION_TF: ${{ matrix.tensorflow }}
