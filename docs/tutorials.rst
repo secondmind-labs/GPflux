@@ -7,6 +7,7 @@ Tutorials
 
    notebooks/intro
    notebooks/gpflux_features
+   notebooks/deep_cde
 
 .. toctree::
    :caption: Advanced
