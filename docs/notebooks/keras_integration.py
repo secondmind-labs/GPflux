@@ -118,6 +118,10 @@ callbacks = [
 ]
 
 dgp_natgrad_train = dgp_natgrad.as_training_model()
+dgp_natgrad_train.natgrad_layers = (
+    True  # we want all (here two) GPLayer instances trained by NaturalGradient
+)
+# alternatively, we could set `natgrad_layers` explicitly to the GPLayer instances inside the model
 dgp_natgrad_train.compile(
     [
         gpflow.optimizers.NaturalGradient(gamma=0.05),

@@ -41,12 +41,36 @@ class NatGradModel(tf.keras.Model):
     models using the functional Keras style, to make it work with the
     NaturalGradient optimizers for q(u) distributions in GP layers.
 
+    You must set the `natgrad_layers` property before compiling the model. Set it
+    to the list of all :class:`~gpflux.layers.GPLayer`\ s you want to train using
+    natural gradients. You can also set it to `True` to include all of them.
+
     This model's :meth:`compile` method has to be passed a list of optimizers, which
-    must be one `gpflow.optimizers.NaturalGradient` instance per
+    must be one `gpflow.optimizers.NaturalGradient` instance per natgrad-trained
     :class:`~gpflux.layers.GPLayer`, followed by a regular optimizer (e.g.
     `tf.keras.optimizers.Adam`) as the last element to handle all other
     parameters (hyperparameters, inducing point locations).
     """
+
+    @property
+    def natgrad_layers(self) -> List[GPLayer]:
+        if not hasattr(self, "_natgrad_layers"):
+            raise AttributeError(
+                f"natgrad_layers must be set before training {self.__class__.__name__}"
+            )  # pragma: no cover
+        return self._natgrad_layers
+
+    @natgrad_layers.setter
+    def natgrad_layers(self, layers: Union[List[GPLayer], bool]):
+        if isinstance(layers, bool):
+            if layers:  # all (GP) layers
+                self._natgrad_layers = [
+                    layer for layer in self.layers if isinstance(layer, GPLayer)
+                ]
+            else:  # no layers
+                self._natgrad_layers = []
+        else:
+            self._natgrad_layers = layers
 
     @property
     def natgrad_optimizers(self) -> List[gpflow.optimizers.NaturalGradient]:
@@ -86,8 +110,9 @@ class NatGradModel(tf.keras.Model):
 
         if not isinstance(optimizers, (tuple, list)):
             raise TypeError(
-                "optimizer needs to be a list of NaturalGradient optimizers for "
-                "each GPLayer followed by one optimizer for non-q(u) parameters, "
+                "`optimizer` needs to be a list of NaturalGradient optimizers for "
+                "each element of `natgrad_layers` followed by one optimizer for all "
+                "other parameters, "
                 f"but was {optimizers}"
             )  # pragma: no cover
         if isinstance(optimizers[-1], NaturalGradient):
@@ -99,7 +124,7 @@ class NatGradModel(tf.keras.Model):
         if not all(isinstance(o, NaturalGradient) for o in optimizers[:-1]):
             raise TypeError(
                 "The all-but-last elements of the optimizer list must be "
-                "NaturalGradient instances, one for each GPLayer in the model, "
+                "NaturalGradient instances, one for each element of natgrad_layers, "
                 f"but were {optimizers[:-1]}"
             )  # pragma: no cover
         self._all_optimizers = optimizers
@@ -109,9 +134,7 @@ class NatGradModel(tf.keras.Model):
     ) -> Tuple[List[Tuple[Parameter, Parameter]], List[tf.Variable]]:
         # NOTE the structure of variational_params is directly linked to the _natgrad_step,
         # do not change out of sync
-        variational_params = [
-            (layer.q_mu, layer.q_sqrt) for layer in self.layers if isinstance(layer, GPLayer)
-        ]
+        variational_params = [(layer.q_mu, layer.q_sqrt) for layer in self.natgrad_layers]
         # NOTE could use a natgrad_parameters attribute on a layer or a
         # singledispatch function to make this more flexible for other layers
 
@@ -130,6 +153,15 @@ class NatGradModel(tf.keras.Model):
         # Leaving the print here until we've established why twice, or whether
         # it's irrelevant, and that it all works correctly in practice.
 
+        num_natgrad_layers = len(self.natgrad_layers)
+        num_natgrad_opt = len(self.natgrad_optimizers)
+        if num_natgrad_opt != num_natgrad_layers:
+            raise ValueError(
+                f"Model has {num_natgrad_opt} NaturalGradient optimizers, "
+                f"but {num_natgrad_layers} variational distributions in "
+                "natgrad_layers"
+            )  # pragma: no cover
+
         variational_params, other_vars = self._split_natgrad_params_and_other_vars()
         variational_params_vars = [
             (q_mu.unconstrained_variable, q_sqrt.unconstrained_variable)
@@ -139,14 +171,6 @@ class NatGradModel(tf.keras.Model):
         variational_params_grads, other_grads = tape.gradient(
             loss, (variational_params_vars, other_vars)
         )
-
-        num_natgrad_opt = len(self.natgrad_optimizers)
-        num_variational = len(variational_params)
-        if len(self.natgrad_optimizers) != len(variational_params):
-            raise ValueError(
-                f"Model has {num_natgrad_opt} NaturalGradient optimizers, "
-                f"but {num_variational} variational distributions"
-            )  # pragma: no cover
 
         for (natgrad_optimizer, (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt)) in zip(
             self.natgrad_optimizers, variational_params_grads, variational_params
