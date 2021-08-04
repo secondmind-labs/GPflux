@@ -36,7 +36,7 @@ __all__ = [
 
 
 class NatGradModel(tf.keras.Model):
-    """
+    r"""
     This is a drop-in replacement for `tf.keras.Model` when constructing GPflux
     models using the functional Keras style, to make it work with the
     NaturalGradient optimizers for q(u) distributions in GP layers.
@@ -61,7 +61,7 @@ class NatGradModel(tf.keras.Model):
         return self._natgrad_layers
 
     @natgrad_layers.setter
-    def natgrad_layers(self, layers: Union[List[GPLayer], bool]):
+    def natgrad_layers(self, layers: Union[List[GPLayer], bool]) -> None:
         if isinstance(layers, bool):
             if layers:  # all (GP) layers
                 self._natgrad_layers = [
