@@ -171,12 +171,13 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         if mean_function is None:
             mean_function = Identity()
-            warnings.warn(
-                "Beware, no mean function was specified in the construction of the `GPLayer` "
-                "so the default `gpflow.mean_functions.Identity` is being used. "
-                "This mean function will only work if the input dimensionality "
-                "matches the number of latent Gaussian processes in the layer."
-            )
+            if verbose:
+                warnings.warn(
+                    "Beware, no mean function was specified in the construction of the `GPLayer` "
+                    "so the default `gpflow.mean_functions.Identity` is being used. "
+                    "This mean function will only work if the input dimensionality "
+                    "matches the number of latent Gaussian processes in the layer."
+                )
         self.mean_function = mean_function
 
         self.full_output_cov = full_output_cov
@@ -193,7 +194,7 @@ class GPLayer(tfp.layers.DistributionLambda):
             if num_latent_gps is None:
                 raise e
 
-            if self.verbose:
+            if verbose:
                 warnings.warn(
                     "Could not verify the compatibility of the `kernel`, `inducing_variable` "
                     "and `mean_function`. We advise using `gpflux.helpers.construct_*` to create "
