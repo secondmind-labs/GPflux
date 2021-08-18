@@ -175,7 +175,7 @@ class GPLayer(tfp.layers.DistributionLambda):
                 "Beware, no mean function was specified in the construction of the `GPLayer` "
                 "so the default `gpflow.mean_functions.Identity` is being used. "
                 "This mean function will only work if the input dimensionality "
-                "matches the number of latent gaussian processes in the layer."
+                "matches the number of latent Gaussian processes in the layer."
             )
         self.mean_function = mean_function
 
