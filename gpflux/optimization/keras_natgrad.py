@@ -55,11 +55,14 @@ class NatGradModel(tf.keras.Model):
     @property
     def natgrad_layers(self) -> List[GPLayer]:
         """
-        The list of layers in this model that should be optimized using `~gpflow.optimizers.NaturalGradient`.
+        The list of layers in this model that should be optimized using
+        `~gpflow.optimizers.NaturalGradient`.
 
-        :getter: Returns a list of the layers that should be trained using `~gpflow.optimizers.NaturalGradient`.
-        :setter: Sets the layers that should be trained using `~gpflow.optimizers.NaturalGradient`.
-            Can be an explicit list or a `bool`: If set to `True`, it will select all `GPLayer` instances in the model layers.
+        :getter: Returns a list of the layers that should be trained using
+            `~gpflow.optimizers.NaturalGradient`.
+        :setter: Sets the layers that should be trained using
+            `~gpflow.optimizers.NaturalGradient`. Can be an explicit list or a `bool`:
+            If set to `True`, it will select all `GPLayer` instances in the model layers.
         """
         if not hasattr(self, "_natgrad_layers"):
             raise AttributeError(
