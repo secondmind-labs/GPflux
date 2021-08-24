@@ -165,6 +165,7 @@ def _keras_fit_natgrad(
     run_eagerly=None,
 ):
     model = gpflux.optimization.NatGradWrapper(base_model)
+    model.natgrad_layers = True  # Shortcut to apply natural gradients to all layers
     natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
     adam = tf.optimizers.Adam(adam_learning_rate)
     model.compile(
