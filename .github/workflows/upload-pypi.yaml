@@ -38,7 +38,7 @@ jobs:
           fi
       - name: Install twine
         run: |
-          pip install twine
+          pip install twine wheel
       - name: Init .pypirc
         run: |
           echo -e "[pypi]" >> ~/.pypirc
