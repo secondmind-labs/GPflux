@@ -15,13 +15,13 @@
 #
 """ A kernel's features and coefficients using Random Fourier Features (RFF). """
 
-from typing import Mapping, Tuple, Type
+from typing import Mapping, Optional, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.base import TensorType
+from gpflow.base import DType, TensorType
 
 from gpflux.types import ShapeType
 
@@ -98,10 +98,10 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
         super().build(input_shape)
 
-    def bias_init(self, shape, dtype=None):
+    def bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2 * np.pi, dtype=dtype)
 
-    def weights_init(self, shape, dtype=None):
+    def weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, dtype=dtype)
         else:
