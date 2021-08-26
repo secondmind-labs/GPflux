@@ -21,9 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - python-version: [3.6, 3.7, 3.8]
-            tensorflow: ["~=2.5"]
+          python-version: [3.6, 3.7, 3.8]
+          tensorflow: ["~=2.5"]
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }}
     env:
       VERSION_TF: ${{ matrix.tensorflow }}
