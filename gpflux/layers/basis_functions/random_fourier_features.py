@@ -90,7 +90,10 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
         shape_weights = [self.output_dim, input_dim]
         self.W = self.add_weight(
-            name="weights", shape=shape_weights, dtype=self.dtype, initializer=self.weights_init,
+            name="weights",
+            shape=shape_weights,
+            dtype=self.dtype,
+            initializer=self.weights_init,
         )
 
         super().build(input_shape)
@@ -115,7 +118,9 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
             # Figurnov et al.
             normal_rvs = tf.random.normal(shape=shape, dtype=dtype)
             shape = tf.concat([shape[:-1], [1]], axis=0)
-            gamma_rvs = tf.tile(tf.random.gamma(shape, alpha=nu, beta=nu), [1, shape[-1]])
+            gamma_rvs = tf.tile(
+                tf.random.gamma(shape, alpha=nu, beta=nu, dtype=dtype), [1, shape[-1]]
+            )
             return tf.math.rsqrt(gamma_rvs) * normal_rvs
 
     def call(self, inputs: TensorType) -> tf.Tensor:
@@ -151,6 +156,8 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
         """
         config = super().get_config()
-        config.update({"kernel": self.kernel, "output_dim": self.output_dim, "input_dim": self._input_dim})
+        config.update(
+            {"kernel": self.kernel, "output_dim": self.output_dim, "input_dim": self._input_dim}
+        )
 
         return config

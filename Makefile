@@ -37,7 +37,6 @@ install:  ## Install repo for developement
 		-r notebook_requirements.txt \
 		-r tests_requirements.txt \
 		tensorflow${VERSION_TF} \
-		tensorflow_probability${VERSION_TFP} \
 		-e .
 
 docs:  ## Build the documentation
