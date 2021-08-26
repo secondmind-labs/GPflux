@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-The library root. See :mod:`~gpflux.models.deep_gp.DeepGP` for the core Deep GP model,
-which is built out of different GP :mod:`~gpflux.layers`.
-"""
-from gpflux import callbacks, encoders, helpers, layers, losses, models, optimization, sampling
-from gpflux.version import __version__
+"""Adds __version__"""
+
+from pathlib import Path
+
+with open(str(Path(__file__).parent.parent / "VERSION"), "r") as file:
+    __version__ = file.read().strip()

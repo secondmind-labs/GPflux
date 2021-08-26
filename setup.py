@@ -4,6 +4,7 @@
 from setuptools import find_namespace_packages, setup
 
 requirements = [
+    "deprecated",
     "gpflow>=2.1",
     "numpy",
     "scipy",

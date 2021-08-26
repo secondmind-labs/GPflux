@@ -17,11 +17,13 @@ from typing import List
 
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 from tensorflow.keras.layers import Layer
 
 from gpflow import default_float
 from gpflow.kernels import RBF, Matern12, Matern52
 
+import gpflux
 from gpflux.layers import TrackableLayer
 
 
@@ -178,3 +180,13 @@ def test_variables():
 def test_tensorflow_classes_trackable(composite_class):
     composite_object = composite_class([Matern52()])
     assert len(composite_object.trainable_variables) == 2
+
+
+@pytest.mark.skipif(
+    Version(gpflux.__version__) < Version("1.0.0"), reason="Only relevant for v1.0.0"
+)
+def test_trackable_layer_is_removed_version_1_0_0():
+    with pytest.raises(ImportError):
+        from gpflux.layers.trackable_layer import TrackableLayer  # noqa: F401
+
+        _ = TrackableLayer()
