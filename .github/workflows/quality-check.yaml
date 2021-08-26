@@ -22,19 +22,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.6
-            tensorflow: "~=2.5"
-            tensorflow_probability: "~=0.12"
-          - python-version: 3.7
-            tensorflow: ""
-            tensorflow_probability: ""
-          - python-version: 3.8
-            tensorflow: ""
-            tensorflow_probability: ""
-    name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }} tensorflow_probability${{ matrix.tensorflow_probability }}
+          - python-version: [3.6, 3.7, 3.8]
+            tensorflow: ["~=2.5", "~=2.6"]
+    name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }}
     env:
       VERSION_TF: ${{ matrix.tensorflow }}
-      VERSION_TFP: ${{ matrix.tensorflow_probability }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
