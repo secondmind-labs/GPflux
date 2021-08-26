@@ -36,18 +36,14 @@ jobs:
             echo "The package version ($VERSION) and the latest tag version ($TAG) are different"
             exit 1
           fi
-      - name: Install twine
+      - name: Install twine and wheel
         run: |
-          pip install twine
-      - name: Init .pypirc
-        run: |
-          echo -e "[pypi]" >> ~/.pypirc
-          echo -e "username = __token__" >> ~/.pypirc
-          echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
-          # https://github.com/secondmind-labs/GPflux/settings/secrets/actions
+          pip install twine wheel
       - name: Create pip package
         run: |
           python setup.py bdist_wheel sdist
-      - name: Upload to PyPI
-        run: |
-          python -m twine upload dist/*
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_PASSWORD }}
