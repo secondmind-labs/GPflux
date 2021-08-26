@@ -69,6 +69,11 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         self.kernel = kernel
         assert isinstance(self.kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         self.output_dim = output_dim  # M
+        if kwargs.get("input_dim", None):
+            self._input_dim = kwargs["input_dim"]
+            self.build(tf.TensorShape([self._input_dim]))
+        else:
+            self._input_dim = None
 
     def build(self, input_shape: ShapeType) -> None:
         """
@@ -79,17 +84,23 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         input_dim = input_shape[-1]
 
         shape_bias = [1, self.output_dim]
-        self.b = self._sample_bias(shape_bias, dtype=self.dtype)
+        self.b = self.add_weight(
+            name="bias", shape=shape_bias, dtype=self.dtype, initializer=self.bias_init
+        )
+
         shape_weights = [self.output_dim, input_dim]
-        self.W = self._sample_weights(shape_weights, dtype=self.dtype)
+        self.W = self.add_weight(
+            name="weights", shape=shape_weights, dtype=self.dtype, initializer=self.weights_init,
+        )
+
         super().build(input_shape)
 
-    def _sample_bias(self, shape: ShapeType, **kwargs: Mapping) -> tf.Tensor:
-        return tf.random.uniform(shape=shape, maxval=2 * np.pi, **kwargs)
+    def bias_init(self, shape, dtype=None):
+        return tf.random.uniform(shape=shape, maxval=2 * np.pi, dtype=dtype)
 
-    def _sample_weights(self, shape: ShapeType, **kwargs: Mapping) -> tf.Tensor:
+    def weights_init(self, shape, dtype=None):
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
-            return tf.random.normal(shape, **kwargs)
+            return tf.random.normal(shape, dtype=dtype)
         else:
             if isinstance(self.kernel, gpflow.kernels.Matern52):
                 nu = 2.5
@@ -102,9 +113,9 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
             # Sample student-t using "Implicit Reparameterization Gradients",
             # Figurnov et al.
-            normal_rvs = tf.random.normal(shape=shape, **kwargs)
+            normal_rvs = tf.random.normal(shape=shape, dtype=dtype)
             shape = tf.concat([shape[:-1], [1]], axis=0)
-            gamma_rvs = tf.tile(tf.random.gamma(shape, alpha=nu, beta=nu, **kwargs), [1, shape[-1]])
+            gamma_rvs = tf.tile(tf.random.gamma(shape, alpha=nu, beta=nu), [1, shape[-1]])
             return tf.math.rsqrt(gamma_rvs) * normal_rvs
 
     def call(self, inputs: TensorType) -> tf.Tensor:
@@ -140,6 +151,6 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
         """
         config = super().get_config()
-        config.update({"kernel": self.kernel, "output_dim": self.output_dim})
+        config.update({"kernel": self.kernel, "output_dim": self.output_dim, "input_dim": self._input_dim})
 
         return config

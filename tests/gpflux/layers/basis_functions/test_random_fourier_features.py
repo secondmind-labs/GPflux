@@ -120,6 +120,7 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
         kwargs={
             "kernel": kernel,
             "output_dim": n_features,
+            "input_dim": 1,
             "dtype": "float64",
             "dynamic": True,
         },
@@ -137,6 +138,7 @@ def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims
         kwargs={
             "kernel": kernel,
             "output_dim": n_features,
+            "input_dim": n_dims,
             "dtype": "float64",
             "dynamic": True,
         },
