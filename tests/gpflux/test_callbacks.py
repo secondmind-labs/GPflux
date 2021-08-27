@@ -116,18 +116,23 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
     del records["batch_2"]
 
     expected_tags = {
-        # TODO(VD) investigate why epoch_lr is not in tensorboard files
-        # "epoch_lr",
+        "epoch_lr",
         "epoch_loss",
         "epoch_gp0_prior_kl",
         "epoch_gp1_prior_kl",
-        "layers[1].kernel.kernel.lengthscales",
-        "layers[1].kernel.kernel.variance",
-        "layers[2].kernel.kernel.lengthscales[0]",
-        "layers[2].kernel.kernel.lengthscales[1]",
-        "layers[2].kernel.kernel.lengthscales[2]",
-        "layers[2].kernel.kernel.variance",
-        "layers[3].likelihood.variance",
+        "self_tracked_trackables[1].kernel.kernel.lengthscales",
+        "self_tracked_trackables[1].kernel.kernel.variance",
+        "self_tracked_trackables[1]._self_tracked_trackables[1].kernel.lengthscales",
+        "self_tracked_trackables[1]._self_tracked_trackables[1].kernel.variance",
+        "self_tracked_trackables[2].kernel.kernel.lengthscales[0]",
+        "self_tracked_trackables[2].kernel.kernel.lengthscales[1]",
+        "self_tracked_trackables[2].kernel.kernel.lengthscales[2]",
+        "self_tracked_trackables[2].kernel.kernel.variance",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.lengthscales[0]",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.lengthscales[1]",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.lengthscales[2]",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.variance",
+        "self_tracked_trackables[3].likelihood.variance",
     }
 
     if update_freq == "batch":

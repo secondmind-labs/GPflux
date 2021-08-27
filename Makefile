@@ -37,8 +37,6 @@ install:  ## Install repo for developement
 		-r notebook_requirements.txt \
 		-r tests_requirements.txt \
 		tensorflow${VERSION_TF} \
-		tensorflow_probability${VERSION_TFP} \
-		tensorboard${VERSION_TF} \
 		-e .
 
 docs:  ## Build the documentation
@@ -91,5 +89,8 @@ test: ## Run unit and integration tests with pytest
 	       --junitxml=reports/junit.xml \
 	       -v --tb=short --durations=10 \
 	       $(TESTS_NAME)
+
+quicktest:  ## Run the tests, start with the failing ones and break on first fail.
+	pytest -vv -x --ff -rN -Wignore -s
 
 check-and-test: check test  ## Run pytest and static tests
