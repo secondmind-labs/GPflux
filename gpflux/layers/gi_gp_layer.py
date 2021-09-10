@@ -22,6 +22,7 @@ Aitchison (2021) for details.
 import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
+import gpflow
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -53,7 +54,7 @@ class BatchingSquaredExponential(SquaredExponential):
 
         Xs = tf.reduce_sum((X**2), -1)[..., :, None]
         X2s = tf.reduce_sum((X2**2), -1)[..., None, :]
-        return Xs + X2s - 2*X@tf.linalg.adjoint(X2s)
+        return Xs + X2s - 2*X@tf.linalg.adjoint(X2)
 
 
 class GIGPLayer(tf.keras.layers.Layer):
@@ -141,13 +142,13 @@ class GIGPLayer(tf.keras.layers.Layer):
         """
 
         super().__init__(
-            make_distribution_fn=self._make_distribution_fn,
-            convert_to_tensor_fn=self._convert_to_tensor_fn,
             dtype=default_float(),
             name=name,
         )
 
         self.kernel = BatchingSquaredExponential(lengthscales=[1.]*input_dim)
+
+        self.input_dim = input_dim
 
         self.num_data = num_data
 
@@ -197,8 +198,8 @@ class GIGPLayer(tf.keras.layers.Layer):
         return self.L_loc * self.L_scale/norm
 
     def mvnormal_log_prob(self, sigma_L, X):
-        in_features = tf.shape(X)[-2]
-        out_features = tf.shape(X)[-1]
+        in_features = self.input_dim
+        out_features = self.num_latent_gps
         trace_quad = tf.reduce_sum(tf.linalg.triangular_solve(sigma_L, X)**2, [-1, -2])
         logdet_term = 2.0*tf.reduce_sum(tf.math.log(tf.linalg.diag_part(sigma_L)), -1)
         return -0.5*trace_quad - 0.5*out_features*(logdet_term + in_features*math.log(2*math.pi))
@@ -212,19 +213,16 @@ class GIGPLayer(tf.keras.layers.Layer):
         """
         Sample-based propagation of both inducing points and function values.
         """
-        assert len(tf.shape(inputs)) == 3
-
         mean_function = self.mean_function(inputs)
 
-        Kuu = self.kernel(inputs[..., :self.num_inducing])
-        Kuf = self.kernel(inputs[..., :self.num_inducing, self.num_inducing:])
+        Kuu = self.kernel(inputs[..., :self.num_inducing, :])
+        Kuf = self.kernel(inputs[..., :self.num_inducing, :], inputs[..., self.num_inducing:, :])
         Kfu = tf.linalg.adjoint(Kuf)
-        Kff = self.kernel.K_diag(inputs[..., self.num_inducing:])
+        Kff = self.kernel.K_diag(inputs[..., self.num_inducing:, :])
 
         Kuu, Kuf, Kfu = tf.expand_dims(Kuu, 1), tf.expand_dims(Kuf, 1), tf.expand_dims(Kfu, 1)
 
-        (S, _, _, _) = tf.shape(Kuu)
-        S = S.numpy()
+        S = tf.shape(Kuu)[0]
 
         Iuu = tf.eye(self.num_inducing, dtype=default_float())
 
@@ -246,6 +244,7 @@ class GIGPLayer(tf.keras.layers.Layer):
             dtype=default_float()
         )
 
+        Kuu = Kuu + gpflow.default_jitter()*tf.eye(self.num_inducing, dtype=default_float())
         chol_Kuu = tf.linalg.cholesky(Kuu)
         chol_Kuu_T = tf.linalg.adjoint(chol_Kuu)
 

@@ -49,7 +49,7 @@ class SampleBasedGaussianLikelihoodLayer(TrackableLayer):
         targets: Optional[TensorType] = None,
         training: bool = None,
     ) -> tfp.distributions.Normal:
-        likelihood_dist = tfp.distributions.Normal(inputs, self.variance, dtype=default_float())
+        likelihood_dist = tfp.distributions.Normal(inputs, tf.sqrt(self.variance))
 
         if training:
             assert targets is not None

@@ -19,6 +19,7 @@ import itertools
 from typing import List, Optional, Tuple, Type, Union
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import Parameter, default_float
@@ -129,11 +130,10 @@ class GIDeepGP(Module):
         return num_data
 
     def _inducing_add(self, inputs: TensorType):
-        assert self.rank == len(tf.shape(inputs))
 
         inducing_data = tf.tile(
             tf.expand_dims(self.inducing_data, 0),
-            [tf.shape(inputs)[0], *tf.shape(self.inducing_data)]
+            [tf.shape(inputs)[0], *[1]*(self.rank-1)]
         )
         x = tf.concat([inducing_data, inputs], 1)
 
@@ -169,7 +169,8 @@ class GIDeepGP(Module):
             observations = None
             num_samples = self.num_test_samples
 
-        features = tf.tile(tf.expand_dims(features, 0), [num_samples, *[1]*len(tf.shape(features))])
+        features = tf.tile(tf.expand_dims(features, 0),
+                           [num_samples, *[1]*(self.rank-1)])
         features = self._inducing_add(features)
 
         for layer in self.f_layers:
@@ -196,20 +197,19 @@ class GIDeepGP(Module):
         inputs: TensorType,
         targets: Optional[TensorType] = None,
         training: Optional[bool] = None,
-    ) -> tf.Tensor:
+    ) -> tfp.distributions.Distribution:
         f_outputs = self._evaluate_deep_gp(inputs, targets=targets, training=training)
         y_outputs = self._evaluate_likelihood(f_outputs, targets=targets, training=training)
         return y_outputs
 
-    # def predict_f(self, inputs: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
-    #     """
-    #     :returns: The mean and variance (not the scale!) of ``f``, for compatibility with GPflow
-    #        models.
-    #
-    #     .. note:: This method does **not** support ``full_cov`` or ``full_output_cov``.
-    #     """
-    #     f_distribution = self._evaluate_deep_gp(inputs, targets=None)
-    #     return f_distribution.loc, f_distribution.scale.diag ** 2
+    def predict_f(self, inputs: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
+        """
+        :returns: The mean and variance (not the scale!) of ``f``, for compatibility with GPflow
+           models.
+
+        .. note:: This method does **not** support ``full_cov`` or ``full_output_cov``.
+        """
+        raise NotImplementedError("TODO")
 
     def elbo(self, data: Tuple[TensorType, TensorType]) -> tf.Tensor:
         """
