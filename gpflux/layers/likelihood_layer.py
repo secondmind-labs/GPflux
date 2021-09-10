@@ -23,11 +23,45 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
 
-from gpflow import default_float
+from gpflow import default_float, Parameter
 from gpflow.base import TensorType
 from gpflow.likelihoods import Likelihood
+from gpflow.utilities.bijectors import positive
 
 from gpflux.layers.trackable_layer import TrackableLayer
+
+
+class SampleBasedGaussianLikelihoodLayer(TrackableLayer):
+    def __init__(self, variance: float = 1., variance_lower_bound=1e-8):
+        super().__init__(dtype=default_float())
+
+        if variance <= variance_lower_bound:
+            raise ValueError(
+                f"The variance of the Gaussian likelihood must be strictly greater than "
+                f"{variance_lower_bound}"
+            )
+
+        self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
+
+    def call(
+        self,
+        inputs: TensorType,
+        targets: Optional[TensorType] = None,
+        training: bool = None,
+    ) -> tfp.distributions.Normal:
+        likelihood_dist = tfp.distributions.Normal(inputs, self.variance, dtype=default_float())
+
+        if training:
+            assert targets is not None
+            loss_per_datapoint = tf.reduce_mean(
+                -likelihood_dist.log_prob(tf.expand_dims(targets, 0))
+            )
+        else:
+            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
+
+        self.add_loss(loss_per_datapoint)
+
+        return likelihood_dist
 
 
 class LikelihoodLayer(TrackableLayer):

@@ -266,7 +266,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         name = f"{self.name}_prior_kl" if self.name else "prior_kl"
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
-        #### f|u
+        #### f|u - possibility of using a conditional here?
         Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
         Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
         Vf = Kff - tf.squeeze(tf.reduce_sum((Kfu_invKuu*Kfu), -1), 1)
