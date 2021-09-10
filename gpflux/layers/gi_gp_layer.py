@@ -28,7 +28,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import math
 
-from gpflow import Parameter, default_float
+from gpflow import Parameter, default_float, default_jitter
 from gpflow.base import TensorType
 from gpflow.kernels import SquaredExponential
 from gpflow.mean_functions import Identity, MeanFunction
@@ -244,7 +244,7 @@ class GIGPLayer(tf.keras.layers.Layer):
             dtype=default_float()
         )
 
-        Kuu = Kuu + gpflow.default_jitter()*tf.eye(self.num_inducing, dtype=default_float())
+        Kuu = Kuu + default_jitter()*tf.eye(self.num_inducing, dtype=default_float())
         chol_Kuu = tf.linalg.cholesky(Kuu)
         chol_Kuu_T = tf.linalg.adjoint(chol_Kuu)
 
@@ -265,17 +265,10 @@ class GIGPLayer(tf.keras.layers.Layer):
         name = f"{self.name}_prior_kl" if self.name else "prior_kl"
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
-        #### f|u - possibility of using a conditional here?
-        Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
-        Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
-        Vf = Kff - tf.squeeze(tf.reduce_sum((Kfu_invKuu*Kfu), -1), 1)
-
-        eps_f = tf.random.normal(
-            tf.shape(Ef),
-            dtype=default_float()
-        )
-
-        f_samples = Ef + tf.math.sqrt(Vf)[..., None]*eps_f
+        if kwargs.get("full_cov"):
+            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu, inputs=inputs, full_cov=True)
+        else:
+            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu)
 
         all_samples = tf.concat(
             [
@@ -286,6 +279,38 @@ class GIGPLayer(tf.keras.layers.Layer):
         )
 
         return all_samples + mean_function
+
+    def sample_conditional(
+        self,
+        u: TensorType,
+        Kff: TensorType,
+        Kuf: TensorType,
+        chol_Kuu: TensorType,
+        inputs: Optional[TensorType] = None,
+        full_cov: bool = False,
+    ) -> tf.Tensor:
+        Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
+        Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
+
+        eps_f = tf.random.normal(
+            tf.shape(Ef),
+            dtype=default_float()
+        )
+
+        if full_cov:
+            assert inputs is not None
+            Kff = self.kernel(inputs[..., self.num_inducing:, :])
+            Vf = Kff - tf.squeeze(Kfu_invKuu @ Kuf, 1)
+            Vf = Vf + default_jitter()*tf.eye(tf.shape(Vf)[-1], dtype=default_float())
+            chol_Vf = tf.linalg.cholesky(Vf)
+
+            var_part = chol_Vf @ eps_f
+        else:
+            Vf = Kff - tf.squeeze(tf.reduce_sum((Kfu_invKuu*tf.linalg.adjoint(Kuf)), -1), 1)
+
+            var_part = tf.math.sqrt(Vf)[..., None]*eps_f
+
+        return Ef + var_part
 
     def prior_kl(
         self,
@@ -307,8 +332,9 @@ class GIGPLayer(tf.keras.layers.Layer):
 
         return -tf.reduce_mean(logpq)
 
-    def sample(self) -> Sample:
+    def sample(self, inputs: TensorType) -> tf.Tensor:
         """
         .. todo:: TODO: Document this.
         """
-        raise NotImplementedError("TODO")
+
+        return self.call(inputs, kwargs={"training": None, "full_cov": True})
