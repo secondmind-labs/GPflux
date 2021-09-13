@@ -285,7 +285,7 @@ class GIDeepGP(Module):
         outputs = self.call(self.inputs)
         return model_class(self.inputs, outputs)
 
-    def sample(self, inputs: TensorType, num_samples: int) -> tf.Tensor:
+    def sample(self, inputs: TensorType, num_samples: int, consistent: bool = False) -> tf.Tensor:
         features = tf.tile(tf.expand_dims(inputs, 0),
                            [num_samples, *[1]*(self.rank-1)])
         features = self._inducing_add(features)
@@ -294,7 +294,7 @@ class GIDeepGP(Module):
             if isinstance(layer, LayerWithObservations):
                 raise NotImplementedError("Latent variable layers not yet supported")
             else:
-                features = layer(features, training=None, full_cov=True)
+                features = layer(features, training=None, full_cov=consistent)
 
         return self._inducing_remove(features)
 
