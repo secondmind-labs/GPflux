@@ -94,6 +94,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         inducing_targets: Optional[tf.Tensor] = None,
         prec_init: Optional[float] = 1.,
         mean_function: Optional[MeanFunction] = None,
+        kernel_variance_init: Optional[float] = 1.,
         *,
         name: Optional[str] = None,
         verbose: bool = True,
@@ -146,7 +147,8 @@ class GIGPLayer(tf.keras.layers.Layer):
             name=name,
         )
 
-        self.kernel = BatchingSquaredExponential(lengthscales=[1.]*input_dim)
+        self.kernel = BatchingSquaredExponential(
+            lengthscales=[1.]*input_dim, variance=kernel_variance_init)
 
         self.input_dim = input_dim
 
@@ -186,7 +188,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         )  # [num_latent_gps, num_inducing, num_inducing]
 
         self.L_scale = Parameter(
-            np.sqrt(prec_init)*np.ones((self.num_latent_gps, 1, 1)),
+            tf.sqrt(self.kernel.variance)*np.sqrt(prec_init)*np.ones((self.num_latent_gps, 1, 1)),
             transform=positive(),
             dtype=default_float(),
             name=f"{self.name}_L_scale" if self.name else "L_scale"
