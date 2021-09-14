@@ -95,7 +95,7 @@ class GIDeepGP(Module):
         assert (inducing_init is not None) != (inducing_shape is not None)
 
         if inducing_init is None:
-            self.inducing_data = Parameter(inducing_shape, dtype=default_float())
+            self.inducing_data = Parameter(tf.random.normal(inducing_shape), dtype=default_float())
         else:
             self.inducing_data = Parameter(inducing_init, dtype=default_float())
 
