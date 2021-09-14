@@ -15,14 +15,13 @@
 #
 """
 This module provides :class:`GIGPLayer`, which implements a 'global inducing' point posterior for
-a GP layer. Currently restricted to single-output kernels, inducing points, etc... See Ober and
-Aitchison (2021) for details.
+a GP layer. Currently restricted to squared exponential kernel, inducing points, etc... See Ober and
+Aitchison (2021): https://arxiv.org/abs/2005.08140 for details.
 """
 
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-import gpflow
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -33,8 +32,6 @@ from gpflow.base import TensorType
 from gpflow.kernels import SquaredExponential
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular, positive
-
-from gpflux.sampling.sample import Sample
 
 
 class BatchingSquaredExponential(SquaredExponential):
@@ -77,20 +74,20 @@ class GIGPLayer(tf.keras.layers.Layer):
 
     L_loc: Parameter
     r"""
-    The lower-triangular Cholesky factor of the precision of ``q(u|v)``.
+    The lower-triangular Cholesky factor of the precision of ``q(v|u)``.
     """
 
     L_scale: Parameter
     r"""
-    Scale parameter for L
+    Scale parameter for L.
     """
 
     def __init__(
         self,
+        input_dim: int,
         num_latent_gps: int,
         num_data: int,
         num_inducing: int,
-        input_dim: int,
         inducing_targets: Optional[tf.Tensor] = None,
         prec_init: Optional[float] = 1.,
         mean_function: Optional[MeanFunction] = None,
@@ -100,9 +97,16 @@ class GIGPLayer(tf.keras.layers.Layer):
         verbose: bool = True,
     ):
         """
-        :param kernel: The multioutput kernel for this layer.
-        :param inducing_variable: The inducing features for this layer.
+        :param input_dim: The dimension of the input for this layer.
+        :param num_latent_gps: The number of latent GPs in this layer (i.e. the output dimension).
+            Unlike for the :class:`GPLayer`, this must be provided for global inducing layers.
         :param num_data: The number of points in the training dataset (see :attr:`num_data`).
+        :param num_inducing: The number of inducing points; for global inducing this should be the
+            same for the whole model.
+        :param inducing_targets: An optional initialization for `v`. The most useful case for this
+            is the last layer, where it may be initialized to (a subset of) the output data.
+        :param prec_init: Initialization for the precision parameter. See Ober and Aitchison (2021)
+            for more details.
         :param mean_function: The mean function that will be applied to the
             inputs. Default: :class:`~gpflow.mean_functions.Identity`.
 
@@ -111,32 +115,7 @@ class GIGPLayer(tf.keras.layers.Layer):
                 change the dimensionality in a layer, you may want to provide a
                 :class:`~gpflow.mean_functions.Linear` mean function instead.
 
-        :param num_samples: The number of samples to draw when converting the
-            :class:`~tfp.layers.DistributionLambda` into a `tf.Tensor`, see
-            :meth:`_convert_to_tensor_fn`. Will be stored in the
-            :attr:`num_samples` attribute.  If `None` (the default), draw a
-            single sample without prefixing the sample shape (see
-            :class:`tfp.distributions.Distribution`'s `sample()
-            <https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution#sample>`_
-            method).
-        :param full_cov: Sets default behaviour of calling this layer
-            (:attr:`full_cov` attribute):
-            If `False` (the default), only predict marginals (diagonal
-            of covariance) with respect to inputs.
-            If `True`, predict full covariance over inputs.
-        :param full_output_cov: Sets default behaviour of calling this layer
-            (:attr:`full_output_cov` attribute):
-            If `False` (the default), only predict marginals (diagonal
-            of covariance) with respect to outputs.
-            If `True`, predict full covariance over outputs.
-        :param num_latent_gps: The number of (latent) GPs in the layer
-            (which can be different from the number of outputs, e.g. with a
-            :class:`~gpflow.kernels.LinearCoregionalization` kernel).
-            This is used to determine the size of the
-            variational parameters :attr:`q_mu` and :attr:`q_sqrt`.
-            If possible, it is inferred from the *kernel* and *inducing_variable*.
-        :param whiten: If `True` (the default), uses the whitened parameterisation
-            of the inducing variables; see :attr:`whiten`.
+        :param kernel_variance_init: Initialization for the kernel variance
         :param name: The name of this layer.
         :param verbose: The verbosity mode. Set this parameter to `True`
             to show debug information.
@@ -146,6 +125,11 @@ class GIGPLayer(tf.keras.layers.Layer):
             dtype=default_float(),
             name=name,
         )
+
+        if kernel_variance_init <= 0:
+            raise ValueError("Kernel variance must be positive.")
+        if prec_init <= 0:
+            raise ValueError("Precision init must be positive")
 
         self.kernel = BatchingSquaredExponential(
             lengthscales=[1.]*input_dim, variance=kernel_variance_init)
@@ -173,6 +157,10 @@ class GIGPLayer(tf.keras.layers.Layer):
 
         if inducing_targets is None:
             inducing_targets = np.zeros((self.num_latent_gps, num_inducing, 1))
+        elif tf.rank(inducing_targets) == 2:
+            inducing_targets = tf.expand_dims(tf.linalg.adjoint(inducing_targets), -1)
+        if inducing_targets.shape != (self.num_latent_gps, num_inducing, 1):
+            raise ValueError("Incorrect shape was provided for the inducing targets.")
 
         self.v = Parameter(
             inducing_targets,
@@ -195,11 +183,24 @@ class GIGPLayer(tf.keras.layers.Layer):
         )
 
     @property
-    def L(self):
+    def L(self) -> tf.Tensor:
+        """
+        :return: the Cholesky of the precision hyperparameter. We parameterize L using L_loc and
+            L_scale to achieve greater stability during optimization.
+        """
         norm = tf.reshape(tf.reduce_mean(tf.linalg.diag_part(self.L_loc), axis=-1), [-1, 1, 1])
         return self.L_loc * self.L_scale/norm
 
-    def mvnormal_log_prob(self, sigma_L, X):
+    def mvnormal_log_prob(self, sigma_L: TensorType, X: TensorType) -> tf.Tensor:
+        """
+        Calculates the log probability of a zero-mean multivariate Gaussian with covariance sigma
+        and evaluation points X, with batching of both the covariance and X.
+
+        TODO: look into whether this can be replaced with a tfp.distributions.Distribution
+        :param sigma_L: Cholesky of covariance sigma, shape [..., 1, D, D]
+        :param X: evaluation point for log_prob, shape [..., M, D, 1]
+        :return: the log probability, shape [..., M]
+        """
         in_features = self.input_dim
         out_features = self.num_latent_gps
         trace_quad = tf.reduce_sum(tf.linalg.triangular_solve(sigma_L, X)**2, [-1, -2])
@@ -213,7 +214,8 @@ class GIGPLayer(tf.keras.layers.Layer):
         **kwargs: Dict[str, Any]
     ) -> tf.Tensor:
         """
-        Sample-based propagation of both inducing points and function values.
+        Sample-based propagation of both inducing points and function values. See Ober & Aitchison
+        (2021) for details.
         """
         mean_function = self.mean_function(inputs)
 
@@ -291,6 +293,19 @@ class GIGPLayer(tf.keras.layers.Layer):
         inputs: Optional[TensorType] = None,
         full_cov: bool = False,
     ) -> tf.Tensor:
+        """
+        Samples function values f based off samples of u.
+
+        :param u: Samples of the inducing points, shape [S, Lout, M, 1]
+        :param Kff: The diag of the kernel evaluated at input function values, shape [S, N]
+        :param Kuf: The kernel evaluated between inducing locations and input function values, shape
+            [S, 1, M, N]
+        :param chol_Kuu: Cholesky factor of kernel evaluated for inducing points, shape [S, 1, M, M]
+        :param inputs: Input data points, required for full_cov = True, shape [S, N, Lin]
+        :param full_cov: Whether to use the full covariance predictive, which gives consistent
+            samples if true
+        :return: samples of f, shape [S, M, Lout]
+        """
         Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
         Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
 
@@ -320,10 +335,14 @@ class GIGPLayer(tf.keras.layers.Layer):
         chol_lKlpI: tf.Tensor,
         u: tf.Tensor,
     ) -> tf.Tensor:
-        r"""
-        Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u)`` to
-        the variational distribution ``q(u)``.  If this layer uses the
-        :attr:`whiten`\ ed representation, returns ``KL[q(v)∥p(v)]``.
+        """
+        Returns sample-based estimates of the KL divergence between the approximate posterior and
+        the prior, KL(q(u)||p(u)).
+
+        :param LT: transpose of L, shape [Lout, M, M]
+        :param chol_lKlpI: Cholesky of LT @ Kuu @ L + I, shape [S, Lout, M, M]
+        :param u: Samples of the inducing points, shape [S, Lout, M, 1]
+        :return: Samples-based estimate of the KL, shape []
         """
         lv = LT @ self.v
 
@@ -336,7 +355,12 @@ class GIGPLayer(tf.keras.layers.Layer):
 
     def sample(self, inputs: TensorType) -> tf.Tensor:
         """
-        .. todo:: TODO: Document this.
+        Sample consistent functions from the layer.
+
+        TODO: Note that this not follow the behavior of the :class:`Sample` in the rest of GPflux.
+
+        :param inputs: [..., Lin]
+        :return: consistent samples, shape [..., Lout]
         """
 
         return self.call(inputs, kwargs={"training": None, "full_cov": True})
