@@ -69,7 +69,11 @@ class GIGPLayer(tf.keras.layers.Layer):
 
     v: Parameter
     r"""
-    The pseudo-targets. 
+    The pseudo-targets. Note that this does not have the same meaning as in much of the GP 
+    literature, where it represents a whitened version of the inducing variables. While we do use
+    whitened representations to compute the KL, we maintain the use of `u` throughout for the 
+    inducing variables, leaving `v` for the pseudo-targets, which follows the notation of Ober &
+    Aitchison (2021).
     """
 
     L_loc: Parameter
@@ -337,7 +341,21 @@ class GIGPLayer(tf.keras.layers.Layer):
     ) -> tf.Tensor:
         """
         Returns sample-based estimates of the KL divergence between the approximate posterior and
-        the prior, KL(q(u)||p(u)).
+        the prior, KL(q(u)||p(u)). Note that we use a whitened representation to compute the KL:
+
+        P = L LT
+        u = N(0, K)
+        v | u = N(u, P^{-1})
+        u | v = N(S P u, S)  - this is the approximate posterior form for u, where
+        S = (K^{-1} + P)^{-1} = K - K L (LT K L + I)^{-1} LT K
+
+        To compute the KL:
+        lu = LT u
+        lv = LT v
+        lv | u = N(lu, I)
+        lv = N(0, LT K L + I)
+
+        P(u)/P(u|lv) = P(lv)/P(lv|u)
 
         :param LT: transpose of L, shape [Lout, M, M]
         :param chol_lKlpI: Cholesky of LT @ Kuu @ L + I, shape [S, Lout, M, M]
