@@ -92,11 +92,11 @@ class GIGPLayer(tf.keras.layers.Layer):
         num_latent_gps: int,
         num_data: int,
         num_inducing: int,
+        *,
         inducing_targets: Optional[tf.Tensor] = None,
         prec_init: Optional[float] = 1.,
         mean_function: Optional[MeanFunction] = None,
         kernel_variance_init: Optional[float] = 1.,
-        *,
         name: Optional[str] = None,
         verbose: bool = True,
     ):

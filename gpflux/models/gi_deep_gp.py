@@ -13,21 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-""" This module provides an implementation of global inducing points for deep GPs. """
+"""
+This module provides an implementation of global inducing points for deep GPs. See Ober &
+Aitchison (2021) https://arxiv.org/abs/2005.08140
+
+Note: this is a sample-based implementation, so we return samples from the DGP instead of predictive
+means and variances.
+"""
 
 import itertools
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-import gpflow
 from gpflow import Parameter, default_float
 from gpflow.base import Module, TensorType
 
 import gpflux
-from gpflux.layers import LayerWithObservations, LikelihoodLayer, SampleBasedGaussianLikelihoodLayer
-from gpflux.sampling.sample import Sample
+from gpflux.layers import LayerWithObservations, SampleBasedGaussianLikelihoodLayer
 
 
 class GIDeepGP(Module):
@@ -35,7 +39,7 @@ class GIDeepGP(Module):
     f_layers: List[tf.keras.layers.Layer]
     """ A list of all layers in this DeepGP (just :attr:`likelihood_layer` is separate). """
 
-    likelihood_layer: gpflux.layers.LikelihoodLayer
+    likelihood_layer: gpflux.layers.SampleBasedGaussianLikelihoodLayer
     """ The likelihood layer. """
 
     """
@@ -297,18 +301,3 @@ class GIDeepGP(Module):
                 features = layer(features, training=None, full_cov=consistent)
 
         return self._inducing_remove(features)
-
-
-def sample_dgp(model: GIDeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
-    function_draws = [layer.sample() for layer in model.f_layers]
-    # TODO: error check that all layers implement .sample()?
-
-    class ChainedSample(Sample):
-        """ This class chains samples from consecutive layers. """
-
-        def __call__(self, X: TensorType) -> tf.Tensor:
-            for f in function_draws:
-                X = f(X)
-            return X
-
-    return ChainedSample()
