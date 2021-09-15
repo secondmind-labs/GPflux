@@ -146,8 +146,8 @@ class GIDeepGP(Module):
         self.default_model_class = default_model_class
         self.num_data = self._validate_num_data(f_layers, num_data)
 
-        if (inducing_init is not None) != (inducing_shape is not None):
-            raise ValueError(f"One of `inducing_init` or `inducing_shape` must be exclusively"
+        if (inducing_init is not None) == (inducing_shape is not None):
+            raise ValueError(f"One of `inducing_init` or `inducing_shape` must be exclusively "
                              f"provided.")
 
         if inducing_init is None:
@@ -158,7 +158,7 @@ class GIDeepGP(Module):
         if num_inducing != tf.shape(self.inducing_data)[0]:
             raise ValueError(f"The number of inducing inputs {self.inducing_data.shape[0]} must "
                              f"equal num_inducing {num_inducing}.")
-        if input_dim is not None and input_dim != tf.shape(self.inducing_data)[-1]:
+        if input_dim is not None and tf.shape(self.inducing_data)[-1] != input_dim:
             raise ValueError(f"The dimension of the inducing inputs {self.inducing_data.shape[-1]}"
                              f"must equal input_dim {input_dim}")
 
