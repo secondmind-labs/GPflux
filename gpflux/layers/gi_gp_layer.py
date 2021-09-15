@@ -370,15 +370,3 @@ class GIGPLayer(tf.keras.layers.Layer):
         logpq = logP - logQ
 
         return -tf.reduce_mean(logpq)
-
-    def sample(self, inputs: TensorType) -> tf.Tensor:
-        """
-        Sample consistent functions from the layer.
-
-        TODO: Note that this not follow the behavior of the :class:`Sample` in the rest of GPflux.
-
-        :param inputs: [..., Lin]
-        :return: consistent samples, shape [..., Lout]
-        """
-
-        return self.call(inputs, kwargs={"training": None, "full_cov": True})

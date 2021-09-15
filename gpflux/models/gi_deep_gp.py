@@ -35,13 +35,30 @@ from gpflux.layers import LayerWithObservations, SampleBasedGaussianLikelihoodLa
 
 
 class GIDeepGP(Module):
+    """
+    This class combines a sequential function model ``f(x) = fₙ(⋯ (f₂(f₁(x))))``
+    and a likelihood ``p(y|f)``. The model uses the inference method described in Ober & Aitchison
+    (2021).
+
+    Layers currently do NOT support inheriting from :class:`~gpflux.layers.LayerWithObservations`.
+
+    .. note:: This class is **not** a `tf.keras.Model` subclass itself. To access
+       Keras features, call either :meth:`as_training_model` or :meth:`as_prediction_model`
+       (depending on the use-case) to create a `tf.keras.Model` instance. See the method docstrings
+       for more details.
+    """
+
+    inputs: tf.keras.Input
+    targets: tf.keras.Input
 
     f_layers: List[tf.keras.layers.Layer]
     """ A list of all layers in this DeepGP (just :attr:`likelihood_layer` is separate). """
 
     likelihood_layer: gpflux.layers.SampleBasedGaussianLikelihoodLayer
-    """ The likelihood layer. """
+    """ The likelihood layer. Currently restricted to 
+    :class:`gpflux.layers.SampleBasedGaussianLikelihoodLayer`."""
 
+    default_model_class: Type[tf.keras.Model]
     """
     The default for the *model_class* argument of :meth:`as_training_model` and
     :meth:`as_prediction_model`. This must have the same semantics as `tf.keras.Model`,
@@ -55,6 +72,28 @@ class GIDeepGP(Module):
     The number of points in the training dataset. This information is used to
     obtain correct scaling between the data-fit and the KL term in the evidence
     lower bound (:meth:`elbo`).
+    """
+
+    num_train_samples: int
+    """
+    The number of samples from the posterior used for training. Usually lower than the number used
+    for testing. Cannot be changed during training once the model has been compiled.
+    """
+
+    num_test_samples: int
+    """
+    The number of samples from the posterior used for testing. Usually greater than the number used
+    for training.
+    """
+
+    num_inducing: int
+    """
+    The number of inducing points to be used. This is the same throughout the model.
+    """
+
+    inducing_data: Parameter
+    """
+    The inducing inputs for the model, propagated through the layers.
     """
 
     def __init__(
@@ -75,9 +114,18 @@ class GIDeepGP(Module):
         """
         :param f_layers: The layers ``[f₁, f₂, …, fₙ]`` describing the latent
             function ``f(x) = fₙ(⋯ (f₂(f₁(x))))``.
-        :param likelihood: The layer for the likelihood ``p(y|f)``. If this is a
-            GPflow likelihood, it will be wrapped in a :class:`~gpflux.layers.LikelihoodLayer`.
-            Alternatively, you can provide a :class:`~gpflux.layers.LikelihoodLayer` explicitly.
+        :param num_inducing: The number of inducing points used in the approximate posterior. This
+            must be the same for all layers of the model. If you do not specify a value for this
+            parameter explicitly, it is automatically detected from the
+            :attr:`~gpflux.layers.GIGPLayer.num_inducing` attribute in the GP layers.
+        :param likelihood_var: The variance for the Gaussian likelihood ``p(y|f)``. This will be
+            passed to a :class:`gpflux.layers.SampleBasedGaussianLikelihoodLayer` instance, which
+            will be the likelihood.
+        :param inducing_init: An initialization for the inducing inputs. Must have shape
+            [num_inducing, input_dim], and cannot be provided along with `inducing_shape`.
+        :param inducing_shape: The initialization shape of the inducing inputs. Used to initialize
+            the inputs from N(0, 1) if `inducing_init` is not provided. Must be [num_inducing,
+            input_dim]. Cannot be provided along with `inducing_init`.
         :param input_dim: The input dimensionality.
         :param target_dim: The target dimensionality.
         :param default_model_class: The default for the *model_class* argument of
@@ -86,28 +134,67 @@ class GIDeepGP(Module):
         :param num_data: The number of points in the training dataset; see the
             :attr:`num_data` attribute.
             If you do not specify a value for this parameter explicitly, it is automatically
-            detected from the :attr:`~gpflux.layers.GPLayer.num_data` attribute in the GP layers.
+            detected from the :attr:`~gpflux.layers.GIGPLayer.num_data` attribute in the GP layers.
+        :param num_train_samples: The number of samples from the posterior used for training.
+        :param num_test_samples: The number of samples from the posterior used for testing.
         """
         self.inputs = tf.keras.Input((input_dim,), name="inputs")
         self.targets = tf.keras.Input((target_dim,), name="targets")
         self.f_layers = f_layers
         self.likelihood_layer = SampleBasedGaussianLikelihoodLayer(variance=likelihood_var)
-        self.num_inducing = num_inducing
+        self.num_inducing = self._validate_num_inducing(f_layers, num_inducing)
         self.default_model_class = default_model_class
         self.num_data = self._validate_num_data(f_layers, num_data)
 
-        assert (inducing_init is not None) != (inducing_shape is not None)
+        if (inducing_init is not None) != (inducing_shape is not None):
+            raise ValueError(f"One of `inducing_init` or `inducing_shape` must be exclusively"
+                             f"provided.")
 
         if inducing_init is None:
             self.inducing_data = Parameter(tf.random.normal(inducing_shape), dtype=default_float())
         else:
             self.inducing_data = Parameter(inducing_init, dtype=default_float())
 
-        assert num_inducing == tf.shape(self.inducing_data)[0]
+        if num_inducing != tf.shape(self.inducing_data)[0]:
+            raise ValueError(f"The number of inducing inputs {self.inducing_data.shape[0]} must "
+                             f"equal num_inducing {num_inducing}.")
+        if input_dim is not None and input_dim != tf.shape(self.inducing_data)[-1]:
+            raise ValueError(f"The dimension of the inducing inputs {self.inducing_data.shape[-1]}"
+                             f"must equal input_dim {input_dim}")
+
         self.rank = 1 + len(tf.shape(self.inducing_data))
+
+        if self.rank != 3:
+            raise ValueError(f"Currently the model only supports data of rank 2 ([N, D]); received"
+                             f"rank {len(self.inducing_data.shape)} instead.")
 
         self.num_train_samples = num_train_samples
         self.num_test_samples = num_test_samples
+
+    @staticmethod
+    def _validate_num_inducing(
+        f_layers: List[tf.keras.layers.Layer], num_inducing: Optional[int] = None
+    ) -> int:
+        """
+        Check that the :attr:`~gpflux.layers.gp_layer.GPLayer.num_inducing`
+        attributes of all layers in *f_layers* are consistent with each other
+        and with the (optional) *num_inducing* argument.
+
+        :returns: The validated number of inducing points.
+        """
+        for i, layer in enumerate(f_layers):
+            layer_num_inducing = getattr(layer, "num_inducing", None)
+            if num_inducing is None:
+                num_inducing = layer_num_inducing
+            else:
+                if layer_num_inducing is not None and num_inducing != layer_num_inducing:
+                    raise ValueError(
+                        f"f_layers[{i}].num_inducing is inconsistent with num_inducing="
+                        f"{num_inducing}"
+                    )
+        if num_inducing is None:
+            raise ValueError("Could not determine num_inducing; please provide explicitly")
+        return num_inducing
 
     @staticmethod
     def _validate_num_data(
@@ -134,6 +221,12 @@ class GIDeepGP(Module):
         return num_data
 
     def _inducing_add(self, inputs: TensorType):
+        """
+        Adds the inducing points to the data to propagate through the model.
+
+        :param inputs: input data
+        :return: concatenated inducing points and datapoints
+        """
 
         inducing_data = tf.tile(
             tf.expand_dims(self.inducing_data, 0),
@@ -144,6 +237,12 @@ class GIDeepGP(Module):
         return x
 
     def _inducing_remove(self, inputs: TensorType):
+        """
+        Removes the inducing points from the combined inducing points and data tensor
+
+        :param inputs: combined inducing point and data tensor
+        :return: data only
+        """
         return inputs[:, self.num_inducing:]
 
     def _evaluate_deep_gp(
@@ -153,12 +252,13 @@ class GIDeepGP(Module):
         training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
-        Evaluate ``f(x) = fₙ(⋯ (f₂(f₁(x))))`` on the *inputs* argument.
+        Evaluate ``f(x) = fₙ(⋯ (f₂(f₁(x))))`` on the *inputs* argument. We must start by expanding
+        the data by copying it :attr:`self.num_train_samples` times, then adding inducing points.
+        These are then removed after the inducing points and data have been propagated through the
+        model.
 
         Layers that inherit from :class:`~gpflux.layers.LayerWithObservations`
-        are passed the additional keyword argument ``observations=[inputs,
-        targets]`` if *targets* contains a value, or ``observations=None`` when
-        *targets* is `None`.
+        are not yet supported.
         """
         features = inputs
 
@@ -166,11 +266,9 @@ class GIDeepGP(Module):
         # symbolic graph needs to be constructed at "build" time (before either
         # fit() or predict() get called).
         if targets is not None:
-            observations = [inputs, targets]
             num_samples = self.num_train_samples
         else:
             # TODO would it be better to simply pass [inputs, None] in this case?
-            observations = None
             num_samples = self.num_test_samples
 
         features = tf.tile(tf.expand_dims(features, 0),
@@ -290,6 +388,23 @@ class GIDeepGP(Module):
         return model_class(self.inputs, outputs)
 
     def sample(self, inputs: TensorType, num_samples: int, consistent: bool = False) -> tf.Tensor:
+        """
+        Sample `num_samples` from the posterior at `inputs`. If `consistent` is True, we return
+        consistent function samples.
+
+        :param inputs: The input data at which we wish to obtain samples. Must have shape [N, D].
+        :param num_samples: The number of samples to obtain.
+        :param consistent: Whether to sample consistent samples.
+        :return: samples with shape [S, N, L].
+        """
+        if inputs.shape[-1] != self.inducing_data.shape[-1]:
+            raise ValueError(f"The trailing dimension of `inputs` must match the trailing dimension"
+                             f"the model's inducing data: received {inputs.shape[-1]} but expected"
+                             f"{self.inducing_data.shape[-1]}.")
+        if len(inputs.shape) != 2:
+            raise ValueError(f"Currently only inputs of rank 2 are supported; received rank"
+                             f"{len(inputs.shape)}")
+
         features = tf.tile(tf.expand_dims(inputs, 0),
                            [num_samples, *[1]*(self.rank-1)])
         features = self._inducing_add(features)
