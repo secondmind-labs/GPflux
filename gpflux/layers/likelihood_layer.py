@@ -17,7 +17,7 @@
 A Keras Layer that wraps a likelihood, while containing the necessary operations
 for training.
 """
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -31,9 +31,20 @@ from gpflow.utilities.bijectors import positive
 from gpflux.layers.trackable_layer import TrackableLayer
 
 
-class SampleBasedGaussianLikelihoodLayer(TrackableLayer):
+class SampleBasedGaussianLikelihoodLayer(tfp.layers.DistributionLambda):
+    """
+    A `DistributionLambda` layer that provides support for sample-based Gaussian likelihoods,
+    for instance with the global inducing posterior. It creates a :class:`tfp.distributions.Normal`
+    centered at the sample-based predictions with scale equal to the (learnable) noise standard
+    deviation. For :meth:`convert_to_tensor_fn`, it simply returns the location parameter of the
+    normal distribution, which in this case is the output samples.
+    """
     def __init__(self, variance: float = 1., variance_lower_bound=1e-8):
-        super().__init__(dtype=default_float())
+        super().__init__(
+            make_distribution_fn=self._make_distribution_fn,
+            convert_to_tensor_fn=self._convert_to_tensor_fn,
+            dtype=default_float()
+        )
 
         if variance <= variance_lower_bound:
             raise ValueError(
@@ -47,11 +58,25 @@ class SampleBasedGaussianLikelihoodLayer(TrackableLayer):
         self,
         inputs: TensorType,
         targets: Optional[TensorType] = None,
-        training: bool = None,
+        *args: List[Any],
+        **kwargs: Dict[str, Any],
     ) -> tfp.distributions.Normal:
-        likelihood_dist = tfp.distributions.Normal(inputs, tf.sqrt(self.variance))
+        """
+        The default behaviour upon calling this layer.
 
-        if training:
+        This method calls the `tfp.layers.DistributionLambda` super-class `call` method, which
+        constructs a `tfp.distributions.Distribution` for the output distributions at the input
+        points (see :meth:`_make_distribution_fn`).
+        You can pass this distribution to `tf.convert_to_tensor`, which will return the location of
+         the distribution (see :meth:`_convert_to_tensor_fn`).
+
+        This method also adds a layer-specific loss function, giving the expected log likelihood
+        of the model.
+        """
+        outputs = super().call(inputs, *args, **kwargs)
+        likelihood_dist = outputs[0]
+
+        if kwargs.get("training"):
             assert targets is not None
             loss_per_datapoint = tf.reduce_mean(
                 -likelihood_dist.log_prob(tf.expand_dims(targets, 0))
@@ -61,7 +86,29 @@ class SampleBasedGaussianLikelihoodLayer(TrackableLayer):
 
         self.add_loss(loss_per_datapoint)
 
-        return likelihood_dist
+        return outputs
+
+    def _make_distribution_fn(self, inputs: TensorType) -> tfp.distributions.Distribution:
+        """
+        Construct a :class:`tfp.distributions.Normal` instance with mean at the inputs to the layer
+        (which will correspond to samples from the function posterior) and scale equal to the
+        noise standard deviation.
+
+        :param inputs: The inputs to the layer, which should be samples from the predictive
+        posterior of the latent function values.
+        """
+        return tfp.distributions.Normal(inputs, tf.sqrt(self.variance))
+
+    @staticmethod
+    def _convert_to_tensor_fn(distribution: tfp.distributions.Distribution) -> tf.Tensor:
+        """
+        Convert the sample-based predictive posterior distribution to samples of the latent
+        function, which is simply the mean of the distribution.
+        """
+        if not isinstance(distribution, tfp.distributions.Normal):
+            raise ValueError("Distribution must be an instance of `tfp.distributions.Normal`")
+
+        return distribution.loc
 
 
 class LikelihoodLayer(TrackableLayer):
