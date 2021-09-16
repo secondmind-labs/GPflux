@@ -205,8 +205,8 @@ class GIGPLayer(tf.keras.layers.Layer):
         :param X: evaluation point for log_prob, shape [..., M, D, 1]
         :return: the log probability, shape [..., M]
         """
-        in_features = self.input_dim
-        out_features = self.num_latent_gps
+        in_features = tf.cast(tf.shape(X)[-2], dtype=default_float())
+        out_features = tf.cast(tf.shape(X)[-1], dtype=default_float())
         trace_quad = tf.reduce_sum(tf.linalg.triangular_solve(sigma_L, X)**2, [-1, -2])
         logdet_term = 2.0*tf.reduce_sum(tf.math.log(tf.linalg.diag_part(sigma_L)), -1)
         return -0.5*trace_quad - 0.5*out_features*(logdet_term + in_features*math.log(2*math.pi))
