@@ -48,7 +48,7 @@ class BatchingSquaredExponential(SquaredExponential):
 
         Xs = tf.reduce_sum((X**2), -1)[..., :, None]
         X2s = tf.reduce_sum((X2**2), -1)[..., None, :]
-        return Xs + X2s - 2*X@tf.linalg.adjoint(X2)
+        return Xs + X2s - 2 * tf.linalg.matmul(X, X2, transpose_b=True)
 
 
 class GIGPLayer(tf.keras.layers.Layer):
