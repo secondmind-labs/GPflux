@@ -39,9 +39,6 @@ class BatchingSquaredExponential(SquaredExponential):
     shape [..., N, D], and X2 with shape [..., M, D], we return [..., N, M] instead of the current
     behavior, which returns [..., N, ..., M]"""
 
-    def K_r2(self, r2):
-        return self.variance * tf.exp(-0.5 * r2)
-
     def scaled_squared_euclid_dist(self, X, X2=None):
         X = self.scale(X)
         X2 = self.scale(X2)
