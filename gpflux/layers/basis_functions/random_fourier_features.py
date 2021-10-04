@@ -89,7 +89,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
             trainable=False,
             shape=shape_bias,
             dtype=self.dtype,
-            initializer=self.bias_init
+            initializer=self.bias_init,
         )
 
         shape_weights = [self.output_dim, input_dim]
