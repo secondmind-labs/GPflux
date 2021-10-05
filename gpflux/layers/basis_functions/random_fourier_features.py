@@ -23,13 +23,13 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import DType, TensorType
 
-from gpflux.types import ShapeType
 from gpflux.layers.basis_functions.utils import (
     RFF_SUPPORTED_KERNELS,
     _mapping,
     _matern_number,
     _sample_students_t,
 )
+from gpflux.types import ShapeType
 
 """
 Kernels supported by :class:`RandomFourierFeatures`.

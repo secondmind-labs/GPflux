@@ -16,13 +16,14 @@
 """
 This module provides a set of common utilities for kernel feature decompositions.
 """
-import tensorflow as tf
-import gpflow
-
 from typing import Tuple, Type
-from gpflow.base import DType, TensorType
-from gpflux.types import ShapeType
 
+import tensorflow as tf
+
+import gpflow
+from gpflow.base import DType, TensorType
+
+from gpflux.types import ShapeType
 
 RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
@@ -82,7 +83,7 @@ def _mapping(
     n_components: int,
 ) -> TensorType:
     """
-    Feature map for random Fourier features (RFF) as originally prescribed 
+    Feature map for random Fourier features (RFF) as originally prescribed
     by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
     See also :cite:p:`sutherland2015error` for additional details.
     """
