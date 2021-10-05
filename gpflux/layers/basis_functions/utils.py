@@ -68,9 +68,8 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     shape = tf.concat([shape[:-1], [1]], axis=0)
     # Gamma(nu/2, nu/2)
     gamma_rvs = tf.random.gamma(shape, alpha=0.5 * nu, beta=0.5 * nu, dtype=dtype)
-    precision = tf.tile(gamma_rvs, [1, shape[-1]])
     # StudentsT(nu)
-    students_t_rvs = tf.math.rsqrt(precision) * normal_rvs
+    students_t_rvs = tf.math.rsqrt(gamma_rvs) * normal_rvs
     return students_t_rvs
 
 
