@@ -15,7 +15,7 @@
 #
 """ A kernel's features and coefficients using Random Fourier Features (RFF). """
 
-from typing import Mapping, Optional, Tuple, Type
+from typing import Mapping, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -24,13 +24,13 @@ import gpflow
 from gpflow.base import DType, TensorType
 
 from gpflux.types import ShapeType
-
-RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
-    gpflow.kernels.SquaredExponential,
-    gpflow.kernels.Matern12,
-    gpflow.kernels.Matern32,
-    gpflow.kernels.Matern52,
+from gpflux.layers.basis_functions.utils import (
+    RFF_SUPPORTED_KERNELS,
+    _projection,
+    _matern_number,
+    _sample_students_t,
 )
+
 """
 Kernels supported by :class:`RandomFourierFeatures`.
 
@@ -104,29 +104,15 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         super().build(input_shape)
 
     def bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        return tf.random.uniform(shape=shape, maxval=2 * np.pi, dtype=dtype)
+        return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
 
     def weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, dtype=dtype)
         else:
-            if isinstance(self.kernel, gpflow.kernels.Matern52):
-                nu = 2.5
-            elif isinstance(self.kernel, gpflow.kernels.Matern32):
-                nu = 1.5
-            elif isinstance(self.kernel, gpflow.kernels.Matern12):
-                nu = 0.5
-            else:
-                raise NotImplementedError("Unsupported Kernel")
-
-            # Sample student-t using "Implicit Reparameterization Gradients",
-            # Figurnov et al.
-            normal_rvs = tf.random.normal(shape=shape, dtype=dtype)
-            shape = tf.concat([shape[:-1], [1]], axis=0)
-            gamma_rvs = tf.tile(
-                tf.random.gamma(shape, alpha=nu, beta=nu, dtype=dtype), [1, shape[-1]]
-            )
-            return tf.math.rsqrt(gamma_rvs) * normal_rvs
+            p = _matern_number(self.kernel)
+            nu = 2.0 * p + 1.0  # degrees of freedom
+            return _sample_students_t(nu, shape, dtype)
 
     def call(self, inputs: TensorType) -> tf.Tensor:
         """
@@ -136,10 +122,14 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``.
         """
-        c = tf.sqrt(2 * self.kernel.variance / self.output_dim)
-        inputs = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
-        basis_functions = tf.cos(tf.matmul(inputs, self.W, transpose_b=True) + self.b)  # [N, M]
-        output = c * basis_functions  # [N, M]
+        output = _projection(
+            inputs,
+            self.W,
+            self.b,
+            variance=self.kernel.variance,
+            lengthscales=self.kernel.lengthscales,
+            n_components=self.output_dim,
+        )
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
 
