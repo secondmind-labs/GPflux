@@ -40,7 +40,7 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
     elif isinstance(kernel, gpflow.kernels.Matern12):
         p = 0
     else:
-        raise NotImplementedError("Not a recognised Matern kernel")
+        raise NotImplementedError("Not a recognized Matern kernel")
     return p
 
 
@@ -73,7 +73,7 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     return students_t_rvs
 
 
-def _projection(
+def _mapping(
     X: TensorType,
     W: TensorType,
     b: TensorType,
@@ -81,6 +81,11 @@ def _projection(
     lengthscales: TensorType,
     n_components: int,
 ) -> TensorType:
+    """
+    Feature map for random Fourier features (RFF) as originally prescribed 
+    by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
+    See also :cite:p:`sutherland2015error` for additional details.
+    """
     constant = tf.sqrt(2.0 * variance / n_components)
     X_scaled = tf.divide(X, lengthscales)  # [N, D]
     bases = tf.cos(tf.matmul(X_scaled, W, transpose_b=True) + b)  # [N, M]

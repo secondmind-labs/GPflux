@@ -26,7 +26,7 @@ from gpflow.base import DType, TensorType
 from gpflux.types import ShapeType
 from gpflux.layers.basis_functions.utils import (
     RFF_SUPPORTED_KERNELS,
-    _projection,
+    _mapping,
     _matern_number,
     _sample_students_t,
 )
@@ -122,7 +122,7 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``.
         """
-        output = _projection(
+        output = _mapping(
             inputs,
             self.W,
             self.b,
