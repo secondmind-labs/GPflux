@@ -111,7 +111,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')`
     where :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}` is a finite-dimensional feature map.
 
-    Each feature is defined as:
+    The feature map is defined as:
 
     .. math::
 
