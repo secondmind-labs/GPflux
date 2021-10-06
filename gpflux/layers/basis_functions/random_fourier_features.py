@@ -117,8 +117,11 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
       \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
         \begin{bmatrix}
-          \cos(\boldsymbol{\theta}^\top \mathbf{x}) \\
-          \sin(\boldsymbol{\theta}^\top \mathbf{x})
+          \cos(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
+          \sin(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
+          \vdots \\
+          \cos(\boldsymbol{\theta}_{\frac{M}{2}}^\top \mathbf{x}) \\
+          \sin(\boldsymbol{\theta}_{\frac{M}{2}}^\top \mathbf{x})
         \end{bmatrix}
 
     where :math:`\sigma^2` is the kernel variance.
@@ -181,10 +184,15 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')` where
     :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}` is a finite-dimensional feature map.
 
-    Each feature is defined as:
+    The feature map is defined as:
 
     .. math::
-      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} \cos(\boldsymbol{\theta}^\top \mathbf{x} + \tau)
+      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
+        \begin{bmatrix}
+          \cos(\boldsymbol{\theta}_1^\top \mathbf{x} + \tau) \\
+          vdots \\
+          \cos(\boldsymbol{\theta}_M^\top \mathbf{x} + \tau)
+        \end{bmatrix}
 
     where :math:`\sigma^2` is the kernel variance.
     The features are parameterised by random weights:
