@@ -115,7 +115,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
     .. math::
 
-      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
+      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
         \begin{bmatrix}
           \cos(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
           \sin(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
@@ -127,7 +127,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     where :math:`\sigma^2` is the kernel variance.
     The features are parameterised by random weights:
 
-    - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})` 
+    - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})`
       where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel.
 
     At least for the squared exponential kernel, this variant of the feature
@@ -187,7 +187,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     The feature map is defined as:
 
     .. math::
-      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
+      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
         \begin{bmatrix}
           \cos(\boldsymbol{\theta}_1^\top \mathbf{x} + \tau) \\
           vdots \\
@@ -197,7 +197,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     where :math:`\sigma^2` is the kernel variance.
     The features are parameterised by random weights:
 
-    - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})` 
+    - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})`
       where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel
     - :math:`\tau \sim \mathcal{U}(0, 2\pi)`
 
