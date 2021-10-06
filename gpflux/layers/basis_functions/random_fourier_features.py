@@ -190,7 +190,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
       \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
         \begin{bmatrix}
           \cos(\boldsymbol{\theta}_1^\top \mathbf{x} + \tau) \\
-          vdots \\
+          \vdots \\
           \cos(\boldsymbol{\theta}_M^\top \mathbf{x} + \tau)
         \end{bmatrix}
 
