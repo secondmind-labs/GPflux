@@ -117,8 +117,8 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
       \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
         \begin{bmatrix}
-          \cos(\theta^\top \mathbf{x}) \\
-          \sin(\theta^\top \mathbf{x})
+          \cos(\boldsymbol{\theta}^\top \mathbf{x}) \\
+          \sin(\boldsymbol{\theta}^\top \mathbf{x})
         \end{bmatrix}
 
     where :math:`\sigma^2` is the kernel variance.
@@ -184,7 +184,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     Each feature is defined as:
 
     .. math::
-      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} \cos(\theta^\top \mathbf{x} + \tau)
+      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} \cos(\boldsymbol{\theta}^\top \mathbf{x} + \tau)
 
     where :math:`\sigma^2` is the kernel variance.
     The features are parameterised by random weights:
