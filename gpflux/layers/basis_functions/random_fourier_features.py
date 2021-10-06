@@ -110,6 +110,19 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
     We will approximate the kernel :math:`k(x, x')` by :math:`\Phi(x)^\top \Phi(x')`
     where :math:`Phi: x \to \mathbb{R}` is a finite-dimensional feature map.
+
+    Each feature is defined as:
+
+    .. math:: \Phi(x) = \sqrt{2 \sigma^2 / \ell) [\cos(\theta^\top x), \sin(\theta^\top x)]^{\top} 
+
+    where :math:`\sigma^2` is the kernel variance.
+
+    The features are parameterised by random weights:
+    * :math:`\theta`, sampled proportional to the kernel's spectral density
+
+    At least for the squared exponential kernel, this variant of the feature
+    mapping has more desirable theoretical properties than its cosine-based
+    counterpart :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
     """
 
     def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
@@ -169,6 +182,8 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     The features are parameterised by random weights:
     * :math:`\theta`, sampled proportional to the kernel's spectral density
     * :math:`\tau \sim \mathcal{U}(0, 2\pi)`
+
+    Equivalent to :class:`RandomFourierFeatures` by elementary trignometric identities.
     """
 
     def build(self, input_shape: ShapeType) -> None:
