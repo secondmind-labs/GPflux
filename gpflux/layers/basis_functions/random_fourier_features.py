@@ -25,10 +25,10 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.utils import (
     RFF_SUPPORTED_KERNELS,
+    _mapping_concat,
+    _mapping_cosine,
     _matern_number,
     _sample_students_t,
-    _mapping_cosine,
-    _mapping_concat,
 )
 from gpflux.types import ShapeType
 
@@ -41,7 +41,6 @@ sample frequencies from their power spectrum, following Bochner's theorem.
 
 
 class RandomFourierFeaturesBase(tf.keras.layers.Layer):
-
     def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of random features.
@@ -59,7 +58,7 @@ class RandomFourierFeaturesBase(tf.keras.layers.Layer):
         else:
             self._input_dim = None
 
-    def _weights_build(self, input_dim, n_components):
+    def _weights_build(self, input_dim: int, n_components: int) -> None:
         shape = (n_components, input_dim)
         self.W = self.add_weight(
             name="weights",
@@ -109,16 +108,18 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     for stationary kernels can be approximated by a Monte Carlo sum.
 
     We will approximate the kernel :math:`k(x, x')` by :math:`\Phi(x)^\top \Phi(x')`
-    where :math:`Phi: x \to \mathbb{R}` is a finite-dimensional feature map.
+    where :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}` is a finite-dimensional feature map.
 
     Each feature is defined as:
 
-    .. math:: \Phi(x) = \sqrt{2 \sigma^2 / \ell) [\cos(\theta^\top x), \sin(\theta^\top x)]^{\top} 
+    .. math::
+
+      \Phi(x) = \sqrt{2 \sigma^2 / \ell) [\cos(\theta^\top x), \sin(\theta^\top x)]^{\top}
 
     where :math:`\sigma^2` is the kernel variance.
 
     The features are parameterised by random weights:
-    * :math:`\theta`, sampled proportional to the kernel's spectral density
+    - :math:`\theta`, sampled proportional to the kernel's spectral density
 
     At least for the squared exponential kernel, this variant of the feature
     mapping has more desirable theoretical properties than its cosine-based
@@ -180,8 +181,8 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     where :math:`\sigma^2` is the kernel variance.
 
     The features are parameterised by random weights:
-    * :math:`\theta`, sampled proportional to the kernel's spectral density
-    * :math:`\tau \sim \mathcal{U}(0, 2\pi)`
+    - :math:`\theta`, sampled proportional to the kernel's spectral density
+    - :math:`\tau \sim \mathcal{U}(0, 2\pi)`
 
     Equivalent to :class:`RandomFourierFeatures` by elementary trignometric identities.
     """
@@ -198,7 +199,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
 
         super().build(input_shape)
 
-    def _bias_build(self, n_components):
+    def _bias_build(self, n_components: int) -> None:
         shape = (1, n_components)
         self.b = self.add_weight(
             name="bias",

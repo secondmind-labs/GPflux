@@ -24,7 +24,7 @@ import gpflow
 from gpflux.layers.basis_functions.random_fourier_features import (
     RFF_SUPPORTED_KERNELS,
     RandomFourierFeatures,
-    RandomFourierFeaturesCosine
+    RandomFourierFeaturesCosine,
 )
 
 
@@ -53,8 +53,9 @@ def _kernel_class_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="random_feature_class",
-                params=[RandomFourierFeatures, RandomFourierFeaturesCosine])
+@pytest.fixture(
+    name="random_feature_class", params=[RandomFourierFeatures, RandomFourierFeaturesCosine]
+)
 def _random_feature_class_fixture(request):
     return request.param
 
@@ -73,7 +74,9 @@ def test_throw_for_unsupported_kernel(random_feature_class):
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-def test_fourier_features_can_approximate_kernel_multidim(random_feature_class, kernel_class, lengthscale, n_dims):
+def test_fourier_features_can_approximate_kernel_multidim(
+    random_feature_class, kernel_class, lengthscale, n_dims
+):
     n_features = 10000
     x_rows = 20
     y_rows = 30
@@ -103,7 +106,9 @@ def test_fourier_features_shapes(random_feature_class, n_features, n_dims, batch
     np.testing.assert_equal(features.shape, [batch_size, n_features])
 
 
-def test_fourier_feature_layer_compute_covariance_of_inducing_variables(random_feature_class, batch_size):
+def test_fourier_feature_layer_compute_covariance_of_inducing_variables(
+    random_feature_class, batch_size
+):
     """
     Ensure that the random fourier feature map can be used to approximate the covariance matrix
     between the inducing point vectors of a sparse GP, with the condition that the number of latent
