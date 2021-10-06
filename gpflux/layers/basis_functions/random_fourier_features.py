@@ -25,9 +25,10 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.utils import (
     RFF_SUPPORTED_KERNELS,
-    _mapping,
     _matern_number,
     _sample_students_t,
+    _mapping_cosine,
+    _mapping_concat,
 )
 from gpflux.types import ShapeType
 
@@ -39,24 +40,7 @@ sample frequencies from their power spectrum, following Bochner's theorem.
 """
 
 
-class RandomFourierFeatures(tf.keras.layers.Layer):
-    r"""
-    Random Fourier Features (RFF) is a method for approximating kernels. The essential
-    element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
-    for stationary kernels can be approximated by a Monte Carlo sum.
-
-    We will approximate the kernel :math:`k(x, x')` by :math:`\Phi(x)^\top \Phi(x')`
-    where :math:`Phi: x \to \mathbb{R}` is a finite-dimensional feature map.
-    Each feature is defined as:
-
-    .. math:: \Phi(x) = \sqrt{2 \sigma^2 / \ell) \cos(\theta^\top x + \tau)
-
-    where :math:`\sigma^2` is the kernel variance.
-
-    The features are parameterised by random weights:
-    * :math:`\theta`, sampled proportional to the kernel's spectral density
-    * :math:`\tau \sim \mathcal{U}(0, 2\pi)`
-    """
+class RandomFourierFeaturesBase(tf.keras.layers.Layer):
 
     def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
         """
@@ -66,8 +50,8 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         """
         super().__init__(**kwargs)
 
+        assert isinstance(kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         self.kernel = kernel
-        assert isinstance(self.kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         self.output_dim = output_dim  # M
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
@@ -75,63 +59,23 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         else:
             self._input_dim = None
 
-    def build(self, input_shape: ShapeType) -> None:
-        """
-        Creates the variables of the layer.
-        See `tf.keras.layers.Layer.build()
-        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
-        """
-        input_dim = input_shape[-1]
-
-        shape_bias = [1, self.output_dim]
-        self.b = self.add_weight(
-            name="bias",
-            trainable=False,
-            shape=shape_bias,
-            dtype=self.dtype,
-            initializer=self.bias_init,
-        )
-
-        shape_weights = [self.output_dim, input_dim]
+    def _weights_build(self, input_dim, n_components):
+        shape = (n_components, input_dim)
         self.W = self.add_weight(
             name="weights",
             trainable=False,
-            shape=shape_weights,
+            shape=shape,
             dtype=self.dtype,
-            initializer=self.weights_init,
+            initializer=self._weights_init,
         )
 
-        super().build(input_shape)
-
-    def bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
-
-    def weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, dtype=dtype)
         else:
             p = _matern_number(self.kernel)
             nu = 2.0 * p + 1.0  # degrees of freedom
             return _sample_students_t(nu, shape, dtype)
-
-    def call(self, inputs: TensorType) -> tf.Tensor:
-        """
-        Evaluate the basis functions at ``inputs``.
-
-        :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
-
-        :return: A tensor with the shape ``[N, M]``.
-        """
-        output = _mapping(
-            inputs,
-            self.W,
-            self.b,
-            variance=self.kernel.variance,
-            lengthscales=self.kernel.lengthscales,
-            n_components=self.output_dim,
-        )
-        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
-        return output
 
     def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
         """
@@ -156,3 +100,117 @@ class RandomFourierFeatures(tf.keras.layers.Layer):
         )
 
         return config
+
+
+class RandomFourierFeatures(RandomFourierFeaturesBase):
+    r"""
+    Random Fourier features (RFF) is a method for approximating kernels. The essential
+    element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
+    for stationary kernels can be approximated by a Monte Carlo sum.
+
+    We will approximate the kernel :math:`k(x, x')` by :math:`\Phi(x)^\top \Phi(x')`
+    where :math:`Phi: x \to \mathbb{R}` is a finite-dimensional feature map.
+    """
+
+    def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
+        """
+        :param kernel: kernel to approximate using a set of random features.
+        :param output_dim: total number of basis functions used to approximate
+            the kernel.
+        """
+        assert not output_dim % 2, "must specify an even number of random features"
+        super().__init__(kernel, output_dim, **kwargs)
+
+    def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
+        input_dim = input_shape[-1]
+        self._weights_build(input_dim, n_components=self.output_dim // 2)
+
+        super().build(input_shape)
+
+    def call(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Evaluate the basis functions at ``inputs``.
+
+        :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
+
+        :return: A tensor with the shape ``[N, M]``.
+        """
+        output = _mapping_concat(
+            inputs,
+            self.W,
+            variance=self.kernel.variance,
+            lengthscales=self.kernel.lengthscales,
+            n_components=self.output_dim,
+        )
+        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
+        return output
+
+
+class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
+    r"""
+    Random Fourier Features (RFF) is a method for approximating kernels. The essential
+    element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
+    for stationary kernels can be approximated by a Monte Carlo sum.
+
+    We will approximate the kernel :math:`k(x, x')` by :math:`\Phi(x)^\top \Phi(x')`
+    where :math:`Phi: x \to \mathbb{R}` is a finite-dimensional feature map.
+
+    Each feature is defined as:
+
+    .. math:: \Phi(x) = \sqrt{2 \sigma^2 / \ell) \cos(\theta^\top x + \tau)
+
+    where :math:`\sigma^2` is the kernel variance.
+
+    The features are parameterised by random weights:
+    * :math:`\theta`, sampled proportional to the kernel's spectral density
+    * :math:`\tau \sim \mathcal{U}(0, 2\pi)`
+    """
+
+    def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
+        input_dim = input_shape[-1]
+        self._weights_build(input_dim, n_components=self.output_dim)
+        self._bias_build(n_components=self.output_dim)
+
+        super().build(input_shape)
+
+    def _bias_build(self, n_components):
+        shape = (1, n_components)
+        self.b = self.add_weight(
+            name="bias",
+            trainable=False,
+            shape=shape,
+            dtype=self.dtype,
+            initializer=self._bias_init,
+        )
+
+    def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+        return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
+
+    def call(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Evaluate the basis functions at ``inputs``.
+
+        :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
+
+        :return: A tensor with the shape ``[N, M]``.
+        """
+        output = _mapping_cosine(
+            inputs,
+            self.W,
+            self.b,
+            variance=self.kernel.variance,
+            lengthscales=self.kernel.lengthscales,
+            n_components=self.output_dim,
+        )
+        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
+        return output
