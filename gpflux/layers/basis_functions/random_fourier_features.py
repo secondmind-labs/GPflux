@@ -115,13 +115,17 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
     .. math::
 
-      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
-        [\cos(\theta^\top \mathbf{x}), \sin(\theta^\top \mathbf{x})]^{\top}
+      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
+        \begin{bmatrix}
+          \cos(\theta^\top \mathbf{x}) \\
+          \sin(\theta^\top \mathbf{x})
+        \end{bmatrix}
 
     where :math:`\sigma^2` is the kernel variance.
     The features are parameterised by random weights:
 
-    - :math:`\theta`, sampled proportional to the kernel's spectral density
+    - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})` 
+      where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel.
 
     At least for the squared exponential kernel, this variant of the feature
     mapping has more desirable theoretical properties than its cosine-based
@@ -185,7 +189,8 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     where :math:`\sigma^2` is the kernel variance.
     The features are parameterised by random weights:
 
-    - :math:`\theta`, sampled proportional to the kernel's spectral density
+    - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})` 
+      where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel
     - :math:`\tau \sim \mathcal{U}(0, 2\pi)`
 
     Equivalent to :class:`RandomFourierFeatures` by elementary trignometric identities.
