@@ -107,15 +107,15 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
     for stationary kernels can be approximated by a Monte Carlo sum.
 
-    We will approximate the kernel :math:`k(\mathbf{x}, \mathbf{x}')` 
-    by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')` 
+    We will approximate the kernel :math:`k(\mathbf{x}, \mathbf{x}')`
+    by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')`
     where :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}` is a finite-dimensional feature map.
 
     Each feature is defined as:
 
-    .. math:: 
+    .. math::
 
-      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}} 
+      \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
         [\cos(\theta^\top \mathbf{x}), \sin(\theta^\top \mathbf{x})]^{\top}
 
     where :math:`\sigma^2` is the kernel variance.
@@ -173,8 +173,8 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
     for stationary kernels can be approximated by a Monte Carlo sum.
 
-    We will approximate the kernel :math:`k(\mathbf{x}, \mathbf{x}')` 
-    by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')` where 
+    We will approximate the kernel :math:`k(\mathbf{x}, \mathbf{x}')`
+    by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')` where
     :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}` is a finite-dimensional feature map.
 
     Each feature is defined as:
