@@ -74,7 +74,7 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     return students_t_rvs
 
 
-def _mapping(
+def _mapping_cosine(
     X: TensorType,
     W: TensorType,
     b: TensorType,
@@ -89,5 +89,25 @@ def _mapping(
     """
     constant = tf.sqrt(2.0 * variance / n_components)
     X_scaled = tf.divide(X, lengthscales)  # [N, D]
-    bases = tf.cos(tf.matmul(X_scaled, W, transpose_b=True) + b)  # [N, M]
+    proj = tf.matmul(X_scaled, W, transpose_b=True)  # [N, M]
+    bases = tf.cos(proj + b)  # [N, M]
+    return constant * bases  # [N, M]
+
+
+def _mapping_concat(
+    X: TensorType,
+    W: TensorType,
+    variance: TensorType,
+    lengthscales: TensorType,
+    n_components: int,
+) -> TensorType:
+    """
+    Feature map for random Fourier features (RFF) as originally prescribed
+    by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
+    See also :cite:p:`sutherland2015error` for additional details.
+    """
+    constant = tf.sqrt(2.0 * variance / n_components)
+    X_scaled = tf.divide(X, lengthscales)  # [N, D]
+    proj = tf.matmul(X_scaled, W, transpose_b=True)  # [N, M // 2]
+    bases = tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, M]
     return constant * bases  # [N, M]
