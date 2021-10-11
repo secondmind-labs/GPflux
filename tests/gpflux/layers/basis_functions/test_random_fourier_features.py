@@ -21,11 +21,11 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 
 import gpflow
 
-from gpflux.layers.basis_functions.random_fourier_features import (
-    RFF_SUPPORTED_KERNELS,
+from gpflux.layers.basis_functions.fourier_features import (
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
+from gpflux.layers.basis_functions.fourier_features.utils import RFF_SUPPORTED_KERNELS
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])

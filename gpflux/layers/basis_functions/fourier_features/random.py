@@ -23,7 +23,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import DType, TensorType
 
-from gpflux.layers.basis_functions.utils import (
+from gpflux.layers.basis_functions.fourier_features.utils import (
     RFF_SUPPORTED_KERNELS,
     _mapping_concat,
     _mapping_cosine,
@@ -32,16 +32,9 @@ from gpflux.layers.basis_functions.utils import (
 )
 from gpflux.types import ShapeType
 
-"""
-Kernels supported by :class:`RandomFourierFeatures`.
-
-You can build RFF for shift-invariant stationary kernels from which you can
-sample frequencies from their power spectrum, following Bochner's theorem.
-"""
-
 
 class RandomFourierFeaturesBase(tf.keras.layers.Layer):
-    def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of random features.
         :param output_dim: total number of basis functions used to approximate
@@ -51,12 +44,23 @@ class RandomFourierFeaturesBase(tf.keras.layers.Layer):
 
         assert isinstance(kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         self.kernel = kernel
-        self.output_dim = output_dim  # M
+        self.n_components = n_components  # M: number of Monte Carlo samples
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
             self.build(tf.TensorShape([self._input_dim]))
         else:
             self._input_dim = None
+
+    def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
+        input_dim = input_shape[-1]
+        self._weights_build(input_dim, n_components=self.n_components)
+
+        super().build(input_shape)
 
     def _weights_build(self, input_dim: int, n_components: int) -> None:
         shape = (n_components, input_dim)
@@ -85,7 +89,8 @@ class RandomFourierFeaturesBase(tf.keras.layers.Layer):
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
-        return tensor_shape[:-1].concatenate(self.output_dim)
+        output_dim = self.n_components
+        return tensor_shape[:-1].concatenate(output_dim)
 
     def get_config(self) -> Mapping:
         """
@@ -95,7 +100,7 @@ class RandomFourierFeaturesBase(tf.keras.layers.Layer):
         """
         config = super().get_config()
         config.update(
-            {"kernel": self.kernel, "output_dim": self.output_dim, "input_dim": self._input_dim}
+            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
         )
 
         return config
@@ -135,25 +140,17 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     counterpart :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
     """
 
-    def __init__(self, kernel: gpflow.kernels.Kernel, output_dim: int, **kwargs: Mapping):
+    def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
         """
-        :param kernel: kernel to approximate using a set of random features.
-        :param output_dim: total number of basis functions used to approximate
-            the kernel.
+        Computes the output shape of the layer.
+        See `tf.keras.layers.Layer.compute_output_shape()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#compute_output_shape>`_.
         """
-        assert not output_dim % 2, "must specify an even number of random features"
-        super().__init__(kernel, output_dim, **kwargs)
-
-    def build(self, input_shape: ShapeType) -> None:
-        """
-        Creates the variables of the layer.
-        See `tf.keras.layers.Layer.build()
-        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
-        """
-        input_dim = input_shape[-1]
-        self._weights_build(input_dim, n_components=self.output_dim // 2)
-
-        super().build(input_shape)
+        # TODO: Keras docs say "If the layer has not been built, this method
+        # will call `build` on the layer." -- do we need to do so?
+        tensor_shape = tf.TensorShape(input_shape).with_rank(2)
+        output_dim = 2 * self.n_components
+        return tensor_shape[:-1].concatenate(output_dim)
 
     def call(self, inputs: TensorType) -> tf.Tensor:
         """
@@ -161,15 +158,11 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``.
+        :return: A tensor with the shape ``[N, 2M]``.
         """
-        output = _mapping_concat(
-            inputs,
-            self.W,
-            variance=self.kernel.variance,
-            lengthscales=self.kernel.lengthscales,
-            n_components=self.output_dim,
-        )
+        constant = tf.sqrt(2.0 * self.kernel.variance / self.n_components)
+        bases = _mapping_concat(inputs, self.W, lengthscales=self.kernel.lengthscales)
+        output = constant * bases
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
 
@@ -237,13 +230,8 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
 
         :return: A tensor with the shape ``[N, M]``.
         """
-        output = _mapping_cosine(
-            inputs,
-            self.W,
-            self.b,
-            variance=self.kernel.variance,
-            lengthscales=self.kernel.lengthscales,
-            n_components=self.output_dim,
-        )
+        constant = tf.sqrt(2.0 * self.kernel.variance / self.n_components)
+        bases = _mapping_cosine(inputs, self.W, lengthscales=self.kernel.lengthscales)
+        output = constant * bases
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output

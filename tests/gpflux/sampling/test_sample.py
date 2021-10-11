@@ -20,7 +20,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import default_float, default_jitter
 
-from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
+from gpflux.layers.basis_functions.fourier_features import RandomFourierFeatures
 from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 from gpflux.sampling.sample import Sample, efficient_sample
 
