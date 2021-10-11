@@ -59,7 +59,6 @@ class RandomFourierFeaturesBase(tf.keras.layers.Layer):
         """
         input_dim = input_shape[-1]
         self._weights_build(input_dim, n_components=self.n_components)
-
         super().build(input_shape)
 
     def _weights_build(self, input_dim: int, n_components: int) -> None:
@@ -206,7 +205,6 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         input_dim = input_shape[-1]
         self._weights_build(input_dim, n_components=self.output_dim)
         self._bias_build(n_components=self.output_dim)
-
         super().build(input_shape)
 
     def _bias_build(self, n_components: int) -> None:
