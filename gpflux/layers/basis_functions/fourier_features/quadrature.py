@@ -43,23 +43,24 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
         """
         input_dim = input_shape[-1]
-        abscissa_value, weights_value = ndgh_points_and_weights(
+        abscissa_value, omegas_value = ndgh_points_and_weights(
             dim=input_dim, n_gh=self.n_components
         )
+        omegas_value = tf.squeeze(omegas_value, axis=-1)
 
         # Quadrature node points
-        self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)
+        self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)  # (M^D, D)
         # Gauss-Hermite weights (not to be confused with random Fourier feature
         # weights or NN weights)
-        self.weights = tf.Variable(initial_value=weights_value, trainable=False)
-        super().build(input_shape)
+        self.omegas = tf.Variable(initial_value=omegas_value, trainable=False)  # (M^D,)
+        super(QuadratureFourierFeatures, self).build(input_shape)
 
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
         input_dim = input_shape[-1]
         return 2 * self.n_components ** input_dim
 
     def _compute_constant(self) -> tf.Tensor:
-        return tf.tile(tf.sqrt(self.kernel.variance * self.weights), multiples=[2])
+        return tf.tile(tf.sqrt(self.kernel.variance * self.omegas), multiples=[2])
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         return _bases_concat(inputs, self.abscissa, lengthscales=self.kernel.lengthscales)
