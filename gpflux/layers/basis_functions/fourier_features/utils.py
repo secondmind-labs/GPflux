@@ -84,7 +84,7 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     return students_t_rvs
 
 
-def _mapping_cosine(
+def _bases_cosine(
     X: TensorType,
     W: TensorType,
     b: TensorType,
@@ -101,7 +101,7 @@ def _mapping_cosine(
     return bases
 
 
-def _mapping_concat(
+def _bases_concat(
     X: TensorType,
     W: TensorType,
     lengthscales: TensorType,

@@ -62,7 +62,7 @@ $$\textbf{f}^\star \approx \boldsymbol{\Phi}^\star \textbf{w} + \textbf{K}_{\tex
 
 that combines both feature approximations and exact kernel evaluations from the Matheron function and weight space approximation formulas above.
 
-The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in `gpflux` are `RandomFourierFeatures`, to approximate a stationary kernel with finitely many random Fourier features $\phi_d(\cdot)$ according to Bochner's theorem and following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007), and `KernelWithFeatureDecomposition`, to approximate a kernel with a specified set of feature functions.
+The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in `gpflux` are `RandomFourierFeaturesCosine`, to approximate a stationary kernel with finitely many random Fourier features $\phi_d(\cdot)$ according to Bochner's theorem and following Rahimi and Recht "Random features for large-scale kernel machines" (NeurIPS, 2007), and `KernelWithFeatureDecomposition`, to approximate a kernel with a specified set of feature functions.
 """
 
 # %%
@@ -79,7 +79,7 @@ from gpflow.config import default_float
 from gpflow.kernels import RBF, Matern52
 from gpflow.models import GPR
 
-from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
+from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
 from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 
 # %% [markdown]
@@ -253,9 +253,9 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     exact_kernel = kernel_class(lengthscales=lengthscale)
 
     # weight space approximated kernel
-    feature_functions = RandomFourierFeatures(
+    feature_functions = RandomFourierFeaturesCosine(
         kernel=kernel_class(lengthscales=lengthscale),
-        output_dim=num_features,
+        n_components=num_features,
         dtype=default_float(),
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())

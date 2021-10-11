@@ -23,30 +23,18 @@ import gpflow
 from gpflow.base import TensorType
 from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights
 
+from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
 from gpflux.layers.basis_functions.fourier_features.utils import (
     QFF_SUPPORTED_KERNELS,
-    _mapping_concat,
+    _bases_concat,
 )
 from gpflux.types import ShapeType
 
 
-class QuadratureFourierFeatures(tf.keras.layers.Layer):
+class QuadratureFourierFeatures(FourierFeaturesBase):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        """
-        :param kernel: kernel to approximate using a set of random features.
-        :param output_dim: total number of basis functions used to approximate
-            the kernel.
-        """
-        super().__init__(**kwargs)
-
         assert isinstance(kernel, QFF_SUPPORTED_KERNELS), "Unsupported Kernel"
-        self.kernel = kernel
-        self.n_components = n_components  # M: number of quadrature points
-        if kwargs.get("input_dim", None):
-            self._input_dim = kwargs["input_dim"]
-            self.build(tf.TensorShape([self._input_dim]))
-        else:
-            self._input_dim = None
+        super(QuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
         """
@@ -63,45 +51,15 @@ class QuadratureFourierFeatures(tf.keras.layers.Layer):
         self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)
         # Gauss-Hermite weights (not to be confused with random Fourier feature
         # weights or NN weights)
-        self.weights = tf.Variable(initiial_value=weights_value, trainable=False)
+        self.weights = tf.Variable(initial_value=weights_value, trainable=False)
         super().build(input_shape)
 
-    def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
-        """
-        Computes the output shape of the layer.
-        See `tf.keras.layers.Layer.compute_output_shape()
-        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#compute_output_shape>`_.
-        """
-        # TODO: Keras docs say "If the layer has not been built, this method
-        # will call `build` on the layer." -- do we need to do so?
+    def _compute_output_dim(self, input_shape: ShapeType) -> int:
         input_dim = input_shape[-1]
-        output_dim = 2 * self.n_components ** input_dim
-        tensor_shape = tf.TensorShape(input_shape).with_rank(2)
-        return tensor_shape[:-1].concatenate(output_dim)
+        return 2 * self.n_components ** input_dim
 
-    def get_config(self) -> Mapping:
-        """
-        Returns the config of the layer.
-        See `tf.keras.layers.Layer.get_config()
-        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
-        """
-        config = super().get_config()
-        config.update(
-            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
-        )
+    def _compute_constant(self) -> tf.Tensor:
+        return tf.tile(tf.sqrt(self.kernel.variance * self.weights), multiples=[2])
 
-        return config
-
-    def call(self, inputs: TensorType) -> tf.Tensor:
-        """
-        Evaluate the basis functions at ``inputs``.
-
-        :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
-
-        :return: A tensor with the shape ``[N, 2M^D]``.
-        """
-        const = tf.tile(tf.sqrt(self.kernel.variance * self.weights), multiples=[2])
-        bases = _mapping_concat(inputs, self.abscissa, lengthscales=self.kernel.lengthscales)
-        output = const * bases
-        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
-        return output
+    def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+        return _bases_concat(inputs, self.abscissa, lengthscales=self.kernel.lengthscales)

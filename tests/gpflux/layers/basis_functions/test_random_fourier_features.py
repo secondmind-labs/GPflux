@@ -43,7 +43,7 @@ def _batch_size_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="n_features", params=[2, 4, 16, 128])
+@pytest.fixture(name="n_features", params=[1, 2, 4, 20, 100])
 def _n_features_fixture(request):
     return request.param
 
@@ -53,24 +53,15 @@ def _kernel_class_fixture(request):
     return request.param
 
 
-@pytest.fixture(
-    name="random_feature_class", params=[RandomFourierFeatures, RandomFourierFeaturesCosine]
-)
+@pytest.fixture(name="random_feature_class", params=[RandomFourierFeaturesCosine])
 def _random_feature_class_fixture(request):
     return request.param
-
-
-def test_throw_for_odd_num_features():
-    kernel = gpflow.kernels.Constant()
-    with pytest.raises(AssertionError) as excinfo:
-        RandomFourierFeatures(kernel, output_dim=3)
-    assert "must specify an even number of random features" in str(excinfo.value)
 
 
 def test_throw_for_unsupported_kernel(random_feature_class):
     kernel = gpflow.kernels.Constant()
     with pytest.raises(AssertionError) as excinfo:
-        random_feature_class(kernel, output_dim=2)
+        random_feature_class(kernel, n_components=1)
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
@@ -137,7 +128,7 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
         RandomFourierFeatures,
         kwargs={
             "kernel": kernel,
-            "output_dim": n_features,
+            "n_components": n_features,
             "input_dim": 1,
             "dtype": "float64",
             "dynamic": True,
@@ -155,7 +146,7 @@ def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims
         RandomFourierFeatures,
         kwargs={
             "kernel": kernel,
-            "output_dim": n_features,
+            "n_components": n_features,
             "input_dim": n_dims,
             "dtype": "float64",
             "dynamic": True,
