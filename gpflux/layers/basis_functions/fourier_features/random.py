@@ -67,12 +67,6 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
             nu = 2.0 * p + 1.0  # degrees of freedom
             return _sample_students_t(nu, shape, dtype)
 
-    def _compute_constant(self) -> tf.Tensor:
-        """
-        Compute normalizing constant for basis functions.
-        """
-        return tf.sqrt(2.0 * self.kernel.variance / self.n_components)
-
 
 class RandomFourierFeatures(RandomFourierFeaturesBase):
     r"""
@@ -113,6 +107,12 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         return _bases_concat(inputs, self.W, lengthscales=self.kernel.lengthscales)
+
+    def _compute_constant(self) -> tf.Tensor:
+        """
+        Compute normalizing constant for basis functions.
+        """
+        return tf.sqrt(self.kernel.variance / self.n_components)
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
@@ -172,3 +172,9 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         return _bases_cosine(inputs, self.W, self.b, lengthscales=self.kernel.lengthscales)
+
+    def _compute_constant(self) -> tf.Tensor:
+        """
+        Compute normalizing constant for basis functions.
+        """
+        return tf.sqrt(2.0 * self.kernel.variance / self.n_components)
