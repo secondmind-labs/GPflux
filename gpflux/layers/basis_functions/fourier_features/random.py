@@ -203,7 +203,6 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
         """
         input_dim = input_shape[-1]
-        self._weights_build(input_dim, n_components=self.output_dim)
         self._bias_build(n_components=self.output_dim)
         super().build(input_shape)
 
