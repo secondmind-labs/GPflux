@@ -63,4 +63,4 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         return tf.tile(tf.sqrt(self.kernel.variance * self.omegas), multiples=[2])
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
-        return _bases_concat(inputs, self.abscissa, lengthscales=self.kernel.lengthscales)
+        return _bases_concat(inputs, self.abscissa)

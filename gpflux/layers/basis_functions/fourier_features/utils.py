@@ -84,34 +84,21 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     return students_t_rvs
 
 
-def _bases_cosine(
-    X: TensorType,
-    W: TensorType,
-    b: TensorType,
-    lengthscales: TensorType,
-) -> TensorType:
+def _bases_cosine(X: TensorType, W: TensorType, b: TensorType) -> TensorType:
     """
     Feature map for random Fourier features (RFF) as originally prescribed
     by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
     See also :cite:p:`sutherland2015error` for additional details.
     """
-    X_scaled = tf.divide(X, lengthscales)  # [N, D]
-    proj = tf.matmul(X_scaled, W, transpose_b=True) + b  # [N, M]
-    bases = tf.cos(proj)  # [N, M]
-    return bases
+    proj = tf.matmul(X, W, transpose_b=True) + b  # [N, M]
+    return tf.cos(proj)  # [N, M]
 
 
-def _bases_concat(
-    X: TensorType,
-    W: TensorType,
-    lengthscales: TensorType,
-) -> TensorType:
+def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
     """
     Feature map for random Fourier features (RFF) as originally prescribed
     by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
     See also :cite:p:`sutherland2015error` for additional details.
     """
-    X_scaled = tf.divide(X, lengthscales)  # [N, D]
-    proj = tf.matmul(X_scaled, W, transpose_b=True)  # [N, M]
-    bases = tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]
-    return bases
+    proj = tf.matmul(X, W, transpose_b=True)  # [N, M]
+    return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]

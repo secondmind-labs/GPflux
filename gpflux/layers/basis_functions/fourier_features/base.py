@@ -33,8 +33,9 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``.
         """
+        X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
         const = self._compute_constant()
-        bases = self._compute_bases(inputs)
+        bases = self._compute_bases(X)
         output = const * bases
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
