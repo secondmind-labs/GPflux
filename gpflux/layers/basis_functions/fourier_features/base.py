@@ -16,7 +16,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         :param output_dim: total number of basis functions used to approximate
             the kernel.
         """
-        super().__init__(**kwargs)
+        super(FourierFeaturesBase, self).__init__(**kwargs)
         self.kernel = kernel
         self.n_components = n_components  # M: number of Monte Carlo samples
         if kwargs.get("input_dim", None):
@@ -57,7 +57,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         See `tf.keras.layers.Layer.get_config()
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
         """
-        config = super().get_config()
+        config = super(FourierFeaturesBase, self).get_config()
         config.update(
             {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
         )
