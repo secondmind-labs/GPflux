@@ -91,7 +91,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         num_inducing: int,
         *,
         inducing_targets: Optional[tf.Tensor] = None,
-        prec_init: Optional[float] = 1.,
+        prec_init: Optional[float] = 10.,
         mean_function: Optional[MeanFunction] = None,
         kernel_variance_init: Optional[float] = 1.,
         name: Optional[str] = None,
