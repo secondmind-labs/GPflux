@@ -24,15 +24,16 @@ import gpflow
 from gpflux.layers.basis_functions.random_fourier_features import (
     RFF_SUPPORTED_KERNELS,
     RandomFourierFeatures,
+    RandomFourierFeaturesCosine,
 )
 
 
-@pytest.fixture(name="n_dims", params=[1, 2, 3])
+@pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])
 def _n_dims_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="lengthscale", params=[0.1, 1.0, 5.0])
+@pytest.fixture(name="lengthscale", params=[1e-3, 0.1, 1.0, 5.0])
 def _lengthscale_fixture(request):
     return request.param
 
@@ -42,7 +43,7 @@ def _batch_size_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="n_features", params=[1, 2, 30])
+@pytest.fixture(name="n_features", params=[2, 4, 16, 128])
 def _n_features_fixture(request):
     return request.param
 
@@ -52,15 +53,30 @@ def _kernel_class_fixture(request):
     return request.param
 
 
-def test_throw_for_unsupported_kernel():
+@pytest.fixture(
+    name="random_feature_class", params=[RandomFourierFeatures, RandomFourierFeaturesCosine]
+)
+def _random_feature_class_fixture(request):
+    return request.param
+
+
+def test_throw_for_odd_num_features():
     kernel = gpflow.kernels.Constant()
     with pytest.raises(AssertionError) as excinfo:
-        RandomFourierFeatures(kernel, 1)
+        RandomFourierFeatures(kernel, output_dim=3)
+    assert "must specify an even number of random features" in str(excinfo.value)
 
+
+def test_throw_for_unsupported_kernel(random_feature_class):
+    kernel = gpflow.kernels.Constant()
+    with pytest.raises(AssertionError) as excinfo:
+        random_feature_class(kernel, output_dim=2)
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthscale, n_dims):
+def test_fourier_features_can_approximate_kernel_multidim(
+    random_feature_class, kernel_class, lengthscale, n_dims
+):
     n_features = 10000
     x_rows = 20
     y_rows = 30
@@ -68,7 +84,7 @@ def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthsc
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
     kernel = kernel_class(lengthscales=lengthscales)
-    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
+    fourier_features = random_feature_class(kernel, n_features, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -79,18 +95,20 @@ def test_fourier_features_can_approximate_kernel_multidim(kernel_class, lengthsc
 
     actual_kernel_matrix = kernel.K(x, y)
 
-    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_fourier_features_shapes(n_features, n_dims, batch_size):
+def test_fourier_features_shapes(random_feature_class, n_features, n_dims, batch_size):
     kernel = gpflow.kernels.SquaredExponential()
-    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
+    fourier_features = random_feature_class(kernel, n_features, dtype=tf.float64)
     features = fourier_features(tf.ones(shape=(batch_size, n_dims)))
 
     np.testing.assert_equal(features.shape, [batch_size, n_features])
 
 
-def test_fourier_feature_layer_compute_covariance_of_inducing_variables(batch_size):
+def test_fourier_feature_layer_compute_covariance_of_inducing_variables(
+    random_feature_class, batch_size
+):
     """
     Ensure that the random fourier feature map can be used to approximate the covariance matrix
     between the inducing point vectors of a sparse GP, with the condition that the number of latent
@@ -99,7 +117,7 @@ def test_fourier_feature_layer_compute_covariance_of_inducing_variables(batch_si
     n_features = 10000
 
     kernel = gpflow.kernels.SquaredExponential()
-    fourier_features = RandomFourierFeatures(kernel, n_features, dtype=tf.float64)
+    fourier_features = random_feature_class(kernel, n_features, dtype=tf.float64)
 
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
@@ -108,7 +126,7 @@ def test_fourier_feature_layer_compute_covariance_of_inducing_variables(batch_si
 
     actual_kernel_matrix = kernel.K(x_new, x_new)
 
-    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=0.05)
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
 def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
