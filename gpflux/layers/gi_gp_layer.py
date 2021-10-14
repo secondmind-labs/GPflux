@@ -20,7 +20,7 @@ Aitchison (2021): https://arxiv.org/abs/2005.08140 for details.
 """
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -91,7 +91,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         num_inducing: int,
         *,
         inducing_targets: Optional[tf.Tensor] = None,
-        prec_init: Optional[float] = 1.,
+        prec_init: Optional[float] = 10.,
         mean_function: Optional[MeanFunction] = None,
         kernel_variance_init: Optional[float] = 1.,
         name: Optional[str] = None,
@@ -285,6 +285,30 @@ class GIGPLayer(tf.keras.layers.Layer):
 
         return all_samples + mean_function
 
+    def predict(
+        self,
+        u: TensorType,
+        Kff: TensorType,
+        Kuf: TensorType,
+        chol_Kuu: TensorType,
+        inputs: Optional[TensorType] = None,
+        full_cov: bool = False
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
+        Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
+        Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
+
+        if full_cov:
+            assert inputs is not None
+            Kff = self.kernel(inputs[..., self.num_inducing:, :])
+            Vf = Kff - tf.squeeze(Kfu_invKuu @ Kuf, 1)
+            Vf = Vf + default_jitter()*tf.eye(tf.shape(Vf)[-1], dtype=default_float())
+        else:
+            Vf = Kff - tf.squeeze(tf.reduce_sum((Kfu_invKuu*tf.linalg.adjoint(Kuf)), -1), 1)
+
+            Vf = Vf[..., None]
+
+        return Ef, Vf
+
     def sample_conditional(
         self,
         u: TensorType,
@@ -307,8 +331,7 @@ class GIGPLayer(tf.keras.layers.Layer):
             samples if true
         :return: samples of f, shape [S, M, Lout]
         """
-        Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
-        Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
+        Ef, Vf = self.predict(u, Kff, Kuf, chol_Kuu, inputs=inputs, full_cov=full_cov)
 
         eps_f = tf.random.normal(
             tf.shape(Ef),
@@ -316,17 +339,11 @@ class GIGPLayer(tf.keras.layers.Layer):
         )
 
         if full_cov:
-            assert inputs is not None
-            Kff = self.kernel(inputs[..., self.num_inducing:, :])
-            Vf = Kff - tf.squeeze(Kfu_invKuu @ Kuf, 1)
-            Vf = Vf + default_jitter()*tf.eye(tf.shape(Vf)[-1], dtype=default_float())
             chol_Vf = tf.linalg.cholesky(Vf)
 
             var_part = chol_Vf @ eps_f
         else:
-            Vf = Kff - tf.squeeze(tf.reduce_sum((Kfu_invKuu*tf.linalg.adjoint(Kuf)), -1), 1)
-
-            var_part = tf.math.sqrt(Vf)[..., None]*eps_f
+            var_part = tf.math.sqrt(Vf)*eps_f
 
         return Ef + var_part
 
