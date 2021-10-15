@@ -177,7 +177,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         )  # [num_latent_gps, num_inducing, num_inducing]
 
         self.L_scale = Parameter(
-            tf.sqrt(self.kernel.variance)*np.sqrt(prec_init)*np.ones((self.num_latent_gps, 1, 1)),
+            np.sqrt(self.kernel.variance.numpy()*prec_init)*np.ones((self.num_latent_gps, 1, 1)),
             transform=positive(),
             dtype=default_float(),
             name=f"{self.name}_L_scale" if self.name else "L_scale"
@@ -227,9 +227,7 @@ class GIGPLayer(tf.keras.layers.Layer):
 
         Kuu, Kuf, Kfu = tf.expand_dims(Kuu, 1), tf.expand_dims(Kuf, 1), tf.expand_dims(Kfu, 1)
 
-        S = tf.shape(Kuu)[0]
-
-        u, chol_lKlpI, chol_Kuu = self.sample_u(S, Kuu)
+        u, chol_lKlpI, chol_Kuu = self.sample_u(Kuu)
 
         if kwargs.get("training"):
             loss_per_datapoint = self.prior_kl(tf.linalg.adjoint(self.L), chol_lKlpI, u) / self.num_data
@@ -260,10 +258,11 @@ class GIGPLayer(tf.keras.layers.Layer):
 
     def sample_u(
         self,
-        S: int,
         Kuu: TensorType
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         # Samples inducing locations u
+
+        S = tf.shape(Kuu)[0]
 
         Iuu = tf.eye(self.num_inducing, dtype=default_float())
 
