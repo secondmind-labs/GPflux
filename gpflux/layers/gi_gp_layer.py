@@ -177,7 +177,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         )  # [num_latent_gps, num_inducing, num_inducing]
 
         self.L_scale = Parameter(
-            tf.sqrt(self.kernel.variance)*np.sqrt(prec_init)*np.ones((self.num_latent_gps, 1, 1)),
+            np.sqrt(self.kernel.variance.numpy()*prec_init)*np.ones((self.num_latent_gps, 1, 1)),
             transform=positive(),
             dtype=default_float(),
             name=f"{self.name}_L_scale" if self.name else "L_scale"
@@ -227,6 +227,41 @@ class GIGPLayer(tf.keras.layers.Layer):
 
         Kuu, Kuf, Kfu = tf.expand_dims(Kuu, 1), tf.expand_dims(Kuf, 1), tf.expand_dims(Kfu, 1)
 
+        u, chol_lKlpI, chol_Kuu = self.sample_u(Kuu)
+
+        if kwargs.get("training"):
+            loss_per_datapoint = self.prior_kl(tf.linalg.adjoint(self.L), chol_lKlpI, u) / self.num_data
+        else:
+            # TF quirk: add_loss must always add a tensor to compile
+            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
+        self.add_loss(loss_per_datapoint)
+
+        # Metric names should be unique; otherwise they get overwritten if you
+        # have multiple with the same name
+        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
+        self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
+
+        if kwargs.get("full_cov"):
+            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu, inputs=inputs, full_cov=True)
+        else:
+            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu)
+
+        all_samples = tf.concat(
+            [
+                tf.linalg.adjoint(tf.squeeze(u, -1)),
+                f_samples,
+            ],
+            axis=-2
+        )
+
+        return all_samples + mean_function
+
+    def sample_u(
+        self,
+        Kuu: TensorType
+    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+        # Samples inducing locations u
+
         S = tf.shape(Kuu)[0]
 
         Iuu = tf.eye(self.num_inducing, dtype=default_float())
@@ -258,32 +293,31 @@ class GIGPLayer(tf.keras.layers.Layer):
         prec_noise = inv_Kuu_noise + L_noise
         u = Sigma @ ((L @ LT) @ self.v + prec_noise)
 
-        if kwargs.get("training"):
-            loss_per_datapoint = self.prior_kl(LT, chol_lKlpI, u) / self.num_data
+        return u, chol_lKlpI, chol_Kuu
+
+    def predict(
+        self,
+        u: TensorType,
+        Kff: TensorType,
+        Kuf: TensorType,
+        chol_Kuu: TensorType,
+        inputs: Optional[TensorType] = None,
+        full_cov: bool = False
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
+        Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
+        Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
+
+        if full_cov:
+            assert inputs is not None
+            Kff = self.kernel(inputs[..., self.num_inducing:, :])
+            Vf = Kff - tf.squeeze(Kfu_invKuu @ Kuf, 1)
+            Vf = Vf + default_jitter()*tf.eye(tf.shape(Vf)[-1], dtype=default_float())
         else:
-            # TF quirk: add_loss must always add a tensor to compile
-            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
-        self.add_loss(loss_per_datapoint)
+            Vf = Kff - tf.squeeze(tf.reduce_sum((Kfu_invKuu*tf.linalg.adjoint(Kuf)), -1), 1)
 
-        # Metric names should be unique; otherwise they get overwritten if you
-        # have multiple with the same name
-        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
-        self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
+            Vf = Vf[..., None]
 
-        if kwargs.get("full_cov"):
-            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu, inputs=inputs, full_cov=True)
-        else:
-            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu)
-
-        all_samples = tf.concat(
-            [
-                tf.linalg.adjoint(tf.squeeze(u, -1)),
-                f_samples,
-            ],
-            axis=-2
-        )
-
-        return all_samples + mean_function
+        return Ef, Vf
 
     def predict(
         self,
