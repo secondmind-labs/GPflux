@@ -105,7 +105,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
       where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel.
 
     At least for the squared exponential kernel, this variant of the feature
-    mapping has more desirable theoretical properties than its counterpart form 
+    mapping has more desirable theoretical properties than its counterpart form
     from phase-shifted cosines :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
     """
 
@@ -119,7 +119,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
         """
         Compute normalizing constant for basis functions.
         """
-        return self.rff_constant(self.kernel.variance, output_dim=2.0 * self.n_components)
+        return self.rff_constant(self.kernel.variance, output_dim=2 * self.n_components)
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
