@@ -23,3 +23,5 @@ from gpflux.layers.gi_gp_layer import GIGPLayer
 from gpflux.layers.latent_variable_layer import LatentVariableLayer, LayerWithObservations
 from gpflux.layers.likelihood_layer import LikelihoodLayer, SampleBasedGaussianLikelihoodLayer
 from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.layers.general import KG, SqExpKernelGram, FeaturesToKernelARD
+from gpflux.layers.inverse_wishart_layer import IWLayer, KGIGPLayer

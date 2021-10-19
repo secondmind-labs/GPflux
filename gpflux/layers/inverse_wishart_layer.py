@@ -22,6 +22,7 @@ Aitchison (2021): https://arxiv.org/abs/2005.08140 for details.
 import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
+import gpflow
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -32,6 +33,8 @@ from gpflow.base import TensorType
 from gpflow.kernels import SquaredExponential
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular, positive
+
+from .general import KG, SqExpKernelGram
 
 
 class BatchingSquaredExponential(SquaredExponential):
@@ -51,7 +54,266 @@ class BatchingSquaredExponential(SquaredExponential):
         return Xs + X2s - 2 * tf.linalg.matmul(X, X2, transpose_b=True)
 
 
-class GIGPLayer(tf.keras.layers.Layer):
+def bartlett(K, nu, sample_shape):
+    """Returns A from the standard Bartlett (i.e. scale I) - ignores K"""
+    Kshape = tf.shape(K)
+    n = tf.experimental.numpy.tril(
+        tf.random.normal([*sample_shape, *Kshape], dtype=default_float()),
+        -1
+    )
+    I = tf.eye(Kshape[-1], dtype=default_float())
+
+    dof = nu - tf.range(Kshape[-1], dtype=default_float())
+    gamma = tfp.distributions.Gamma(dof/2., 0.5)
+
+    c = tf.sqrt(gamma.sample([*sample_shape, *Kshape[:-2], 1]))
+    A = n + I*c
+    return A
+
+
+def mvlgamma(input, p):
+    result = math.log(math.pi)*p*(p-1)/4.
+
+    for i in range(p):
+        result = result + tf.math.lgamma(input - 0.5*i)
+
+    return result
+
+
+class InverseWishart:
+    def __init__(self, K, nu):
+        tf.debugging.assert_less(tf.shape(K)[-1], nu)
+        self.nu = nu
+        self.K = K
+
+    def rsample_log_prob(self, sample_shape):
+        x, A = self._rsample(sample_shape)
+        log_prob = self.log_prob(x, A)
+        return x, log_prob
+
+    def _rsample(self, sample_shape):
+        L = tf.linalg.cholesky(self.K)
+        A = bartlett(L, self.nu, sample_shape)
+        return L @ tf.linalg.cholesky_solve(A, tf.linalg.adjoint(L)), A
+
+    def rsample(self, sample_shape):
+        return self._rsample(sample_shape)[0]
+
+    def log_prob(self, x, A=None):
+        if A is None:
+            Lx = tf.linalg.cholesky(x)
+            AAT = tf.linalg.cholesky_solve(Lx, self.K)
+        else:
+            AAT = A @ tf.linalg.adjoint(A)
+
+        nu = self.nu
+        p = tf.shape(self.K)[-1]
+
+        res = -((nu + p + 1)/2)*tf.linalg.logdet(x)
+        res = res + (nu/2)*tf.linalg.logdet(self.K)
+        res = res - 0.5*tf.reduce_sum(tf.linalg.diag_part(AAT), -1)
+        res = res - 0.5*nu*p * math.log(2)
+        res = res - mvlgamma(0.5*nu*tf.ones((), dtype=gpflow.default_float()), p)
+
+        return res
+
+
+class IWLayer(tf.keras.layers.Layer):
+
+    num_data: int
+
+    delta: Parameter
+
+    V: Parameter
+
+    diag: Parameter
+
+    gamma: Parameter
+
+    def __init__(
+        self,
+        num_data: int,
+        num_inducing: int,
+        *,
+        kernel_variance_init: Optional[float] = 1.,
+        name: Optional[str] = None,
+        verbose: bool = True,
+    ):
+        """
+        :param input_dim: The dimension of the input for this layer.
+        :param num_latent_gps: The number of latent GPs in this layer (i.e. the output dimension).
+            Unlike for the :class:`GPLayer`, this must be provided for global inducing layers.
+        :param num_data: The number of points in the training dataset (see :attr:`num_data`).
+        :param num_inducing: The number of inducing points; for global inducing this should be the
+            same for the whole model.
+        :param inducing_targets: An optional initialization for `v`. The most useful case for this
+            is the last layer, where it may be initialized to (a subset of) the output data.
+        :param prec_init: Initialization for the precision parameter. See Ober and Aitchison (2021)
+            for more details.
+        :param mean_function: The mean function that will be applied to the
+            inputs. Default: :class:`~gpflow.mean_functions.Identity`.
+
+            .. note:: The Identity mean function requires the input and output
+                dimensionality of this layer to be the same. If you want to
+                change the dimensionality in a layer, you may want to provide a
+                :class:`~gpflow.mean_functions.Linear` mean function instead.
+
+        :param kernel_variance_init: Initialization for the kernel variance
+        :param name: The name of this layer.
+        :param verbose: The verbosity mode. Set this parameter to `True`
+            to show debug information.
+        """
+
+        super().__init__(
+            dtype=default_float(),
+            name=name,
+        )
+
+        self.kernel_gram = SqExpKernelGram(height=kernel_variance_init, trainable_noise=True)
+
+        self.num_data = num_data
+
+        self.verbose = verbose
+
+        self.P = num_inducing
+
+        self.delta = Parameter(
+            tf.ones([]),
+            transform=positive(),
+            dtype=default_float(),
+            name=f"{self.name}_delta" if self.name else "delta",
+        )
+
+        self.V = Parameter(
+            tf.random.normal([num_inducing, num_inducing]),
+            dtype=default_float(),
+            name=f"{self.name}_V" if self.name else "V",
+        )
+
+        self.diag = Parameter(
+            tf.ones([]),
+            transform=positive(),
+            dtype=default_float(),
+            name=f"{self.name}_diag" if self.name else "diag",
+        )
+
+        self.gamma = Parameter(
+            tf.ones([]),
+            transform=positive(),
+            dtype=default_float(),
+            name=f"{self.name}_gamma" if self.name else "gamma"
+        )
+
+    @property
+    def prior_nu(self) -> tf.Tensor:
+        return self.delta + self.P + 1
+
+    def post_nu(self) -> tf.Tensor:
+        return self.prior_nu + self.gamma
+
+    def prior_psi(self, dKii: TensorType) -> TensorType:
+        return dKii
+
+    def post_psi(self, dKii: TensorType):
+        return dKii + tf.linalg.matmul(self.V*self.diag, self.V, transpose_b=True)/self.P
+
+    def PGii(self, dKii: TensorType) -> InverseWishart:
+        return InverseWishart(self.prior_psi(dKii), self.prior_nu)
+
+    def QGii(self, dKii: TensorType) -> InverseWishart:
+        return InverseWishart(self.post_psi(dKii), self.post_nu)
+
+    def Gii(self, dKii: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
+        PGii = self.PGii(dKii)
+        QGii = self.QGii(dKii)
+
+        Gii, logQ = QGii.rsample_log_prob([])
+        logP = PGii.log_prob(Gii)
+
+        logpq = logP - logQ
+
+        return Gii, logpq
+
+    def call(
+        self,
+        K: KG,
+        *args: List[Any],
+        **kwargs: Dict[str, Any]
+    ) -> KG:
+        K = self.kernel_gram(K)
+
+        dKii = self.delta * K.ii
+        dKit = self.delta * K.it
+        dKtt = self.delta * K.tt
+
+        Gii, logpq = self.Gii(dKii)
+
+        if kwargs.get("training"):
+            loss_per_datapoint = -tf.reduce_mean(logpq) / self.num_data
+        else:
+            # TF quirk: add_loss must always add a tensor to compile
+            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
+        self.add_loss(loss_per_datapoint)
+
+        chol_Kii = tf.linalg.cholesky(dKii)
+        inv_Kii_kit = tf.linalg.cholesky_solve(chol_Kii, dKit)
+
+        if kwargs.get("full_cov"):
+            Git, Gtt = self.sample_conditional_full(Gii, dKii, dKit, dKtt, inv_Kii_kit)
+        else:
+            Git, Gtt = self.sample_conditional_marginal(Gii, dKii, dKit, dKtt, inv_Kii_kit)
+
+        return KG(Gii, Git, Gtt)
+
+    def sample_conditional_marginal(
+        self,
+        Gii: TensorType,
+        dKii: TensorType,
+        dKit: TensorType,
+        dktt: TensorType,
+        inv_Kii_kit: TensorType,
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
+        dktti = dktt - tf.reduce_sum(dKit * inv_Kii_kit, -2)
+        alpha = (self.delta + self.P + tf.shape(dktt)[-1] + 1)/2
+        Ptt = tfp.distributions.Gamma(alpha, dktti/2)
+        gtti = 1/Ptt.sample([])
+
+        chol_dKii = tf.linalg.cholesky(dKii)
+        inv_Gii_git = inv_Kii_kit + tf.linalg.triangular_solve(
+            tf.linalg.adjoint(chol_dKii),
+            tf.random.normal([*tf.shape(dKit)], dtype=default_float()),
+            upper=True
+        ) + tf.sqrt(gtti)[:, None, :]
+        git = Gii @ inv_Gii_git
+
+        gtt = gtti + tf.reduce_sum(git * inv_Gii_git, -2)
+
+        return git, gtt
+
+    def sample_conditional_full(
+        self,
+        Gii: TensorType,
+        dKii: TensorType,
+        dKit: TensorType,
+        dKtt: TensorType,
+        inv_Kii_kit: TensorType,
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
+        dKtti = dKtt - tf.linalg.matmul(dKit, inv_Kii_kit, transpose_a=True)
+        nu = self.delta + self.P + tf.shape(dKtt)[-1] + 1
+        Ptti = InverseWishart(dKtti, nu)
+        Gtti_sample = Ptti.rsample([])
+        Gtti = Gtti_sample + default_jitter()*tf.eye(tf.shape(Gtti_sample)[-1], dtype=default_float())
+
+        inv_Gii_git = inv_Kii_kit + tf.linalg.cholesky(dKii) @ tf.linalg.matmul(tf.random.normal(
+            [*tf.shape(dKit)], dtype=default_float()), tf.linalg.cholesky(Gtti), transpose_b=True)
+        Git = Gii @ inv_Gii_git
+
+        Gtt = Gtti + tf.linalg.matmul(Git, inv_Gii_git, transpose_a=True)
+
+        return Git, Gtt
+
+
+class KGIGPLayer(tf.keras.layers.Layer):
     """
     A sparse variational multioutput GP layer. This layer holds the kernel,
     inducing variables and variational distribution, and mean function.
@@ -92,7 +354,6 @@ class GIGPLayer(tf.keras.layers.Layer):
         *,
         inducing_targets: Optional[tf.Tensor] = None,
         prec_init: Optional[float] = 10.,
-        mean_function: Optional[MeanFunction] = None,
         kernel_variance_init: Optional[float] = 1.,
         name: Optional[str] = None,
         verbose: bool = True,
@@ -127,28 +388,14 @@ class GIGPLayer(tf.keras.layers.Layer):
             name=name,
         )
 
-        if kernel_variance_init <= 0:
-            raise ValueError("Kernel variance must be positive.")
         if prec_init <= 0:
             raise ValueError("Precision init must be positive")
 
-        self.kernel = BatchingSquaredExponential(
-            lengthscales=[1.]*input_dim, variance=kernel_variance_init)
+        self.kernel_gram = SqExpKernelGram(height=kernel_variance_init, trainable_noise=True)
 
         self.input_dim = input_dim
 
         self.num_data = num_data
-
-        if mean_function is None:
-            mean_function = Identity()
-            if verbose:
-                warnings.warn(
-                    "Beware, no mean function was specified in the construction of the `GPLayer` "
-                    "so the default `gpflow.mean_functions.Identity` is being used. "
-                    "This mean function will only work if the input dimensionality "
-                    "matches the number of latent Gaussian processes in the layer."
-                )
-        self.mean_function = mean_function
 
         self.verbose = verbose
 
@@ -177,7 +424,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         )  # [num_latent_gps, num_inducing, num_inducing]
 
         self.L_scale = Parameter(
-            np.sqrt(self.kernel.variance.numpy()*prec_init)*np.ones((self.num_latent_gps, 1, 1)),
+            np.sqrt(kernel_variance_init*prec_init)*np.ones((self.num_latent_gps, 1, 1)),
             transform=positive(),
             dtype=default_float(),
             name=f"{self.name}_L_scale" if self.name else "L_scale"
@@ -210,7 +457,7 @@ class GIGPLayer(tf.keras.layers.Layer):
 
     def call(
         self,
-        inputs: TensorType,
+        inputs: KG,
         *args: List[Any],
         **kwargs: Dict[str, Any]
     ) -> tf.Tensor:
@@ -218,12 +465,12 @@ class GIGPLayer(tf.keras.layers.Layer):
         Sample-based propagation of both inducing points and function values. See Ober & Aitchison
         (2021) for details.
         """
-        mean_function = self.mean_function(inputs)
+        inputs = self.kernel_gram(inputs)
 
-        Kuu = self.kernel(inputs[..., :self.num_inducing, :])
-        Kuf = self.kernel(inputs[..., :self.num_inducing, :], inputs[..., self.num_inducing:, :])
+        Kuu = inputs.ii
+        Kuf = inputs.it
         Kfu = tf.linalg.adjoint(Kuf)
-        Kff = self.kernel.K_diag(inputs[..., self.num_inducing:, :])
+        Kff = inputs.tt
 
         Kuu, Kuf, Kfu = tf.expand_dims(Kuu, 1), tf.expand_dims(Kuf, 1), tf.expand_dims(Kfu, 1)
 
@@ -242,7 +489,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
         if kwargs.get("full_cov"):
-            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu, inputs=inputs, full_cov=True)
+            f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu, full_cov=True)
         else:
             f_samples = self.sample_conditional(u, Kff, Kuf, chol_Kuu)
 
@@ -254,7 +501,7 @@ class GIGPLayer(tf.keras.layers.Layer):
             axis=-2
         )
 
-        return all_samples + mean_function
+        return all_samples
 
     def sample_u(
         self,
@@ -301,15 +548,12 @@ class GIGPLayer(tf.keras.layers.Layer):
         Kff: TensorType,
         Kuf: TensorType,
         chol_Kuu: TensorType,
-        inputs: Optional[TensorType] = None,
         full_cov: bool = False
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         Kfu_invKuu = tf.linalg.adjoint(tf.linalg.cholesky_solve(chol_Kuu, Kuf))
         Ef = tf.linalg.adjoint(tf.squeeze((Kfu_invKuu @ u), -1))
 
         if full_cov:
-            assert inputs is not None
-            Kff = self.kernel(inputs[..., self.num_inducing:, :])
             Vf = Kff - tf.squeeze(Kfu_invKuu @ Kuf, 1)
             Vf = Vf + default_jitter()*tf.eye(tf.shape(Vf)[-1], dtype=default_float())
         else:
@@ -325,7 +569,6 @@ class GIGPLayer(tf.keras.layers.Layer):
         Kff: TensorType,
         Kuf: TensorType,
         chol_Kuu: TensorType,
-        inputs: Optional[TensorType] = None,
         full_cov: bool = False,
     ) -> tf.Tensor:
         """
@@ -341,7 +584,7 @@ class GIGPLayer(tf.keras.layers.Layer):
             samples if true
         :return: samples of f, shape [S, M, Lout]
         """
-        Ef, Vf = self.predict(u, Kff, Kuf, chol_Kuu, inputs=inputs, full_cov=full_cov)
+        Ef, Vf = self.predict(u, Kff, Kuf, chol_Kuu, full_cov=full_cov)
 
         eps_f = tf.random.normal(
             tf.shape(Ef),
