@@ -101,7 +101,7 @@ class DeepIWP(Module):
         f_layers: List[tf.keras.layers.Layer],
         num_inducing: int,
         *,
-        likelihood_var: Optional[float] = 1.0,
+        likelihood_var: Optional[float] = 0.01,
         inducing_init: Optional[tf.Tensor] = None,
         inducing_shape: Optional[List[int]] = None,
         input_dim: Optional[int] = None,
@@ -303,7 +303,7 @@ class DeepIWP(Module):
         targets: Optional[TensorType] = None,
         training: Optional[bool] = None,
     ) -> tfp.distributions.Distribution:
-        f_outputs = self._evaluate_deep_gp(inputs, targets=targets, training=training)
+        f_outputs = self._evaluate_deep_iwp(inputs, targets=targets, training=training)
         y_outputs = self._evaluate_likelihood(f_outputs, targets=targets, training=training)
         return y_outputs
 
@@ -322,12 +322,15 @@ class DeepIWP(Module):
         """
         X, Y = data
         _ = self.call(X, Y, training=True)
-        all_losses = [
-            loss
-            for layer in itertools.chain(self.f_layers, [self.likelihood_layer])
+        all_f_losses = [
+            loss*T
+            for layer in self.f_layers
             for loss in layer.losses
         ]
-        return -tf.reduce_sum(all_losses) * self.num_data
+        likelihood_loss = [
+            loss for loss in self.likelihood_layer.losses
+        ]
+        return -tf.reduce_sum(all_f_losses) * self.num_data - tf.reduce_sum(likelihood_loss) * self.num_data
 
     def _get_model_class(self, model_class: Optional[Type[tf.keras.Model]]) -> Type[tf.keras.Model]:
         if model_class is not None:
@@ -411,6 +414,8 @@ class DeepIWP(Module):
         features = tf.tile(tf.expand_dims(inputs, 0),
                            [num_samples, *[1]*(self.rank-1)])
         features = self._inducing_add(features)
+
+        features = self.kernelizer(features, full_cov=consistent)
 
         for layer in self.f_layers:
             if isinstance(layer, LayerWithObservations):

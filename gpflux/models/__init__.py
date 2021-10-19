@@ -18,3 +18,4 @@ Base model classes implemented in GPflux
 """
 from gpflux.models.deep_gp import DeepGP
 from gpflux.models.gi_deep_gp import GIDeepGP
+from gpflux.models.deep_iwp import DeepIWP

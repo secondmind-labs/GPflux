@@ -47,7 +47,7 @@ class Kernel(tf.keras.layers.Layer):
         else:
             Ktt = self.kernel(d2tt) + noise
 
-        h = tf.exp(2*self.height)
+        h = self.height
 
         return KG(h*Kii, h*Kit, h*Ktt)
 

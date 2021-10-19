@@ -54,19 +54,20 @@ class BatchingSquaredExponential(SquaredExponential):
         return Xs + X2s - 2 * tf.linalg.matmul(X, X2, transpose_b=True)
 
 
-def bartlett(K, nu, sample_shape):
+def bartlett(Kshape, nu, sample_shape):
     """Returns A from the standard Bartlett (i.e. scale I) - ignores K"""
-    Kshape = tf.shape(K)
+    random_samples = tf.random.normal(tf.concat([sample_shape, Kshape], 0), dtype=default_float())
     n = tf.experimental.numpy.tril(
-        tf.random.normal([*sample_shape, *Kshape], dtype=default_float()),
-        -1
+        random_samples, -1
     )
+    # n = tf.linalg.band_part(random_samples, -1, 0) - tf.linalg.band_part(random_samples, 0, 0)
+
     I = tf.eye(Kshape[-1], dtype=default_float())
 
     dof = nu - tf.range(Kshape[-1], dtype=default_float())
     gamma = tfp.distributions.Gamma(dof/2., 0.5)
 
-    c = tf.sqrt(gamma.sample([*sample_shape, *Kshape[:-2], 1]))
+    c = tf.sqrt(gamma.sample(tf.concat([sample_shape, Kshape[:-2], [1]], 0)))
     A = n + I*c
     return A
 
@@ -74,17 +75,18 @@ def bartlett(K, nu, sample_shape):
 def mvlgamma(input, p):
     result = math.log(math.pi)*p*(p-1)/4.
 
-    for i in range(p):
-        result = result + tf.math.lgamma(input - 0.5*i)
+    for i in range(tf.cast(p, tf.int32)):
+        result = result + tf.math.lgamma(input - 0.5*tf.cast(i, default_float()))
 
     return result
 
 
 class InverseWishart:
     def __init__(self, K, nu):
-        tf.debugging.assert_less(tf.shape(K)[-1], nu)
+        tf.debugging.assert_less(tf.cast(tf.shape(K)[-1], default_float()), nu)
         self.nu = nu
         self.K = K
+        self.Kshape = tf.shape(K)
 
     def rsample_log_prob(self, sample_shape):
         x, A = self._rsample(sample_shape)
@@ -93,7 +95,7 @@ class InverseWishart:
 
     def _rsample(self, sample_shape):
         L = tf.linalg.cholesky(self.K)
-        A = bartlett(L, self.nu, sample_shape)
+        A = bartlett(self.Kshape, self.nu, sample_shape)
         return L @ tf.linalg.cholesky_solve(A, tf.linalg.adjoint(L)), A
 
     def rsample(self, sample_shape):
@@ -107,13 +109,13 @@ class InverseWishart:
             AAT = A @ tf.linalg.adjoint(A)
 
         nu = self.nu
-        p = tf.shape(self.K)[-1]
+        p = tf.cast(tf.shape(self.K)[-1], default_float())
 
         res = -((nu + p + 1)/2)*tf.linalg.logdet(x)
         res = res + (nu/2)*tf.linalg.logdet(self.K)
         res = res - 0.5*tf.reduce_sum(tf.linalg.diag_part(AAT), -1)
         res = res - 0.5*nu*p * math.log(2)
-        res = res - mvlgamma(0.5*nu*tf.ones((), dtype=gpflow.default_float()), p)
+        res = res - mvlgamma(0.5*nu*tf.ones([], dtype=gpflow.default_float()), p)
 
         return res
 
@@ -169,7 +171,7 @@ class IWLayer(tf.keras.layers.Layer):
             name=name,
         )
 
-        self.kernel_gram = SqExpKernelGram(height=kernel_variance_init, trainable_noise=True)
+        self.kernel_gram = SqExpKernelGram(height=kernel_variance_init, trainable_noise=False)
 
         self.num_data = num_data
 
@@ -187,6 +189,7 @@ class IWLayer(tf.keras.layers.Layer):
         self.V = Parameter(
             tf.random.normal([num_inducing, num_inducing]),
             dtype=default_float(),
+            transform=triangular(),
             name=f"{self.name}_V" if self.name else "V",
         )
 
@@ -208,6 +211,7 @@ class IWLayer(tf.keras.layers.Layer):
     def prior_nu(self) -> tf.Tensor:
         return self.delta + self.P + 1
 
+    @property
     def post_nu(self) -> tf.Tensor:
         return self.prior_nu + self.gamma
 
@@ -240,7 +244,7 @@ class IWLayer(tf.keras.layers.Layer):
         *args: List[Any],
         **kwargs: Dict[str, Any]
     ) -> KG:
-        K = self.kernel_gram(K)
+        K = self.kernel_gram(K, full_cov=kwargs.get("full_cov"))
 
         dKii = self.delta * K.ii
         dKit = self.delta * K.it
@@ -274,16 +278,16 @@ class IWLayer(tf.keras.layers.Layer):
         inv_Kii_kit: TensorType,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         dktti = dktt - tf.reduce_sum(dKit * inv_Kii_kit, -2)
-        alpha = (self.delta + self.P + tf.shape(dktt)[-1] + 1)/2
+        alpha = (self.delta + self.P + tf.cast(tf.shape(dktt)[-1], default_float()) + 1)/2
         Ptt = tfp.distributions.Gamma(alpha, dktti/2)
-        gtti = 1/Ptt.sample([])
+        gtti = tf.math.reciprocal(Ptt.sample([]))
 
         chol_dKii = tf.linalg.cholesky(dKii)
         inv_Gii_git = inv_Kii_kit + tf.linalg.triangular_solve(
             tf.linalg.adjoint(chol_dKii),
-            tf.random.normal([*tf.shape(dKit)], dtype=default_float()),
-            upper=True
-        ) + tf.sqrt(gtti)[:, None, :]
+            tf.random.normal(tf.shape(dKit), dtype=default_float()),
+            lower=False
+        ) * tf.sqrt(gtti)[:, None, :]
         git = Gii @ inv_Gii_git
 
         gtt = gtti + tf.reduce_sum(git * inv_Gii_git, -2)
@@ -299,13 +303,17 @@ class IWLayer(tf.keras.layers.Layer):
         inv_Kii_kit: TensorType,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         dKtti = dKtt - tf.linalg.matmul(dKit, inv_Kii_kit, transpose_a=True)
-        nu = self.delta + self.P + tf.shape(dKtt)[-1] + 1
+        nu = self.delta + self.P + tf.cast(tf.shape(dKtt)[-1], default_float()) + 1
         Ptti = InverseWishart(dKtti, nu)
         Gtti_sample = Ptti.rsample([])
-        Gtti = Gtti_sample + default_jitter()*tf.eye(tf.shape(Gtti_sample)[-1], dtype=default_float())
+        Gtti = Gtti_sample + default_jitter()*tf.reduce_max(Gtti_sample)*tf.eye(tf.shape(Gtti_sample)[-1], dtype=default_float())
 
-        inv_Gii_git = inv_Kii_kit + tf.linalg.cholesky(dKii) @ tf.linalg.matmul(tf.random.normal(
-            [*tf.shape(dKit)], dtype=default_float()), tf.linalg.cholesky(Gtti), transpose_b=True)
+        chol_dKii = tf.linalg.cholesky(dKii)
+        inv_Gii_git = inv_Kii_kit + tf.linalg.matmul(tf.linalg.triangular_solve(
+            tf.linalg.adjoint(chol_dKii),
+            tf.random.normal(tf.shape(dKit), dtype=default_float()),
+            lower=False
+        ), tf.linalg.cholesky(Gtti), transpose_b=True)
         Git = Gii @ inv_Gii_git
 
         Gtt = Gtti + tf.linalg.matmul(Git, inv_Gii_git, transpose_a=True)
@@ -347,7 +355,6 @@ class KGIGPLayer(tf.keras.layers.Layer):
 
     def __init__(
         self,
-        input_dim: int,
         num_latent_gps: int,
         num_data: int,
         num_inducing: int,
@@ -391,9 +398,7 @@ class KGIGPLayer(tf.keras.layers.Layer):
         if prec_init <= 0:
             raise ValueError("Precision init must be positive")
 
-        self.kernel_gram = SqExpKernelGram(height=kernel_variance_init, trainable_noise=True)
-
-        self.input_dim = input_dim
+        self.kernel_gram = SqExpKernelGram(height=kernel_variance_init, trainable_noise=False)
 
         self.num_data = num_data
 
@@ -465,7 +470,7 @@ class KGIGPLayer(tf.keras.layers.Layer):
         Sample-based propagation of both inducing points and function values. See Ober & Aitchison
         (2021) for details.
         """
-        inputs = self.kernel_gram(inputs)
+        inputs = self.kernel_gram(inputs, full_cov=kwargs.get("full_cov"))
 
         Kuu = inputs.ii
         Kuf = inputs.it
