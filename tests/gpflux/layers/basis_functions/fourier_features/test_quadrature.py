@@ -62,7 +62,9 @@ def test_throw_for_unsupported_kernel():
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-def test_quadrature_fourier_features_can_approximate_kernel_multidim(kernel_cls, variance, lengthscale, n_dims):
+def test_quadrature_fourier_features_can_approximate_kernel_multidim(
+    kernel_cls, variance, lengthscale, n_dims
+):
 
     n_components = 60
 
@@ -92,7 +94,7 @@ def test_fourier_features_shapes(n_components, n_dims, batch_size):
     feature_functions = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
     output_shape = feature_functions.compute_output_shape(input_shape)
     output_dim = output_shape[-1]
-    assert output_dim == 2*n_components**n_dims
+    assert output_dim == 2 * n_components ** n_dims
     features = feature_functions(tf.ones(shape=input_shape))
     np.testing.assert_equal(features.shape, output_shape)
 
