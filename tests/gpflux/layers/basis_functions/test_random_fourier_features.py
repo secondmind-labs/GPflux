@@ -33,6 +33,11 @@ def _n_dims_fixture(request):
     return request.param
 
 
+@pytest.fixture(name="variance", params=[0.5, 1.0, 2.0])
+def _variance_fixture(request):
+    return request.param
+
+
 @pytest.fixture(name="lengthscale", params=[1e-3, 0.1, 1.0, 5.0])
 def _lengthscale_fixture(request):
     return request.param
@@ -53,7 +58,7 @@ def _kernel_cls_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="random_feature_cls", params=[RandomFourierFeatures, 
+@pytest.fixture(name="random_feature_cls", params=[RandomFourierFeatures,
                                                    RandomFourierFeaturesCosine])
 def _random_feature_cls_fixture(request):
     return request.param
@@ -67,15 +72,15 @@ def test_throw_for_unsupported_kernel(random_feature_cls):
 
 
 def test_fourier_features_can_approximate_kernel_multidim(
-    random_feature_cls, kernel_cls, lengthscale, n_dims
+    random_feature_cls, kernel_cls, variance, lengthscale, n_dims
 ):
-    n_components = 10000
+    n_components = 50000
     x_rows = 20
     y_rows = 30
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    kernel = kernel_cls(lengthscales=lengthscales)
+    kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
     fourier_features = random_feature_cls(kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)

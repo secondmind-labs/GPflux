@@ -72,7 +72,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         """
         Normalizing constant for random Fourier features.
         """
-        return tf.sqrt(2.0 * variance / output_dim)
+        return tf.sqrt(tf.math.truediv(2.0 * variance, output_dim))
 
 
 class RandomFourierFeatures(RandomFourierFeaturesBase):
@@ -119,7 +119,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
         """
         Compute normalizing constant for basis functions.
         """
-        return self.rff_constant(self.kernel.variance, 2 * self.n_components)
+        return self.rff_constant(self.kernel.variance, output_dim=2.0 * self.n_components)
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
@@ -184,4 +184,4 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         """
         Compute normalizing constant for basis functions.
         """
-        return self.rff_constant(self.kernel.variance, self.n_components)
+        return self.rff_constant(self.kernel.variance, output_dim=self.n_components)
