@@ -105,8 +105,8 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
       where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel.
 
     At least for the squared exponential kernel, this variant of the feature
-    mapping has more desirable theoretical properties than its cosine-based
-    counterpart :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
+    mapping has more desirable theoretical properties than its counterpart form 
+    from phase-shifted cosines :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
     """
 
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
@@ -149,7 +149,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
       where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel
     - :math:`\tau \sim \mathcal{U}(0, 2\pi)`
 
-    Equivalent to :class:`RandomFourierFeatures` by elementary trignometric identities.
+    Equivalent to :class:`RandomFourierFeatures` by elementary trigonometric identities.
     """
 
     def build(self, input_shape: ShapeType) -> None:
