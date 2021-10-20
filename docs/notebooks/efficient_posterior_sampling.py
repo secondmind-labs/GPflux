@@ -98,7 +98,7 @@ num_experiment_runs = 4  # number of experiment repetitions (64 in the paper)
 num_input_dimensions = [2, 4, 8]  # number of input dimensions
 train_sample_exponents = [2, 4, 6, 8, 10]  # num_train_samples = 2 ** train_sample_exponents
 num_train_samples = [2 ** train_sample_exponent for train_sample_exponent in train_sample_exponents]
-num_components = [
+num_features = [
     1024,
     4096,
     16384,
@@ -233,7 +233,7 @@ The core method of the notebook conducts an individual experiment for a specifie
 """
 
 # %%
-def conduct_experiment(num_input_dimensions, num_train_samples, num_components):
+def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     """
     Compute the log10 Wassertein distance between the weight space approximated GP and the exact GP,
     and between the hybrid-rule approximated GP and the exact GP.
@@ -247,7 +247,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_components):
     lengthscale = (
         num_input_dimensions / 100.0
     ) ** 0.5  # adjust kernel lengthscale to the number of input dims
-    num_features = num_train_samples + num_components
+    num_features = num_train_samples + num_features
 
     # exact kernel
     exact_kernel = kernel_class(lengthscales=lengthscale)
@@ -255,7 +255,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_components):
     # weight space approximated kernel
     feature_functions = RandomFourierFeaturesCosine(
         kernel=kernel_class(lengthscales=lengthscale),
-        n_components=num_components,
+        n_components=num_features,
         dtype=default_float(),
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())
@@ -327,7 +327,7 @@ This helper function repeats an individual experiment several times and returns 
 """
 
 # %%
-def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples, num_components):
+def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples, num_features):
     """
     Conduct the experiment as specified above `num_experiment_runs` times and identify the quartiles for
     the log10 Wassertein distance between the weight space approximated GP and the exact GP,
@@ -347,7 +347,7 @@ def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples
         log10_ws_dist_weight, log10_ws_dist_hybrid = conduct_experiment(
             num_input_dimensions=num_input_dimensions,
             num_train_samples=num_train_samples,
-            num_components=num_components,
+            num_features=num_features,
         )
         list_of_log10_ws_dist_weight.append(log10_ws_dist_weight)
         list_of_log10_ws_dist_hybrid.append(log10_ws_dist_hybrid)
@@ -363,7 +363,7 @@ Since we conduct different experiments with different training data sizes, we ne
 """
 
 # %%
-def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_components):
+def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_features):
     """
     Conduct the experiment as specified above for different training dataset sizes and store the results in lists.
 
@@ -383,13 +383,13 @@ def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_
         ) = conduct_experiment_for_multiple_runs(
             num_input_dimensions=num_input_dimensions,
             num_train_samples=nts,
-            num_components=num_components,
+            num_features=num_features,
         )
         print(
             "Completed for num input dims = "
             + str(num_input_dimensions)
             + " and feature param = "
-            + str(num_components)
+            + str(num_features)
             + " and num train samples = "
             + str(nts)
         )
@@ -420,9 +420,9 @@ def conduct_experiment_for_different_num_features(num_input_dimensions):
         []
     )  # for the analytic solution using the weight space approximated kernel
     list_of_hybrid_results = []  # for the hybrid-rule approximation
-    for nf in num_components:
+    for nf in num_features:
         weight_results, hybrid_results = conduct_experiment_for_different_train_data_sizes(
-            num_input_dimensions=num_input_dimensions, num_components=nf
+            num_input_dimensions=num_input_dimensions, num_features=nf
         )
         print()
         list_of_weight_results.append(weight_results)
@@ -454,7 +454,7 @@ for i in range(
 
     # plot the results for the analytic solution using the weight space approximated kernel
     colors = ["bisque", "orange", "peru"]
-    assert len(colors) == len(num_components), "Number of colors must equal the number of features!"
+    assert len(colors) == len(num_features), "Number of colors must equal the number of features!"
     for j in range(len(weight_results)):
         weight_result = weight_results[j]
         axs[i].fill_between(
@@ -465,7 +465,7 @@ for i in range(
 
     # plot the results for the hybrid-rule approximation
     colors = ["lightblue", "blue", "darkblue"]
-    assert len(colors) == len(num_components), "Number of colors must equal the number of features!"
+    assert len(colors) == len(num_features), "Number of colors must equal the number of features!"
     for j in range(len(hybrid_results)):
         hybrid_result = hybrid_results[j]
         axs[i].fill_between(
