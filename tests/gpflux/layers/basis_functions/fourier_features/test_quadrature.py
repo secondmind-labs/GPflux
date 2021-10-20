@@ -40,7 +40,7 @@ def _variance_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="lengthscale", params=[0.1, 1.0, 5.0])
+@pytest.fixture(name="lengthscale", params=[0.75, 1.0, 5.0])
 def _lengthscale_fixture(request):
     return request.param
 
@@ -66,12 +66,12 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
     kernel_cls, variance, lengthscale, n_dims
 ):
 
-    n_components = 60
+    n_components = 128
 
     x_rows = 20
     y_rows = 30
     # ARD
-    lengthscales = np.random.rand(n_dims) * lengthscale
+    lengthscales = np.random.uniform(low=0.75, size=n_dims) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
     fourier_features = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
@@ -85,7 +85,7 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
 
     actual_kernel_matrix = kernel.K(x, y)
 
-    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix)
 
 
 def test_fourier_features_shapes(n_components, n_dims, batch_size):
