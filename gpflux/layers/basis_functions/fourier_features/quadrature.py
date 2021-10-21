@@ -20,6 +20,8 @@ from typing import Mapping
 import tensorflow as tf
 
 import gpflow
+import warnings
+
 from gpflow.base import TensorType
 from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights
 
@@ -34,6 +36,9 @@ from gpflux.types import ShapeType
 class QuadratureFourierFeatures(FourierFeaturesBase):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         assert isinstance(kernel, QFF_SUPPORTED_KERNELS), "Unsupported Kernel"
+        if tf.reduce_any(tf.less(kernel.lengthscales, 1e-1)):
+            warnings.warn("Quadrature Fourier feature approximation of kernels "
+                          "with small lengthscale lead to unexpected behaviors!")
         super(QuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
