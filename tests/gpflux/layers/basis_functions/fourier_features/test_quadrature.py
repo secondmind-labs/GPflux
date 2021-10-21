@@ -20,6 +20,8 @@ from tensorflow.python.keras.testing_utils import layer_test
 from tensorflow.python.keras.utils.kernelized_utils import inner_product
 
 import gpflow
+from gpflow.quadrature.gauss_hermite import NDiagGHQuadrature
+from gpflow.utilities.ops import difference_matrix
 
 from gpflux.layers.basis_functions.fourier_features import QuadratureFourierFeatures
 from gpflux.layers.basis_functions.fourier_features.utils import QFF_SUPPORTED_KERNELS
@@ -86,6 +88,44 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
     actual_kernel_matrix = kernel.K(x, y)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix)
+
+
+def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_components):
+    """
+    Verify that the inner product of the feature map yields exactly the same
+    result as the direct Gauss-Hermite quadrature scheme.
+    """
+    x_rows = 20
+    y_rows = 30
+    # ARD
+    lengthscales = np.random.rand(n_dims) * lengthscale
+
+    kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
+    fourier_features = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
+
+    x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
+    y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
+
+    u = fourier_features(x)
+    v = fourier_features(y)
+    K_decomp = inner_product(u, v)
+
+    x_scaled = tf.truediv(x, lengthscales)
+    y_scaled = tf.truediv(y, lengthscales)
+    r = difference_matrix(x_scaled, y_scaled)
+
+    def eigen_func(w):
+        return variance * tf.cos(tf.matmul(r, w, transpose_b=True))
+
+    quadrature = NDiagGHQuadrature(dim=n_dims, n_gh=n_components)
+    K_quadrature = quadrature(
+        eigen_func,
+        mean=tf.zeros((1, 1, n_dims), dtype=tf.float64),
+        var=tf.ones((1, 1, n_dims), dtype=tf.float64),
+    )
+    K_quadrature = tf.squeeze(K_quadrature, axis=-1)
+
+    np.testing.assert_allclose(K_decomp, K_quadrature, atol=1e-15)
 
 
 def test_fourier_features_shapes(n_components, n_dims, batch_size):
