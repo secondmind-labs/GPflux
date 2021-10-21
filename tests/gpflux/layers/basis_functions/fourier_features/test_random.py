@@ -22,6 +22,7 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 import gpflow
 
 from gpflux.layers.basis_functions.fourier_features import (
+    OrthogonalRandomFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
@@ -53,12 +54,15 @@ def _n_features_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="kernel_cls", params=list(RFF_SUPPORTED_KERNELS))
+@pytest.fixture(name="kernel_cls", params=[gpflow.kernels.SquaredExponential])  # list(RFF_SUPPORTED_KERNELS))
 def _kernel_cls_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine])
+@pytest.fixture(
+    name="basis_func_cls",
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, OrthogonalRandomFeatures],
+)
 def _basis_func_cls_fixture(request):
     return request.param
 

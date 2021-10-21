@@ -18,6 +18,7 @@ This module provides a set of common utilities for kernel feature decompositions
 """
 from typing import Tuple, Type
 
+import numpy as np
 import tensorflow as tf
 
 import gpflow
@@ -53,6 +54,21 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
     else:
         raise NotImplementedError("Not a recognized Matern kernel")
     return p
+
+
+def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
+    """
+    Draw samples from Chi-squared distribution with nu degrees of freedom.
+    """
+    return tf.random.gamma(shape=shape, alpha=0.5 * nu, beta=0.5, dtype=dtype)
+
+
+def _sample_chi(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
+    """
+    Draw samples from Chi-distribution with nu degrees of freedom.
+    """
+    s = _sample_chi_squared(nu, shape, dtype)
+    return tf.sqrt(s)
 
 
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
@@ -102,3 +118,7 @@ def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
     """
     proj = tf.matmul(X, W, transpose_b=True)  # [N, M]
     return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]
+
+
+def ceil_divide(a, b):
+    return - np.floor_divide(-a, b)
