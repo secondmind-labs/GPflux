@@ -54,10 +54,16 @@ def _n_features_fixture(request):
     return request.param
 
 
-@pytest.fixture(
-    name="kernel_cls", params=[gpflow.kernels.SquaredExponential]
-)  # list(RFF_SUPPORTED_KERNELS))
+@pytest.fixture(name="kernel_cls", params=list(RFF_SUPPORTED_KERNELS))
 def _kernel_cls_fixture(request):
+    return request.param
+
+
+@pytest.fixture(
+    name="random_basis_func_cls",
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
+)
+def _basis_func_cls_fixture(request):
     return request.param
 
 
@@ -77,7 +83,7 @@ def test_throw_for_unsupported_kernel(basis_func_cls):
 
 
 def test_random_fourier_features_can_approximate_kernel_multidim(
-    basis_func_cls, kernel_cls, variance, lengthscale, n_dims
+    random_basis_func_cls, kernel_cls, variance, lengthscale, n_dims
 ):
     n_components = 40000
 
@@ -87,7 +93,30 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
-    fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
+    fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
+
+    x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
+    y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
+
+    u = fourier_features(x)
+    v = fourier_features(y)
+    approx_kernel_matrix = inner_product(u, v)
+
+    actual_kernel_matrix = kernel.K(x, y)
+
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
+
+
+def test_orthogonal_fourier_features_can_approximate_kernel_multidim(variance, lengthscale, n_dims):
+    n_components = 40000
+
+    x_rows = 20
+    y_rows = 30
+    # ARD
+    lengthscales = np.random.rand((n_dims)) * lengthscale
+
+    kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
+    fourier_features = OrthogonalRandomFeatures(kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)

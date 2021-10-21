@@ -125,6 +125,11 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
 
 class OrthogonalRandomFeatures(RandomFourierFeatures):
+    r"""
+    Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
+    efficient and accurate kernel approximations than random Fourier features.
+    """
+
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         assert isinstance(kernel, gpflow.kernels.SquaredExponential), "Unsupported Kernel"
         super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
