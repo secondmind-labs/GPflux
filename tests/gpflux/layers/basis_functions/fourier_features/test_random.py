@@ -63,7 +63,7 @@ def _kernel_cls_fixture(request):
     name="random_basis_func_cls",
     params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
 )
-def _basis_func_cls_fixture(request):
+def _random_basis_func_cls_fixture(request):
     return request.param
 
 
@@ -107,8 +107,8 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_orthogonal_fourier_features_can_approximate_kernel_multidim(variance, lengthscale, n_dims):
-    n_components = 40000
+def test_orthogonal_random_features_can_approximate_kernel_multidim(variance, lengthscale, n_dims):
+    n_components = 20000
 
     x_rows = 20
     y_rows = 30
