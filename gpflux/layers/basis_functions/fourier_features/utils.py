@@ -120,5 +120,5 @@ def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
     return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]
 
 
-def ceil_divide(a, b):
-    return - np.floor_divide(-a, b)
+def ceil_divide(a: float, b: float) -> int:
+    return -np.floor_divide(-a, b)

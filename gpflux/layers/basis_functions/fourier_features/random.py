@@ -31,7 +31,7 @@ from gpflux.layers.basis_functions.fourier_features.utils import (
     _matern_number,
     _sample_chi,
     _sample_students_t,
-    ceil_divide
+    ceil_divide,
 )
 from gpflux.types import ShapeType
 
@@ -140,7 +140,7 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
         U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [K, D, D]
         V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
 
-        return V[:self.n_components]  # shape [M, D] (throw away K*D - M rows)
+        return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):

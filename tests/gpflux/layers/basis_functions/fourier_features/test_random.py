@@ -54,7 +54,9 @@ def _n_features_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="kernel_cls", params=[gpflow.kernels.SquaredExponential])  # list(RFF_SUPPORTED_KERNELS))
+@pytest.fixture(
+    name="kernel_cls", params=[gpflow.kernels.SquaredExponential]
+)  # list(RFF_SUPPORTED_KERNELS))
 def _kernel_cls_fixture(request):
     return request.param
 
