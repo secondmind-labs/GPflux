@@ -14,11 +14,12 @@
 # limitations under the License.
 #
 """ A kernel's features and coefficients using Random Fourier Features (RFF). """
-
+import warnings
 from typing import Mapping, Optional
 
 import numpy as np
 import tensorflow as tf
+from scipy.stats.qmc import Halton, MultivariateNormalQMC, Sobol
 
 import gpflow
 from gpflow.base import DType, TensorType
@@ -120,6 +121,40 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
         Compute normalizing constant for basis functions.
         """
         return self.rff_constant(self.kernel.variance, output_dim=2 * self.n_components)
+
+
+class QuasiRandomFourierFeatures(RandomFourierFeatures):
+
+    r"""
+    Quasi-random Fourier features (ORF) :cite:p:`yang2014quasi` for more
+    efficient and accurate kernel approximations than random Fourier features.
+    """
+
+    ENGINE_CLASSES = dict(sobol=Sobol, halton=Halton)
+
+    def __init__(
+        self,
+        kernel: gpflow.kernels.Kernel,
+        n_components: int,
+        method: str = "halton",
+        scramble: bool = True,
+        **kwargs: Mapping
+    ):
+        assert isinstance(kernel, gpflow.kernels.SquaredExponential), "Unsupported Kernel"
+        assert method in self.ENGINE_CLASSES, "Quasi Monte Carlo method not recognized"
+        super(QuasiRandomFourierFeatures, self).__init__(kernel, n_components, **kwargs)
+        self.engine_cls = self.ENGINE_CLASSES[method]
+        self.scramble = scramble
+
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+        n_components, input_dim = shape  # M, D
+        if input_dim > 1:
+            engine = self.engine_cls(d=input_dim, scramble=self.scramble)
+        else:
+            warnings.warn("QMC engine option ignored when `input_dim==1` (defaults to `Sobol`)")
+            engine = None
+        sampler = MultivariateNormalQMC(mean=np.zeros(input_dim), engine=engine)
+        return sampler.random(n=n_components)  # shape [M, D]
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):

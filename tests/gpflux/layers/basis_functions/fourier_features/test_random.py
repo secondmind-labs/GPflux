@@ -22,6 +22,7 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 import gpflow
 
 from gpflux.layers.basis_functions.fourier_features import (
+    QuasiRandomFourierFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
@@ -58,7 +59,17 @@ def _kernel_cls_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine])
+@pytest.fixture(
+    name="random_basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine]
+)
+def _random_basis_func_cls_fixture(request):
+    return request.param
+
+
+@pytest.fixture(
+    name="basis_func_cls",
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, QuasiRandomFourierFeatures],
+)
 def _basis_func_cls_fixture(request):
     return request.param
 
@@ -71,7 +82,7 @@ def test_throw_for_unsupported_kernel(basis_func_cls):
 
 
 def test_random_fourier_features_can_approximate_kernel_multidim(
-    basis_func_cls, kernel_cls, variance, lengthscale, n_dims
+    random_basis_func_cls, kernel_cls, variance, lengthscale, n_dims
 ):
     n_components = 40000
 
@@ -81,7 +92,32 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
-    fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
+    fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
+
+    x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
+    y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
+
+    u = fourier_features(x)
+    v = fourier_features(y)
+    approx_kernel_matrix = inner_product(u, v)
+
+    actual_kernel_matrix = kernel.K(x, y)
+
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
+
+
+def test_quasi_random_fourier_features_can_approximate_kernel_multidim(
+    variance, lengthscale, n_dims
+):
+    n_components = 25000
+
+    x_rows = 20
+    y_rows = 30
+    # ARD
+    lengthscales = np.random.rand((n_dims)) * lengthscale
+
+    kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
+    fourier_features = QuasiRandomFourierFeatures(kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
