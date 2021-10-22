@@ -259,20 +259,20 @@ class IWLayer(tf.keras.layers.Layer):
             loss_per_datapoint = tf.constant(0.0, dtype=default_float())
         self.add_loss(loss_per_datapoint)
 
-        chol_Kii = tf.linalg.cholesky(dKii)
-        inv_Kii_kit = tf.linalg.cholesky_solve(chol_Kii, dKit)
+        chol_dKii = tf.linalg.cholesky(dKii)
+        inv_Kii_kit = tf.linalg.cholesky_solve(chol_dKii, dKit)
 
         if kwargs.get("full_cov"):
-            Git, Gtt = self.sample_conditional_full(Gii, dKii, dKit, dKtt, inv_Kii_kit)
+            Git, Gtt = self.sample_conditional_full(Gii, chol_dKii, dKit, dKtt, inv_Kii_kit)
         else:
-            Git, Gtt = self.sample_conditional_marginal(Gii, dKii, dKit, dKtt, inv_Kii_kit)
+            Git, Gtt = self.sample_conditional_marginal(Gii, chol_dKii, dKit, dKtt, inv_Kii_kit)
 
         return KG(Gii, Git, Gtt)
 
     def sample_conditional_marginal(
         self,
         Gii: TensorType,
-        dKii: TensorType,
+        chol_dKii: TensorType,
         dKit: TensorType,
         dktt: TensorType,
         inv_Kii_kit: TensorType,
@@ -282,7 +282,6 @@ class IWLayer(tf.keras.layers.Layer):
         Ptt = tfp.distributions.Gamma(alpha, dktti/2)
         gtti = tf.math.reciprocal(Ptt.sample([]))
 
-        chol_dKii = tf.linalg.cholesky(dKii)
         inv_Gii_git = inv_Kii_kit + tf.linalg.triangular_solve(
             tf.linalg.adjoint(chol_dKii),
             tf.random.normal(tf.shape(dKit), dtype=default_float()),
@@ -297,10 +296,10 @@ class IWLayer(tf.keras.layers.Layer):
     def sample_conditional_full(
         self,
         Gii: TensorType,
-        dKii: TensorType,
+        chol_dKii: TensorType,
         dKit: TensorType,
         dKtt: TensorType,
-        inv_Kii_kit: TensorType,
+        inv_Kii_kit: TensorType
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         dKtti = dKtt - tf.linalg.matmul(dKit, inv_Kii_kit, transpose_a=True)
         nu = self.delta + self.P + tf.cast(tf.shape(dKtt)[-1], default_float()) + 1
@@ -308,7 +307,6 @@ class IWLayer(tf.keras.layers.Layer):
         Gtti_sample = Ptti.rsample([])
         Gtti = Gtti_sample + default_jitter()*tf.reduce_max(Gtti_sample)*tf.eye(tf.shape(Gtti_sample)[-1], dtype=default_float())
 
-        chol_dKii = tf.linalg.cholesky(dKii)
         inv_Gii_git = inv_Kii_kit + tf.linalg.matmul(tf.linalg.triangular_solve(
             tf.linalg.adjoint(chol_dKii),
             tf.random.normal(tf.shape(dKit), dtype=default_float()),
@@ -405,6 +403,8 @@ class KGIGPLayer(tf.keras.layers.Layer):
         self.verbose = verbose
 
         self.num_latent_gps = num_latent_gps
+
+        self.mean_function = gpflow.mean_functions.Zero()
 
         self.num_inducing = num_inducing
 
@@ -506,7 +506,10 @@ class KGIGPLayer(tf.keras.layers.Layer):
             axis=-2
         )
 
-        return all_samples
+        if not isinstance(self.mean_function, gpflow.mean_functions.Zero):
+            return all_samples + self.mean_function.c
+        else:
+            return all_samples
 
     def sample_u(
         self,
