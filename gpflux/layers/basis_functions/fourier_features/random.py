@@ -151,6 +151,9 @@ class QuasiRandomFourierFeatures(RandomFourierFeatures):
         if input_dim > 1:
             engine = self.engine_cls(d=input_dim, scramble=self.scramble)
         else:
+            # When `input_dim==1`, specifying an engine will erroneously throw
+            # exception.
+            # Can remove once issue https://github.com/scipy/scipy/issues/14904 is resolved.
             warnings.warn("QMC engine option ignored when `input_dim==1` (defaults to `Sobol`)")
             engine = None
         sampler = MultivariateNormalQMC(mean=np.zeros(input_dim), engine=engine)
