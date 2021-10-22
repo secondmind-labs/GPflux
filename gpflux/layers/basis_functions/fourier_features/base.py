@@ -29,13 +29,13 @@ from gpflux.types import ShapeType
 class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         """
-        :param kernel: kernel to approximate using a set of random features.
-        :param output_dim: total number of basis functions used to approximate
-            the kernel.
+        :param kernel: kernel to approximate using a set of Fourier bases.
+        :param n_components: number of components (e.g. Monte Carlo samples, 
+            quadrature nodes, etc.) used to numerically approximate the kernel.
         """
         super(FourierFeaturesBase, self).__init__(**kwargs)
         self.kernel = kernel
-        self.n_components = n_components  # M: number of Monte Carlo samples
+        self.n_components = n_components
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
             self.build(tf.TensorShape([self._input_dim]))

@@ -77,6 +77,8 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
     x_rows = 20
     y_rows = 30
     # ARD
+
+    # small lengthscales can lead to large errors in this approximation
     lengthscales = np.random.uniform(low=0.75, size=n_dims) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)

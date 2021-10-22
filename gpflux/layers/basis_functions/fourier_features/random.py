@@ -113,11 +113,18 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
         return 2 * self.n_components
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Compute basis functions.
+
+        :return: A tensor with the shape ``[N, 2M]``.
+        """
         return _bases_concat(inputs, self.W)
 
     def _compute_constant(self) -> tf.Tensor:
         """
         Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return self.rff_constant(self.kernel.variance, output_dim=2 * self.n_components)
 
@@ -178,10 +185,17 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         return self.n_components
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Compute basis functions.
+
+        :return: A tensor with the shape ``[N, M]``.
+        """
         return _bases_cosine(inputs, self.W, self.b)
 
     def _compute_constant(self) -> tf.Tensor:
         """
         Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return self.rff_constant(self.kernel.variance, output_dim=self.n_components)
