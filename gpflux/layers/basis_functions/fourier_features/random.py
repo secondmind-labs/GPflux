@@ -15,6 +15,7 @@
 #
 """ A kernel's features and coefficients using Random Fourier Features (RFF). """
 import warnings
+
 from typing import Mapping, Optional
 
 import numpy as np
@@ -26,10 +27,13 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
 from gpflux.layers.basis_functions.fourier_features.utils import (
+    ORF_SUPPORTED_KERNELS,
     RFF_SUPPORTED_KERNELS,
     _bases_concat,
     _bases_cosine,
+    _ceil_divide,
     _matern_number,
+    _sample_chi,
     _sample_students_t,
 )
 from gpflux.types import ShapeType
@@ -114,50 +118,20 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
         return 2 * self.n_components
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Compute basis functions.
+
+        :return: A tensor with the shape ``[N, 2M]``.
+        """
         return _bases_concat(inputs, self.W)
 
     def _compute_constant(self) -> tf.Tensor:
         """
         Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return self.rff_constant(self.kernel.variance, output_dim=2 * self.n_components)
-
-
-class QuasiRandomFourierFeatures(RandomFourierFeatures):
-
-    r"""
-    Quasi-random Fourier features (ORF) :cite:p:`yang2014quasi` for more
-    efficient and accurate kernel approximations than random Fourier features.
-    """
-
-    ENGINE_CLASSES = dict(sobol=Sobol, halton=Halton)
-
-    def __init__(
-        self,
-        kernel: gpflow.kernels.Kernel,
-        n_components: int,
-        method: str = "halton",
-        scramble: bool = True,
-        **kwargs: Mapping
-    ):
-        assert isinstance(kernel, gpflow.kernels.SquaredExponential), "Unsupported Kernel"
-        assert method in self.ENGINE_CLASSES, "Quasi Monte Carlo method not recognized"
-        super(QuasiRandomFourierFeatures, self).__init__(kernel, n_components, **kwargs)
-        self.engine_cls = self.ENGINE_CLASSES[method]
-        self.scramble = scramble
-
-    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        n_components, input_dim = shape  # M, D
-        if input_dim > 1:
-            engine = self.engine_cls(d=input_dim, scramble=self.scramble)
-        else:
-            # When `input_dim==1`, specifying an engine will erroneously throw
-            # exception.
-            # Can remove once issue https://github.com/scipy/scipy/issues/14904 is resolved.
-            warnings.warn("QMC engine option ignored when `input_dim==1` (defaults to `Sobol`)")
-            engine = None
-        sampler = MultivariateNormalQMC(mean=np.zeros(input_dim), engine=engine)
-        return sampler.random(n=n_components)  # shape [M, D]
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
@@ -216,10 +190,78 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         return self.n_components
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Compute basis functions.
+
+        :return: A tensor with the shape ``[N, M]``.
+        """
         return _bases_cosine(inputs, self.W, self.b)
 
     def _compute_constant(self) -> tf.Tensor:
         """
         Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return self.rff_constant(self.kernel.variance, output_dim=self.n_components)
+
+
+class QuasiRandomFourierFeatures(RandomFourierFeatures):
+
+    r"""
+    Quasi-random Fourier features (ORF) :cite:p:`yang2014quasi` for more
+    efficient and accurate kernel approximations than random Fourier features.
+    """
+
+    ENGINE_CLASSES = dict(sobol=Sobol, halton=Halton)
+
+    def __init__(
+        self,
+        kernel: gpflow.kernels.Kernel,
+        n_components: int,
+        method: str = "halton",
+        scramble: bool = True,
+        **kwargs: Mapping
+    ):
+        assert isinstance(kernel, gpflow.kernels.SquaredExponential), "Unsupported Kernel"
+        assert method in self.ENGINE_CLASSES, "Quasi Monte Carlo method not recognized"
+        super(QuasiRandomFourierFeatures, self).__init__(kernel, n_components, **kwargs)
+        self.engine_cls = self.ENGINE_CLASSES[method]
+        self.scramble = scramble
+
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+        n_components, input_dim = shape  # M, D
+        if input_dim > 1:
+            engine = self.engine_cls(d=input_dim, scramble=self.scramble)
+        else:
+            # When `input_dim==1`, specifying an engine will erroneously throw
+            # exception.
+            # Can remove once issue https://github.com/scipy/scipy/issues/14904 is resolved.
+            warnings.warn("QMC engine option ignored when `input_dim==1` (defaults to `Sobol`)")
+            engine = None
+        sampler = MultivariateNormalQMC(mean=np.zeros(input_dim), engine=engine)
+        return sampler.random(n=n_components)  # shape [M, D]
+
+
+class OrthogonalRandomFeatures(RandomFourierFeatures):
+    r"""
+    Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
+    efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
+    """
+
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+        assert isinstance(kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
+        super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
+
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+        n_components, input_dim = shape  # M, D
+        n_reps = _ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
+
+        W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
+        Q, _ = tf.linalg.qr(W)  # throw away R; shape [K, D, D]
+
+        s = _sample_chi(nu=input_dim, shape=(n_reps, input_dim), dtype=dtype)  # shape [K, D]
+        U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [K, D, D]
+        V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
+
+        return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)

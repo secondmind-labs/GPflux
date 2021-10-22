@@ -22,9 +22,10 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 import gpflow
 
 from gpflux.layers.basis_functions.fourier_features import (
-    QuasiRandomFourierFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
+    QuasiRandomFourierFeatures,
+    OrthogonalRandomFeatures,
 )
 from gpflux.layers.basis_functions.fourier_features.utils import RFF_SUPPORTED_KERNELS
 
@@ -60,7 +61,8 @@ def _kernel_cls_fixture(request):
 
 
 @pytest.fixture(
-    name="random_basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine]
+    name="random_basis_func_cls",
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
 )
 def _random_basis_func_cls_fixture(request):
     return request.param
@@ -68,7 +70,7 @@ def _random_basis_func_cls_fixture(request):
 
 @pytest.fixture(
     name="basis_func_cls",
-    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, QuasiRandomFourierFeatures],
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, QuasiRandomFourierFeatures, OrthogonalRandomFeatures],
 )
 def _basis_func_cls_fixture(request):
     return request.param
@@ -106,9 +108,7 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_quasi_random_fourier_features_can_approximate_kernel_multidim(
-    variance, lengthscale, n_dims
-):
+def test_orthogonal_random_features_can_approximate_kernel_multidim(variance, lengthscale, n_dims):
     n_components = 25000
 
     x_rows = 20
@@ -117,7 +117,7 @@ def test_quasi_random_fourier_features_can_approximate_kernel_multidim(
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
     kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
-    fourier_features = QuasiRandomFourierFeatures(kernel, n_components, dtype=tf.float64)
+    fourier_features = OrthogonalRandomFeatures(kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)

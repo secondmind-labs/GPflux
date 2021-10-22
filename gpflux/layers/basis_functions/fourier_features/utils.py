@@ -18,6 +18,7 @@ This module provides a set of common utilities for kernel feature decompositions
 """
 from typing import Tuple, Type
 
+import numpy as np
 import tensorflow as tf
 
 import gpflow
@@ -25,7 +26,26 @@ from gpflow.base import DType, TensorType
 
 from gpflux.types import ShapeType
 
+"""
+Kernels supported by :class:`QuadratureFourierFeatures`.
+
+Currently we only support the :class:`gpflow.kernels.SquaredExponential` kernel.
+For Matern kernels please use :class:`RandomFourierFeatures`
+or :class:`RandomFourierFeaturesCosine`.
+"""
 QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+    gpflow.kernels.SquaredExponential,
+)
+
+"""
+Kernels supported by :class:`OrthogonalRandomFeatures`.
+
+This random matrix sampling scheme only applies to the :class:`gpflow.kernels.SquaredExponential`
+kernel.
+For Matern kernels please use :class:`RandomFourierFeatures`
+or :class:`RandomFourierFeaturesCosine`.
+"""
+ORF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
 )
 
@@ -53,6 +73,24 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
     else:
         raise NotImplementedError("Not a recognized Matern kernel")
     return p
+
+
+def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
+    """
+    Draw samples from Chi-squared distribution with `nu` degrees of freedom.
+
+    See https://mathworld.wolfram.com/Chi-SquaredDistribution.html for further
+    details regarding relationship to Gamma distribution.
+    """
+    return tf.random.gamma(shape=shape, alpha=0.5 * nu, beta=0.5, dtype=dtype)
+
+
+def _sample_chi(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
+    """
+    Draw samples from Chi-distribution with `nu` degrees of freedom.
+    """
+    s = _sample_chi_squared(nu, shape, dtype)
+    return tf.sqrt(s)
 
 
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
@@ -102,3 +140,10 @@ def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
     """
     proj = tf.matmul(X, W, transpose_b=True)  # [N, M]
     return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]
+
+
+def _ceil_divide(a: float, b: float) -> int:
+    """
+    Ceiling division. Returns the smallest integer `m` s.t. `m*b >= a`.
+    """
+    return -np.floor_divide(-a, b)
