@@ -64,7 +64,7 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
 
 def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
-    Draw samples from Chi-squared distribution with nu degrees of freedom.
+    Draw samples from Chi-squared distribution with `nu` degrees of freedom.
     """
     return tf.random.gamma(shape=shape, alpha=0.5 * nu, beta=0.5, dtype=dtype)
 
