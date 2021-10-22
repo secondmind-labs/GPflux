@@ -25,10 +25,13 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
 from gpflux.layers.basis_functions.fourier_features.utils import (
+    ORF_SUPPORTED_KERNELS,
     RFF_SUPPORTED_KERNELS,
     _bases_concat,
     _bases_cosine,
+    _ceil_divide,
     _matern_number,
+    _sample_chi,
     _sample_students_t,
 )
 from gpflux.types import ShapeType
@@ -199,3 +202,27 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return self.rff_constant(self.kernel.variance, output_dim=self.n_components)
+
+
+class OrthogonalRandomFeatures(RandomFourierFeatures):
+    r"""
+    Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
+    efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
+    """
+
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+        assert isinstance(kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
+        super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
+
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+        n_components, input_dim = shape  # M, D
+        n_reps = _ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
+
+        W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
+        Q, _ = tf.linalg.qr(W)  # throw away R; shape [K, D, D]
+
+        s = _sample_chi(nu=input_dim, shape=(n_reps, input_dim), dtype=dtype)  # shape [K, D]
+        U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [K, D, D]
+        V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
+
+        return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)

@@ -99,7 +99,7 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
 def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_components):
     """
     Verify that the inner product of the feature map yields exactly the same
-    result as the direct Gauss-Hermite quadrature scheme.
+    result as that of the direct Gauss-Hermite quadrature scheme.
     """
     x_rows = 20
     y_rows = 30

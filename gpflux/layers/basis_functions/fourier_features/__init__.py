@@ -20,8 +20,14 @@ A kernel's features for efficient sampling, used by
 
 from gpflux.layers.basis_functions.fourier_features.quadrature import QuadratureFourierFeatures
 from gpflux.layers.basis_functions.fourier_features.random import (
+    OrthogonalRandomFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
 
-__all__ = ["QuadratureFourierFeatures", "RandomFourierFeatures", "RandomFourierFeaturesCosine"]
+__all__ = [
+    "QuadratureFourierFeatures",
+    "OrthogonalRandomFeatures",
+    "RandomFourierFeatures",
+    "RandomFourierFeaturesCosine",
+]
