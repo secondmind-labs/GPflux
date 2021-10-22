@@ -21,11 +21,11 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 
 import gpflow
 
-from gpflux.layers.basis_functions.random_fourier_features import (
-    RFF_SUPPORTED_KERNELS,
+from gpflux.layers.basis_functions.fourier_features import (
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
+from gpflux.layers.basis_functions.fourier_features.utils import RFF_SUPPORTED_KERNELS
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])
@@ -33,7 +33,12 @@ def _n_dims_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="lengthscale", params=[1e-3, 0.1, 1.0, 5.0])
+@pytest.fixture(name="variance", params=[0.5, 1.0, 2.0])
+def _variance_fixture(request):
+    return request.param
+
+
+@pytest.fixture(name="lengthscale", params=[0.1, 1.0, 5.0])
 def _lengthscale_fixture(request):
     return request.param
 
@@ -43,48 +48,40 @@ def _batch_size_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="n_features", params=[2, 4, 16, 128])
+@pytest.fixture(name="n_components", params=[1, 2, 4, 20, 100])
 def _n_features_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="kernel_class", params=list(RFF_SUPPORTED_KERNELS))
-def _kernel_class_fixture(request):
+@pytest.fixture(name="kernel_cls", params=list(RFF_SUPPORTED_KERNELS))
+def _kernel_cls_fixture(request):
     return request.param
 
 
-@pytest.fixture(
-    name="random_feature_class", params=[RandomFourierFeatures, RandomFourierFeaturesCosine]
-)
-def _random_feature_class_fixture(request):
+@pytest.fixture(name="basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine])
+def _basis_func_cls_fixture(request):
     return request.param
 
 
-def test_throw_for_odd_num_features():
+def test_throw_for_unsupported_kernel(basis_func_cls):
     kernel = gpflow.kernels.Constant()
     with pytest.raises(AssertionError) as excinfo:
-        RandomFourierFeatures(kernel, output_dim=3)
-    assert "must specify an even number of random features" in str(excinfo.value)
-
-
-def test_throw_for_unsupported_kernel(random_feature_class):
-    kernel = gpflow.kernels.Constant()
-    with pytest.raises(AssertionError) as excinfo:
-        random_feature_class(kernel, output_dim=2)
+        basis_func_cls(kernel, n_components=1)
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-def test_fourier_features_can_approximate_kernel_multidim(
-    random_feature_class, kernel_class, lengthscale, n_dims
+def test_random_fourier_features_can_approximate_kernel_multidim(
+    basis_func_cls, kernel_cls, variance, lengthscale, n_dims
 ):
-    n_features = 10000
+    n_components = 40000
+
     x_rows = 20
     y_rows = 30
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    kernel = kernel_class(lengthscales=lengthscales)
-    fourier_features = random_feature_class(kernel, n_features, dtype=tf.float64)
+    kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
+    fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -98,26 +95,18 @@ def test_fourier_features_can_approximate_kernel_multidim(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_fourier_features_shapes(random_feature_class, n_features, n_dims, batch_size):
-    kernel = gpflow.kernels.SquaredExponential()
-    fourier_features = random_feature_class(kernel, n_features, dtype=tf.float64)
-    features = fourier_features(tf.ones(shape=(batch_size, n_dims)))
-
-    np.testing.assert_equal(features.shape, [batch_size, n_features])
-
-
-def test_fourier_feature_layer_compute_covariance_of_inducing_variables(
-    random_feature_class, batch_size
+def test_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
+    basis_func_cls, batch_size
 ):
     """
     Ensure that the random fourier feature map can be used to approximate the covariance matrix
     between the inducing point vectors of a sparse GP, with the condition that the number of latent
     GP models is greater than one.
     """
-    n_features = 10000
+    n_components = 10000
 
     kernel = gpflow.kernels.SquaredExponential()
-    fourier_features = random_feature_class(kernel, n_features, dtype=tf.float64)
+    fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
 
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
@@ -129,15 +118,24 @@ def test_fourier_feature_layer_compute_covariance_of_inducing_variables(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
-    kernel = kernel_class()
+def test_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_size):
+    input_shape = (batch_size, n_dims)
+    kernel = gpflow.kernels.SquaredExponential()
+    feature_functions = basis_func_cls(kernel, n_components, dtype=tf.float64)
+    output_shape = feature_functions.compute_output_shape(input_shape)
+    features = feature_functions(tf.ones(shape=input_shape))
+    np.testing.assert_equal(features.shape, output_shape)
+
+
+def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
+    kernel = kernel_cls()
 
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
         kwargs={
             "kernel": kernel,
-            "output_dim": n_features,
+            "n_components": n_components,
             "input_dim": 1,
             "dtype": "float64",
             "dynamic": True,
@@ -147,15 +145,15 @@ def test_keras_testing_util_layer_test_1D(kernel_class, batch_size, n_features):
     )
 
 
-def test_keras_testing_util_layer_test_multidim(kernel_class, batch_size, n_dims, n_features):
-    kernel = kernel_class()
+def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, n_components):
+    kernel = kernel_cls()
 
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
         kwargs={
             "kernel": kernel,
-            "output_dim": n_features,
+            "n_components": n_components,
             "input_dim": n_dims,
             "dtype": "float64",
             "dynamic": True,
