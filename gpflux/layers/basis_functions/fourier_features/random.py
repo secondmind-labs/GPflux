@@ -134,7 +134,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 class OrthogonalRandomFeatures(RandomFourierFeatures):
     r"""
     Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
-    efficient and accurate kernel approximations than random Fourier features.
+    efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
     """
 
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
