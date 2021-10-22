@@ -71,7 +71,7 @@ def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType
 
 def _sample_chi(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
-    Draw samples from Chi-distribution with nu degrees of freedom.
+    Draw samples from Chi-distribution with `nu` degrees of freedom.
     """
     s = _sample_chi_squared(nu, shape, dtype)
     return tf.sqrt(s)
