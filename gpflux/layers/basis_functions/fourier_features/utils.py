@@ -30,7 +30,8 @@ from gpflux.types import ShapeType
 Kernels supported by :class:`QuadratureFourierFeatures`.
 
 Currently we only support the :class:`gpflow.kernels.SquaredExponential` kernel.
-For Matern kernels please use :class:`RandomFourierFeatures` or :class:`RandomFourierFeaturesCosine`.
+For Matern kernels please use :class:`RandomFourierFeatures`
+or :class:`RandomFourierFeaturesCosine`.
 """
 QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
@@ -39,8 +40,10 @@ QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
 """
 Kernels supported by :class:`OrthogonalRandomFeatures`.
 
-This random matrix sampling scheme only applies to the :class:`gpflow.kernels.SquaredExponential` kernel.
-For Matern kernels please use :class:`RandomFourierFeatures` or :class:`RandomFourierFeaturesCosine`.
+This random matrix sampling scheme only applies to the :class:`gpflow.kernels.SquaredExponential`
+kernel.
+For Matern kernels please use :class:`RandomFourierFeatures`
+or :class:`RandomFourierFeaturesCosine`.
 """
 ORF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
@@ -76,7 +79,7 @@ def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType
     """
     Draw samples from Chi-squared distribution with `nu` degrees of freedom.
 
-    See https://mathworld.wolfram.com/Chi-SquaredDistribution.html for further 
+    See https://mathworld.wolfram.com/Chi-SquaredDistribution.html for further
     details regarding relationship to Gamma distribution.
     """
     return tf.random.gamma(shape=shape, alpha=0.5 * nu, beta=0.5, dtype=dtype)

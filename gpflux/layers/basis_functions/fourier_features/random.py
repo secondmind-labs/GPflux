@@ -25,14 +25,14 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
 from gpflux.layers.basis_functions.fourier_features.utils import (
-    RFF_SUPPORTED_KERNELS,
     ORF_SUPPORTED_KERNELS,
+    RFF_SUPPORTED_KERNELS,
     _bases_concat,
     _bases_cosine,
+    _ceil_divide,
     _matern_number,
     _sample_chi,
     _sample_students_t,
-    _ceil_divide,
 )
 from gpflux.types import ShapeType
 
