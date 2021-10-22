@@ -68,6 +68,10 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
     kernel_cls, variance, lengthscale, n_dims
 ):
 
+    """
+    Compare finite feature approximation to analytical kernel expression.
+    Approximation only holds for large enough lengthscales, as explained in TODO: notebook.
+    """
     n_components = 128
 
     x_rows = 20
