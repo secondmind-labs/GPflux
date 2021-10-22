@@ -177,7 +177,7 @@ class GIGPLayer(tf.keras.layers.Layer):
         )  # [num_latent_gps, num_inducing, num_inducing]
 
         self.L_scale = Parameter(
-            np.sqrt(prec_init)*np.ones((self.num_latent_gps, 1, 1)),
+            np.sqrt(self.kernel.variance.numpy()*prec_init)*np.ones((self.num_latent_gps, 1, 1)),
             transform=positive(),
             dtype=default_float(),
             name=f"{self.name}_L_scale" if self.name else "L_scale"
