@@ -30,9 +30,19 @@ from gpflux.types import ShapeType
 Kernels supported by :class:`QuadratureFourierFeatures`.
 
 Currently we only support the :class:`gpflow.kernels.SquaredExponential` kernel.
-For Matern kernels use :class:`RandomFourierFeatures`.
+For Matern kernels please use :class:`RandomFourierFeatures` or :class:`RandomFourierFeaturesCosine`.
 """
 QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+    gpflow.kernels.SquaredExponential,
+)
+
+"""
+Kernels supported by :class:`OrthogonalRandomFeatures`.
+
+This random matrix sampling scheme only applies to the :class:`gpflow.kernels.SquaredExponential` kernel.
+For Matern kernels please use :class:`RandomFourierFeatures` or :class:`RandomFourierFeaturesCosine`.
+"""
+ORF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
 )
 
@@ -65,6 +75,9 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
 def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
     Draw samples from Chi-squared distribution with `nu` degrees of freedom.
+
+    See https://mathworld.wolfram.com/Chi-SquaredDistribution.html for further 
+    details regarding relationship to Gamma distribution.
     """
     return tf.random.gamma(shape=shape, alpha=0.5 * nu, beta=0.5, dtype=dtype)
 
@@ -126,5 +139,8 @@ def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
     return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]
 
 
-def ceil_divide(a: float, b: float) -> int:
+def _ceil_divide(a: float, b: float) -> int:
+    """
+    Ceiling division. Returns the smallest integer `m` s.t. `m*b >= a`.
+    """
     return -np.floor_divide(-a, b)
