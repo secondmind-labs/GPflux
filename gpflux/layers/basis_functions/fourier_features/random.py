@@ -142,7 +142,7 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
         super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        n_components, input_dim = shape  # M
+        n_components, input_dim = shape  # M, D
         n_reps = ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
 
         W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
