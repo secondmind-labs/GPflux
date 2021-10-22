@@ -43,6 +43,7 @@ extensions = [
     "sphinx.ext.viewcode",  # Add a link to the Python source code for classes, functions etc.
     "sphinx.ext.mathjax",  # Render math via Javascript
     "IPython.sphinxext.ipython_console_highlighting",  # syntax-highlighting ipython interactive sessions
+    "manim_directive"
 ]
 
 
