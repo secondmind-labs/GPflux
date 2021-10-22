@@ -64,8 +64,18 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         input_dim = input_shape[-1]
         return 2 * self.n_components ** input_dim
 
-    def _compute_constant(self) -> tf.Tensor:
-        return tf.tile(tf.sqrt(self.kernel.variance * self.factors), multiples=[2])
-
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+        """
+        Compute basis functions.
+
+        :return: A tensor with the shape ``[N, 2M^D]``.
+        """
         return _bases_concat(inputs, self.abscissa)
+
+    def _compute_constant(self) -> tf.Tensor:
+        """
+        Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[2M^D,]``
+        """
+        return tf.tile(tf.sqrt(self.kernel.variance * self.factors), multiples=[2])

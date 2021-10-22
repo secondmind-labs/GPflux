@@ -26,6 +26,12 @@ from gpflow.base import DType, TensorType
 
 from gpflux.types import ShapeType
 
+"""
+Kernels supported by :class:`QuadratureFourierFeatures`.
+
+Currently we only support the :class:`gpflow.kernels.SquaredExponential` kernel.
+For Matern kernels use :class:`RandomFourierFeatures`.
+"""
 QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
 )
