@@ -22,10 +22,10 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 import gpflow
 
 from gpflux.layers.basis_functions.fourier_features import (
+    OrthogonalRandomFeatures,
+    QuasiRandomFourierFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
-    QuasiRandomFourierFeatures,
-    OrthogonalRandomFeatures,
 )
 from gpflux.layers.basis_functions.fourier_features.utils import RFF_SUPPORTED_KERNELS
 
@@ -70,7 +70,12 @@ def _random_basis_func_cls_fixture(request):
 
 @pytest.fixture(
     name="basis_func_cls",
-    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, QuasiRandomFourierFeatures, OrthogonalRandomFeatures],
+    params=[
+        RandomFourierFeatures,
+        RandomFourierFeaturesCosine,
+        QuasiRandomFourierFeatures,
+        OrthogonalRandomFeatures,
+    ],
 )
 def _basis_func_cls_fixture(request):
     return request.param

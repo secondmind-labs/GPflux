@@ -15,7 +15,6 @@
 #
 """ A kernel's features and coefficients using Random Fourier Features (RFF). """
 import warnings
-
 from typing import Mapping, Optional
 
 import numpy as np
