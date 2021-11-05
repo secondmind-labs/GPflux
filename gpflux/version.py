@@ -15,7 +15,4 @@
 #
 """Adds __version__"""
 
-from pathlib import Path
-
-with open(str(Path(__file__).parent.parent / "VERSION"), "r") as file:
-    __version__ = file.read().strip()
+__version__ = "0.2.4"
