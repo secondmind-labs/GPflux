@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from pathlib import Path
 from setuptools import find_namespace_packages, setup
-import gpflux.version
+
 
 requirements = [
     "deprecated",
@@ -16,11 +16,12 @@ requirements = [
 with open("README.md", "r") as file:
     long_description = file.read()
 
-version = gpflux.version.__version__
+with open(Path(__file__).parent / "gpflux" / "version.py", "r") as version_file:
+    exec(version_file.read())
 
 setup(
     name="gpflux",
-    version=version,
+    version=__version__,
     author="Secondmind Labs",
     author_email="gpflux@secondmind.ai",
     long_description=long_description,
