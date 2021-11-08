@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from setuptools import find_namespace_packages, setup
+import gpflux.version
 
 requirements = [
     "deprecated",
@@ -15,8 +16,7 @@ requirements = [
 with open("README.md", "r") as file:
     long_description = file.read()
 
-with open("VERSION", "r") as file:
-    version = file.read().strip()
+version = gpflux.version.__version__
 
 setup(
     name="gpflux",
