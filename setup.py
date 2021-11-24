@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pathlib import Path
-from setuptools import find_namespace_packages, setup
 
+from setuptools import find_namespace_packages, setup
 
 requirements = [
     "deprecated",
