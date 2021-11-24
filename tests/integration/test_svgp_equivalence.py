@@ -33,7 +33,7 @@ tf.keras.backend.set_floatx("float64")
 
 class LogPrior_ELBO_SVGP(gpflow.models.SVGP):
     """
-    SVGP model that takes into account the log_prior into the ELBO
+    SVGP model that takes into account the log_prior in the ELBO
     """
     def elbo(self, data: RegressionData) -> tf.Tensor:
         loss_prior = tf.add_n(
