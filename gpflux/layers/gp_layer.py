@@ -284,9 +284,7 @@ class GPLayer(tfp.layers.DistributionLambda):
         outputs = super().call(inputs, *args, **kwargs)
 
         if kwargs.get("training"):
-            log_prior = tf.add_n(
-                [p.log_prior_density() for p in self.kernel.trainable_parameters]
-            )
+            log_prior = tf.add_n([p.log_prior_density() for p in self.kernel.trainable_parameters])
             loss = self.prior_kl() - log_prior
             loss_per_datapoint = loss / self.num_data
 

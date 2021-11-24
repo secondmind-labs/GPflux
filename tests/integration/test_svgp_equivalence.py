@@ -23,8 +23,8 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import Parameter
-from gpflow.utilities import positive, to_default_float
 from gpflow.models.model import RegressionData
+from gpflow.utilities import positive, to_default_float
 
 import gpflux
 
@@ -35,10 +35,9 @@ class LogPrior_ELBO_SVGP(gpflow.models.SVGP):
     """
     SVGP model that takes into account the log_prior in the ELBO
     """
+
     def elbo(self, data: RegressionData) -> tf.Tensor:
-        loss_prior = tf.add_n(
-            [p.log_prior_density() for p in self.trainable_parameters]
-        )
+        loss_prior = tf.add_n([p.log_prior_density() for p in self.trainable_parameters])
         return super().elbo(data) + loss_prior
 
 
@@ -63,7 +62,9 @@ def make_dataset(data, as_dict=True):
 
 def make_kernel_likelihood_iv():
     kernel = gpflow.kernels.SquaredExponential(variance=0.7, lengthscales=0.6)
-    kernel.lengthscales.prior = tfp.distributions.LogNormal(to_default_float(1.0), to_default_float(0.5))
+    kernel.lengthscales.prior = tfp.distributions.LogNormal(
+        to_default_float(1.0), to_default_float(0.5)
+    )
     likelihood = gpflow.likelihoods.Gaussian(variance=0.08)
     Z = np.linspace(0, 6, 20)[:, np.newaxis]
     inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
