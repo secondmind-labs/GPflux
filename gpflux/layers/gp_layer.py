@@ -287,7 +287,7 @@ class GPLayer(tfp.layers.DistributionLambda):
             loss = self.prior_kl() - tf.add_n(
                 [p.log_prior_density() for p in self.kernel.trainable_parameters]
             )
-            loss_per_datapoint = loss / num_data
+            loss_per_datapoint = loss / self.num_data
 
         else:
             # TF quirk: add_loss must always add a tensor to compile
