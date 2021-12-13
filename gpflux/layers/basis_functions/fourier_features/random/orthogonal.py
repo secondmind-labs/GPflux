@@ -23,7 +23,6 @@ import gpflow
 from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.random.base import RandomFourierFeatures
-from gpflux.layers.basis_functions.fourier_features.utils import _ceil_divide
 from gpflux.types import ShapeType
 
 """

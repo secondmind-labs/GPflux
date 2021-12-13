@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 """
-Kernel decompositon into features and coefficients based on Gauss-Christoffel 
+Kernel decompositon into features and coefficients based on Gauss-Christoffel
 quadrature aka Gaussian quadrature.
 """
 
@@ -28,10 +28,7 @@ from gpflow.base import TensorType
 from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
-from gpflux.layers.basis_functions.fourier_features.utils import (
-    QFF_SUPPORTED_KERNELS,
-    _bases_concat,
-)
+from gpflux.layers.basis_functions.fourier_features.utils import _bases_concat
 from gpflux.types import ShapeType
 
 """
