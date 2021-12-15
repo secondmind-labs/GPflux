@@ -21,37 +21,43 @@ quadrature aka Gaussian quadrature.
 import warnings
 from typing import Mapping, Tuple, Type
 
+import numpy as np
 import tensorflow as tf
+from scipy.stats import multivariate_normal, multivariate_t
 
 import gpflow
-from gpflow.base import TensorType
-from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights
 
-from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
-from gpflux.layers.basis_functions.fourier_features.utils import _bases_concat
+# from gpflow.config import default_float
+from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights, repeat_as_list, reshape_Z_dZ
+
+from gpflux.layers.basis_functions.fourier_features.quadrature.base import (
+    QuadratureFourierFeatures,
+    TanTransform,
+)
+from gpflux.layers.basis_functions.fourier_features.utils import _matern_number
 from gpflux.types import ShapeType
 
-"""
-Kernels supported by :class:`QuadratureFourierFeatures`.
 
-Currently we only support the :class:`gpflow.kernels.SquaredExponential` kernel.
-For Matern kernels please use :class:`RandomFourierFeatures`
-or :class:`RandomFourierFeaturesCosine`.
-"""
-QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
-    gpflow.kernels.SquaredExponential,
-)
+class GaussianQuadratureFourierFeatures(QuadratureFourierFeatures):
+    pass
 
 
-class QuadratureFourierFeatures(FourierFeaturesBase):
+class GaussHermiteQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
+
+    SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+        gpflow.kernels.SquaredExponential,
+    )
+
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(kernel, QFF_SUPPORTED_KERNELS), "Unsupported Kernel"
+        assert isinstance(
+            kernel, GaussHermiteQuadratureFourierFeatures.SUPPORTED_KERNELS
+        ), "Unsupported Kernel"
         if tf.reduce_any(tf.less(kernel.lengthscales, 1e-1)):
             warnings.warn(
-                "Quadrature Fourier feature approximation of kernels "
+                "Gauss-Hermite Quadrature Fourier feature approximation of kernels "
                 "with small lengthscale lead to unexpected behaviors!"
             )
-        super(QuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
+        super(GaussHermiteQuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
         """
@@ -60,33 +66,69 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
         """
         input_dim = input_shape[-1]
-        abscissa_value, omegas_value = ndgh_points_and_weights(
+        # (L^D, D), (L^D, 1)
+        abscissa_value, factors_value = ndgh_points_and_weights(
             dim=input_dim, n_gh=self.n_components
         )
-        omegas_value = tf.squeeze(omegas_value, axis=-1)
+        factors_value = tf.squeeze(factors_value, axis=-1)  # (L^D,)
 
-        # Quadrature node points
-        self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)  # (M^D, D)
-        # Gauss-Hermite weights
-        self.factors = tf.Variable(initial_value=omegas_value, trainable=False)  # (M^D,)
-        super(QuadratureFourierFeatures, self).build(input_shape)
+        # Gauss-Christoffel nodes (L^D, D)
+        self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)
+        # Gauss-Christoffel weights (L^D,)
+        self.factors = tf.Variable(initial_value=factors_value, trainable=False)
+        super(GaussHermiteQuadratureFourierFeatures, self).build(input_shape)
 
-    def _compute_output_dim(self, input_shape: ShapeType) -> int:
+
+class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
+
+    SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+        gpflow.kernels.SquaredExponential,
+        gpflow.kernels.Matern12,
+        gpflow.kernels.Matern32,
+        gpflow.kernels.Matern52,
+    )
+
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+        assert isinstance(
+            kernel, GaussLegendreQuadratureFourierFeatures.SUPPORTED_KERNELS
+        ), "Unsupported Kernel"
+        super(GaussLegendreQuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
+
+    def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
         input_dim = input_shape[-1]
-        return 2 * self.n_components ** input_dim
 
-    def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
-        """
-        Compute basis functions.
+        if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
+            dist = multivariate_normal(loc=np.zeros(input_dim))
+        else:
+            p = _matern_number(self.kernel)
+            nu = 2.0 * p + 1.0  # degrees of freedom
+            dist = multivariate_t(loc=np.zeros(input_dim), df=nu)
 
-        :return: A tensor with the shape ``[N, 2M^D]``.
-        """
-        return _bases_concat(inputs, self.abscissa)
+        # raw 1-dimensional quadrature nodes and weights (L,) (L,)
+        abscissa_value_flat, factors_value_flat = np.polynomial.legendre.leggauss(
+            deg=self.n_components
+        )
 
-    def _compute_constant(self) -> tf.Tensor:
-        """
-        Compute normalizing constant for basis functions.
+        # transformed 1-dimensional quadrature nodes and weights
+        transform = TanTransform()
+        abscissa_value_flat = transform(abscissa_value_flat)  # (L,)
+        factors_value_flat *= transform.multiplier(abscissa_value_flat)  # (L,)
 
-        :return: A tensor with the shape ``[2M^D,]``
-        """
-        return tf.tile(tf.sqrt(self.kernel.variance * self.factors), multiples=[2])
+        # transformed D-dimensional quadrature nodes and weights
+        abscissa_value_rep = repeat_as_list(abscissa_value_flat, n=input_dim)  # (L, ..., L)
+        factors_value_rep = repeat_as_list(factors_value_flat, n=input_dim)  # (L, ..., L)
+        # (L^D, D), (L^D, 1)
+        abscissa_value, factors_value = reshape_Z_dZ(abscissa_value_rep, factors_value_rep)
+        factors_value *= dist.pdf(abscissa_value)  # (L^D, 1)
+        factors_value = tf.squeeze(factors_value, axis=-1)  # (L^D,)
+
+        # Gauss-Christoffel nodes (L^D, D)
+        self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)
+        # Gauss-Christoffel weights (L^D,)
+        self.factors = tf.Variable(initial_value=factors_value, trainable=False)
+        super(GaussLegendreQuadratureFourierFeatures, self).build(input_shape)
