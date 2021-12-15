@@ -124,9 +124,9 @@ class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
         super(GaussLegendreQuadratureFourierFeatures, self).build(input_shape)
 
 
-class QuadratureFourierFeatures(GaussLegendreQuadratureFourierFeatures):
+class QuadratureFourierFeatures(GaussHermiteQuadratureFourierFeatures):
     """
-    Alias for GaussLegendreQuadratureFourierFeatures.
+    Alias
     """
 
     pass
