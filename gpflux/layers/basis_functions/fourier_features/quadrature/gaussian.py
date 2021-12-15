@@ -103,7 +103,7 @@ class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
         input_dim = input_shape[-1]
 
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
-            dist = multivariate_normal(loc=np.zeros(input_dim))
+            dist = multivariate_normal(mean=np.zeros(input_dim))
         else:
             p = _matern_number(self.kernel)
             nu = 2.0 * p + 1.0  # degrees of freedom
@@ -116,19 +116,28 @@ class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
 
         # transformed 1-dimensional quadrature nodes and weights
         transform = TanTransform()
-        abscissa_value_flat = transform(abscissa_value_flat)  # (L,)
         factors_value_flat *= transform.multiplier(abscissa_value_flat)  # (L,)
+        abscissa_value_flat = transform(abscissa_value_flat)  # (L,)
 
         # transformed D-dimensional quadrature nodes and weights
         abscissa_value_rep = repeat_as_list(abscissa_value_flat, n=input_dim)  # (L, ..., L)
         factors_value_rep = repeat_as_list(factors_value_flat, n=input_dim)  # (L, ..., L)
         # (L^D, D), (L^D, 1)
         abscissa_value, factors_value = reshape_Z_dZ(abscissa_value_rep, factors_value_rep)
-        factors_value *= dist.pdf(abscissa_value)  # (L^D, 1)
+
         factors_value = tf.squeeze(factors_value, axis=-1)  # (L^D,)
+        factors_value *= dist.pdf(abscissa_value)  # (L^D,)
 
         # Gauss-Christoffel nodes (L^D, D)
         self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)
         # Gauss-Christoffel weights (L^D,)
         self.factors = tf.Variable(initial_value=factors_value, trainable=False)
+
         super(GaussLegendreQuadratureFourierFeatures, self).build(input_shape)
+
+
+class QuadratureFourierFeatures(GaussLegendreQuadratureFourierFeatures):
+    """
+    Alias for GaussLegendreQuadratureFourierFeatures.
+    """
+    pass
