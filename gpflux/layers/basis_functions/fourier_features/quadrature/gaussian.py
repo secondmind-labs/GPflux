@@ -34,7 +34,7 @@ from gpflux.layers.basis_functions.fourier_features.quadrature.base import (
     QuadratureFourierFeatures,
     TanTransform,
 )
-from gpflux.layers.basis_functions.fourier_features.utils import _matern_number
+from gpflux.layers.basis_functions.fourier_features.utils import _matern_dof
 from gpflux.types import ShapeType
 
 
@@ -105,8 +105,7 @@ class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             dist = multivariate_normal(mean=np.zeros(input_dim))
         else:
-            p = _matern_number(self.kernel)
-            nu = 2.0 * p + 1.0  # degrees of freedom
+            nu = _matern_dof(self.kernel)  # degrees of freedom
             dist = multivariate_t(loc=np.zeros(input_dim), df=nu)
 
         # raw 1-dimensional quadrature nodes and weights (L,) (L,)
@@ -140,4 +139,5 @@ class QuadratureFourierFeatures(GaussLegendreQuadratureFourierFeatures):
     """
     Alias for GaussLegendreQuadratureFourierFeatures.
     """
+
     pass

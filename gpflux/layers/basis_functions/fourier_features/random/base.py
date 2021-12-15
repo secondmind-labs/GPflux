@@ -25,7 +25,7 @@ from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesB
 from gpflux.layers.basis_functions.fourier_features.utils import (
     _bases_concat,
     _bases_cosine,
-    _matern_number,
+    _matern_dof,
 )
 from gpflux.types import ShapeType
 
@@ -101,8 +101,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, dtype=dtype)
         else:
-            p = _matern_number(self.kernel)
-            nu = 2.0 * p + 1.0  # degrees of freedom
+            nu = _matern_dof(self.kernel)  # degrees of freedom
             return _sample_students_t(nu, shape, dtype)
 
     @staticmethod
