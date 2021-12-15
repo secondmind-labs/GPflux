@@ -79,7 +79,7 @@ def test_throw_for_unsupported_kernel(basis_func_cls):
     kernel = gpflow.kernels.Constant()
     with pytest.raises(AssertionError) as excinfo:
         basis_func_cls(kernel, n_components=1)
-    assert "Unsupported Kernel" in str(excinfo.value)
+    assert "Only the following kernels are supported" in str(excinfo.value)
 
 
 def test_random_fourier_features_can_approximate_kernel_multidim(
