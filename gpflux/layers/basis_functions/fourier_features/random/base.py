@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import Mapping, Optional, Tuple, Type
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
@@ -28,19 +28,6 @@ from gpflux.layers.basis_functions.fourier_features.utils import (
     _matern_dof,
 )
 from gpflux.types import ShapeType
-
-"""
-Kernels supported by :class:`RandomFourierFeatures`.
-
-You can build RFF for shift-invariant stationary kernels from which you can
-sample frequencies from their power spectrum, following Bochner's theorem.
-"""
-RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
-    gpflow.kernels.SquaredExponential,
-    gpflow.kernels.Matern12,
-    gpflow.kernels.Matern32,
-    gpflow.kernels.Matern52,
-)
 
 
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
@@ -73,9 +60,13 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
-        super(RandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
+
+    SUPPORTED_KERNELS = (
+        gpflow.kernels.SquaredExponential,
+        gpflow.kernels.Matern12,
+        gpflow.kernels.Matern32,
+        gpflow.kernels.Matern52,
+    )
 
     def build(self, input_shape: ShapeType) -> None:
         """

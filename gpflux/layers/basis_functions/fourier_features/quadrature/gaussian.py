@@ -19,7 +19,7 @@ quadrature aka Gaussian quadrature.
 """
 
 import warnings
-from typing import Mapping, Tuple, Type
+from typing import Mapping
 
 import numpy as np
 import tensorflow as tf
@@ -31,27 +31,22 @@ import gpflow
 from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights, repeat_as_list, reshape_Z_dZ
 
 from gpflux.layers.basis_functions.fourier_features.quadrature.base import (
-    QuadratureFourierFeatures,
+    QuadratureFourierFeaturesBase,
     TanTransform,
 )
 from gpflux.layers.basis_functions.fourier_features.utils import _matern_dof
 from gpflux.types import ShapeType
 
 
-class GaussianQuadratureFourierFeatures(QuadratureFourierFeatures):
+class GaussianQuadratureFourierFeatures(QuadratureFourierFeaturesBase):
     pass
 
 
 class GaussHermiteQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
 
-    SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
-        gpflow.kernels.SquaredExponential,
-    )
+    SUPPORTED_KERNELS = (gpflow.kernels.SquaredExponential,)
 
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(
-            kernel, GaussHermiteQuadratureFourierFeatures.SUPPORTED_KERNELS
-        ), "Unsupported Kernel"
         if tf.reduce_any(tf.less(kernel.lengthscales, 1e-1)):
             warnings.warn(
                 "Gauss-Hermite Quadrature Fourier feature approximation of kernels "
@@ -81,18 +76,12 @@ class GaussHermiteQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
 
 class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
 
-    SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+    SUPPORTED_KERNELS = (
         gpflow.kernels.SquaredExponential,
         gpflow.kernels.Matern12,
         gpflow.kernels.Matern32,
         gpflow.kernels.Matern52,
     )
-
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(
-            kernel, GaussLegendreQuadratureFourierFeatures.SUPPORTED_KERNELS
-        ), "Unsupported Kernel"
-        super(GaussLegendreQuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
         """

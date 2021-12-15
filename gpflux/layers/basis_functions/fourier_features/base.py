@@ -16,7 +16,7 @@
 """ Shared functionality for stationary kernel basis functions. """
 
 from abc import ABC, abstractmethod
-from typing import Mapping
+from typing import Mapping, Tuple, Type
 
 import tensorflow as tf
 
@@ -27,6 +27,9 @@ from gpflux.types import ShapeType
 
 
 class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
+
+    SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...]
+
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
@@ -34,6 +37,9 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
             quadrature nodes, etc.) used to numerically approximate the kernel.
         """
         super(FourierFeaturesBase, self).__init__(**kwargs)
+        assert isinstance(
+            kernel, self.SUPPORTED_KERNELS
+        ), f"Only the following kernels are supported: {self.SUPPORTED_KERNELS}"
         self.kernel = kernel
         self.n_components = n_components
         if kwargs.get("input_dim", None):
