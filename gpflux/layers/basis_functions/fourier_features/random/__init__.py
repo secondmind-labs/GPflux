@@ -15,8 +15,13 @@
 #
 """ A kernel's features and coefficients using Random Fourier Features (RFF). """
 
-from .base import RandomFourierFeatures, RandomFourierFeaturesCosine
-from .orthogonal import OrthogonalRandomFeatures
+from gpflux.layers.basis_functions.fourier_features.random.base import (
+    RandomFourierFeatures,
+    RandomFourierFeaturesCosine,
+)
+from gpflux.layers.basis_functions.fourier_features.random.orthogonal import (
+    OrthogonalRandomFeatures,
+)
 
 __all__ = [
     "OrthogonalRandomFeatures",
