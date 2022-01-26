@@ -47,12 +47,12 @@ class GaussHermiteQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
     SUPPORTED_KERNELS = (gpflow.kernels.SquaredExponential,)
 
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+        super(GaussHermiteQuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
         if tf.reduce_any(tf.less(kernel.lengthscales, 1e-1)):
             warnings.warn(
                 "Gauss-Hermite Quadrature Fourier feature approximation of kernels "
                 "with small lengthscale lead to unexpected behaviors!"
             )
-        super(GaussHermiteQuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
         """
@@ -126,7 +126,7 @@ class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
 
 class QuadratureFourierFeatures(GaussHermiteQuadratureFourierFeatures):
     """
-    Alias
+    Alias for `GaussHermiteQuadratureFourierFeatures`.
     """
 
     pass
