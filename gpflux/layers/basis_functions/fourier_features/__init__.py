@@ -19,12 +19,13 @@ A kernel's features for efficient sampling, used by
 """
 
 from gpflux.layers.basis_functions.fourier_features.quadrature import (
-    QuadratureFourierFeatures,
     GaussHermiteQuadratureFourierFeatures,
     GaussLegendreQuadratureFourierFeatures,
+    QuadratureFourierFeatures,
 )
 from gpflux.layers.basis_functions.fourier_features.random import (
     OrthogonalRandomFeatures,
+    QuasiRandomFourierFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
