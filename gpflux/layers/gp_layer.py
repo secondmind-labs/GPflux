@@ -204,7 +204,7 @@ class GPLayer(tfp.layers.DistributionLambda):
                 )
 
             num_inducing, self.num_latent_gps = (
-                len(inducing_variable),
+                inducing_variable.num_inducing,
                 num_latent_gps,
             )
 
