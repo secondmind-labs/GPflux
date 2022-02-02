@@ -22,6 +22,7 @@ from gpflux.layers.basis_functions.fourier_features.quadrature import (
     GaussHermiteQuadratureFourierFeatures,
     GaussLegendreQuadratureFourierFeatures,
     QuadratureFourierFeatures,
+    SimpsonQuadratureFourierFeatures
 )
 from gpflux.layers.basis_functions.fourier_features.random import (
     OrthogonalRandomFeatures,
