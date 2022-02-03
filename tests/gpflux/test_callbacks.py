@@ -39,7 +39,7 @@ class CONFIG:
 
 @pytest.fixture
 def data() -> Tuple[np.ndarray, np.ndarray]:
-    """ Step function: f(x) = -1 for x <= 0 and 1 for x > 0. """
+    """Step function: f(x) = -1 for x <= 0 and 1 for x > 0."""
     X = np.linspace(-1, 1, CONFIG.num_data)
     Y = np.where(X > 0, np.ones_like(X), -np.ones_like(X))
     return (X.reshape(-1, 1), Y.reshape(-1, 1))

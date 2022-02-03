@@ -156,45 +156,65 @@ def _efficient_sample_matheron_rule(
     :param whiten: Determines the parameterisation of the inducing variables.
     """
     L = tf.shape(kernel.feature_coefficients)[0]  # num eigenfunctions  # noqa: F841
-
-    prior_weights = tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
-        tf.shape(kernel.feature_coefficients), dtype=default_float()
-    )  # [L, 1]
-
-    M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
-    u_sample_noise = tf.matmul(
-        q_sqrt,
-        tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
-    )  # [P, M, 1]
-    Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
-    tf.debugging.assert_equal(tf.shape(Kmm), [M, M])
-    u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
-
-    if whiten:
-        Luu = tf.linalg.cholesky(Kmm)  # [M, M]
-        u_sample = tf.matmul(Luu, u_sample)  # [M, P]
-
-    phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L]
-    weight_space_prior_Z = phi_Z @ prior_weights  # [M, 1]
-    diff = u_sample - weight_space_prior_Z  # [M, P] -- using implicit broadcasting
-    v = compute_A_inv_b(Kmm, diff)  # [M, P]
-    tf.debugging.assert_equal(tf.shape(v), [M, P])
+    P = tf.shape(q_mu)[1]
 
     class WilsonSample(Sample):
+        def __init__(self) -> None:
+            self._prior_weights_sample = tf.Variable(self._sample_prior_weights())
+            self._v_sample = tf.Variable(self._sample_v())
+
+        @tf.function
         def __call__(self, X: TensorType) -> tf.Tensor:
             """
             :param X: evaluation points [N, D]
-            :return: function value of sample [N, P]
+            :return: function value of sample [N, 1, P]
             """
             N = tf.shape(X)[0]
             phi_X = kernel.feature_functions(X)  # [N, L]
-            weight_space_prior_X = phi_X @ prior_weights  # [N, 1]
+            weight_space_prior_X = phi_X @ self._prior_weights_sample  # [N, 1]
             Knm = tf.linalg.matrix_transpose(Kuf(inducing_variable, kernel, X))  # [N, M]
-            function_space_update_X = Knm @ v  # [N, P]
+            function_space_update_X = Knm @ self._v_sample  # [N, P]
 
             tf.debugging.assert_equal(tf.shape(weight_space_prior_X), [N, 1])
             tf.debugging.assert_equal(tf.shape(function_space_update_X), [N, P])
 
             return weight_space_prior_X + function_space_update_X  # [N, P]
+
+        def resample(self) -> None:
+            """
+            Efficiently resample a :class:`WilsonSample` in-place to avoid function retracing
+            with every new sample.
+            """
+            self._prior_weights_sample.assign(self._sample_prior_weights())
+            self._v_sample.assign(self._sample_v())
+
+        def _sample_prior_weights(self) -> tf.Tensor:
+            return tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
+                tf.shape(kernel.feature_coefficients), dtype=default_float()
+            )  # [L, 1]
+
+        @tf.function
+        def _sample_v(self) -> tf.Tensor:
+            M = tf.shape(q_mu)[0]  # num inducing, num output heads
+
+            u_noise_sample = tf.matmul(
+                q_sqrt,
+                tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
+            )  # [P, M, 1]
+
+            Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
+            tf.debugging.assert_equal(tf.shape(Kmm), [M, M])
+            u_sample = q_mu + tf.linalg.matrix_transpose(u_noise_sample[..., 0])  # [M, P]
+
+            if whiten:
+                Luu = tf.linalg.cholesky(Kmm)  # [M, M]
+                u_sample = tf.matmul(Luu, u_sample)  # [M, P]
+
+            phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L]
+            weight_space_prior_Z = phi_Z @ self._prior_weights_sample  # [M, 1]
+            diff = u_sample - weight_space_prior_Z  # [M, P] -- using implicit broadcasting
+            v = compute_A_inv_b(Kmm, diff)  # [M, P]
+            tf.debugging.assert_equal(tf.shape(v), [M, P])
+            return v
 
     return WilsonSample()

@@ -100,6 +100,34 @@ def test_wilson_efficient_sample(kernel, inducing_variable, whiten):
     )
 
 
+def test_wilson_efficient_sample_update_without_retracing(kernel, inducing_variable, whiten):
+    """TODO"""
+    eigenfunctions = RandomFourierFeaturesCosine(kernel, 100, dtype=default_float())
+    eigenvalues = np.ones((100, 1), dtype=default_float())
+    # To apply Wilson sampling we require the features and eigenvalues of the kernel
+    kernel2 = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
+    q_mu, q_sqrt = _get_qmu_qsqrt(kernel, inducing_variable)
+
+    sample_func = efficient_sample(
+        inducing_variable,
+        kernel2,
+        q_mu,
+        q_sqrt=1e-1 * tf.convert_to_tensor(q_sqrt[np.newaxis]),
+        whiten=whiten,
+    )
+
+    X = np.linspace(-1, 0, 100).reshape(-1, 1)
+
+    sample_evals_1 = sample_func(X)
+    sample_func.resample()
+    sample_evals_2 = sample_func(X)
+
+    np.testing.assert_array_less(
+        1e-4, tf.abs(sample_evals_1 - sample_evals_2)
+    )  # check samples are different
+    assert sample_func.__call__._get_tracing_count() == 1  # check no retracing
+
+
 class SampleMock(Sample):
     def __init__(self, a):
         self.a = a
