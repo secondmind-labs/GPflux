@@ -59,8 +59,8 @@ class SimpsonQuadratureFourierFeatures(QuadratureFourierFeaturesBase):
             nu = _matern_dof(self.kernel)  # degrees of freedom
             dist = multivariate_t(loc=np.zeros(input_dim), df=nu)
 
-        stop = 1.
-        start = -1.
+        stop = 1.0
+        start = -1.0
 
         # `n_components` denotes half the desired number of intervals
         n_abscissa = 2 * self.n_components + 1
@@ -69,14 +69,14 @@ class SimpsonQuadratureFourierFeatures(QuadratureFourierFeaturesBase):
         # raw 1-dimensional quadrature nodes (L,)
         abscissa_value_flat = np.linspace(start, stop, n_abscissa)
 
-        alpha = np.atleast_2d(4.)
-        beta = np.atleast_2d(2.)
+        alpha = np.atleast_2d(4.0)
+        beta = np.atleast_2d(2.0)
         a = np.hstack([beta, alpha])
 
         factors_value_flat = np.append(np.tile(a, reps=self.n_components), beta, axis=-1)
         factors_value_flat *= width
-        factors_value_flat /= 3.
-        factors_value_flat[..., [0, -1]] /= 2.  # halve first and last weight
+        factors_value_flat /= 3.0
+        factors_value_flat[..., [0, -1]] /= 2.0  # halve first and last weight
 
         # transformed 1-dimensional quadrature nodes and weights
         transform = TanTransform()
