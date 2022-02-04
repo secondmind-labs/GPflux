@@ -39,12 +39,11 @@ from gpflux.types import ShapeType
 
 
 class GaussianQuadratureFourierFeatures(QuadratureFourierFeaturesBase):
-
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         super(GaussianQuadratureFourierFeatures, self).__init__(kernel, n_components, **kwargs)
         if tf.reduce_any(tf.less(kernel.lengthscales, 1e-1)):
             warnings.warn(
-                "Fourier feature approximation of kernels with small " 
+                "Fourier feature approximation of kernels with small "
                 "lengthscales using Gaussian quadrature can have "
                 "unexpected behaviors!"
             )

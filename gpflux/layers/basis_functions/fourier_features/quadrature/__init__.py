@@ -20,5 +20,5 @@ from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import (
     QuadratureFourierFeatures,
 )
 from gpflux.layers.basis_functions.fourier_features.quadrature.newton_cotes import (
-    SimpsonQuadratureFourierFeatures
+    SimpsonQuadratureFourierFeatures,
 )
