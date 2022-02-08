@@ -17,11 +17,21 @@
 from typing import Optional
 
 import numpy as np
+import tensorflow as tf
+import tensorflow_probability as tfp
+
+from scipy.stats import multivariate_normal, multivariate_t
 from scipy.stats.qmc import MultivariateNormalQMC
 
+import gpflow
 from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.random.base import RandomFourierFeatures
+from gpflux.layers.basis_functions.fourier_features.utils import _matern_dof
+from gpflux.types import ShapeType
+
+
+tfd = tfp.distributions
 
 
 class QuasiRandomFourierFeatures(RandomFourierFeatures):
@@ -35,3 +45,47 @@ class QuasiRandomFourierFeatures(RandomFourierFeatures):
         n_components, input_dim = shape  # M, D
         sampler = MultivariateNormalQMC(mean=np.zeros(input_dim))
         return sampler.random(n=n_components)  # shape [M, D]
+
+
+class ReweightedQuasiRandomFourierFeatures(QuasiRandomFourierFeatures):
+
+    SUPPORTED_KERNELS = (
+        gpflow.kernels.SquaredExponential,
+        gpflow.kernels.Matern12,
+        gpflow.kernels.Matern32,
+        gpflow.kernels.Matern52,
+    )
+
+    def _compute_constant(self) -> tf.Tensor:
+        """
+        Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[]`` (i.e. a scalar).
+        """
+        return (
+            tf.tile(tf.sqrt(self.factors), multiples=[2])
+            * super(ReweightedQuasiRandomFourierFeatures, self)._compute_constant()
+        )
+
+    def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
+        super(ReweightedQuasiRandomFourierFeatures, self).build(input_shape)
+
+        input_dim = input_shape[-1]
+
+        if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
+            dist = multivariate_normal(mean=np.zeros(input_dim))
+        else:
+            nu = _matern_dof(self.kernel)  # degrees of freedom
+            dist = tfd.MultivariateStudentTLinearOperator(df=nu, loc=np.zeros(input_dim, dtype=self.dtype), scale=tf.eye(input_dim, dtype=self.dtype))
+
+        print("DIST!!!", dist.prob(self.W))
+
+        factors_value = tf.ones(self.n_components, dtype=self.dtype)  # dist.pdf(self.W)
+        self.factors = tf.Variable(initial_value=factors_value, trainable=False)
+
+        print(f"CALLED!, {self.W} {self.factors}")
