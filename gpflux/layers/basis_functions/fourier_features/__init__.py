@@ -29,4 +29,5 @@ from gpflux.layers.basis_functions.fourier_features.random import (
     QuasiRandomFourierFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
+    ReweightedQuasiRandomFourierFeatures,
 )

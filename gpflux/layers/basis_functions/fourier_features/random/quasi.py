@@ -19,7 +19,6 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-
 from scipy.stats import multivariate_normal, multivariate_t
 from scipy.stats.qmc import MultivariateNormalQMC
 
@@ -29,7 +28,6 @@ from gpflow.base import DType, TensorType
 from gpflux.layers.basis_functions.fourier_features.random.base import RandomFourierFeatures
 from gpflux.layers.basis_functions.fourier_features.utils import _matern_dof
 from gpflux.types import ShapeType
-
 
 tfd = tfp.distributions
 
@@ -78,14 +76,15 @@ class ReweightedQuasiRandomFourierFeatures(QuasiRandomFourierFeatures):
         input_dim = input_shape[-1]
 
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
-            dist = multivariate_normal(mean=np.zeros(input_dim))
+            factors_value = tf.ones(self.n_components, dtype=self.dtype)
         else:
             nu = _matern_dof(self.kernel)  # degrees of freedom
-            dist = tfd.MultivariateStudentTLinearOperator(df=nu, loc=np.zeros(input_dim, dtype=self.dtype), scale=tf.eye(input_dim, dtype=self.dtype))
+            q = tfd.MultivariateNormalDiag(loc=tf.zeros(input_dim, dtype=self.dtype))
+            p = tfd.MultivariateStudentTLinearOperator(
+                df=nu,
+                loc=tf.zeros(input_dim, dtype=self.dtype),
+                scale=tf.linalg.LinearOperatorLowerTriangular(tf.eye(input_dim, dtype=self.dtype)),
+            )
+            factors_value = tf.exp(p.log_prob(self.W) - q.log_prob(self.W))
 
-        print("DIST!!!", dist.prob(self.W))
-
-        factors_value = tf.ones(self.n_components, dtype=self.dtype)  # dist.pdf(self.W)
         self.factors = tf.Variable(initial_value=factors_value, trainable=False)
-
-        print(f"CALLED!, {self.W} {self.factors}")
