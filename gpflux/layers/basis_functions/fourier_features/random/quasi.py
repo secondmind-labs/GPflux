@@ -74,10 +74,9 @@ class ReweightedQuasiRandomFourierFeatures(QuasiRandomFourierFeatures):
         super(ReweightedQuasiRandomFourierFeatures, self).build(input_shape)
 
         input_dim = input_shape[-1]
+        importance_weight_value = tf.ones(self.n_components, dtype=self.dtype)
 
-        if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
-            factors_value = tf.ones(self.n_components, dtype=self.dtype)
-        else:
+        if not isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             nu = _matern_dof(self.kernel)  # degrees of freedom
             q = tfd.MultivariateNormalDiag(loc=tf.zeros(input_dim, dtype=self.dtype))
             p = tfd.MultivariateStudentTLinearOperator(
