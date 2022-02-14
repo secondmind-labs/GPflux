@@ -34,7 +34,7 @@ tfd = tfp.distributions
 
 class QuasiRandomFourierFeatures(RandomFourierFeatures):
 
-    r"""
+    """
     Quasi-random Fourier features (ORF) :cite:p:`yang2014quasi` for more
     efficient and accurate kernel approximations than random Fourier features.
     """
@@ -61,7 +61,7 @@ class ReweightedQuasiRandomFourierFeatures(QuasiRandomFourierFeatures):
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return (
-            tf.tile(tf.sqrt(self.factors), multiples=[2])
+            tf.tile(tf.sqrt(self.importance_weight), multiples=[2])
             * super(ReweightedQuasiRandomFourierFeatures, self)._compute_constant()
         )
 
@@ -85,6 +85,7 @@ class ReweightedQuasiRandomFourierFeatures(QuasiRandomFourierFeatures):
                 loc=tf.zeros(input_dim, dtype=self.dtype),
                 scale=tf.linalg.LinearOperatorLowerTriangular(tf.eye(input_dim, dtype=self.dtype)),
             )
-            factors_value = tf.exp(p.log_prob(self.W) - q.log_prob(self.W))
+            importance_weight_value = tf.exp(p.log_prob(self.W) - q.log_prob(self.W))
 
-        self.factors = tf.Variable(initial_value=factors_value, trainable=False)
+        self.importance_weight = tf.Variable(initial_value=importance_weight_value,
+                                             trainable=False)
