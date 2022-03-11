@@ -24,7 +24,6 @@ from gpflow.quadrature.gauss_hermite import NDiagGHQuadrature
 from gpflow.utilities.ops import difference_matrix
 
 from gpflux.layers.basis_functions.fourier_features.quadrature import QuadratureFourierFeatures
-from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import QFF_SUPPORTED_KERNELS
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3])
@@ -52,7 +51,7 @@ def _batch_size_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="kernel_cls", params=list(QFF_SUPPORTED_KERNELS))
+@pytest.fixture(name="kernel_cls", params=list(QuadratureFourierFeatures.SUPPORTED_KERNELS))
 def _kernel_cls_fixture(request):
     return request.param
 
@@ -61,7 +60,7 @@ def test_throw_for_unsupported_kernel():
     kernel = gpflow.kernels.Constant()
     with pytest.raises(AssertionError) as excinfo:
         QuadratureFourierFeatures(kernel, n_components=1)
-    assert "Unsupported Kernel" in str(excinfo.value)
+    assert "Only the following kernels are supported" in str(excinfo.value)
 
 
 def test_quadrature_fourier_features_can_approximate_kernel_multidim(

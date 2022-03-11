@@ -15,7 +15,10 @@
 #
 """ A kernel's features and coefficients using quadrature Fourier features (QFF). """
 from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import (
+    GaussHermiteQuadratureFourierFeatures,
+    GaussLegendreQuadratureFourierFeatures,
     QuadratureFourierFeatures,
 )
-
-__all__ = ["QuadratureFourierFeatures"]
+from gpflux.layers.basis_functions.fourier_features.quadrature.newton_cotes import (
+    SimpsonQuadratureFourierFeatures,
+)

@@ -26,7 +26,6 @@ from gpflux.layers.basis_functions.fourier_features.random import (
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])
@@ -54,7 +53,7 @@ def _n_features_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="kernel_cls", params=list(RFF_SUPPORTED_KERNELS))
+@pytest.fixture(name="kernel_cls", params=list(RandomFourierFeatures.SUPPORTED_KERNELS))
 def _kernel_cls_fixture(request):
     return request.param
 
@@ -79,7 +78,7 @@ def test_throw_for_unsupported_kernel(basis_func_cls):
     kernel = gpflow.kernels.Constant()
     with pytest.raises(AssertionError) as excinfo:
         basis_func_cls(kernel, n_components=1)
-    assert "Unsupported Kernel" in str(excinfo.value)
+    assert "Only the following kernels are supported" in str(excinfo.value)
 
 
 def test_random_fourier_features_can_approximate_kernel_multidim(

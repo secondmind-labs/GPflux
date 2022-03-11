@@ -20,6 +20,9 @@ LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
                      $(LIB_NAME)/initializers/__init__.py:F401 \
                      $(LIB_NAME)/layers/__init__.py:F401 \
                      $(LIB_NAME)/layers/basis_functions/__init__.py:F401 \
+                     $(LIB_NAME)/layers/basis_functions/fourier_features/__init__.py:F401 \
+                     $(LIB_NAME)/layers/basis_functions/fourier_features/random/__init__.py:F401 \
+                     $(LIB_NAME)/layers/basis_functions/fourier_features/quadrature/__init__.py:F401 \
                      $(LIB_NAME)/models/__init__.py:F401 \
                      $(LIB_NAME)/optimization/__init__.py:F401 \
                      $(LIB_NAME)/sampling/__init__.py:F401 \

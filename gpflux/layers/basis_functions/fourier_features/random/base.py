@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import Mapping, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
@@ -25,22 +25,9 @@ from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesB
 from gpflux.layers.basis_functions.fourier_features.utils import (
     _bases_concat,
     _bases_cosine,
-    _matern_number,
+    _matern_dof,
 )
 from gpflux.types import ShapeType
-
-"""
-Kernels supported by :class:`RandomFourierFeatures`.
-
-You can build RFF for shift-invariant stationary kernels from which you can
-sample frequencies from their power spectrum, following Bochner's theorem.
-"""
-RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
-    gpflow.kernels.SquaredExponential,
-    gpflow.kernels.Matern12,
-    gpflow.kernels.Matern32,
-    gpflow.kernels.Matern52,
-)
 
 
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
@@ -73,9 +60,13 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
-        super(RandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
+
+    SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+        gpflow.kernels.SquaredExponential,
+        gpflow.kernels.Matern12,
+        gpflow.kernels.Matern32,
+        gpflow.kernels.Matern52,
+    )
 
     def build(self, input_shape: ShapeType) -> None:
         """
@@ -101,8 +92,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, dtype=dtype)
         else:
-            p = _matern_number(self.kernel)
-            nu = 2.0 * p + 1.0  # degrees of freedom
+            nu = _matern_dof(self.kernel)  # degrees of freedom
             return _sample_students_t(nu, shape, dtype)
 
     @staticmethod

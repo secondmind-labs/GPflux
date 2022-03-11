@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from typing import Mapping, Optional, Tuple, Type
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
@@ -24,18 +24,6 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.random.base import RandomFourierFeatures
 from gpflux.types import ShapeType
-
-"""
-Kernels supported by :class:`OrthogonalRandomFeatures`.
-
-This random matrix sampling scheme only applies to the :class:`gpflow.kernels.SquaredExponential`
-kernel.
-For Matern kernels please use :class:`RandomFourierFeatures`
-or :class:`RandomFourierFeaturesCosine`.
-"""
-ORF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
-    gpflow.kernels.SquaredExponential,
-)
 
 
 def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
@@ -69,9 +57,7 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
     efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
     """
 
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
-        super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
+    SUPPORTED_KERNELS = (gpflow.kernels.SquaredExponential,)
 
     def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         n_components, input_dim = shape  # M, D

@@ -8,7 +8,7 @@ requirements = [
     "deprecated",
     "gpflow>=2.1",
     "numpy",
-    "scipy",
+    "scipy>=1.6.0",
     "tensorflow>=2.5.0,<2.6.0",
     "tensorflow-probability>=0.12.0,<0.14.0",
 ]

@@ -34,6 +34,14 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
     return p
 
 
+def _matern_dof(kernel: gpflow.kernels.Kernel) -> float:
+    """
+    Degrees of freedom corresponding to a kernel from the Matern family.
+    """
+    p = _matern_number(kernel)
+    return 2.0 * p + 1.0  # degrees of freedom
+
+
 def _bases_cosine(X: TensorType, W: TensorType, b: TensorType) -> TensorType:
     """
     Feature map for random Fourier features (RFF) as originally prescribed

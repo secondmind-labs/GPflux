@@ -22,9 +22,7 @@ from gpflux.layers.basis_functions.fourier_features.random.base import (
 from gpflux.layers.basis_functions.fourier_features.random.orthogonal import (
     OrthogonalRandomFeatures,
 )
-
-__all__ = [
-    "OrthogonalRandomFeatures",
-    "RandomFourierFeatures",
-    "RandomFourierFeaturesCosine",
-]
+from gpflux.layers.basis_functions.fourier_features.random.quasi import (
+    QuasiRandomFourierFeatures,
+    ReweightedQuasiRandomFourierFeatures,
+)
