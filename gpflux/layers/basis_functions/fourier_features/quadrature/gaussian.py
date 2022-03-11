@@ -23,6 +23,8 @@ from typing import Mapping
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
+
 from scipy.stats import multivariate_normal, multivariate_t
 
 import gpflow
@@ -36,6 +38,8 @@ from gpflux.layers.basis_functions.fourier_features.quadrature.base import (
 )
 from gpflux.layers.basis_functions.fourier_features.utils import _matern_dof
 from gpflux.types import ShapeType
+
+tfd = tfp.distributions
 
 
 class GaussianQuadratureFourierFeatures(QuadratureFourierFeaturesBase):
@@ -71,6 +75,51 @@ class GaussHermiteQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
         # Gauss-Christoffel weights (L^D,)
         self.factors = tf.Variable(initial_value=factors_value, trainable=False)
         super(GaussHermiteQuadratureFourierFeatures, self).build(input_shape)
+
+
+class ReweightedGaussHermiteQuadratureFourierFeatures(GaussHermiteQuadratureFourierFeatures):
+
+    SUPPORTED_KERNELS = (
+        gpflow.kernels.SquaredExponential,
+        gpflow.kernels.Matern12,
+        gpflow.kernels.Matern32,
+        gpflow.kernels.Matern52,
+    )
+
+    def _compute_constant(self) -> tf.Tensor:
+        """
+        Compute normalizing constant for basis functions.
+
+        :return: A tensor with the shape ``[]`` (i.e. a scalar).
+        """
+        return (
+            tf.tile(tf.sqrt(self.importance_weight), multiples=[2])
+            * super(ReweightedGaussHermiteQuadratureFourierFeatures, self)._compute_constant()
+        )
+
+    def build(self, input_shape: ShapeType) -> None:
+        """
+        Creates the variables of the layer.
+        See `tf.keras.layers.Layer.build()
+        <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+        """
+        super(ReweightedGaussHermiteQuadratureFourierFeatures, self).build(input_shape)
+
+        input_dim = input_shape[-1]
+        importance_weight_value = tf.ones(self.abscissa.shape[0], dtype=self.dtype)
+
+        if not isinstance(self.kernel, gpflow.kernels.SquaredExponential):
+            nu = _matern_dof(self.kernel)  # degrees of freedom
+            q = tfd.MultivariateNormalDiag(loc=tf.zeros(input_dim, dtype=self.dtype))
+            p = tfd.MultivariateStudentTLinearOperator(
+                df=nu,
+                loc=tf.zeros(input_dim, dtype=self.dtype),
+                scale=tf.linalg.LinearOperatorLowerTriangular(tf.eye(input_dim, dtype=self.dtype)),
+            )
+            importance_weight_value = tf.exp(p.log_prob(self.abscissa) - q.log_prob(self.abscissa))
+
+        self.importance_weight = tf.Variable(initial_value=importance_weight_value,
+                                             trainable=False)
 
 
 class GaussLegendreQuadratureFourierFeatures(GaussianQuadratureFourierFeatures):
