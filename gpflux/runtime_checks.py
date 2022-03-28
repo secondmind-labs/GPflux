@@ -70,5 +70,5 @@ def verify_compatibility(
                 f"the number of separate independent inducing_variables ({latent_inducing_points})"
             )
 
-    num_inducing_points = len(inducing_variable)  # currently the same for each dim
+    num_inducing_points = inducing_variable.num_inducing  # currently the same for each dim
     return num_inducing_points, num_latent_gps
