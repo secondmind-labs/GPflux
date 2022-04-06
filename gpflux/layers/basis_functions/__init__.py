@@ -16,3 +16,5 @@
 """
 Basis functions.
 """
+
+from . import fourier_features
