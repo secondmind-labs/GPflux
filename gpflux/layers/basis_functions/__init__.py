@@ -16,3 +16,4 @@
 """
 Basis functions.
 """
+from gpflux.layers.basis_functions import fourier_features
