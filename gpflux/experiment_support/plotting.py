@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -64,9 +64,11 @@ def plot_layer(
 
 def plot_layers(
     X: TensorType, means: List[TensorType], covs: List[TensorType], samples: List[TensorType]
-) -> None:  # pragma: no cover
+) -> Tuple[plt.Figure, np.ndarray]:
     L = len(means)
     fig, axes = plt.subplots(3, L, figsize=(L * 3.33, 10))
     for i in range(L):
         layer_input = X if i == 0 else samples[i - 1][0]
-        plot_layer(X, layer_input, means[i], covs[i], samples[i], i, axes[:, i])
+        axs = axes[:, i] if L > 1 else axes
+        plot_layer(X, layer_input, means[i], covs[i], samples[i], i, axs)
+    return fig, axes

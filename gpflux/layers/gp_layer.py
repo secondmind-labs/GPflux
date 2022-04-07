@@ -295,7 +295,7 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         # Metric names should be unique; otherwise they get overwritten if you
         # have multiple with the same name
-        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
+        name = f"{self.name}_kl" if self.name else "kl"
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
 
         return outputs

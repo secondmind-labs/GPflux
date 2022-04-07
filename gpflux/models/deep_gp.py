@@ -16,7 +16,7 @@
 """ This module provides the base implementation for DeepGP models. """
 
 import itertools
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union, Sequence
 
 import tensorflow as tf
 
@@ -25,7 +25,7 @@ from gpflow.base import Module, TensorType
 
 import gpflux
 from gpflux.layers import LayerWithObservations, LikelihoodLayer
-from gpflux.sampling.sample import Sample
+from tensorflow.python.framework.ops import inside_function
 
 
 class DeepGP(Module):
@@ -75,7 +75,7 @@ class DeepGP(Module):
             gpflux.layers.LikelihoodLayer, gpflow.likelihoods.Likelihood
         ],  # fully-qualified for autoapi
         *,
-        input_dim: Optional[int] = None,
+        input_dim: Optional[Union[int, Sequence[int]]] = None,
         target_dim: Optional[int] = None,
         default_model_class: Type[tf.keras.Model] = tf.keras.Model,
         num_data: Optional[int] = None,
@@ -96,7 +96,11 @@ class DeepGP(Module):
             If you do not specify a value for this parameter explicitly, it is automatically
             detected from the :attr:`~gpflux.layers.GPLayer.num_data` attribute in the GP layers.
         """
-        self.inputs = tf.keras.Input((input_dim,), name="inputs")
+        if isinstance(input_dim, int):
+            self.inputs = tf.keras.Input((input_dim,), name="inputs")
+        else:
+            self.inputs = tf.keras.Input(input_dim, name="inputs")
+
         self.targets = tf.keras.Input((target_dim,), name="targets")
         self.f_layers = f_layers
         if isinstance(likelihood, gpflow.likelihoods.Likelihood):
@@ -267,18 +271,3 @@ class DeepGP(Module):
         model_class = self._get_model_class(model_class)
         outputs = self.call(self.inputs)
         return model_class(self.inputs, outputs)
-
-
-def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
-    function_draws = [layer.sample() for layer in model.f_layers]
-    # TODO: error check that all layers implement .sample()?
-
-    class ChainedSample(Sample):
-        """ This class chains samples from consecutive layers. """
-
-        def __call__(self, X: TensorType) -> tf.Tensor:
-            for f in function_draws:
-                X = f(X)
-            return X
-
-    return ChainedSample()
