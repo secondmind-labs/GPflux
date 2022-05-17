@@ -34,7 +34,7 @@ tf.keras.backend.set_floatx("float64")
 
 
 def _zero_one_normal_prior(w_dim):
-    """ N(0, I) prior """
+    """N(0, I) prior"""
     return tfp.distributions.MultivariateNormalDiag(loc=np.zeros(w_dim), scale_diag=np.ones(w_dim))
 
 

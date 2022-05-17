@@ -274,7 +274,7 @@ def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vani
     # TODO: error check that all layers implement .sample()?
 
     class ChainedSample(Sample):
-        """ This class chains samples from consecutive layers. """
+        """This class chains samples from consecutive layers."""
 
         def __call__(self, X: TensorType) -> tf.Tensor:
             for f in function_draws:

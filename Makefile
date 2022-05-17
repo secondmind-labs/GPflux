@@ -37,6 +37,8 @@ install:  ## Install repo for developement
 		-r notebook_requirements.txt \
 		-r tests_requirements.txt \
 		tensorflow${VERSION_TF} \
+		keras${VERSION_KERAS} \
+		tensorflow-probability${VERSION_TFP} \
 		-e .
 
 docs:  ## Build the documentation
@@ -85,7 +87,7 @@ test: ## Run unit and integration tests with pytest
 	       --cov-config .coveragerc \
 	       --cov-report term \
 	       --cov-report xml \
-	       --cov-fail-under=97 \
+	       --cov-fail-under=94 \
 	       --junitxml=reports/junit.xml \
 	       -v --tb=short --durations=10 \
 	       $(TESTS_NAME)
