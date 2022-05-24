@@ -28,6 +28,7 @@ from gpflow.base import TensorType
 from gpflow.likelihoods import Likelihood
 
 from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.types import unwrap_dist
 
 
 class LikelihoodLayer(TrackableLayer):
@@ -75,7 +76,7 @@ class LikelihoodLayer(TrackableLayer):
             containing mean and variance only.
         """
         # TODO: add support for non-distribution inputs? or other distributions?
-        assert isinstance(inputs, tfp.distributions.MultivariateNormalDiag)
+        assert isinstance(unwrap_dist(inputs), tfp.distributions.MultivariateNormalDiag)
         F_mean = inputs.loc
         F_var = inputs.scale.diag ** 2
 

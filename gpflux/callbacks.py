@@ -135,7 +135,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
             self.monitor(batch)
 
     def on_epoch_end(self, epoch: int, logs: Optional[Mapping] = None) -> None:
-        """ Write to TensorBoard if :attr:`update_freq` equals ``"epoch"``. """
+        """Write to TensorBoard if :attr:`update_freq` equals ``"epoch"``."""
         super().on_epoch_end(epoch, logs=logs)
 
         if self.update_freq == "epoch":
@@ -156,7 +156,7 @@ class KerasModelToTensorBoard(gpflow.monitor.ModelToTensorBoard):
         return self._LAYER_PARAMETER_REGEXP.match(match) is not None
 
     def run(self, **unused_kwargs: Any) -> None:
-        """ Write the model's parameters to TensorBoard. """
+        """Write the model's parameters to TensorBoard."""
 
         for name, parameter in parameter_dict(self.model).items():
             if not self._parameter_of_interest(name):

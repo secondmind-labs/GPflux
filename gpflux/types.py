@@ -19,8 +19,21 @@ Types used within GPflux (for static type-checking).
 from typing import List, Tuple, Union
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from gpflow.base import TensorType
+
+
+def unwrap_dist(dist: tfp.distributions.Distribution) -> tfp.distributions.Distribution:
+    """
+    Unwrap the given distribution, if it is wrapped in a ``_TensorCoercible``.
+    """
+    while True:
+        inner = getattr(dist, "tensor_distribution", None)
+        if inner is None:
+            return dist
+        dist = inner
+
 
 ShapeType = Union[tf.TensorShape, List[int], Tuple[int, ...]]
 r""" Union of valid types for describing the shape of a `tf.Tensor`\ (-like) object """

@@ -26,6 +26,8 @@ import tensorflow_probability as tfp
 import gpflow
 from gpflow.base import TensorType
 
+from gpflux.types import unwrap_dist
+
 
 class LikelihoodLoss(tf.keras.losses.Loss):
     r"""
@@ -77,7 +79,7 @@ class LikelihoodLoss(tf.keras.losses.Loss):
         Note that we deviate from the Keras Loss interface by calling the
         second argument *f_prediction* rather than *y_pred*.
         """
-        if isinstance(f_prediction, tfp.distributions.MultivariateNormalDiag):
+        if isinstance(unwrap_dist(f_prediction), tfp.distributions.MultivariateNormalDiag):
 
             F_mu = f_prediction.loc
             F_var = f_prediction.scale.diag ** 2

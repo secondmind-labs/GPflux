@@ -19,6 +19,7 @@ from typing import Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
 
@@ -39,7 +40,7 @@ class CONFIG:
 
 @pytest.fixture
 def data() -> Tuple[np.ndarray, np.ndarray]:
-    """ Step function: f(x) = -1 for x <= 0 and 1 for x > 0. """
+    """Step function: f(x) = -1 for x <= 0 and 1 for x > 0."""
     X = np.linspace(-1, 1, CONFIG.num_data)
     Y = np.where(X > 0, np.ones_like(X), -np.ones_like(X))
     return (X.reshape(-1, 1), Y.reshape(-1, 1))
@@ -135,12 +136,13 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
         "self_tracked_trackables[3].likelihood.variance",
     }
 
-    if update_freq == "batch":
-        expected_tags |= {
-            "batch_loss",
-            "batch_gp0_prior_kl",
-            "batch_gp1_prior_kl",
-        }
+    if Version(tf.__version__) < Version("2.8"):
+        if update_freq == "batch":
+            expected_tags |= {
+                "batch_loss",
+                "batch_gp0_prior_kl",
+                "batch_gp1_prior_kl",
+            }
 
     # Check all model variables, loss and lr are in tensorboard.
     assert set(records.keys()) == expected_tags

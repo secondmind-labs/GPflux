@@ -1,7 +1,16 @@
 import numpy as np
 import pytest
+import tensorflow as tf
+from packaging.version import Version
 
 from gpflow.kernels import SquaredExponential
+
+# TODO: It would be great to make serialisation work in general. See:
+# https://github.com/GPflow/GPflow/issues/1658
+skip_serialization_tests = pytest.mark.skipif(
+    Version(tf.__version__) >= Version("2.6"),
+    reason="GPflow Parameter cannot be serialized in newer version of TensorFlow.",
+)
 
 
 @pytest.fixture

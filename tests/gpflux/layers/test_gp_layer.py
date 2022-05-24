@@ -23,6 +23,7 @@ from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
 from gpflux.layers import GPLayer
+from gpflux.types import unwrap_dist
 
 
 def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
@@ -97,19 +98,19 @@ def test_call_shapes():
     assert not gp_layer.full_cov and not gp_layer.full_output_cov
 
     distribution = gp_layer(X, training=False)
-    assert isinstance(distribution, tfp.distributions.MultivariateNormalDiag)
+    assert isinstance(unwrap_dist(distribution), tfp.distributions.MultivariateNormalDiag)
     assert distribution.shape == (batch_size, output_dim)
 
     gp_layer.full_cov = True
     distribution = gp_layer(X, training=False)
-    assert isinstance(distribution, tfp.distributions.MultivariateNormalTriL)
+    assert isinstance(unwrap_dist(distribution), tfp.distributions.MultivariateNormalTriL)
     assert distribution.shape == (batch_size, output_dim)
     assert distribution.covariance().shape == (output_dim, batch_size, batch_size)
 
     gp_layer.full_output_cov = True
     gp_layer.full_cov = False
     distribution = gp_layer(X, training=False)
-    assert isinstance(distribution, tfp.distributions.MultivariateNormalTriL)
+    assert isinstance(unwrap_dist(distribution), tfp.distributions.MultivariateNormalTriL)
     assert distribution.shape == (batch_size, output_dim)
     assert distribution.covariance().shape == (batch_size, output_dim, output_dim)
 
