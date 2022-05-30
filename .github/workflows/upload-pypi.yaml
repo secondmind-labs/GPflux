@@ -28,6 +28,14 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
+      - name: Verify git tag vs. VERSION
+        run: |
+          VERSION="v$(cat gpflux/version.py | grep "__version__ = " | sed -e 's/__version__ = //' | sed -e 's/"//g')"
+          TAG="${GITHUB_REF/refs\/tags\//}"
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "The package version ($VERSION) and the latest tag version ($TAG) are different"
+            exit 1
+          fi
       - name: Install twine and wheel
         run: |
           pip install twine wheel
