@@ -1,13 +1,17 @@
 # Code quality tools:
-black==20.8b1
+black==21.7b0
 codecov
-flake8==3.8.4
-isort==5.6.4
-mypy==0.770
+click==8.0.4
+flake8==4.0.1
+isort==5.10.1
+mypy==0.921
 pytest
 pytest-cov
 pytest-random-order
 pytest-mock
+
+# For mypy stubs:
+types-Deprecated
 
 tqdm
 

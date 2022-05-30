@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-Basis functions.
-"""
-from gpflux.layers.basis_functions import fourier_features
+""" A kernel's features and coefficients using quadrature Fourier features (QFF). """
+from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import (
+    QuadratureFourierFeatures,
+)
+
+__all__ = ["QuadratureFourierFeatures"]

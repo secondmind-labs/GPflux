@@ -13,7 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-Basis functions.
-"""
-from gpflux.layers.basis_functions import fourier_features
+""" A kernel's features and coefficients using Random Fourier Features (RFF). """
+
+from gpflux.layers.basis_functions.fourier_features.random.base import (
+    RandomFourierFeatures,
+    RandomFourierFeaturesCosine,
+)
+from gpflux.layers.basis_functions.fourier_features.random.orthogonal import (
+    OrthogonalRandomFeatures,
+)
+
+__all__ = [
+    "OrthogonalRandomFeatures",
+    "RandomFourierFeatures",
+    "RandomFourierFeaturesCosine",
+]

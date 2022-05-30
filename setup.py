@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pathlib import Path
-from setuptools import find_namespace_packages, setup
 
+from setuptools import find_namespace_packages, setup
 
 requirements = [
     "deprecated",
     "gpflow>=2.1",
     "numpy",
     "scipy",
-    "tensorflow>=2.5.0,<2.6.0",
-    "tensorflow-probability>=0.12.0,<0.14.0",
+    "tensorflow>=2.5.0,<2.9.0",
+    "tensorflow-probability>=0.13.0,<0.17.0",
+    "protobuf~=3.19.0"
 ]
 
 with open("README.md", "r") as file:

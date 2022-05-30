@@ -19,6 +19,7 @@ arbitrary depth where each hidden layer has the same input dimensionality as the
 """
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 import tensorflow as tf
@@ -144,7 +145,7 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
             mean_function = construct_mean_function(X_running, D_in, D_out)
             X_running = mean_function(X_running)
             if tf.is_tensor(X_running):
-                X_running = X_running.numpy()
+                X_running = cast(tf.Tensor, X_running).numpy()
             q_sqrt_scaling = config.inner_layer_qsqrt_factor
 
         layer = GPLayer(

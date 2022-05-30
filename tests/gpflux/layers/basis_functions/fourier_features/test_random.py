@@ -21,12 +21,13 @@ from tensorflow.python.keras.utils.kernelized_utils import inner_product
 
 import gpflow
 
-from gpflux.layers.basis_functions.fourier_features import (
+from gpflux.layers.basis_functions.fourier_features.random import (
     OrthogonalRandomFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.utils import RFF_SUPPORTED_KERNELS
+from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
+from tests.conftest import skip_serialization_tests
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])
@@ -162,6 +163,7 @@ def test_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_siz
     np.testing.assert_equal(features.shape, output_shape)
 
 
+@skip_serialization_tests
 def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
     kernel = kernel_cls()
 
@@ -180,6 +182,7 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
     )
 
 
+@skip_serialization_tests
 def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, n_components):
     kernel = kernel_cls()
 

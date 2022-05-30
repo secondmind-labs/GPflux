@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-""" A kernel's features and coefficients using Random Fourier Features (RFF). """
-
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
@@ -25,16 +23,53 @@ from gpflow.base import DType, TensorType
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
 from gpflux.layers.basis_functions.fourier_features.utils import (
-    ORF_SUPPORTED_KERNELS,
-    RFF_SUPPORTED_KERNELS,
     _bases_concat,
     _bases_cosine,
-    _ceil_divide,
     _matern_number,
-    _sample_chi,
-    _sample_students_t,
 )
 from gpflux.types import ShapeType
+
+"""
+Kernels supported by :class:`RandomFourierFeatures`.
+
+You can build RFF for shift-invariant stationary kernels from which you can
+sample frequencies from their power spectrum, following Bochner's theorem.
+"""
+RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+    gpflow.kernels.SquaredExponential,
+    gpflow.kernels.Matern12,
+    gpflow.kernels.Matern32,
+    gpflow.kernels.Matern52,
+)
+
+
+def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
+    """
+    Draw samples from a (central) Student's t-distribution using the following:
+      BETA ~ Gamma(nu/2, nu/2) (shape-rate parameterization)
+      X ~ Normal(0, 1/BETA)
+    then:
+      X ~ StudentsT(nu)
+
+    Note this is equivalent to the more commonly used parameterization
+      Z ~ Chi2(nu) = Gamma(nu/2, 1/2)
+      EPSILON ~ Normal(0, 1)
+      X = EPSILON * sqrt(nu/Z)
+
+    To see this, note
+      Z/nu ~ Gamma(nu/2, nu/2)
+    and
+      X ~ Normal(0, nu/Z)
+    The equivalence becomes obvious when we set BETA = Z/nu
+    """
+    # Normal(0, 1)
+    normal_rvs = tf.random.normal(shape=shape, dtype=dtype)
+    shape = tf.concat([shape[:-1], [1]], axis=0)
+    # Gamma(nu/2, nu/2)
+    gamma_rvs = tf.random.gamma(shape, alpha=0.5 * nu, beta=0.5 * nu, dtype=dtype)
+    # StudentsT(nu)
+    students_t_rvs = tf.math.rsqrt(gamma_rvs) * normal_rvs
+    return students_t_rvs
 
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
@@ -202,27 +237,3 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
         return self.rff_constant(self.kernel.variance, output_dim=self.n_components)
-
-
-class OrthogonalRandomFeatures(RandomFourierFeatures):
-    r"""
-    Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
-    efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
-    """
-
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
-        super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
-
-    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        n_components, input_dim = shape  # M, D
-        n_reps = _ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
-
-        W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
-        Q, _ = tf.linalg.qr(W)  # throw away R; shape [K, D, D]
-
-        s = _sample_chi(nu=input_dim, shape=(n_reps, input_dim), dtype=dtype)  # shape [K, D]
-        U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [K, D, D]
-        V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
-
-        return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)

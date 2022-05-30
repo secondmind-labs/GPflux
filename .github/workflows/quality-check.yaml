@@ -21,11 +21,35 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-          python-version: [3.6, 3.7, 3.8]
-          tensorflow: ["~=2.5.0"]
+          python-version: ["3.7", "3.8", "3.9", "3.10"]
+          tensorflow: ["~=2.5.0", "~=2.6.0", "~=2.7.0", "~=2.8.0"]
+          include:
+            - tensorflow: "~=2.5.0"
+              keras: "~=2.6.0"
+              tensorflow-probability: "~=0.13.0"
+            - tensorflow: "~=2.6.0"
+              keras: "~=2.6.0"
+              tensorflow-probability: "~=0.14.0"
+            - tensorflow: "~=2.7.0"
+              keras: "~=2.7.0"
+              tensorflow-probability: "~=0.15.0"
+            - tensorflow: "~=2.8.0"
+              keras: "~=2.8.0"
+              tensorflow-probability: "~=0.16.0"
+          exclude:
+            # These older versions of TensorFlow don't work with Python 3.10:
+            - python-version: "3.10"
+              tensorflow: "~=2.5.0"
+            - python-version: "3.10"
+              tensorflow: "~=2.6.0"
+            - python-version: "3.10"
+              tensorflow: "~=2.7.0"
+
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }}
     env:
       VERSION_TF: ${{ matrix.tensorflow }}
+      VERSION_KERAS: ${{ matrix.keras }}
+      VERSION_TFP: ${{ matrix.tensorflow-probability }}
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2

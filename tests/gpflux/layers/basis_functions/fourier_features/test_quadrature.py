@@ -23,8 +23,9 @@ import gpflow
 from gpflow.quadrature.gauss_hermite import NDiagGHQuadrature
 from gpflow.utilities.ops import difference_matrix
 
-from gpflux.layers.basis_functions.fourier_features import QuadratureFourierFeatures
-from gpflux.layers.basis_functions.fourier_features.utils import QFF_SUPPORTED_KERNELS
+from gpflux.layers.basis_functions.fourier_features.quadrature import QuadratureFourierFeatures
+from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import QFF_SUPPORTED_KERNELS
+from tests.conftest import skip_serialization_tests
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3])
@@ -145,6 +146,7 @@ def test_fourier_features_shapes(n_components, n_dims, batch_size):
     np.testing.assert_equal(features.shape, output_shape)
 
 
+@skip_serialization_tests
 def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
     kernel = kernel_cls()
 
@@ -163,6 +165,7 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
     )
 
 
+@skip_serialization_tests
 def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, n_components):
     kernel = kernel_cls()
 

@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-""" A kernel's features and coefficients using quadrature Fourier features (QFF). """
+"""
+Kernel decompositon into features and coefficients based on Gauss-Christoffel
+quadrature aka Gaussian quadrature.
+"""
 
 import warnings
-from typing import Mapping
+from typing import Mapping, Tuple, Type
 
 import tensorflow as tf
 
@@ -25,11 +28,19 @@ from gpflow.base import TensorType
 from gpflow.quadrature.gauss_hermite import ndgh_points_and_weights
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
-from gpflux.layers.basis_functions.fourier_features.utils import (
-    QFF_SUPPORTED_KERNELS,
-    _bases_concat,
-)
+from gpflux.layers.basis_functions.fourier_features.utils import _bases_concat
 from gpflux.types import ShapeType
+
+"""
+Kernels supported by :class:`QuadratureFourierFeatures`.
+
+Currently we only support the :class:`gpflow.kernels.SquaredExponential` kernel.
+For Matern kernels please use :class:`RandomFourierFeatures`
+or :class:`RandomFourierFeaturesCosine`.
+"""
+QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
+    gpflow.kernels.SquaredExponential,
+)
 
 
 class QuadratureFourierFeatures(FourierFeaturesBase):
