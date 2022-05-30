@@ -11,6 +11,7 @@ requirements = [
     "scipy",
     "tensorflow>=2.5.0,<2.9.0",
     "tensorflow-probability>=0.13.0,<0.17.0",
+    "protobuf~=3.19.0"
 ]
 
 with open("README.md", "r") as file:
