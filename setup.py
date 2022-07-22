@@ -9,7 +9,10 @@ requirements = [
     "gpflow>=2.1",
     "numpy",
     "scipy",
-    "tensorflow>=2.5.0,<2.9.0",
+    "tensorflow>=2.5.0,<2.9.0; platform_system!='Darwin' or platform_machine!='arm64'",
+    # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
+    "tensorflow-macos>=2.5.0,<2.9.0; platform_system=='Darwin' and platform_machine=='arm64'",
+    # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
     "tensorflow-probability>=0.13.0,<0.17.0",
     "protobuf~=3.19.0"
 ]
