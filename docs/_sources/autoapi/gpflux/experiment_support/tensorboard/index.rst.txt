@@ -1,0 +1,28 @@
+:py:mod:`gpflux.experiment_support.tensorboard`
+===============================================
+
+.. py:module:: gpflux.experiment_support.tensorboard
+
+.. autoapi-nested-parse::
+
+   TensorBoard event iterator
+
+
+
+Module Contents
+---------------
+
+.. py:class:: Event
+
+   Minimal container to hold TensorBoard event data
+
+
+.. py:function:: tensorboard_event_iterator(file_pattern: Union[str, List[str], tensorflow.Tensor]) -> Iterator[Event]
+
+   Iterator yielding preprocessed tensorboard Events.
+
+   :param file_pattern: A string, a list of strings, or a `tf.Tensor` of string type
+       (scalar or vector), representing the filename glob (i.e. shell wildcard)
+       pattern(s) that will be matched.
+
+

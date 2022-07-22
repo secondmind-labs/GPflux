@@ -1,0 +1,39 @@
+:py:mod:`gpflux.exceptions`
+===========================
+
+.. py:module:: gpflux.exceptions
+
+.. autoapi-nested-parse::
+
+   This module provides custom exceptions used by GPflux. 
+
+
+
+Module Contents
+---------------
+
+.. py:exception:: GPLayerIncompatibilityException
+
+   Bases: :py:obj:`Exception`
+
+   This exception is raised when :class:`~gpflux.layers.GPLayer` is
+   misconfigured. This can be caused by multiple reasons, but common misconfigurations are:
+
+   - Incompatible or wrong type of :class:`~gpflow.kernels.Kernel`,
+     :class:`~gpflow.inducing_variables.InducingVariables` and/or
+     :class:`~gpflow.mean_functions.MeanFunction`.
+   - Incompatible number of latent GPs specified.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:exception:: EncoderInitializationError
+
+   Bases: :py:obj:`Exception`
+
+   This exception is raised by an encoder (e.g. :class:`DirectlyParameterizedNormalDiag`)
+   when parameters are not initialised correctly.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+

@@ -1,0 +1,61 @@
+:py:mod:`gpflux.layers.basis_functions.fourier_features.base`
+=============================================================
+
+.. py:module:: gpflux.layers.basis_functions.fourier_features.base
+
+.. autoapi-nested-parse::
+
+   Shared functionality for stationary kernel basis functions. 
+
+
+
+Module Contents
+---------------
+
+.. py:class:: FourierFeaturesBase(kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping)
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`tensorflow.keras.layers.Layer`
+
+   Helper class that provides a standard way to create an ABC using
+   inheritance.
+
+   :param kernel: kernel to approximate using a set of Fourier bases.
+   :param n_components: number of components (e.g. Monte Carlo samples,
+       quadrature nodes, etc.) used to numerically approximate the kernel.
+
+   .. py:method:: call(self, inputs: gpflow.base.TensorType) -> tensorflow.Tensor
+
+      Evaluate the basis functions at ``inputs``.
+
+      :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
+
+      :return: A tensor with the shape ``[N, M]``.
+
+
+   .. py:method:: compute_output_shape(self, input_shape: gpflux.types.ShapeType) -> tensorflow.TensorShape
+
+      Computes the output shape of the layer.
+      See `tf.keras.layers.Layer.compute_output_shape()
+      <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#compute_output_shape>`_.
+
+
+   .. py:method:: get_config(self) -> Mapping
+
+      Returns the config of the layer.
+      See `tf.keras.layers.Layer.get_config()
+      <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
+
+
+   .. py:method:: _compute_constant(self) -> tensorflow.Tensor
+      :abstractmethod:
+
+      Compute normalizing constant for basis functions.
+
+
+   .. py:method:: _compute_bases(self, inputs: gpflow.base.TensorType) -> tensorflow.Tensor
+      :abstractmethod:
+
+      Compute basis functions.
+
+
+

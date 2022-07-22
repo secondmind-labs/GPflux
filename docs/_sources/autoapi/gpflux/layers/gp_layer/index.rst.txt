@@ -1,0 +1,194 @@
+:py:mod:`gpflux.layers.gp_layer`
+================================
+
+.. py:module:: gpflux.layers.gp_layer
+
+.. autoapi-nested-parse::
+
+   This module provides :class:`GPLayer`, which implements a Sparse Variational
+   Multioutput Gaussian Process as a Keras :class:`~tf.keras.layers.Layer`.
+
+
+
+Module Contents
+---------------
+
+.. py:class:: GPLayer(kernel: gpflow.kernels.MultioutputKernel, inducing_variable: gpflow.inducing_variables.MultioutputInducingVariables, num_data: int, mean_function: Optional[gpflow.mean_functions.MeanFunction] = None, *, num_samples: Optional[int] = None, full_cov: bool = False, full_output_cov: bool = False, num_latent_gps: int = None, whiten: bool = True, name: Optional[str] = None, verbose: bool = True)
+
+   Bases: :py:obj:`tensorflow_probability.layers.DistributionLambda`
+
+   A sparse variational multioutput GP layer. This layer holds the kernel,
+   inducing variables and variational distribution, and mean function.
+
+   :param kernel: The multioutput kernel for this layer.
+   :param inducing_variable: The inducing features for this layer.
+   :param num_data: The number of points in the training dataset (see :attr:`num_data`).
+   :param mean_function: The mean function that will be applied to the
+       inputs. Default: :class:`~gpflow.mean_functions.Identity`.
+
+       .. note:: The Identity mean function requires the input and output
+           dimensionality of this layer to be the same. If you want to
+           change the dimensionality in a layer, you may want to provide a
+           :class:`~gpflow.mean_functions.Linear` mean function instead.
+
+   :param num_samples: The number of samples to draw when converting the
+       :class:`~tfp.layers.DistributionLambda` into a `tf.Tensor`, see
+       :meth:`_convert_to_tensor_fn`. Will be stored in the
+       :attr:`num_samples` attribute.  If `None` (the default), draw a
+       single sample without prefixing the sample shape (see
+       :class:`tfp.distributions.Distribution`'s `sample()
+       <https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution#sample>`_
+       method).
+   :param full_cov: Sets default behaviour of calling this layer
+       (:attr:`full_cov` attribute):
+       If `False` (the default), only predict marginals (diagonal
+       of covariance) with respect to inputs.
+       If `True`, predict full covariance over inputs.
+   :param full_output_cov: Sets default behaviour of calling this layer
+       (:attr:`full_output_cov` attribute):
+       If `False` (the default), only predict marginals (diagonal
+       of covariance) with respect to outputs.
+       If `True`, predict full covariance over outputs.
+   :param num_latent_gps: The number of (latent) GPs in the layer
+       (which can be different from the number of outputs, e.g. with a
+       :class:`~gpflow.kernels.LinearCoregionalization` kernel).
+       This is used to determine the size of the
+       variational parameters :attr:`q_mu` and :attr:`q_sqrt`.
+       If possible, it is inferred from the *kernel* and *inducing_variable*.
+   :param whiten: If `True` (the default), uses the whitened parameterisation
+       of the inducing variables; see :attr:`whiten`.
+   :param name: The name of this layer.
+   :param verbose: The verbosity mode. Set this parameter to `True`
+       to show debug information.
+
+   .. py:attribute:: num_data
+      :annotation: :int
+
+      The number of points in the training dataset. This information is used to
+      obtain the correct scaling between the data-fit and the KL term in the
+      evidence lower bound (ELBO).
+
+
+   .. py:attribute:: whiten
+      :annotation: :bool
+
+      This parameter determines the parameterisation of the inducing variables.
+
+      If `True`, this layer uses the whitened (or non-centred) representation, in
+      which (at the example of inducing point inducing variables) ``u = f(Z) =
+      cholesky(Kuu) v``, and we parameterise an approximate posterior on ``v`` as
+      ``q(v) = N(q_mu, q_sqrt q_sqrtᵀ)``. The prior on ``v`` is ``p(v) = N(0, I)``.
+
+      If `False`, this layer uses the non-whitened (or centred) representation,
+      in which we directly parameterise ``q(u) = N(q_mu, q_sqrt q_sqrtᵀ)``. The
+      prior on ``u`` is ``p(u) = N(0, Kuu)``.
+
+
+   .. py:attribute:: num_samples
+      :annotation: :Optional[int]
+
+      The number of samples drawn when coercing the output distribution of
+      this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)
+
+
+   .. py:attribute:: full_cov
+      :annotation: :bool
+
+      This parameter determines the behaviour of calling this layer. If `False`, only
+      predict or sample marginals (diagonal of covariance) with respect to inputs.
+      If `True`, predict or sample with the full covariance over the inputs.
+
+
+   .. py:attribute:: full_output_cov
+      :annotation: :bool
+
+      This parameter determines the behaviour of calling this layer. If `False`, only
+      predict or sample marginals (diagonal of covariance) with respect to outputs.
+      If `True`, predict or sample with the full covariance over the outputs.
+
+
+   .. py:attribute:: q_mu
+      :annotation: :gpflow.Parameter
+
+      The mean of ``q(v)`` or ``q(u)`` (depending on whether :attr:`whiten`\ ed
+      parametrisation is used).
+
+
+   .. py:attribute:: q_sqrt
+      :annotation: :gpflow.Parameter
+
+      The lower-triangular Cholesky factor of the covariance of ``q(v)`` or ``q(u)``
+      (depending on whether :attr:`whiten`\ ed parametrisation is used).
+
+
+   .. py:method:: predict(self, inputs: gpflow.base.TensorType, *, full_cov: bool = False, full_output_cov: bool = False) -> Tuple[tensorflow.Tensor, tensorflow.Tensor]
+
+      Make a prediction at N test inputs for the Q outputs of this layer,
+      including the mean function contribution.
+
+      The covariance and its shape is determined by *full_cov* and *full_output_cov* as follows:
+
+      +--------------------+---------------------------+--------------------------+
+      | (co)variance shape | ``full_output_cov=False`` | ``full_output_cov=True`` |
+      +--------------------+---------------------------+--------------------------+
+      | ``full_cov=False`` | [N, Q]                    | [N, Q, Q]                |
+      +--------------------+---------------------------+--------------------------+
+      | ``full_cov=True``  | [Q, N, N]                 | [N, Q, N, Q]             |
+      +--------------------+---------------------------+--------------------------+
+
+      :param inputs: The inputs to predict at, with a shape of [N, D], where D is
+          the input dimensionality of this layer.
+      :param full_cov: Whether to return full covariance (if `True`) or
+          marginal variance (if `False`, the default) w.r.t. inputs.
+      :param full_output_cov: Whether to return full covariance (if `True`)
+          or marginal variance (if `False`, the default) w.r.t. outputs.
+
+      :returns: posterior mean (shape [N, Q]) and (co)variance (shape as above) at test points
+
+
+   .. py:method:: call(self, inputs: gpflow.base.TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tensorflow.Tensor
+
+      The default behaviour upon calling this layer.
+
+      This method calls the `tfp.layers.DistributionLambda` super-class
+      `call` method, which constructs a `tfp.distributions.Distribution`
+      for the predictive distributions at the input points
+      (see :meth:`_make_distribution_fn`).
+      You can pass this distribution to `tf.convert_to_tensor`, which will return
+      samples from the distribution (see :meth:`_convert_to_tensor_fn`).
+
+      This method also adds a layer-specific loss function, given by the KL divergence between
+      this layer and the GP prior (scaled to per-datapoint).
+
+
+   .. py:method:: prior_kl(self) -> tensorflow.Tensor
+
+      Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u)`` to
+      the variational distribution ``q(u)``.  If this layer uses the
+      :attr:`whiten`\ ed representation, returns ``KL[q(v)∥p(v)]``.
+
+
+   .. py:method:: _make_distribution_fn(self, previous_layer_outputs: gpflow.base.TensorType) -> tensorflow_probability.distributions.Distribution
+
+      Construct the posterior distributions at the output points of the previous layer,
+      depending on :attr:`full_cov` and :attr:`full_output_cov`.
+
+      :param previous_layer_outputs: The output from the previous layer,
+          which should be coercible to a `tf.Tensor`
+
+
+   .. py:method:: _convert_to_tensor_fn(self, distribution: tensorflow_probability.distributions.Distribution) -> tensorflow.Tensor
+
+      Convert the predictive distributions at the input points (see
+      :meth:`_make_distribution_fn`) to a tensor of :attr:`num_samples`
+      samples from that distribution.
+      Whether the samples are correlated or marginal (uncorrelated) depends
+      on :attr:`full_cov` and :attr:`full_output_cov`.
+
+
+   .. py:method:: sample(self) -> gpflux.sampling.sample.Sample
+
+      .. todo:: TODO: Document this.
+
+
+

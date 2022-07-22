@@ -1,0 +1,73 @@
+:py:mod:`gpflux.layers.bayesian_dense_layer`
+============================================
+
+.. py:module:: gpflux.layers.bayesian_dense_layer
+
+.. autoapi-nested-parse::
+
+   This module provides :class:`BayesianDenseLayer`, which implements a
+   variational Bayesian dense (fully-connected) neural network layer as a Keras
+   :class:`~tf.keras.layers.Layer`.
+
+
+
+Module Contents
+---------------
+
+.. py:class:: BayesianDenseLayer(input_dim: int, output_dim: int, num_data: int, w_mu: Optional[numpy.ndarray] = None, w_sqrt: Optional[numpy.ndarray] = None, activation: Optional[Callable] = None, is_mean_field: bool = True, temperature: float = 0.0001)
+
+   Bases: :py:obj:`gpflux.layers.trackable_layer.TrackableLayer`
+
+   A dense (fully-connected) layer for variational Bayesian neural networks.
+
+   This layer holds the mean and square-root of the variance of the
+   distribution over the weights. This layer also has a temperature for
+   cooling (or heating) the posterior.
+
+   :param input_dim: The input dimension (excluding bias) of this layer.
+   :param output_dim: The output dimension of this layer.
+   :param num_data: The number of points in the training dataset (used for
+       scaling the KL regulariser).
+   :param w_mu: Initial value of the variational mean for weights + bias.
+       If not specified, this defaults to `xavier_initialization_numpy`
+       for the weights and zero for the bias.
+   :param w_sqrt: Initial value of the variational Cholesky of the
+       (co)variance for weights + bias. If not specified, this defaults to
+       1e-5 * Identity.
+   :param activation: The activation function. If not specified, this defaults to the identity.
+   :param is_mean_field: Determines whether the approximation to the
+       weight posterior is mean field. Must be consistent with the shape
+       of ``w_sqrt``, if specified.
+   :param temperature: The KL loss will be scaled by this factor.
+       Can be used for cooling (< 1.0) or heating (> 1.0) the posterior.
+       As suggested in `"How Good is the Bayes Posterior in Deep Neural
+       Networks Really?" by Wenzel et al. (2020)
+       <http://proceedings.mlr.press/v119/wenzel20a>`_ the default value
+       is a cold ``1e-4``.
+
+   .. py:method:: build(self, input_shape: gpflux.types.ShapeType) -> None
+
+      Build the variables necessary on first call
+
+
+   .. py:method:: predict_samples(self, inputs: gpflow.base.TensorType, *, num_samples: Optional[int] = None) -> tensorflow.Tensor
+
+      Samples from the approximate posterior at N test inputs, with input_dim = D, output_dim = Q.
+
+      :param inputs: The inputs to predict at; shape ``[N, D]``.
+      :param num_samples: The number of samples S, to draw.
+      :returns: Samples, shape ``[S, N, Q]`` if S is not None else ``[N, Q]``.
+
+
+   .. py:method:: call(self, inputs: gpflow.base.TensorType, training: Optional[bool] = False) -> Union[tensorflow.Tensor, gpflow.models.model.MeanAndVariance]
+
+      The default behaviour upon calling this layer.
+
+
+   .. py:method:: prior_kl(self) -> tensorflow.Tensor
+
+      Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u) = N(0, I)`` to
+      the variational distribution ``q(u) = N(w_mu, w_sqrt²)``.
+
+
+

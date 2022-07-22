@@ -1,0 +1,59 @@
+:py:mod:`gpflux.losses`
+=======================
+
+.. py:module:: gpflux.losses
+
+.. autoapi-nested-parse::
+
+   This module provides the `LikelihoodLoss` adapter to use GPflow's
+   :class:`~gpflow.likelihoods.Likelihood` implementations as a
+   `tf.keras.losses.Loss`.
+
+
+
+Module Contents
+---------------
+
+.. py:class:: LikelihoodLoss(likelihood: gpflow.likelihoods.Likelihood)
+
+   Bases: :py:obj:`tensorflow.keras.losses.Loss`
+
+   This class is a `tf.keras.losses.Loss` implementation that wraps a GPflow
+   :class:`~gpflow.likelihoods.Likelihood` instance.
+
+   When the prediction (last-layer output) is a
+   :class:`~tfp.distributions.Distribution` ``q(f)``, calling this loss
+   returns the negative variational expectation :math:`-\mathbb{E}_{q(f)}[\log
+   p(y|f)]`. When the prediction is a `tf.Tensor`, calling this loss returns
+   the negative log-probability :math:`-\log p(y|f)`.
+
+   When you use this loss function in training a Keras model, the value of
+   this loss is not logged explicitly (in contrast, the layer-specific losses
+   are logged, as is the overall model loss).
+   To output this loss value explicitly, wrap this class in a
+   `tf.keras.metrics.Metric` and add it to the model metrics.
+
+   .. note::
+
+       Use **either** this `LikelihoodLoss` (e.g. together with a
+       `tf.keras.Sequential` model) **or**
+       :class:`~gpflux.layers.LikelihoodLayer` (together with
+       `gpflux.models.DeepGP`). Do **not** use both at once because this would
+       add the loss twice.
+
+   :param likelihood: the GPflow likelihood object to use.
+
+       .. note:: If you want to train any parameters of the likelihood
+           (e.g. likelihood variance), you must include the likelihood as
+           an attribute on a :class:`~gpflux.layers.TrackableLayer`
+           instance that is part of your model. (This is not required when
+           instead you use a :class:`gpflux.layers.LikelihoodLayer`
+           together with :class:`gpflux.models.DeepGP`.)
+
+   .. py:method:: call(self, y_true: gpflow.base.TensorType, f_prediction: Union[gpflow.base.TensorType, tensorflow_probability.distributions.MultivariateNormalDiag]) -> tensorflow.Tensor
+
+      Note that we deviate from the Keras Loss interface by calling the
+      second argument *f_prediction* rather than *y_pred*.
+
+
+

@@ -1,0 +1,68 @@
+:py:mod:`gpflux.layers.likelihood_layer`
+========================================
+
+.. py:module:: gpflux.layers.likelihood_layer
+
+.. autoapi-nested-parse::
+
+   A Keras Layer that wraps a likelihood, while containing the necessary operations
+   for training.
+
+
+
+Module Contents
+---------------
+
+.. py:class:: LikelihoodLayer(likelihood: gpflow.likelihoods.Likelihood)
+
+   Bases: :py:obj:`gpflux.layers.trackable_layer.TrackableLayer`
+
+   A Keras layer that wraps a GPflow :class:`~gpflow.likelihoods.Likelihood`. This layer expects a
+   `tfp.distributions.MultivariateNormalDiag` as its input, describing ``q(f)``.
+   When training, calling this class computes the negative variational expectation
+   :math:`-\mathbb{E}_{q(f)}[\log p(y|f)]` and adds it as a layer loss.
+   When not training, it computes the mean and variance of ``y`` under ``q(f)``
+   using :meth:`~gpflow.likelihoods.Likelihood.predict_mean_and_var`.
+
+   .. note::
+
+       Use **either** this `LikelihoodLayer` (together with
+       `gpflux.models.DeepGP`) **or** `LikelihoodLoss` (e.g. together with a
+       `tf.keras.Sequential` model). Do **not** use both at once because
+       this would add the loss twice.
+
+   .. py:method:: call(self, inputs: tensorflow_probability.distributions.MultivariateNormalDiag, targets: Optional[gpflow.base.TensorType] = None, training: bool = None) -> LikelihoodOutputs
+
+      When training (``training=True``), this method computes variational expectations
+      (data-fit loss) and adds this information as a layer loss.
+      When testing (the default), it computes the posterior mean and variance of ``y``.
+
+      :param inputs: The output distribution of the previous layer. This is currently
+          expected to be a :class:`~tfp.distributions.MultivariateNormalDiag`;
+          that is, the preceding :class:`~gpflux.layers.GPLayer` should have
+          ``full_cov=full_output_cov=False``.
+      :returns: a `LikelihoodOutputs` tuple with the mean and variance of ``f`` and,
+          if not training, the mean and variance of ``y``.
+
+      .. todo:: Turn this layer into a
+          :class:`~tfp.layers.DistributionLambda` as well and return the
+          correct :class:`~tfp.distributions.Distribution` instead of a tuple
+          containing mean and variance only.
+
+
+
+.. py:class:: LikelihoodOutputs(f_mean: gpflow.base.TensorType, f_var: gpflow.base.TensorType, y_mean: Optional[gpflow.base.TensorType], y_var: Optional[gpflow.base.TensorType])
+
+   Bases: :py:obj:`tensorflow.Module`
+
+   This class encapsulates the outputs of a :class:`~gpflux.layers.LikelihoodLayer`.
+
+   It contains the mean and variance of the marginal distribution of the final latent
+   :class:`~gpflux.layers.GPLayer`, as well as the mean and variance of the likelihood.
+
+   This class includes the `TensorMetaClass
+   <https://github.com/tensorflow/probability/blob/master/tensorflow_probability/python/util/deferred_tensor.py#L81>`_
+   to make objects behave as a `tf.Tensor`. This is necessary so that it can be
+   returned from the `tfp.layers.DistributionLambda` Keras layer.
+
+

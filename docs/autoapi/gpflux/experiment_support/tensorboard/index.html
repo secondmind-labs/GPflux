@@ -1,0 +1,656 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>gpflux.experiment_support.tensorboard &#8212; GPflux 0.1.0 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="gpflux.layers" href="../../layers/index.html" />
+    <link rel="prev" title="gpflux.experiment_support.ci_utils" href="../ci_utils/index.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+    <img src="../../../../_static/logo.png" class="logo__image only-light" alt="Logo image">
+    <img src="../../../../_static/logo.png" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../index.html">
+  GPflux
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../notebooks/benchmarks.html">
+  Benchmarks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../tutorials.html">
+  Tutorials
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../index.html">
+  API Reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <span id="theme-switch" class="btn btn-sm btn-outline-primary navbar-btn rounded-circle">
+    <a class="theme-switch" data-mode="light"><i class="fas fa-sun"></i></a>
+    <a class="theme-switch" data-mode="dark"><i class="far fa-moon"></i></a>
+    <a class="theme-switch" data-mode="auto"><i class="fas fa-adjust"></i></a>
+</span>
+      </div>
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/secondmind-labs/gpflux" rel="noopener" target="_blank" title="GitHub"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../architectures/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.architectures
+    </span>
+   </code>
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../architectures/constant_input_dim_deep_gp/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.architectures.constant_input_dim_deep_gp
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../encoders/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.encoders
+    </span>
+   </code>
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../encoders/directly_parameterized_encoder/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.encoders.directly_parameterized_encoder
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.experiment_support
+    </span>
+   </code>
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="../ci_utils/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.experiment_support.ci_utils
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.experiment_support.tensorboard
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../layers/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.layers
+    </span>
+   </code>
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+  <label for="toctree-checkbox-4">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../layers/basis_functions/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.layers.basis_functions
+      </span>
+     </code>
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+    <label for="toctree-checkbox-5">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3 has-children">
+      <a class="reference internal" href="../../layers/basis_functions/fourier_features/index.html">
+       <code class="xref py py-mod docutils literal notranslate">
+        <span class="pre">
+         gpflux.layers.basis_functions.fourier_features
+        </span>
+       </code>
+      </a>
+      <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+      <label for="toctree-checkbox-6">
+       <i class="fas fa-chevron-down">
+       </i>
+      </label>
+      <ul>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../layers/basis_functions/fourier_features/quadrature/index.html">
+         <code class="xref py py-mod docutils literal notranslate">
+          <span class="pre">
+           gpflux.layers.basis_functions.fourier_features.quadrature
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../layers/basis_functions/fourier_features/random/index.html">
+         <code class="xref py py-mod docutils literal notranslate">
+          <span class="pre">
+           gpflux.layers.basis_functions.fourier_features.random
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../layers/basis_functions/fourier_features/base/index.html">
+         <code class="xref py py-mod docutils literal notranslate">
+          <span class="pre">
+           gpflux.layers.basis_functions.fourier_features.base
+          </span>
+         </code>
+        </a>
+       </li>
+       <li class="toctree-l4">
+        <a class="reference internal" href="../../layers/basis_functions/fourier_features/utils/index.html">
+         <code class="xref py py-mod docutils literal notranslate">
+          <span class="pre">
+           gpflux.layers.basis_functions.fourier_features.utils
+          </span>
+         </code>
+        </a>
+       </li>
+      </ul>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../layers/bayesian_dense_layer/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.layers.bayesian_dense_layer
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../layers/gp_layer/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.layers.gp_layer
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../layers/latent_variable_layer/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.layers.latent_variable_layer
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../layers/likelihood_layer/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.layers.likelihood_layer
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../layers/trackable_layer/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.layers.trackable_layer
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../models/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.models
+    </span>
+   </code>
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../models/deep_gp/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.models.deep_gp
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../optimization/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.optimization
+    </span>
+   </code>
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../optimization/keras_natgrad/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.optimization.keras_natgrad
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../sampling/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.sampling
+    </span>
+   </code>
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../sampling/kernel_with_feature_decomposition/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.sampling.kernel_with_feature_decomposition
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../sampling/sample/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.sampling.sample
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../sampling/utils/index.html">
+     <code class="xref py py-mod docutils literal notranslate">
+      <span class="pre">
+       gpflux.sampling.utils
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../callbacks/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.callbacks
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../exceptions/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.exceptions
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../helpers/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.helpers
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../losses/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.losses
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../math/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.math
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../runtime_checks/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.runtime_checks
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../types/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.types
+    </span>
+   </code>
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../version/index.html">
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     gpflux.version
+    </span>
+   </code>
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#module-contents">
+   Module Contents
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflux.experiment_support.tensorboard.Event">
+     Event
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflux.experiment_support.tensorboard.tensorboard_event_iterator">
+     tensorboard_event_iterator
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <section id="module-gpflux.experiment_support.tensorboard">
+<span id="gpflux-experiment-support-tensorboard"></span><h1><a class="reference internal" href="#module-gpflux.experiment_support.tensorboard" title="gpflux.experiment_support.tensorboard"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gpflux.experiment_support.tensorboard</span></code></a><a class="headerlink" href="#module-gpflux.experiment_support.tensorboard" title="Permalink to this heading">#</a></h1>
+<p>TensorBoard event iterator</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.experiment_support.tensorboard.Event">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Event</span></span><a class="reference internal" href="../../../../_modules/gpflux/experiment_support/tensorboard.html#Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.experiment_support.tensorboard.Event" title="Permalink to this definition">#</a></dt>
+<dd><p>Minimal container to hold TensorBoard event data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflux.experiment_support.tensorboard.tensorboard_event_iterator">
+<span class="sig-name descname"><span class="pre">tensorboard_event_iterator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_pattern</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#gpflux.experiment_support.tensorboard.Event" title="gpflux.experiment_support.tensorboard.Event"><span class="pre">Event</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/gpflux/experiment_support/tensorboard.html#tensorboard_event_iterator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.experiment_support.tensorboard.tensorboard_event_iterator" title="Permalink to this definition">#</a></dt>
+<dd><p>Iterator yielding preprocessed tensorboard Events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_pattern</strong> – A string, a list of strings, or a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.Tensor</span></code></a> of string type
+(scalar or vector), representing the filename glob (i.e. shell wildcard)
+pattern(s) that will be matched.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

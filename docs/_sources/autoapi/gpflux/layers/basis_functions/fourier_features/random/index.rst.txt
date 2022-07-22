@@ -1,0 +1,137 @@
+:py:mod:`gpflux.layers.basis_functions.fourier_features.random`
+===============================================================
+
+.. py:module:: gpflux.layers.basis_functions.fourier_features.random
+
+.. autoapi-nested-parse::
+
+   A kernel's features and coefficients using Random Fourier Features (RFF). 
+
+
+
+Package Contents
+----------------
+
+.. py:class:: RandomFourierFeatures(kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping)
+
+   Bases: :py:obj:`RandomFourierFeaturesBase`
+
+   Random Fourier features (RFF) is a method for approximating kernels. The essential
+   element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
+   for stationary kernels can be approximated by a Monte Carlo sum.
+
+   We will approximate the kernel :math:`k(\mathbf{x}, \mathbf{x}')`
+   by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')`
+   where :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}` is a finite-dimensional feature map.
+
+   The feature map is defined as:
+
+   .. math::
+
+     \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
+       \begin{bmatrix}
+         \cos(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
+         \sin(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
+         \vdots \\
+         \cos(\boldsymbol{\theta}_{\frac{M}{2}}^\top \mathbf{x}) \\
+         \sin(\boldsymbol{\theta}_{\frac{M}{2}}^\top \mathbf{x})
+       \end{bmatrix}
+
+   where :math:`\sigma^2` is the kernel variance.
+   The features are parameterised by random weights:
+
+   - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})`
+     where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel.
+
+   At least for the squared exponential kernel, this variant of the feature
+   mapping has more desirable theoretical properties than its counterpart form
+   from phase-shifted cosines :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
+
+   :param kernel: kernel to approximate using a set of Fourier bases.
+   :param n_components: number of components (e.g. Monte Carlo samples,
+       quadrature nodes, etc.) used to numerically approximate the kernel.
+
+   .. py:method:: _compute_bases(self, inputs: gpflow.base.TensorType) -> tensorflow.Tensor
+
+      Compute basis functions.
+
+      :return: A tensor with the shape ``[N, 2M]``.
+
+
+   .. py:method:: _compute_constant(self) -> tensorflow.Tensor
+
+      Compute normalizing constant for basis functions.
+
+      :return: A tensor with the shape ``[]`` (i.e. a scalar).
+
+
+
+.. py:class:: RandomFourierFeaturesCosine(kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping)
+
+   Bases: :py:obj:`RandomFourierFeaturesBase`
+
+   Random Fourier Features (RFF) is a method for approximating kernels. The essential
+   element of the RFF approach :cite:p:`rahimi2007random` is the realization that Bochner's theorem
+   for stationary kernels can be approximated by a Monte Carlo sum.
+
+   We will approximate the kernel :math:`k(\mathbf{x}, \mathbf{x}')`
+   by :math:`\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')` where
+   :math:`\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}` is a finite-dimensional feature map.
+
+   The feature map is defined as:
+
+   .. math::
+     \Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
+       \begin{bmatrix}
+         \cos(\boldsymbol{\theta}_1^\top \mathbf{x} + \tau) \\
+         \vdots \\
+         \cos(\boldsymbol{\theta}_M^\top \mathbf{x} + \tau)
+       \end{bmatrix}
+
+   where :math:`\sigma^2` is the kernel variance.
+   The features are parameterised by random weights:
+
+   - :math:`\boldsymbol{\theta} \sim p(\boldsymbol{\theta})`
+     where :math:`p(\boldsymbol{\theta})` is the spectral density of the kernel
+   - :math:`\tau \sim \mathcal{U}(0, 2\pi)`
+
+   Equivalent to :class:`RandomFourierFeatures` by elementary trigonometric identities.
+
+   :param kernel: kernel to approximate using a set of Fourier bases.
+   :param n_components: number of components (e.g. Monte Carlo samples,
+       quadrature nodes, etc.) used to numerically approximate the kernel.
+
+   .. py:method:: build(self, input_shape: gpflux.types.ShapeType) -> None
+
+      Creates the variables of the layer.
+      See `tf.keras.layers.Layer.build()
+      <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build>`_.
+
+
+   .. py:method:: _compute_bases(self, inputs: gpflow.base.TensorType) -> tensorflow.Tensor
+
+      Compute basis functions.
+
+      :return: A tensor with the shape ``[N, M]``.
+
+
+   .. py:method:: _compute_constant(self) -> tensorflow.Tensor
+
+      Compute normalizing constant for basis functions.
+
+      :return: A tensor with the shape ``[]`` (i.e. a scalar).
+
+
+
+.. py:class:: OrthogonalRandomFeatures(kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping)
+
+   Bases: :py:obj:`gpflux.layers.basis_functions.fourier_features.random.base.RandomFourierFeatures`
+
+   Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
+   efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
+
+   :param kernel: kernel to approximate using a set of Fourier bases.
+   :param n_components: number of components (e.g. Monte Carlo samples,
+       quadrature nodes, etc.) used to numerically approximate the kernel.
+
+

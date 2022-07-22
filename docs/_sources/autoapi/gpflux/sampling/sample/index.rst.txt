@@ -1,0 +1,79 @@
+:py:mod:`gpflux.sampling.sample`
+================================
+
+.. py:module:: gpflux.sampling.sample
+
+.. autoapi-nested-parse::
+
+   This module enables you to sample from (Deep) GPs using different approaches. 
+
+
+
+Module Contents
+---------------
+
+.. py:data:: efficient_sample
+   
+
+   A function that returns a :class:`Sample` of a GP posterior. 
+
+
+.. py:class:: Sample
+
+   Bases: :py:obj:`abc.ABC`
+
+   This class represents a sample from a GP that you can evaluate by using the ``__call__``
+   at new locations within the support of the GP.
+
+   Importantly, the same function draw (sample) is evaluated when calling it multiple
+   times. This property is called consistency. Achieving consistency for vanilla GPs is costly
+   because it scales cubically with the number of evaluation points,
+   but works with any kernel. It is implemented in
+   :meth:`_efficient_sample_conditional_gaussian`.
+   For :class:`KernelWithFeatureDecomposition`, the more efficient approach
+   following :cite:t:`wilson2020efficiently` is implemented in
+   :meth:`_efficient_sample_matheron_rule`.
+
+   See the tutorial notebooks `Efficient sampling
+   <../../../../notebooks/efficient_sampling.ipynb>`_ and `Weight Space
+   Approximation with Random Fourier Features
+   <../../../../notebooks/weight_space_approximation.ipynb>`_ for an
+   in-depth overview.
+
+   .. py:method:: __call__(self, X: gpflow.base.TensorType) -> tensorflow.Tensor
+      :abstractmethod:
+
+      Return the evaluation of the GP sample :math:`f(X)` for :math:`f \sim GP(0, k)`.
+
+      :param X: The inputs, a tensor with the shape ``[N, D]``, where ``D`` is the
+          input dimensionality.
+      :return: Function values, a tensor with the shape ``[N, P]``, where ``P`` is the
+          output dimensionality.
+
+
+   .. py:method:: __add__(self, other: Union[Sample, Callable[[gpflow.base.TensorType], gpflow.base.TensorType]]) -> Sample
+
+      Allow for the summation of two instances that implement the ``__call__`` method.
+
+
+
+.. py:function:: _efficient_sample_conditional_gaussian(inducing_variable: gpflow.inducing_variables.InducingVariables, kernel: gpflow.kernels.Kernel, q_mu: tensorflow.Tensor, *, q_sqrt: Optional[gpflow.base.TensorType] = None, whiten: bool = False) -> Sample
+
+   Most costly implementation for obtaining a consistent GP sample.
+   However, this method can be used for any kernel.
+
+
+.. py:function:: _efficient_sample_matheron_rule(inducing_variable: gpflow.inducing_variables.InducingVariables, kernel: gpflux.sampling.kernel_with_feature_decomposition.KernelWithFeatureDecomposition, q_mu: tensorflow.Tensor, *, q_sqrt: Optional[gpflow.base.TensorType] = None, whiten: bool = False) -> Sample
+
+   Implements the efficient sampling rule from :cite:t:`wilson2020efficiently` using
+   the Matheron rule. To use this sampling scheme, the GP has to have a
+   ``kernel`` of the :class:`KernelWithFeatureDecomposition` type .
+
+   :param kernel: A kernel of the :class:`KernelWithFeatureDecomposition` type, which
+       holds the covariance function and the kernel's features and
+       coefficients.
+   :param q_mu: A tensor with the shape ``[M, P]``.
+   :param q_sqrt: A tensor with the shape ``[P, M, M]``.
+   :param whiten: Determines the parameterisation of the inducing variables.
+
+

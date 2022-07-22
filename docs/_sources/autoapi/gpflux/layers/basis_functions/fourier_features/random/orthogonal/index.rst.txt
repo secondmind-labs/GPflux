@@ -1,0 +1,41 @@
+:orphan:
+
+:py:mod:`gpflux.layers.basis_functions.fourier_features.random.orthogonal`
+==========================================================================
+
+.. py:module:: gpflux.layers.basis_functions.fourier_features.random.orthogonal
+
+
+Module Contents
+---------------
+
+.. py:function:: _sample_chi_squared(nu: float, shape: gpflux.types.ShapeType, dtype: gpflow.base.DType) -> gpflow.base.TensorType
+
+   Draw samples from Chi-squared distribution with `nu` degrees of freedom.
+
+   See https://mathworld.wolfram.com/Chi-SquaredDistribution.html for further
+   details regarding relationship to Gamma distribution.
+
+
+.. py:function:: _sample_chi(nu: float, shape: gpflux.types.ShapeType, dtype: gpflow.base.DType) -> gpflow.base.TensorType
+
+   Draw samples from Chi-distribution with `nu` degrees of freedom.
+
+
+.. py:function:: _ceil_divide(a: float, b: float) -> int
+
+   Ceiling division. Returns the smallest integer `m` s.t. `m*b >= a`.
+
+
+.. py:class:: OrthogonalRandomFeatures(kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping)
+
+   Bases: :py:obj:`gpflux.layers.basis_functions.fourier_features.random.base.RandomFourierFeatures`
+
+   Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
+   efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
+
+   :param kernel: kernel to approximate using a set of Fourier bases.
+   :param n_components: number of components (e.g. Monte Carlo samples,
+       quadrature nodes, etc.) used to numerically approximate the kernel.
+
+

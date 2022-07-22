@@ -1,0 +1,28 @@
+:py:mod:`gpflux.layers.basis_functions.fourier_features.utils`
+==============================================================
+
+.. py:module:: gpflux.layers.basis_functions.fourier_features.utils
+
+.. autoapi-nested-parse::
+
+   This module provides a set of common utilities for kernel feature decompositions.
+
+
+
+Module Contents
+---------------
+
+.. py:function:: _bases_cosine(X: gpflow.base.TensorType, W: gpflow.base.TensorType, b: gpflow.base.TensorType) -> gpflow.base.TensorType
+
+   Feature map for random Fourier features (RFF) as originally prescribed
+   by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
+   See also :cite:p:`sutherland2015error` for additional details.
+
+
+.. py:function:: _bases_concat(X: gpflow.base.TensorType, W: gpflow.base.TensorType) -> gpflow.base.TensorType
+
+   Feature map for random Fourier features (RFF) as originally prescribed
+   by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
+   See also :cite:p:`sutherland2015error` for additional details.
+
+

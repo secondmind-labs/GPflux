@@ -1,0 +1,22 @@
+:orphan:
+
+:py:mod:`gpflux.experiment_support.plotting`
+============================================
+
+.. py:module:: gpflux.experiment_support.plotting
+
+
+Module Contents
+---------------
+
+.. py:function:: plot_layer(X: gpflow.base.TensorType, layer_input: gpflow.base.TensorType, mean: List[gpflow.base.TensorType], cov: List[gpflow.base.TensorType], sample: List[gpflow.base.TensorType], idx: Optional[int], axes: Optional[Sequence[matplotlib.pyplot.Axes]] = None) -> None
+
+   :param X: original inputs to the DGP, shape [N, 1]
+   :param layer_input: inputs to this layer, shape [N, 1]
+   :param mean: mean of this layer's output, shape [N, 1]
+   :param cov: covariance of this layer's output, shape [1, N, N]
+   :param sample: samples from this layer's output, shape [S, N, 1]
+   :param idx: the index of this layer (for labels)
+   :param axes: the sequence of 3 axes on which to plot
+
+

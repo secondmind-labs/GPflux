@@ -1,0 +1,73 @@
+:py:mod:`gpflux.encoders.directly_parameterized_encoder`
+========================================================
+
+.. py:module:: gpflux.encoders.directly_parameterized_encoder
+
+.. autoapi-nested-parse::
+
+   An "encoder" for parametrizing latent variables. Does not work with mini-batching.
+
+
+
+Module Contents
+---------------
+
+.. py:class:: DirectlyParameterizedNormalDiag(num_data: int, latent_dim: int, means: Optional[numpy.ndarray] = None)
+
+   Bases: :py:obj:`gpflux.layers.TrackableLayer`
+
+   This class implements direct parameterisation of the Normally-distributed
+   posterior of the latent variables. A mean and standard deviation to parameterise a
+   mean-field Normal distribution for each latent variable is created and learned
+   during training. This type of encoder is not computationally very efficient for
+   larger datasets, but can greatly simplify training, because no neural network is
+   required to learn an amortized mapping.
+
+   ..note::
+       No amortization is used; each datapoint element has an associated mean and
+       standard deviation. This is not compatible with mini-batching.
+
+   See :cite:t:`dutordoir2018cde` for a more thorough explanation of latent variable models
+   and encoders.
+
+   Directly parameterise the posterior of the latent variables associated with
+   each datapoint with a diagonal multivariate Normal distribution. Note that across
+   latent variables we assume a mean-field approximation.
+
+   See :cite:t:`dutordoir2018cde` for a more thorough explanation of
+   latent variable models and encoders.
+
+   :param num_data: The number of datapoints, ``N``.
+   :param latent_dim: The dimensionality of the latent variable, ``W``.
+   :param means: The initialisation of the mean of the latent variable posterior
+       distribution. (see :attr:`means`). If `None` (the default setting), set to
+       ``np.random.randn(N, W) * 0.01``; otherwise, ``means`` should be an array of
+       rank two with the shape ``[N, W]``.
+
+   .. py:attribute:: means
+      :annotation: :gpflow.Parameter
+
+      Each row contains the value of the mean for a latent variable in the model.
+      ``means`` is a tensor of rank two with the shape ``[N, W]`` because we have the same number
+      of latent variables as datapoints, and each latent variable is ``W``-dimensional.
+      Consequently, the mean for each latent variable is also ``W``-dimensional.
+
+
+   .. py:attribute:: stds
+      :annotation: :gpflow.Parameter
+
+      Each row contains the value of the diagonal covariances for a latent variable.
+      ``stds`` is a tensor of rank two with the shape ``[N, W]`` because we have the same number
+      of latent variables as datapoints, and each latent variable is ``W``-dimensional.
+      Consequently, the diagonal elements of the square covariance matrix for each latent variable
+      is also ``W``-dimensional.
+
+      Initialised to ``1e-5 * np.ones((N, W))``.
+
+
+   .. py:method:: call(self, inputs: Optional[gpflow.base.TensorType] = None, *args: Any, **kwargs: Any) -> Tuple[tensorflow.Tensor, tensorflow.Tensor]
+
+      Return the posterior's mean (see :attr:`means`) and standard deviation (see :attr:`stds`).
+
+
+
