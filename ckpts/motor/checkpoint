@@ -1,0 +1,2 @@
+model_checkpoint_path: "DistDGP(layers:3,units:1,lik.:Gaussian)"
+all_model_checkpoint_paths: "DistDGP(layers:3,units:1,lik.:Gaussian)"

@@ -1,25 +1,7 @@
-#
-# Copyright (c) 2021 The GPflux Contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-"""
-This module provides :class:`GPLayer`, which implements a Sparse Variational
-Multioutput Gaussian Process as a Keras :class:`~tf.keras.layers.Layer`.
-"""
 
+from ast import Param
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -27,10 +9,10 @@ import tensorflow_probability as tfp
 
 from gpflow import Parameter, default_float
 from gpflow.base import TensorType
-from gpflow.conditionals import conditional
-from gpflow.inducing_variables import MultioutputInducingVariables
-from gpflow.kernels import MultioutputKernel
-from gpflow.kullback_leiblers import prior_kl
+from gpflux.conditionals import conditional
+from gpflux.inducing_variables import MultioutputDistributionalInducingVariables
+from gpflux.kernels import DistributionalMultioutputKernel
+from gpflux.kullback_leiblers import prior_kl
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
 
@@ -39,76 +21,32 @@ from gpflux.math import _cholesky_with_jitter
 from gpflux.runtime_checks import verify_compatibility
 from gpflux.sampling.sample import Sample, efficient_sample
 
-class GPLayer(tfp.layers.DistributionLambda):
+
+class DistGPLayer(tfp.layers.DistributionLambda):
     """
-    A sparse variational multioutput GP layer. This layer holds the kernel,
+    A sparse variational multioutput DistGP layer. This layer holds the kernel,
     inducing variables and variational distribution, and mean function.
     """
 
     num_data: int
-    """
-    The number of points in the training dataset. This information is used to
-    obtain the correct scaling between the data-fit and the KL term in the
-    evidence lower bound (ELBO).
-    """
-
     whiten: bool
-    """
-    This parameter determines the parameterisation of the inducing variables.
-
-    If `True`, this layer uses the whitened (or non-centred) representation, in
-    which (at the example of inducing point inducing variables) ``u = f(Z) =
-    cholesky(Kuu) v``, and we parameterise an approximate posterior on ``v`` as
-    ``q(v) = N(q_mu, q_sqrt q_sqrtᵀ)``. The prior on ``v`` is ``p(v) = N(0, I)``.
-
-    If `False`, this layer uses the non-whitened (or centred) representation,
-    in which we directly parameterise ``q(u) = N(q_mu, q_sqrt q_sqrtᵀ)``. The
-    prior on ``u`` is ``p(u) = N(0, Kuu)``.
-    """
-
     num_samples: Optional[int]
-    """
-    The number of samples drawn when coercing the output distribution of
-    this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)
-    """
-
     full_cov: bool
-    """
-    This parameter determines the behaviour of calling this layer. If `False`, only
-    predict or sample marginals (diagonal of covariance) with respect to inputs.
-    If `True`, predict or sample with the full covariance over the inputs.
-    """
-
     full_output_cov: bool
-    """
-    This parameter determines the behaviour of calling this layer. If `False`, only
-    predict or sample marginals (diagonal of covariance) with respect to outputs.
-    If `True`, predict or sample with the full covariance over the outputs.
-    """
-
     q_mu: Parameter
-    r"""
-    The mean of ``q(v)`` or ``q(u)`` (depending on whether :attr:`whiten`\ ed
-    parametrisation is used).
-    """
-
     q_sqrt: Parameter
-    r"""
-    The lower-triangular Cholesky factor of the covariance of ``q(v)`` or ``q(u)``
-    (depending on whether :attr:`whiten`\ ed parametrisation is used).
-    """
 
     def __init__(
         self,
-        kernel: MultioutputKernel,
-        inducing_variable: MultioutputInducingVariables,
+        kernel: DistributionalMultioutputKernel,
+        inducing_variable: MultioutputDistributionalInducingVariables,
         num_data: int,
+        num_latent_gps: int,
         mean_function: Optional[MeanFunction] = None,
         *,
         num_samples: Optional[int] = None,
         full_cov: bool = False,
         full_output_cov: bool = False,
-        num_latent_gps: int = None,
         whiten: bool = True,
         name: Optional[str] = None,
         verbose: bool = True,
@@ -165,7 +103,6 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         self.kernel = kernel
         self.inducing_variable = inducing_variable
-
         self.num_data = num_data
 
         if mean_function is None:
@@ -183,32 +120,12 @@ class GPLayer(tfp.layers.DistributionLambda):
         self.full_cov = full_cov
         self.whiten = whiten
         self.verbose = verbose
+        num_inducing = self.inducing_variable.num_inducing
+        self.num_latent_gps = num_latent_gps
 
-        try:
-            num_inducing, self.num_latent_gps = verify_compatibility(
-                kernel, mean_function, inducing_variable
-            )
-            # TODO: if num_latent_gps is not None, verify it is equal to self.num_latent_gps
-        except GPLayerIncompatibilityException as e:
-            if num_latent_gps is None:
-                raise e
-
-            if verbose:
-                warnings.warn(
-                    "Could not verify the compatibility of the `kernel`, `inducing_variable` "
-                    "and `mean_function`. We advise using `gpflux.helpers.construct_*` to create "
-                    "compatible kernels and inducing variables. As "
-                    f"`num_latent_gps={num_latent_gps}` has been specified explicitly, this will "
-                    "be used to create the `q_mu` and `q_sqrt` parameters."
-                )
-
-            num_inducing, self.num_latent_gps = (
-                inducing_variable.num_inducing,
-                num_latent_gps,
-            )
-
+        ###### Introduce variational parameters for q(U) #######
         self.q_mu = Parameter(
-            np.zeros((num_inducing, self.num_latent_gps)),
+            np.random.uniform(-0.5, 0.5, (num_inducing, self.num_latent_gps)), # np.zeros((num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name=f"{self.name}_q_mu" if self.name else "q_mu",
         )  # [num_inducing, num_latent_gps]
@@ -224,7 +141,7 @@ class GPLayer(tfp.layers.DistributionLambda):
 
     def predict(
         self,
-        inputs: TensorType,
+        inputs: tfp.distributions.MultivariateNormalDiag,
         *,
         full_cov: bool = False,
         full_output_cov: bool = False,
@@ -252,6 +169,8 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         :returns: posterior mean (shape [N, Q]) and (co)variance (shape as above) at test points
         """
+        
+        #NOTE -- this will only work for constant input-dim architectures
         mean_function = self.mean_function(inputs)
         mean_cond, cov = conditional(
             inputs,
@@ -266,7 +185,8 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         return mean_cond + mean_function, cov
 
-    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tf.Tensor:
+
+    def call(self, inputs: tfp.distributions.MultivariateNormalDiag, *args: List[Any], **kwargs: Dict[str, Any]):
         """
         The default behaviour upon calling this layer.
 
@@ -280,7 +200,10 @@ class GPLayer(tfp.layers.DistributionLambda):
         This method also adds a layer-specific loss function, given by the KL divergence between
         this layer and the GP prior (scaled to per-datapoint).
         """
+
+        # I think this is getting just the samples from the distribution 
         outputs = super().call(inputs, *args, **kwargs)
+        #NOTE -- at this point it seems to spit out the (distribution, distribution.sample()) as a tuple
 
         if kwargs.get("training"):
             log_prior = tf.add_n([p.log_prior_density() for p in self.kernel.trainable_parameters])
@@ -294,8 +217,45 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         # Metric names should be unique; otherwise they get overwritten if you
         # have multiple with the same name
-        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
+        name = f"{self.name}_standard_kl" if self.name else "standard_kl"
         self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
+
+        with tf.name_scope(self.name):
+
+            tf.summary.histogram(
+                name = "q_mu", data = self.q_mu 
+            )   
+            tf.summary.histogram(
+                name = "q_sqrt", data = self.q_sqrt
+            )   
+
+            tf.summary.histogram(
+                name = "Z_mean", data = self.inducing_variable.inducing_variable.Z_mean 
+            )   
+            tf.summary.histogram(
+                name = "Z_var", data = self.inducing_variable.inducing_variable.Z_var
+            )   
+
+            tf.summary.histogram(
+                name = "kernel_lengthscales", data = self.kernel.kernel.lengthscales 
+            )   
+            tf.summary.histogram(
+                name = "kernel_variance", data = self.kernel.kernel.variance
+            )   
+
+            #tf.print(outputs[0].variance())
+
+            """
+            outputs_mean_param = Parameter(outputs[0].mean(), name = f"{self.name}_predictive_mean")
+            outputs_var_param = Parameter(outputs[0].variance(), name = f"{self.name}_predictive_variance")
+
+            tf.summary.histogram(
+                name = "outputs_mean", data = outputs_mean_param 
+            )   
+            tf.summary.histogram(
+                name = "output_variance", data = outputs_var_param
+            )  
+            """ 
 
         return outputs
 
@@ -310,7 +270,7 @@ class GPLayer(tfp.layers.DistributionLambda):
         )
 
     def _make_distribution_fn(
-        self, previous_layer_outputs: TensorType
+        self, previous_layer_outputs: tfp.distributions.MultivariateNormalDiag
     ) -> tfp.distributions.Distribution:
         """
         Construct the posterior distributions at the output points of the previous layer,
@@ -319,6 +279,7 @@ class GPLayer(tfp.layers.DistributionLambda):
         :param previous_layer_outputs: The output from the previous layer,
             which should be coercible to a `tf.Tensor`
         """
+        
         mean, cov = self.predict(
             previous_layer_outputs,
             full_cov=self.full_cov,
@@ -328,22 +289,26 @@ class GPLayer(tfp.layers.DistributionLambda):
         if self.full_cov and not self.full_output_cov:
             # mean: [N, Q], cov: [Q, N, N]
             return tfp.distributions.MultivariateNormalTriL(
-                loc=tf.linalg.adjoint(mean), scale_tril=_cholesky_with_jitter(cov)
+                loc=tf.linalg.adjoint(mean), scale_tril=_cholesky_with_jitter(cov),  name = self.name+'/Mvn'
             )  # loc: [Q, N], scale: [Q, N, N]
         elif self.full_output_cov and not self.full_cov:
             # mean: [N, Q], cov: [N, Q, Q]
             return tfp.distributions.MultivariateNormalTriL(
-                loc=mean, scale_tril=_cholesky_with_jitter(cov)
+                loc=mean, scale_tril=_cholesky_with_jitter(cov), name = self.name+'/Mvn'
             )  # loc: [N, Q], scale: [N, Q, Q]
         elif not self.full_cov and not self.full_output_cov:
             # mean: [N, Q], cov: [N, Q]
-            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
+            tf.debugging.assert_greater(cov, tf.zeros_like(cov, dtype = default_float()), 
+                message="Unverlying covariance matrix is not positive", 
+                name = "assert_cov_g_zero")
+
+            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov), name = self.name+'/Mvn')
         else:
             raise NotImplementedError(
                 "The combination of both `full_cov` and `full_output_cov` is not permitted."
             )
 
-    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> tf.Tensor:
+    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution):
         """
         Convert the predictive distributions at the input points (see
         :meth:`_make_distribution_fn`) to a tensor of :attr:`num_samples`
@@ -366,10 +331,11 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         return samples
 
+    """
     def sample(self) -> Sample:
-        """
-        .. todo:: TODO: Document this.
-        """
+        
+        #.. todo:: TODO: Document this.
+        
         return (
             efficient_sample(
                 self.inducing_variable,
@@ -381,3 +347,4 @@ class GPLayer(tfp.layers.DistributionLambda):
             # Makes use of the magic __add__ of the Sample class
             + self.mean_function
         )
+    """
