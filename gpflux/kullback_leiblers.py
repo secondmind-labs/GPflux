@@ -21,9 +21,7 @@ from gpflow.base import TensorType
 from gpflow.config import default_float, default_jitter
 from gpflux.covariances import Kuu
 from gpflow.inducing_variables import InducingVariables
-from gpflux.inducing_variables import DistributionalInducingVariables
 from gpflow.kernels import Kernel
-from gpflux.kernels import DistributionalKernel
 from gpflow.utilities import Dispatcher, to_default_float
 
 prior_kl = Dispatcher("prior_kl")
@@ -37,23 +35,6 @@ def _(
     q_sqrt: TensorType,
     whiten: bool = False,
 ) -> tf.Tensor:
-    if whiten:
-        return gauss_kl(q_mu, q_sqrt, None)
-    else:
-        K = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
-        return gauss_kl(q_mu, q_sqrt, K)
-
-
-@prior_kl.register(DistributionalInducingVariables, DistributionalKernel, object, object)
-def _(
-    inducing_variable: DistributionalInducingVariables,
-    kernel: DistributionalKernel,
-    q_mu: TensorType,
-    q_sqrt: TensorType,
-    whiten: bool = False,
-) -> tf.Tensor:
-
-    #TODO -- check paper to see if there is any difference here
     if whiten:
         return gauss_kl(q_mu, q_sqrt, None)
     else:

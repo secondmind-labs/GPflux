@@ -81,12 +81,12 @@ def _construct_kernel(input_dim: int, is_last_layer: bool) -> SquaredExponential
     :param input_dim: The input dimensionality of the layer.
     :param is_last_layer: Whether the kernel is part of the last layer in the Deep GP.
     """
-    variance = 1e-6 if not is_last_layer else 1.0
+    variance = 0.351 if not is_last_layer else 0.351
 
     # TODO: Looking at this initializing to 2 (assuming N(0, 1) or U[0,1] normalized
     # data) seems a bit weird - that's really long lengthscales? And I remember seeing
     # something where the value scaled with the number of dimensions before
-    lengthscales = [2.0] * input_dim
+    lengthscales = [0.351] * input_dim
     return SquaredExponential(lengthscales=lengthscales, variance=variance)
 
 
@@ -142,7 +142,7 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
             mean_function = gpflow.mean_functions.Zero()
             q_sqrt_scaling = 1.0
         else:
-            mean_function = construct_mean_function(X_running, D_in, D_out)
+            mean_function = construct_mean_function(X_running, D_out)
             X_running = mean_function(X_running)
             if tf.is_tensor(X_running):
                 X_running = cast(tf.Tensor, X_running).numpy()

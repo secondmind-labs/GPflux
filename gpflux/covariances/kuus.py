@@ -21,9 +21,7 @@ from gpflow.config import default_float
 from gpflow.inducing_variables import InducingPoints
 
 from gpflow.base import TensorLike
-from gpflux.inducing_variables import DistributionalInducingPoints
 from gpflow.kernels import Kernel
-from gpflux.kernels import DistributionalKernel
 from gpflux.covariances.dispatch import Kuu
 
 
@@ -32,17 +30,5 @@ def Kuu_kernel_inducingpoints(
     inducing_variable: InducingPoints, kernel: Kernel, *, jitter: float = 0.0
 ) -> tf.Tensor:
     Kzz = kernel(inducing_variable.Z)
-    Kzz += jitter * tf.eye(inducing_variable.num_inducing, dtype=Kzz.dtype)
-    return Kzz
-
-@Kuu.register(DistributionalInducingPoints, DistributionalKernel)
-def Kuu_kernel_distributionalinducingpoints(
-    inducing_variable: DistributionalInducingPoints, kernel: DistributionalKernel, *, jitter: float = 0.0, seed: int = None
-) -> tf.Tensor:
-
-    # Create instance of tfp.distributions.MultivariateNormalDiag so that it works with underpinning methods from kernel
-    distributional_inducing_points = tfp.distributions.MultivariateNormalDiag(loc = inducing_variable.Z_mean,
-        scale_diag = tf.sqrt(inducing_variable.Z_var))
-    Kzz = kernel(distributional_inducing_points, seed = seed)    
     Kzz += jitter * tf.eye(inducing_variable.num_inducing, dtype=Kzz.dtype)
     return Kzz

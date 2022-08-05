@@ -5,8 +5,6 @@ from typing import Any, Optional, Union
 
 
 from gpflow.base import TensorLike, TensorType
-from gpflux.inducing_variables import SharedIndependentDistributionalInducingVariables
-
 
 from gpflow.inducing_variables import (
     InducingPoints,
@@ -17,7 +15,6 @@ from gpflow.kernels import (
     SharedIndependent,
 )
 
-from gpflux.kernels import DistributionalSharedIndependent 
 from gpflux.covariances.dispatch import Kuf
 
 
@@ -28,14 +25,3 @@ def Kuf_shared_shared(
     Xnew: tf.Tensor,
 ) -> tf.Tensor:
     return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew)  # [M, N]
-
-
-@Kuf.register(SharedIndependentDistributionalInducingVariables, DistributionalSharedIndependent, tfp.distributions.MultivariateNormalDiag)
-def Kuf_shared_shared_distributional(
-    inducing_variable: SharedIndependentInducingVariables,
-    kernel: DistributionalSharedIndependent,
-    Xnew: tfp.distributions.MultivariateNormalDiag,
-    *,
-    seed:int = None
-) -> tf.Tensor:
-    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew, seed = seed)  # [M, N]

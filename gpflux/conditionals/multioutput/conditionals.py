@@ -20,8 +20,6 @@ import tensorflow_probability as tfp
 
 from gpflow.base import MeanAndVariance
 
-from gpflux.inducing_variables import SharedIndependentDistributionalInducingVariables
-
 from gpflow.inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -36,12 +34,13 @@ from gpflow.kernels import (
     SharedIndependent,
 )
 
-from gpflux.kernels import DistributionalSharedIndependent
-
 from gpflux.posteriors import (
     IndependentPosteriorMultiOutput,
+    #TODO -- probably need to add the Orthogonal version here
 )
 from  gpflux.conditionals.dispatch import conditional
+
+from gpflux.posteriors import BasePosterior, get_posterior_class
 
 
 @conditional._gpflow_internal_register(
@@ -86,7 +85,10 @@ def shared_independent_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    posterior = IndependentPosteriorMultiOutput(
+
+    posterior_class = get_posterior_class(kernel, inducing_variable, None)
+
+    posterior = posterior_class(
         kernel,
         inducing_variable,
         f,
@@ -99,17 +101,20 @@ def shared_independent_conditional(
 
 
 @conditional._gpflow_internal_register(
-    tfp.distributions.MultivariateNormalDiag, SharedIndependentDistributionalInducingVariables, DistributionalSharedIndependent, object
+    object, SharedIndependentInducingVariables, SharedIndependentInducingVariables, SharedIndependent, object, object
 )
-def shared_independent_distributional_conditional(
+def shared_independent_orthogonal_conditional(
     Xnew: tf.Tensor,
-    inducing_variable: SharedIndependentInducingVariables,
-    kernel: DistributionalSharedIndependent,
-    f: tf.Tensor,
+    inducing_variable_u: SharedIndependentInducingVariables,
+    inducing_variable_v: SharedIndependentInducingVariables,
+    kernel: SharedIndependent,
+    f_u: tf.Tensor,
+    f_v: tf.Tensor,
     *,
     full_cov: bool = False,
     full_output_cov: bool = False,
-    q_sqrt: Optional[tf.Tensor] = None,
+    q_sqrt_u: Optional[tf.Tensor] = None,
+    q_sqrt_v: Optional[tf.Tensor] = None,
     white: bool = False
 ) -> MeanAndVariance:
     """Multioutput conditional for an independent kernel and shared inducing inducing.
@@ -140,11 +145,17 @@ def shared_independent_distributional_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    posterior = IndependentPosteriorMultiOutput(
+
+    posterior_class = get_posterior_class(kernel, inducing_variable_u, inducing_variable_v)
+
+    posterior = posterior_class(
         kernel,
-        inducing_variable,
-        f,
-        q_sqrt,
+        inducing_variable_u,
+        inducing_variable_v,
+        f_u,
+        f_v,
+        q_sqrt_u,
+        q_sqrt_v,
         whiten=white,
         mean_function=None,
     )

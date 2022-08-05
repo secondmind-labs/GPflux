@@ -161,6 +161,26 @@ class DeepGP(Module):
                 features = layer(features, training=training)
         return features
 
+    def _evaluate_layer_wise_deep_gp(
+        self,
+        inputs: TensorType,
+        *,
+        training: Optional[bool] = False,
+    ) -> tf.Tensor:
+        """
+        Evaluate ``f(x) = fₙ(⋯ (f₂(f₁(x))))`` on the *inputs* argument.
+        """
+        features = inputs
+        hidden_layers = []
+
+        for count, layer in enumerate(self.f_layers):
+            
+            features = layer(features, training=training)            
+            moments = features.mean(), features.variance()
+            hidden_layers.append(moments)
+
+        return hidden_layers
+
     def _evaluate_likelihood(
         self,
         f_outputs: TensorType,
