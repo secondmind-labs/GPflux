@@ -553,7 +553,6 @@ def conditional_GP_maths(leading_dims,
 
         else:
 
-
             if full_cov:
                 fvar = fvar + tf.linalg.matmul(LTA, LTA, transpose_a=True)  # [R, N, N]
             else:
