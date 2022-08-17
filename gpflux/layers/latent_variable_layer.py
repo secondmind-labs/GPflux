@@ -94,7 +94,7 @@ class LatentVariableLayer(LayerWithObservations):
             posterior distribution; see :attr:`encoder`.
         :param compositor: A layer that combines layer inputs and latent variable
             samples into a single tensor; see :attr:`compositor`. If you do not specify a value for
-            this parameter, the default is 
+            this parameter, the default is
             ``tf.keras.layers.Concatenate(axis=-1,dtype=default_float())``. Note that you should
             set ``dtype`` of the layer to GPflow default dtype as in
             :meth:`~gpflow.default_float()`.
@@ -106,7 +106,9 @@ class LatentVariableLayer(LayerWithObservations):
         self.distribution_class = prior.__class__
         self.encoder = encoder
         self.compositor = (
-            compositor if compositor is not None else tf.keras.layers.Concatenate(axis=-1, dtype=default_float())
+            compositor
+            if compositor is not None
+            else tf.keras.layers.Concatenate(axis=-1, dtype=default_float())
         )
 
     def call(

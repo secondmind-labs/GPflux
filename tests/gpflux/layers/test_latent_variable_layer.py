@@ -26,7 +26,6 @@ from gpflow.kullback_leiblers import gauss_kl
 from gpflux.encoders import DirectlyParameterizedNormalDiag
 from gpflux.layers import LatentVariableLayer, LayerWithObservations, TrackableLayer
 
-
 ############
 # Utilities
 ############
