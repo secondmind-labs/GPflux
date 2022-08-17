@@ -133,7 +133,6 @@ def get_live_plotter(train_data, model):
 
 
 def run_demo(maxiter=int(80e3), plotter_interval=60):
-    tf.keras.backend.set_floatx("float64")
     input_dim = 2
     num_data = 1000
     data = setup_dataset(input_dim, num_data)

@@ -96,8 +96,8 @@ class DeepGP(Module):
             If you do not specify a value for this parameter explicitly, it is automatically
             detected from the :attr:`~gpflux.layers.GPLayer.num_data` attribute in the GP layers.
         """
-        self.inputs = tf.keras.Input((input_dim,), name="inputs")
-        self.targets = tf.keras.Input((target_dim,), name="targets")
+        self.inputs = tf.keras.Input((input_dim,), dtype=tf.float64, name="inputs")
+        self.targets = tf.keras.Input((target_dim,), dtype=tf.float64, name="targets")
         self.f_layers = f_layers
         if isinstance(likelihood, gpflow.likelihoods.Likelihood):
             self.likelihood_layer = LikelihoodLayer(likelihood)

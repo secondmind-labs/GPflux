@@ -5,8 +5,6 @@ import tensorflow as tf
 from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 from gpflux.helpers import make_dataclass_from_class
 
-tf.keras.backend.set_floatx("float64")
-
 
 class DemoConfig:
     num_inducing = 7
