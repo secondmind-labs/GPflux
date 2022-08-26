@@ -208,6 +208,10 @@ class GPLayer(tfp.layers.DistributionLambda):
                 num_latent_gps,
             )
 
+        print('**************888')
+        print(num_inducing)
+        print(self.num_latent_gps)
+
         self.q_mu = Parameter(
             np.zeros((num_inducing, self.num_latent_gps)),
             dtype=default_float(),

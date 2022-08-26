@@ -25,9 +25,16 @@ from gpflux.layers.basis_functions.fourier_features.random import (
     RandomFourierFeaturesCosine,
 )
 
+from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
+    MultiOutputRandomFourierFeatures,
+    MultiOutputRandomFourierFeaturesCosine,
+)
+
 __all__ = [
-    "QuadratureFourierFeatures",
+    "QuadratureFourierFeatures", 
     "OrthogonalRandomFeatures",
     "RandomFourierFeatures",
     "RandomFourierFeaturesCosine",
+    "MultiOutputRandomFourierFeatures",
+    "MultiOutputRandomFourierFeaturesCosine",
 ]

@@ -88,7 +88,7 @@ def _construct_kernel(input_dim: int, is_last_layer: bool) -> SquaredExponential
     # something where the value scaled with the number of dimensions before
     lengthscales = [2.0] * input_dim
     return SquaredExponential(lengthscales=lengthscales, variance=variance)
-
+construct_kernel
 
 def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Config) -> DeepGP:
     r"""

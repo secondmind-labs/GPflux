@@ -54,15 +54,165 @@ plt.rc("text")
 plt.rcParams.update({"font.size": 20})
 import tensorflow as tf
 
-import gpflow as gpf
+import gpflow 
 from gpflow.config import default_float
 from gpflow.models import GPR, SVGP
-from gpflow.kernels import RBF, Matern52
+from gpflow.kernels import SquaredExponential, Matern52
 from gpflow.likelihoods import Gaussian
 from gpflow.inducing_variables import InducingPoints
 
-from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition
+from gpflux.layers.basis_functions.fourier_features import MultiOutputRandomFourierFeaturesCosine
+from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition, SeparateMultiOutputKernelWithFeatureDecomposition, SharedMultiOutputKernelWithFeatureDecomposition
+
+
+
+
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from typing import Optional
+
+import tensorflow as tf
+
+import gpflow
+
+
+
+
+#from gpflow import posteriors
+from gpflow.base import InputData, MeanAndVariance, RegressionData
+from gpflow.experimental.check_shapes import check_shapes, inherit_check_shapes
+from gpflow.kernels import Kernel
+from gpflow.likelihoods import Gaussian
+from gpflow.logdensities import multivariate_normal
+from gpflow.mean_functions import MeanFunction
+from gpflow.utilities.model_utils import add_likelihood_noise_cov
+from gpflow.utilities import assert_params_false
+from gpflow.models.model import GPModel
+from gpflow.models.training_mixins import InternalDataTrainingLossMixin
+from gpflow.models.util import data_input_to_tensor
+
+class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
+    r"""
+    Gaussian Process Regression.
+
+    This is a vanilla implementation of GP regression with a Gaussian
+    likelihood.  Multiple columns of Y are treated independently.
+
+    The log likelihood of this model is given by
+
+    .. math::
+       \log p(Y \,|\, \mathbf f) =
+            \mathcal N(Y \,|\, 0, \sigma_n^2 \mathbf{I})
+
+    To train the model, we maximise the log _marginal_ likelihood
+    w.r.t. the likelihood variance and kernel hyperparameters theta.
+    The marginal likelihood is found by integrating the likelihood
+    over the prior, and has the form
+
+    .. math::
+       \log p(Y \,|\, \sigma_n, \theta) =
+            \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})
+    """
+
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
+    def __init__(
+        self,
+        data: RegressionData,
+        kernel: Kernel,
+        mean_function: Optional[MeanFunction] = None,
+        noise_variance: Optional[float] = None,
+        likelihood: Optional[Gaussian] = None,
+    ):
+        assert (noise_variance is None) or (
+            likelihood is None
+        ), "Cannot set both `noise_variance` and `likelihood`."
+        if likelihood is None:
+            if noise_variance is None:
+                noise_variance = 1.0
+            likelihood = gpflow.likelihoods.Gaussian(noise_variance)
+        _, Y_data = data
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
+        self.data = data_input_to_tensor(data)
+
+    # type-ignore is because of changed method signature:
+    @inherit_check_shapes
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
+        return self.log_marginal_likelihood()
+
+    @check_shapes(
+        "return: []",
+    )
+    def log_marginal_likelihood(self) -> tf.Tensor:
+        r"""
+        Computes the log marginal likelihood.
+
+        .. math::
+            \log p(Y | \theta).
+
+        """
+        X, Y = self.data
+        K = self.kernel(X)
+        ks = add_likelihood_noise_cov(K, self.likelihood, tf.tile(X[None,...], [2,1,1]))
+        L = tf.linalg.cholesky(ks)
+        m = self.mean_function(X)
+
+        # [R,] log-likelihoods for each independent dimension of Y
+        log_prob = multivariate_normal(Y, m, L)
+        return tf.reduce_sum(log_prob)
+
+    @inherit_check_shapes
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        r"""
+        This method computes predictions at X \in R^{N \x D} input points
+
+        .. math::
+            p(F* | Y)
+
+        where F* are points on the GP at new data points, Y are noisy observations at training data
+        points.
+        """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
+        X, Y = self.data
+        err = Y - self.mean_function(X)
+
+        kmm = self.kernel(X)
+        knn = self.kernel(Xnew, full_cov=full_cov)
+        kmn = self.kernel(X, Xnew)
+        #kmm_plus_s = add_likelihood_noise_cov(kmm, self.likelihood, X)
+        kmm_plus_s = add_likelihood_noise_cov(kmm, self.likelihood, tf.tile(X[None,...], [2,1,1]))
+
+        #NOTE -- this onlty works for a single latent Full GP
+        #conditional = gpflow.conditionals.base_conditional
+        
+        conditional = gpflow.conditionals.util.separate_independent_conditional_implementation
+                
+        f_mean_zero, f_var = conditional(
+            kmn, kmm_plus_s, knn, err, full_cov=full_cov, white=False
+        )  # [N, P], [N, P] or [P, N, N]
+        f_mean = f_mean_zero + self.mean_function(Xnew)
+        return f_mean, f_var
+
+
+
+
 
 # %% [markdown]
 """
@@ -76,7 +226,7 @@ The only aspect that is different across both experimental settings is the numbe
 # %%
 # experiment parameters that are the same for both sets of experiments
 X_interval = [0.14, 0.5]  # interval where training points live
-lengthscale = 0.1  # lengthscale for the kernel (which is not learned in all experiments, the kernel variance is 1)
+lengthscale = [0.1]  # lengthscale for the kernel (which is not learned in all experiments, the kernel variance is 1)
 number_of_features = 2000  # number of basis functions for weight-space approximated kernels
 noise_variance = 1e-3  # noise variance of the likelihood (which is not learned in all experiments)
 number_of_test_samples = 1024  # number of evaluation points for prediction
@@ -89,7 +239,7 @@ number_of_train_samples = [4, 1000]  # number of training points
 number_of_inducing_points = [4, 8]  # number of inducing points for SVGP models
 
 # kernel class
-kernel_class = Matern52  # set alternatively kernel_class = RBF
+#kernel_class = Matern52  # set altern    experiment = 2*j + nvmatively kernel_class = RBF
 
 # plotting configuration
 x_lim = [0.0, 1.0]
@@ -102,25 +252,39 @@ We proceed by generating the training data for both experimental settings from a
 
 # %%
 # generate training data and evaluation points for both sets of experiments
-kernel = kernel_class(lengthscales=lengthscale)  # kernel object to draw training dataset from
+
+
+list_kernels = [ Matern52(lengthscales=lengthscale), SquaredExponential(lengthscales=lengthscale) ]
+#kernel = kernel_class(lengthscales=lengthscale)  # kernel object to draw training dataset from
+
 X, y, X_star = [], [], []  # training points, training observations, and test points for evaluation
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
+
 for i in range(len(number_of_train_samples)):
+    
+    X_temp, y_temp, X_star_temp = [], [], [] 
 
     # training pointsnumber_of_train_samples
-    X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]))
+    X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i])[...,None])
 
-    # training observations generated from a zero-mean GP corrupted with Gaussian noise
-    kXX = kernel.K(X[i][..., None])
-    kXX_plus_noise_var = kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
-    lXX = tf.linalg.cholesky(kXX_plus_noise_var)
-    y.append(
-        tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[i].dtype))[..., 0]
-    )
+    for j in range(len(list_kernels)):
+
+        # training observations generated from a zero-mean GP corrupted with Gaussian noise
+        kXX = list_kernels[j].K(X[-1])
+        kXX_plus_noise_var = kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
+        lXX = tf.linalg.cholesky(kXX_plus_noise_var)
+        y_temp.append(
+            tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[-1].dtype))[..., 0][...,None]
+        )
 
     # test points for evaluation
-    X_star.append(np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples))
+    X_star.append(np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples)[...,None])
+    y.append(np.concatenate(y_temp, axis = -1))
+
+
+
+
 
 # %% [markdown]
 """
@@ -129,177 +293,125 @@ The `for` loop below iterates through both experimental settings with few and ma
 
 # %%
 # create subplot frame
-# 1st row: experiments with few training examples, 2nd row: experiments with many training examples
+# 1st row: experiments with few training examples, 2nd row: experiments with many training examples :: Matern52 kernel
+# 3rd row: experiments with few training examples, 4th row: experiments with many training examples :: SqExp kernel
 # 1st col: exact Gaussian process regression (GPR), 2nd col: sparse variational Gaussian process model (SVGP),
 # 3rd col: weight space approximation (WSA) of the exact GPR posterior with random Fourier features
-fig, axs = plt.subplots(2, 3)
+fig, axs = plt.subplots(2, 2)
 
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
+
 for experiment in range(len(number_of_train_samples)):
 
     # subplot titles and axis labels
-    axs[experiment, 0].set_title("Exact GP $N=" + str(number_of_train_samples[experiment]) + "$")
-    axs[experiment, 1].set_title("Sparse GP $N=" + str(number_of_train_samples[experiment]) + "$")
-    axs[experiment, 2].set_title(
-        "Weight Space GP $N=" + str(number_of_train_samples[experiment]) + "$"
+    axs[experiment, 0].set_title(
+        "Weight Space GP Matern52 $N=" + str(number_of_train_samples[experiment]) + "$"
+    )
+    axs[experiment, 1].set_title(
+        "Weight Space GP SqExp $N=" + str(number_of_train_samples[experiment]) + "$"
     )
     axs[experiment, 0].set_ylabel("$f(X)$")
     if experiment == 1:
         axs[experiment, 0].set_xlabel("$X$")
         axs[experiment, 1].set_xlabel("$X$")
-        axs[experiment, 2].set_xlabel("$X$")
 
     # plot training point locations X and set axis limits
-    for i in range(3):  # iterate through all three subplots (GPR, SVGP and WSA)
-        if (
-            experiment == 0
-        ):  # as vertical lines for the first set of experiments with few training samples
-            axs[experiment, i].vlines(
-                X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors="lightgrey"
-            )
-        else:  # as fill plots for the second set of experiments with many training samples
-            axs[experiment, i].fill_between(
-                X[experiment], y_lim[0], y_lim[1], color="gray", alpha=0.2
-            )
-        axs[experiment, i].set_xlim(x_lim)
-        axs[experiment, i].set_ylim(y_lim)
-
-    # create the GPR "ground truth" model
-    gpr_model = GPR(
-        data=(X[experiment][..., None], y[experiment][..., None]),
-        kernel=kernel_class(lengthscales=lengthscale),
-        noise_variance=noise_variance,
-    )
-
-    # predict function mean and variance, and draw function samples (without observation noise)
-    f_mean, f_var = gpr_model.predict_f(X_star[experiment][..., None])
-    f_samples = gpr_model.predict_f_samples(
-        X_star[experiment][..., None], num_samples=number_of_function_samples
-    )
-    f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
-    f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
-
-    # plot mean and std lines from the GPR model as "ground truth" in all three plots
-    for i in range(3):
-        axs[experiment, i].plot(X_star[experiment], f_mean[..., 0], linestyle="--", color="black")
-        axs[experiment, i].plot(
-            X_star[experiment], f_mean_minus_2std[..., 0], linestyle="--", color="black"
-        )
-        axs[experiment, i].plot(
-            X_star[experiment], f_mean_plus_2std[..., 0], linestyle="--", color="black"
-        )
-
-    # visualise GPR model predictions (mean +/- 2 * std and function samples) in the first column
-    axs[experiment, 0].fill_between(
-        X_star[experiment],
-        f_mean_minus_2std[..., 0],
-        f_mean_plus_2std[..., 0],
-        color="green",
-        alpha=0.2,
-    )
-    for i in range(f_samples.shape[0]):
-        axs[experiment, 0].plot(
-            X_star[experiment], f_samples[i, ..., 0], color="green", linewidth=0.2
-        )
-
-    # create the SVGP model
     if (
         experiment == 0
-    ):  # inducing points equal the training data for the first experiment with few training points
-        Z = X[experiment].copy()[..., None]
-    else:  # inducing points are randomly chosen for the second experiment with many training points
-        Z = np.linspace(X_interval[0], X_interval[1], number_of_inducing_points[experiment])[
-            ..., None
-        ]
-    svgp_model = SVGP(
-        kernel=kernel_class(lengthscales=lengthscale),
-        likelihood=Gaussian(variance=noise_variance),
-        inducing_variable=InducingPoints(Z=Z),
-    )
-    gpf.set_trainable(
-        svgp_model.kernel, False
-    )  # the training data has been sampled from a known kernel!
-    gpf.set_trainable(svgp_model.likelihood, False)  # the likelihood variance is known!
-    gpf.set_trainable(svgp_model.inducing_variable, False)  # inducing point locations are fixed!
-
-    def optimize_model_with_scipy(model):
-        optimizer = gpf.optimizers.Scipy()
-        optimizer.minimize(
-            model.training_loss_closure((X[experiment][..., None], y[experiment][..., None])),
-            variables=model.trainable_variables,
-            method="l-bfgs-b",
-            options={"disp": False, "maxiter": 10000},
+    ):  # as vertical lines for the first set of experiments with few training samples
+        axs[experiment, i].vlines(
+            X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors="lightgrey"
         )
-
-    optimize_model_with_scipy(svgp_model)
-
-    # predict function mean and variance, and draw function samples (without observation noise)
-    f_mean, f_var = svgp_model.predict_f(X_star[experiment][..., None])
-    f_samples = svgp_model.predict_f_samples(
-        X_star[experiment][..., None], num_samples=number_of_function_samples
-    )
-    f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
-    f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
-
-    # visualise SVGP model predictions (mean +/- 2 * std and function samples) in the second column
-    axs[experiment, 1].fill_between(
-        X_star[experiment],
-        f_mean_minus_2std[..., 0],
-        f_mean_plus_2std[..., 0],
-        color="purple",
-        alpha=0.2,
-    )
-    for i in range(f_samples.shape[0]):
-        axs[experiment, 1].plot(
-            X_star[experiment], f_samples[i, ..., 0], color="purple", linewidth=0.2
+    else:  # as fill plots for the second set of experiments with many training samples
+        axs[experiment, 1].fill_between(
+            X[experiment].ravel(), y_lim[0], y_lim[1], color="gray", alpha=0.2
         )
-    axs[experiment, 1].plot(X_star[experiment], f_mean[..., 0], color="purple")
-
-    # visualise predictions at inducing point locations (without observation noise)
-    Z = svgp_model.inducing_variable.Z
-    q_mu, _ = svgp_model.predict_f(Z)
-    axs[experiment, 1].plot(
-        Z[..., 0], q_mu[..., 0], "o", mfc="none", markeredgewidth=2, color="purple"
-    )
+    axs[experiment, 0].set_xlim(x_lim)
+    axs[experiment, 0].set_ylim(y_lim)
+    axs[experiment, 1].set_xlim(x_lim)
+    axs[experiment, 1].set_ylim(y_lim)
 
     # create exact GPR model with weight-space approximated kernel (WSA model)
-    feature_functions = RandomFourierFeaturesCosine(
-        kernel=kernel_class(lengthscales=lengthscale),
-        n_components=number_of_features,
-        dtype=default_float(),
+    
+    kernel1 = gpflow.kernels.Matern52(lengthscales=lengthscale)
+    kernel2 = gpflow.kernels.SquaredExponential(lengthscales=lengthscale)
+    #kernel = gpflow.kernels.SeparateIndependent( kernels = [kernel1, kernel2])
+    kernel = gpflow.kernels.SharedIndependent( kernel = kernel1, output_dim = 2)
+
+    feature_functions = MultiOutputRandomFourierFeaturesCosine(kernel, 
+        number_of_features, 
+        dtype=default_float())
+
+    feature_coefficients = np.ones((2, number_of_features, 1), dtype=default_float())
+    #kernel = SeparateMultiOutputKernelWithFeatureDecomposition(
+    #    kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients, 
+    #    output_dim = 2
+    #)
+    kernel = SharedMultiOutputKernelWithFeatureDecomposition(
+        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients, 
+        output_dim = 2
     )
-    feature_coefficients = np.ones((number_of_features, 1), dtype=default_float())
-    kernel = KernelWithFeatureDecomposition(
-        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
-    )
-    gpr_model = GPR(
-        data=(X[experiment][..., None], y[experiment][..., None]),
+
+
+    print('***************************************')
+    print('-- shape of data for current experiment')
+    print(X[experiment].shape)
+    print(y[experiment].shape)
+    print(X_star[experiment].shape)
+
+    gpr_model = GPR_deprecated(
+        data=(X[experiment], y[experiment]),
         kernel=kernel,
         noise_variance=noise_variance,
     )
 
-    # predict function mean and variance, and draw function samples (without observation noise)
-    f_mean, f_var = gpr_model.predict_f(X_star[experiment][..., None])
+    # predict function mean and variance, and draw function samples (without observation noise)#
+
+    f_mean, f_var = gpr_model.predict_f(X_star[experiment])
     f_samples = gpr_model.predict_f_samples(
-        X_star[experiment][..., None], num_samples=number_of_function_samples
+        X_star[experiment], num_samples=number_of_function_samples
     )
     f_mean_plus_2std = f_mean + 2 * f_var ** 0.5
     f_mean_minus_2std = f_mean - 2 * f_var ** 0.5
 
+    print('***************************************')
+    print('-- shape of current predictions')
+    print(f_mean.shape)
+    print(f_mean_minus_2std.shape)
+
+
     # visualise WSA model predictions (mean +/- 2 * std and function samples) in the third column
-    axs[experiment, 2].fill_between(
-        X_star[experiment],
+
+    ### Matern52 ###
+
+    axs[experiment, 0].fill_between(
+        X_star[experiment][...,0],
         f_mean_minus_2std[..., 0],
         f_mean_plus_2std[..., 0],
         color="orange",
         alpha=0.2,
     )
     for i in range(f_samples.shape[0]):
-        axs[experiment, 2].plot(
-            X_star[experiment], f_samples[i, ..., 0], color="orange", linewidth=0.2
+        axs[experiment, 0].plot(
+            X_star[experiment][...,0], f_samples[i, ..., 0], color="orange", linewidth=0.2
         )
-    axs[experiment, 2].plot(X_star[experiment], f_mean[..., 0], color="orange")
+    axs[experiment, 0].plot(X_star[experiment][...,0], f_mean[..., 0], color="orange")
+
+    ### SquaredExponential ###
+
+    axs[experiment, 1].fill_between(
+        X_star[experiment][...,0],
+        f_mean_minus_2std[..., 1],
+        f_mean_plus_2std[..., 1],
+        color="orange",
+        alpha=0.2,
+    )
+    for i in range(f_samples.shape[0]):
+        axs[experiment, 1].plot(
+            X_star[experiment][...,0], f_samples[i, ..., 1], color="orange", linewidth=0.2
+        )
+    axs[experiment, 1].plot(X_star[experiment][...,0], f_mean[..., 1], color="orange")
 
 
 # show the plot

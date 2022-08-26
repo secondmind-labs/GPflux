@@ -28,15 +28,15 @@ and `Weight Space Approximation with Random Fourier Features
 <../../../../notebooks/weight_space_approximation.ipynb>`_
 for an in-depth overview.
 """
-from typing import Optional, Union
+from typing import List, Optional, Union, Tuple
 
 import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
 
-NoneType = type(None)
 
+NoneType = type(None)
 
 class _ApproximateKernel(gpflow.kernels.Kernel):
     r"""
@@ -58,36 +58,37 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
         :param feature_functions: A Keras layer for which the call evaluates the
             ``L`` features of the kernel :math:`\phi_i(\cdot)`. For ``X`` with the shape ``[N, D]``,
             ``feature_functions(X)`` returns a tensor with the shape ``[N, L]``.
-        :param feature_coefficients: A tensor with the shape ``[L, 1]`` with coefficients
+        :param feature_coefficients: A tensor with the shape ``[L, 1]`'  with coefficients
             associated with the features, :math:`\lambda_i`.
         """
-        self._feature_functions = feature_functions
+        self._feature_functions = feature_functions # [N, L]
         self._feature_coefficients = feature_coefficients  # [L, 1]
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         """Approximate the true kernel by an inner product between feature functions."""
-        phi = self._feature_functions(X)  # [N, L]
+        phi = self._feature_functions(X)  # [N, L] 
         if X2 is None:
             phi2 = phi
         else:
             phi2 = self._feature_functions(X2)  # [N2, L]
 
-        r = tf.matmul(
-            phi, tf.transpose(self._feature_coefficients) * phi2, transpose_b=True
+        r = tf.linalg.matmul(
+            phi, tf.linalg.matrix_transpose(self._feature_coefficients) * phi2, transpose_b=True
         )  # [N, N2]
 
         N1, N2 = tf.shape(phi)[0], tf.shape(phi2)[0]
+
         tf.debugging.assert_equal(tf.shape(r), [N1, N2])
         return r
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
         """Approximate the true kernel by an inner product between feature functions."""
-        phi_squared = self._feature_functions(X) ** 2  # [N, L]
-        r = tf.reduce_sum(phi_squared * tf.transpose(self._feature_coefficients), axis=1)  # [N,]
-        N = tf.shape(X)[0]
+        phi_squared = self._feature_functions(X) ** 2  # [N, L] 
+        r = tf.reduce_sum(phi_squared * tf.transpose(self._feature_coefficients), axis=-1)  # [N,]
+        N = tf.shape(X)[0] if tf.experimental.numpy.ndim(X)==1 else tf.shape(X)[0]
+        
         tf.debugging.assert_equal(tf.shape(r), [N])  # noqa: E231
         return r
-
 
 class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
     r"""
@@ -156,8 +157,9 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
         else:
             self._kernel = kernel
 
-        self._feature_functions = feature_functions
+        self._feature_functions = feature_functions # [N, L]
         self._feature_coefficients = feature_coefficients  # [L, 1]
+    
         tf.ensure_shape(self._feature_coefficients, tf.TensorShape([None, 1]))
 
     @property
@@ -175,3 +177,4 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return self._kernel.K_diag(X)
+

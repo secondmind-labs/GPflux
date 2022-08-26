@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-This module enables you to sample from (Deep) GPs efficiently and consistently.
-"""
+""" A kernel's features and coefficients using Random Fourier Features (RFF). """
 
-from . import sample, multioutput
-from .dispatch import efficient_sample
+from gpflux.layers.basis_functions.fourier_features.multioutput.random.base import (
+    MultiOutputRandomFourierFeatures,
+    MultiOutputRandomFourierFeaturesCosine,
+)
 
 __all__ = [
-    "efficient_sample",
-    "sample",
-    "multioutput",
+    "MultiOutputRandomFourierFeatures",
+    "MultiOutputRandomFourierFeaturesCosine",    
 ]
