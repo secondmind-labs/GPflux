@@ -95,8 +95,8 @@ class LatentVariableLayer(LayerWithObservations):
         :param compositor: A layer that combines layer inputs and latent variable
             samples into a single tensor; see :attr:`compositor`. If you do not specify a value for
             this parameter, the default is
-            ``tf.keras.layers.Concatenate(axis=-1,dtype=default_float())``. Note that you should
-            set ``dtype`` of the layer to GPflow default dtype as in
+            ``tf.keras.layers.Concatenate(axis=-1, dtype=default_float())``. Note that you should
+            set ``dtype`` of the layer to GPflow's default dtype as in
             :meth:`~gpflow.default_float()`.
         :param name: The name of this layer (passed through to `tf.keras.layers.Layer`).
         """
