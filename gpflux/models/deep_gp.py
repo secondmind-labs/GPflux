@@ -139,7 +139,7 @@ class DeepGP(Module):
         Check that data ``x`` is of correct ``dtype``, corresponding to GPflow's default dtype as
         defined by :meth:`~gpflow.default_float()`.
 
-        :raise ValueError: If ``x`` is of incorrect ``dtype.
+        :raise ValueError: If ``x`` is of incorrect ``dtype``.
         """
         if x.dtype != gpflow.default_float():
             raise ValueError(
@@ -208,7 +208,7 @@ class DeepGP(Module):
         """
         :returns: The mean and variance (not the scale!) of ``f``, for compatibility with GPflow
            models.
-        :raise ValueError: If ``x`` is of incorrect ``dtype.
+        :raise ValueError: If ``x`` is of incorrect ``dtype``.
 
         .. note:: This method does **not** support ``full_cov`` or ``full_output_cov``.
         """
