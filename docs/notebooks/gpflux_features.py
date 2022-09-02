@@ -33,7 +33,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-tf.keras.backend.set_floatx("float64")  # we want to carry out GP calculations in 64 bit
 tf.get_logger().setLevel("INFO")
 
 

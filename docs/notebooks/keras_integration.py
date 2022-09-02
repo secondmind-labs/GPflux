@@ -28,8 +28,6 @@ from gpflow.ci_utils import ci_niter
 
 import matplotlib.pyplot as plt
 
-# %%
-tf.keras.backend.set_floatx("float64")
 
 # %%
 # %matplotlib inline

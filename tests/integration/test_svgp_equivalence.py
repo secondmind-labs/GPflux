@@ -28,8 +28,6 @@ from gpflow.utilities import positive, to_default_float
 
 import gpflux
 
-tf.keras.backend.set_floatx("float64")
-
 
 class LogPrior_ELBO_SVGP(gpflow.models.SVGP):
     """
@@ -264,15 +262,15 @@ def fit_natgrad(model, data, maxiter, adam_learning_rate=0.01, gamma=1.0):
 
 
 @pytest.mark.parametrize(
-    "svgp_fitter, sldgp_fitter",
+    "svgp_fitter, sldgp_fitter, tol_kw",
     [
-        (fit_adam, fit_adam),
-        (fit_adam, keras_fit_adam),
-        (fit_natgrad, fit_natgrad),
-        (fit_natgrad, keras_fit_natgrad),
+        (fit_adam, fit_adam, {}),
+        (fit_adam, keras_fit_adam, {}),
+        (fit_natgrad, fit_natgrad, {}),
+        (fit_natgrad, keras_fit_natgrad, dict(atol=1e-7)),
     ],
 )
-def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
+def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, tol_kw, maxiter=20):
     data = load_data()
 
     svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
@@ -281,14 +279,14 @@ def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
     sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
     sldgp_fitter(sldgp, data, maxiter=maxiter)
 
-    assert_equivalence(svgp, sldgp, data)
+    assert_equivalence(svgp, sldgp, data, **tol_kw)
 
 
 @pytest.mark.parametrize(
     "svgp_fitter, keras_fitter, tol_kw",
     [
         (fit_adam, _keras_fit_adam, {}),
-        (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-8)),
+        (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-6)),
     ],
 )
 def test_svgp_equivalence_with_keras_sequential(svgp_fitter, keras_fitter, tol_kw, maxiter=10):
