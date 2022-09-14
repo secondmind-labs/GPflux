@@ -1,5 +1,5 @@
 from .kernel_with_feature_decomposition import (
-    _ApproximateKernel, 
+    _ApproximateKernel,
     KernelWithFeatureDecomposition,
 )
 from .multioutput import (
@@ -9,11 +9,9 @@ from .multioutput import (
 )
 
 __all__ = [
-    "_ApproximateKernel", 
+    "_ApproximateKernel",
     "KernelWithFeatureDecomposition",
     "_MultiOutputApproximateKernel",
     "SharedMultiOutputKernelWithFeatureDecomposition",
     "SeparateMultiOutputKernelWithFeatureDecomposition",
 ]
-
-

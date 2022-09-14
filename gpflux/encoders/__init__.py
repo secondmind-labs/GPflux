@@ -17,4 +17,6 @@ r"""
 Encoders are used by :class:`~gpflux.layers.LatentVariableLayer`\ s to
 parametrize the approximate posterior distribution over latent variables.
 """
-from gpflux.encoders.directly_parameterized_encoder import DirectlyParameterizedNormalDiag
+from gpflux.encoders.directly_parameterized_encoder import (
+    DirectlyParameterizedNormalDiag,
+)

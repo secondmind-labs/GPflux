@@ -24,8 +24,11 @@ import gpflow
 from gpflow.base import TensorType
 from gpflux.types import ShapeType
 
+
 class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+    def __init__(
+        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
+    ):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
         :param n_components: number of components (e.g. Monte Carlo samples,
@@ -49,9 +52,9 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         :return: A tensor with the shape ``[N, M]``.mypy
         """
 
-        X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D] 
-        const = self._compute_constant() 
-        bases = self._compute_bases(X) 
+        X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
+        const = self._compute_constant()
+        bases = self._compute_bases(X)
         output = const * bases
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
@@ -77,7 +80,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         config = super(FourierFeaturesBase, self).get_config()
         config.update(
-            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
+            {
+                "kernel": self.kernel,
+                "n_components": self.n_components,
+                "input_dim": self._input_dim,
+            }
         )
 
         return config

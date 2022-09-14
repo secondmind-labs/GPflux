@@ -25,8 +25,14 @@ import gpflow
 from gpflow.base import TensorType
 from gpflux.types import ShapeType
 
+
 class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
-    def __init__(self, kernel: gpflow.kernels.MultioutputKernel, n_components: int, **kwargs: Mapping):
+    def __init__(
+        self,
+        kernel: gpflow.kernels.MultioutputKernel,
+        n_components: int,
+        **kwargs: Mapping
+    ):
         """
         :param kernel: kernel to approximate using a set of Fourier bases. Expects a Multioutput Kernel
         :param n_components: number of components (e.g. Monte Carlo samples,
@@ -54,31 +60,47 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         D = tf.shape(inputs)[-1]
 
         if isinstance(self.kernel, gpflow.kernels.SeparateIndependent):
-                            
-            for kernel in self.kernel.kernels:
-                print(kernel.lengthscales.unconstrained_variable.value())   
 
-            _lengthscales = tf.concat([ kernel.lengthscales[None, None, ...] if tf.rank(kernel.lengthscales.unconstrained_variable.value()) == 1 
-                else kernel.lengthscales[None, None, None, ...] for kernel in self.kernel.kernels], axis = 0) # [P, 1, D]
-            print('size -f _lengthscales')
+            for kernel in self.kernel.kernels:
+                print(kernel.lengthscales.unconstrained_variable.value())
+
+            _lengthscales = tf.concat(
+                [
+                    kernel.lengthscales[None, None, ...]
+                    if tf.rank(kernel.lengthscales.unconstrained_variable.value()) == 1
+                    else kernel.lengthscales[None, None, None, ...]
+                    for kernel in self.kernel.kernels
+                ],
+                axis=0,
+            )  # [P, 1, D]
+            print("size -f _lengthscales")
             print(_lengthscales)
             tf.debugging.assert_equal(tf.shape(_lengthscales), [P, 1, D])
 
         elif isinstance(self.kernel, gpflow.kernels.SharedIndependent):
-            #NOTE -- each kernel.kernel.lengthscales has to be of the shape [D,]
-            _lengthscales = tf.tile(self.kernel.kernel.lengthscales[None, None, ...] if tf.rank(self.kernel.kernel.lengthscales.unconstrained_variable.value()) == 1 
-                else self.kernel.kernel.lengthscales[None, None, None, ...] ,
-                [P, 1, 1]) # [P, 1, D]
+            # NOTE -- each kernel.kernel.lengthscales has to be of the shape [D,]
+            _lengthscales = tf.tile(
+                self.kernel.kernel.lengthscales[None, None, ...]
+                if tf.rank(
+                    self.kernel.kernel.lengthscales.unconstrained_variable.value()
+                )
+                == 1
+                else self.kernel.kernel.lengthscales[None, None, None, ...],
+                [P, 1, 1],
+            )  # [P, 1, D]
             tf.debugging.assert_equal(tf.shape(_lengthscales), [P, 1, D])
         else:
-            raise ValueError("kernel is not supported. Must be either gpflow.kernels.SharedIndependent or gpflow.kernels.SeparateIndependent")
+            raise ValueError(
+                "kernel is not supported. Must be either gpflow.kernels.SharedIndependent or gpflow.kernels.SeparateIndependent"
+            )
 
-        X = tf.divide(inputs, # [N, D] in the case that we predict at X*, in case we want to get the Fourier Features for Z, this would correspond to [P, M, D]
-             _lengthscales # [P, 1, D]
-            )  # [P, N, D] or [P, M, D]
-        const = self._compute_constant()[...,None,None] # [P,1,1]
-        bases = self._compute_bases(X) # [P, N, L] for X*, or [P,M,L] in the case of Z
-        output = const * bases # [P, N, L] for X*, or [P,M,L] in the case of Z
+        X = tf.divide(
+            inputs,  # [N, D] in the case that we predict at X*, in case we want to get the Fourier Features for Z, this would correspond to [P, M, D]
+            _lengthscales,  # [P, 1, D]
+        )  # [P, N, D] or [P, M, D]
+        const = self._compute_constant()[..., None, None]  # [P,1,1]
+        bases = self._compute_bases(X)  # [P, N, L] for X*, or [P,M,L] in the case of Z
+        output = const * bases  # [P, N, L] for X*, or [P,M,L] in the case of Z
 
         tf.ensure_shape(output, self.compute_output_shape(X.shape))
         return output
@@ -91,7 +113,7 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
-  
+
         tensor_shape = tf.TensorShape(input_shape).with_rank(3)
         output_dim = self._compute_output_dim(input_shape)
         return tensor_shape[:-1].concatenate(output_dim)
@@ -104,7 +126,11 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         config = super(MultiOutputFourierFeaturesBase, self).get_config()
         config.update(
-            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
+            {
+                "kernel": self.kernel,
+                "n_components": self.n_components,
+                "input_dim": self._input_dim,
+            }
         )
 
         return config

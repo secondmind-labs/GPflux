@@ -22,5 +22,5 @@ from gpflux.layers.basis_functions.fourier_features.multioutput.random.base impo
 
 __all__ = [
     "MultiOutputRandomFourierFeatures",
-    "MultiOutputRandomFourierFeaturesCosine",    
+    "MultiOutputRandomFourierFeaturesCosine",
 ]

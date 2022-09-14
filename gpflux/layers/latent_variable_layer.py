@@ -103,7 +103,9 @@ class LatentVariableLayer(LayerWithObservations):
         self.distribution_class = prior.__class__
         self.encoder = encoder
         self.compositor = (
-            compositor if compositor is not None else tf.keras.layers.Concatenate(axis=-1)
+            compositor
+            if compositor is not None
+            else tf.keras.layers.Concatenate(axis=-1)
         )
 
     def call(
@@ -133,7 +135,9 @@ class LatentVariableLayer(LayerWithObservations):
         """
         if training:
             if observations is None:
-                raise ValueError("LatentVariableLayer requires observations when training")
+                raise ValueError(
+                    "LatentVariableLayer requires observations when training"
+                )
 
             samples, loss_per_datapoint = self._inference_latent_samples_and_loss(
                 layer_inputs, observations, seed=seed
@@ -152,9 +156,7 @@ class LatentVariableLayer(LayerWithObservations):
         return self.compositor([layer_inputs, samples])
 
     def _inference_posteriors(
-        self,
-        observations: ObservationType,
-        training: Optional[bool] = None,
+        self, observations: ObservationType, training: Optional[bool] = None,
     ) -> tfp.distributions.Distribution:
         """
         Return the posterior distributions parametrised by the :attr:`encoder`, which gets called
@@ -173,12 +175,17 @@ class LatentVariableLayer(LayerWithObservations):
         encoder_inputs = tf.concat(observations, axis=-1)
 
         distribution_params = self.encoder(encoder_inputs, training=training)
-        posteriors = self.distribution_class(*distribution_params, allow_nan_stats=False)
+        posteriors = self.distribution_class(
+            *distribution_params, allow_nan_stats=False
+        )
 
         return posteriors
 
     def _inference_latent_samples_and_loss(
-        self, layer_inputs: TensorType, observations: ObservationType, seed: Optional[int] = None
+        self,
+        layer_inputs: TensorType,
+        observations: ObservationType,
+        seed: Optional[int] = None,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""
         Sample latent variables during the *training* forward pass, hence requiring

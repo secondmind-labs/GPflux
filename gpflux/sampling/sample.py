@@ -30,7 +30,10 @@ from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
 from gpflow.utilities import Dispatcher
 
 from gpflux.math import compute_A_inv_b
-from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition, _ApproximateKernel
+from gpflux.feature_decomposition_kernels import (
+    KernelWithFeatureDecomposition,
+    _ApproximateKernel,
+)
 from gpflux.sampling.utils import draw_conditional_sample
 
 from .dispatch import efficient_sample
@@ -71,7 +74,9 @@ class Sample(abc.ABC):
         """
         raise NotImplementedError
 
-    def __add__(self, other: Union["Sample", Callable[[TensorType], TensorType]]) -> "Sample":
+    def __add__(
+        self, other: Union["Sample", Callable[[TensorType], TensorType]]
+    ) -> "Sample":
         """
         Allow for the summation of two instances that implement the ``__call__`` method.
         """
@@ -135,6 +140,7 @@ def _efficient_sample_conditional_gaussian(
 
     return SampleConditional()
 
+
 @efficient_sample.register(InducingVariables, KernelWithFeatureDecomposition, object)
 def _efficient_sample_matheron_rule(
     inducing_variable: InducingVariables,
@@ -161,27 +167,25 @@ def _efficient_sample_matheron_rule(
     M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
 
     prior_weights = tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
-        (L, P), dtype=default_float() # [L, 1], [L,P]
+        (L, P), dtype=default_float()  # [L, 1], [L,P]
     )  # [L, P]
 
     u_sample_noise = tf.matmul(
-        q_sqrt, 
+        q_sqrt,
         tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
-    Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M] 
+    Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
 
     tf.debugging.assert_equal(tf.shape(Kmm), [M, M])
     u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
 
     if whiten:
-        Luu = tf.linalg.cholesky(Kmm)  # [M, M] 
+        Luu = tf.linalg.cholesky(Kmm)  # [M, M]
         u_sample = tf.matmul(Luu, u_sample)  # [M, P]
 
-    phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L] 
-    
-    weight_space_prior_Z = tf.matmul( phi_Z, # [M, L] 
-        prior_weights  # [L, P]
-        )  # [M, P]
+    phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L]
+
+    weight_space_prior_Z = tf.matmul(phi_Z, prior_weights)  # [M, L]  # [L, P]  # [M, P]
 
     diff = u_sample - weight_space_prior_Z  # [M, P]
     v = compute_A_inv_b(Kmm, diff)  # [M, P]
@@ -195,18 +199,17 @@ def _efficient_sample_matheron_rule(
             :return: function value of sample [N, P]
             """
             N = tf.shape(X)[0]
-            phi_X = kernel.feature_functions(X)  # [N, L] 
-            
+            phi_X = kernel.feature_functions(X)  # [N, L]
 
-            weight_space_prior_X = tf.matmul(phi_X, # [N, L] 
-                prior_weights # [L, P]
-                )  # [N, P]
+            weight_space_prior_X = tf.matmul(
+                phi_X, prior_weights  # [N, L]  # [L, P]
+            )  # [N, P]
 
-            Knm = tf.linalg.matrix_transpose(Kuf(inducing_variable, kernel, X))  # [N, M]
+            Knm = tf.linalg.matrix_transpose(
+                Kuf(inducing_variable, kernel, X)
+            )  # [N, M]
 
-            function_space_update_X = tf.matmul(Knm, # [N, M]
-                v  # [M, P]
-                )  # [N, P]
+            function_space_update_X = tf.matmul(Knm, v)  # [N, M]  # [M, P]  # [N, P]
 
             tf.debugging.assert_equal(tf.shape(weight_space_prior_X), [N, P])
             tf.debugging.assert_equal(tf.shape(function_space_update_X), [N, P])

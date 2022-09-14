@@ -60,11 +60,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
         self,
         log_dir: str = "logs",
         *,
-        keywords_to_monitor: List[str] = [
-            "kernel",
-            "mean_function",
-            "likelihood",
-        ],
+        keywords_to_monitor: List[str] = ["kernel", "mean_function", "likelihood",],
         max_size: int = 3,
         histogram_freq: int = 0,
         write_graph: bool = True,
@@ -163,7 +159,9 @@ class KerasModelToTensorBoard(gpflow.monitor.ModelToTensorBoard):
                 # skip parameters
                 continue
             # check if the parameter name matches any of the specified keywords
-            if self.summarize_all or any((keyword in name) for keyword in self.keywords_to_monitor):
+            if self.summarize_all or any(
+                (keyword in name) for keyword in self.keywords_to_monitor
+            ):
                 # keys are sometimes prepended with a character, which we strip
                 name = name.lstrip(self.left_strip_character)
                 self._summarize_parameter(name, parameter)

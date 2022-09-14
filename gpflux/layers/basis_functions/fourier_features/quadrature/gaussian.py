@@ -44,7 +44,9 @@ QFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
 
 
 class QuadratureFourierFeatures(FourierFeaturesBase):
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+    def __init__(
+        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
+    ):
         assert isinstance(kernel, QFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         if tf.reduce_any(tf.less(kernel.lengthscales, 1e-1)):
             warnings.warn(
@@ -66,9 +68,13 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         omegas_value = tf.squeeze(omegas_value, axis=-1)
 
         # Quadrature node points
-        self.abscissa = tf.Variable(initial_value=abscissa_value, trainable=False)  # (M^D, D)
+        self.abscissa = tf.Variable(
+            initial_value=abscissa_value, trainable=False
+        )  # (M^D, D)
         # Gauss-Hermite weights
-        self.factors = tf.Variable(initial_value=omegas_value, trainable=False)  # (M^D,)
+        self.factors = tf.Variable(
+            initial_value=omegas_value, trainable=False
+        )  # (M^D,)
         super(QuadratureFourierFeatures, self).build(input_shape)
 
     def _compute_output_dim(self, input_shape: ShapeType) -> int:

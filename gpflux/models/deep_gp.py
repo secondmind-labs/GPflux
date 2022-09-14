@@ -181,7 +181,9 @@ class DeepGP(Module):
         training: Optional[bool] = None,
     ) -> tf.Tensor:
         f_outputs = self._evaluate_deep_gp(inputs, targets=targets, training=training)
-        y_outputs = self._evaluate_likelihood(f_outputs, targets=targets, training=training)
+        y_outputs = self._evaluate_likelihood(
+            f_outputs, targets=targets, training=training
+        )
         return y_outputs
 
     def predict_f(self, inputs: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -207,7 +209,9 @@ class DeepGP(Module):
         ]
         return -tf.reduce_sum(all_losses) * self.num_data
 
-    def _get_model_class(self, model_class: Optional[Type[tf.keras.Model]]) -> Type[tf.keras.Model]:
+    def _get_model_class(
+        self, model_class: Optional[Type[tf.keras.Model]]
+    ) -> Type[tf.keras.Model]:
         if model_class is not None:
             return model_class
         else:
@@ -269,7 +273,9 @@ class DeepGP(Module):
         return model_class(self.inputs, outputs)
 
 
-def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
+def sample_dgp(
+    model: DeepGP,
+) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
     function_draws = [layer.sample() for layer in model.f_layers]
     # TODO: error check that all layers implement .sample()?
 

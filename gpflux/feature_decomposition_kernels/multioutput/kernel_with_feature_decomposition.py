@@ -38,6 +38,7 @@ from gpflow.kernels import SquaredExponential
 
 NoneType = type(None)
 
+
 class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
     r"""
     This class approximates a kernel by the finite feature decomposition:
@@ -61,7 +62,7 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
         :param feature_coefficients: A tensor with the shape ``[P, L, 1]`` with coefficients
             associated with the features, :math:`\lambda_i`.
         """
-        self._feature_functions = feature_functions # [P, N, L]
+        self._feature_functions = feature_functions  # [P, N, L]
         self._feature_coefficients = feature_coefficients  # [P, L, 1]
 
     @property
@@ -74,13 +75,20 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
         """In this scenario we do not have access to the underlying kernels, so we are just returning the feature_functions"""
         return self._feature_functions
 
-    def K(self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True) -> tf.Tensor:
+    def K(
+        self,
+        X: TensorType,
+        X2: Optional[TensorType] = None,
+        full_output_cov: bool = True,
+    ) -> tf.Tensor:
         """Approximate the true kernel by an inner product between feature functions."""
         phi = self._feature_functions(X)  # [P, N, L]
-        
+
         L = tf.shape(phi)[-1]
-        #NOTE - there are some differences between using FourierFeatures and FourierFeaturesCosine, extra check to ensure right shape and to guide debugging in notebooks
-        tf.debugging.assert_equal(tf.shape(self._feature_coefficients), [self.num_latent_gps, L, 1])
+        # NOTE - there are some differences between using FourierFeatures and FourierFeaturesCosine, extra check to ensure right shape and to guide debugging in notebooks
+        tf.debugging.assert_equal(
+            tf.shape(self._feature_coefficients), [self.num_latent_gps, L, 1]
+        )
 
         if X2 is None:
             phi2 = phi
@@ -88,7 +96,9 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
             phi2 = self._feature_functions(X2)  # [P, N2, L]
 
         r = tf.linalg.matmul(
-            phi, tf.linalg.matrix_transpose(self._feature_coefficients) * phi2, transpose_b=True
+            phi,
+            tf.linalg.matrix_transpose(self._feature_coefficients) * phi2,
+            transpose_b=True,
         )  # [P, N, N2]
 
         N1, N2 = tf.shape(phi)[1], tf.shape(phi2)[1]
@@ -99,27 +109,33 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
         """Approximate the true kernel by an inner product between feature functions."""
 
         phi_squared = self._feature_functions(X) ** 2  # [P, N, L]
-        r = tf.reduce_sum(phi_squared * tf.linalg.matrix_transpose(self._feature_coefficients), axis=-1)  # [P,N,]
-        N = tf.shape(X)[0]  
+        r = tf.reduce_sum(
+            phi_squared * tf.linalg.matrix_transpose(self._feature_coefficients),
+            axis=-1,
+        )  # [P,N,]
+        N = tf.shape(X)[0]
 
         tf.debugging.assert_equal(tf.shape(r), [self.num_latent_gps, N])  # noqa: E231
         return r
 
 
-class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedIndependent):
+class SharedMultiOutputKernelWithFeatureDecompositionBase(
+    gpflow.kernels.SharedIndependent
+):
 
     """
     'Wrapper' class to solve the issue with full_cov:bool = False inherited from gpflow.kernels.MultiOutputKernel
     which doesn't work well with GPRPosterior, as it does not use dispatchers from gpflow.covariances.
     #NOTE -- I think in general GPR in GPflow is only meant to be used in univariate regression settings or multivariate case but with common covariance
     """
+
     # Overriding __call__ from gpflow.kernels.MultioutputKernel
     def __call__(
         self,
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True, #NOTE -- this needs to be set to True as not to throw errors later on
+        full_cov: bool = True,  # NOTE -- this needs to be set to True as not to throw errors later on
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -134,7 +150,9 @@ class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedI
         return self.K(X, X2, full_output_cov=full_output_cov)
 
 
-class SharedMultiOutputKernelWithFeatureDecomposition(SharedMultiOutputKernelWithFeatureDecompositionBase):
+class SharedMultiOutputKernelWithFeatureDecomposition(
+    SharedMultiOutputKernelWithFeatureDecompositionBase
+):
     r"""
     This class represents a gpflow.kernels.SharedIndependent kernel together with its finite feature decomposition:
 
@@ -176,7 +194,7 @@ class SharedMultiOutputKernelWithFeatureDecomposition(SharedMultiOutputKernelWit
         feature_functions: tf.keras.layers.Layer,
         feature_coefficients: TensorType,
         *,
-        output_dim: Optional[int] = None
+        output_dim: Optional[int] = None,
     ):
         r"""
         :param kernel: The kernel corresponding to the feature decomposition.
@@ -198,16 +216,18 @@ class SharedMultiOutputKernelWithFeatureDecomposition(SharedMultiOutputKernelWit
         """
 
         if kernel is None:
-            #NOTE -- this is a subclass of gpflow.kernels.SharedIndependent (needed to be used with dispatchers from gpflow.covariances) 
-            # so it needs to be initialized somehow. Not sure if this is the best approach though 
+            # NOTE -- this is a subclass of gpflow.kernels.SharedIndependent (needed to be used with dispatchers from gpflow.covariances)
+            # so it needs to be initialized somehow. Not sure if this is the best approach though
             _dummy_kernel = SquaredExponential()
             super().__init__(_dummy_kernel, output_dim)
-            self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)
+            self._kernel = _MultiOutputApproximateKernel(
+                feature_functions, feature_coefficients
+            )
         else:
             super().__init__(kernel.kernel, kernel.output_dim)
             self._kernel = kernel
 
-        self._feature_functions = feature_functions # [P, N, L] 
+        self._feature_functions = feature_functions  # [P, N, L]
         self._feature_coefficients = feature_coefficients  # [P, L, 1]
 
         tf.ensure_shape(self._feature_coefficients, tf.TensorShape([None, None, 1]))
@@ -220,7 +240,9 @@ class SharedMultiOutputKernelWithFeatureDecomposition(SharedMultiOutputKernelWit
     def latent_kernels(self) -> Tuple[gpflow.kernels.Kernel, ...]:
         """The underlying kernels in the multioutput kernel"""
         if isinstance(self._kernel, _MultiOutputApproximateKernel):
-            return self._kernel.latent_kernels #NOTE -- this will return self._feature_functions from ApproximateKernel
+            return (
+                self._kernel.latent_kernels
+            )  # NOTE -- this will return self._feature_functions from ApproximateKernel
         else:
             return (self._kernel,)
 
@@ -234,14 +256,21 @@ class SharedMultiOutputKernelWithFeatureDecomposition(SharedMultiOutputKernelWit
         r"""Return the kernel's coefficients :math:`\lambda_i`."""
         return self._feature_coefficients
 
-    def K(self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True) -> tf.Tensor:
+    def K(
+        self,
+        X: TensorType,
+        X2: Optional[TensorType] = None,
+        full_output_cov: bool = True,
+    ) -> tf.Tensor:
         return self._kernel.K(X, X2, full_output_cov)
 
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         return self._kernel.K_diag(X, full_output_cov)
 
 
-class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SeparateIndependent):
+class SeparateMultiOutputKernelWithFeatureDecompositionBase(
+    gpflow.kernels.SeparateIndependent
+):
 
     """
     'Wrapper' class to solve the issue with full_cov:bool = False inherited from gpflow.kernels.MultiOutputKernel
@@ -255,7 +284,7 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True, #NOTE -- this needs to be set to True as not to throw errors later on
+        full_cov: bool = True,  # NOTE -- this needs to be set to True as not to throw errors later on
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -270,7 +299,9 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         return self.K(X, X2, full_output_cov=full_output_cov)
 
 
-class SeparateMultiOutputKernelWithFeatureDecomposition(SeparateMultiOutputKernelWithFeatureDecompositionBase):
+class SeparateMultiOutputKernelWithFeatureDecomposition(
+    SeparateMultiOutputKernelWithFeatureDecompositionBase
+):
     r"""
     This class represents a gpflow.kernel.SeparateIndependent together with its finite feature decomposition:
 
@@ -312,7 +343,7 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(SeparateMultiOutputKerne
         feature_functions: tf.keras.layers.Layer,
         feature_coefficients: TensorType,
         *,
-        output_dim: Optional[int] = None
+        output_dim: Optional[int] = None,
     ):
         r"""
         :param kernel: The kernel corresponding to the feature decomposition.
@@ -334,19 +365,21 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(SeparateMultiOutputKerne
         """
 
         if kernel is None:
-            #NOTE -- this is a subclass of gpflow.kernels.SeparateIndependent (needed to be used with dispatchers from gpflow.covariances) 
-            # so it needs to be initialized somehow. Not sure if this is the best approach though 
+            # NOTE -- this is a subclass of gpflow.kernels.SeparateIndependent (needed to be used with dispatchers from gpflow.covariances)
+            # so it needs to be initialized somehow. Not sure if this is the best approach though
             _dummy_kernels = [SquaredExponential() for _ in range(output_dim)]
-            super().__init__(_dummy_kernels) 
-            self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)
+            super().__init__(_dummy_kernels)
+            self._kernel = _MultiOutputApproximateKernel(
+                feature_functions, feature_coefficients
+            )
         else:
 
             super().__init__(kernel.kernels)
             self._kernel = kernel
 
-        self._feature_functions = feature_functions # [P, N, L] 
+        self._feature_functions = feature_functions  # [P, N, L]
         self._feature_coefficients = feature_coefficients  # [P, L, 1]
-        
+
         tf.ensure_shape(self._feature_coefficients, tf.TensorShape([None, None, 1]))
 
     @property
@@ -369,9 +402,13 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(SeparateMultiOutputKerne
         r"""Return the kernel's coefficients :math:`\lambda_i`."""
         return self._feature_coefficients
 
-    def K(self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True) -> tf.Tensor:
+    def K(
+        self,
+        X: TensorType,
+        X2: Optional[TensorType] = None,
+        full_output_cov: bool = True,
+    ) -> tf.Tensor:
         return self._kernel.K(X, X2, full_output_cov)
 
     def K_diag(self, X: TensorType, full_output_cov: bool = False) -> tf.Tensor:
         return self._kernel.K_diag(X, full_output_cov)
-

@@ -208,7 +208,7 @@ class GPLayer(tfp.layers.DistributionLambda):
                 num_latent_gps,
             )
 
-        print('**************888')
+        print("**************888")
         print(num_inducing)
         print(self.num_latent_gps)
 
@@ -271,7 +271,9 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         return mean_cond + mean_function, cov
 
-    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tf.Tensor:
+    def call(
+        self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]
+    ) -> tf.Tensor:
         """
         The default behaviour upon calling this layer.
 
@@ -288,7 +290,9 @@ class GPLayer(tfp.layers.DistributionLambda):
         outputs = super().call(inputs, *args, **kwargs)
 
         if kwargs.get("training"):
-            log_prior = tf.add_n([p.log_prior_density() for p in self.kernel.trainable_parameters])
+            log_prior = tf.add_n(
+                [p.log_prior_density() for p in self.kernel.trainable_parameters]
+            )
             loss = self.prior_kl() - log_prior
             loss_per_datapoint = loss / self.num_data
 
@@ -311,7 +315,11 @@ class GPLayer(tfp.layers.DistributionLambda):
         :attr:`whiten`\ ed representation, returns ``KL[q(v)∥p(v)]``.
         """
         return prior_kl(
-            self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
+            self.inducing_variable,
+            self.kernel,
+            self.q_mu,
+            self.q_sqrt,
+            whiten=self.whiten,
         )
 
     def _make_distribution_fn(
@@ -342,13 +350,17 @@ class GPLayer(tfp.layers.DistributionLambda):
             )  # loc: [N, Q], scale: [N, Q, Q]
         elif not self.full_cov and not self.full_output_cov:
             # mean: [N, Q], cov: [N, Q]
-            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
+            return tfp.distributions.MultivariateNormalDiag(
+                loc=mean, scale_diag=tf.sqrt(cov)
+            )
         else:
             raise NotImplementedError(
                 "The combination of both `full_cov` and `full_output_cov` is not permitted."
             )
 
-    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> tf.Tensor:
+    def _convert_to_tensor_fn(
+        self, distribution: tfp.distributions.Distribution
+    ) -> tf.Tensor:
         """
         Convert the predictive distributions at the input points (see
         :meth:`_make_distribution_fn`) to a tensor of :attr:`num_samples`

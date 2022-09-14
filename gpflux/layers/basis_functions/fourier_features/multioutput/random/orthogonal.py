@@ -65,6 +65,8 @@ def _ceil_divide(a: float, b: float) -> int:
     return -np.floor_divide(-a, b)
 
 
+# TODO -- this class has to be updated
+# NOTE -- I am not sure if the shapes are fine here, check the actual paper
 class OrthogonalRandomFeatures(RandomFourierFeatures):
     r"""
     Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
@@ -80,20 +82,20 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
     def _weights_init(
         self, shape: TensorType, dtype: Optional[DType] = None
     ) -> TensorType:
-        n_components, input_dim = shape  # M, D
+        n_out, n_components, input_dim = shape  # P, M, D
         n_reps = _ceil_divide(
             n_components, input_dim
         )  # K, smallest integer s.t. K*D >= M
 
-        W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
-        Q, _ = tf.linalg.qr(W)  # throw away R; shape [K, D, D]
+        W = tf.random.normal(shape=(n_out, n_reps, input_dim, input_dim), dtype=dtype)
+        Q, _ = tf.linalg.qr(W)  # throw away R; shape [P, K, D, D]
 
         s = _sample_chi(
-            nu=input_dim, shape=(n_reps, input_dim), dtype=dtype
-        )  # shape [K, D]
+            nu=input_dim, shape=(n_out, n_reps, input_dim), dtype=dtype
+        )  # shape [P, K, D]
         U = (
             tf.expand_dims(s, axis=-1) * Q
-        )  # equiv: S @ Q where S = diag(s); shape [K, D, D]
-        V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
+        )  # equiv: S @ Q where S = diag(s); shape [P, K, D, D]
+        V = tf.reshape(U, shape=(n_out, -1, input_dim))  # shape [P, K*D, D]
 
         return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)

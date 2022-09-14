@@ -21,6 +21,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import TensorType
 
+
 def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
     if isinstance(kernel, gpflow.kernels.Matern52):
         p = 2
@@ -31,6 +32,7 @@ def _matern_number(kernel: gpflow.kernels.Kernel) -> int:
     else:
         raise NotImplementedError("Not a recognized Matern kernel")
     return p
+
 
 def _bases_cosine(X: TensorType, W: TensorType, b: TensorType) -> TensorType:
     """

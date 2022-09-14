@@ -73,7 +73,9 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+    def __init__(
+        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
+    ):
         assert isinstance(kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         super(RandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
 
@@ -97,7 +99,9 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
             initializer=self._weights_init,
         )
 
-    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+    def _weights_init(
+        self, shape: TensorType, dtype: Optional[DType] = None
+    ) -> TensorType:
         if isinstance(self.kernel, gpflow.kernels.SquaredExponential):
             return tf.random.normal(shape, dtype=dtype)
         else:
@@ -216,7 +220,9 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
             initializer=self._bias_init,
         )
 
-    def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+    def _bias_init(
+        self, shape: TensorType, dtype: Optional[DType] = None
+    ) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
 
     def _compute_output_dim(self, input_shape: ShapeType) -> int:

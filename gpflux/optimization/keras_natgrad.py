@@ -108,7 +108,9 @@ class NatGradModel(tf.keras.Model):
         return self._all_optimizers[-1]
 
     @optimizer.setter
-    def optimizer(self, optimizers: List[Union[NaturalGradient, tf.optimizers.Optimizer]]) -> None:
+    def optimizer(
+        self, optimizers: List[Union[NaturalGradient, tf.optimizers.Optimizer]]
+    ) -> None:
         if optimizers is None:
             # tf.keras.Model.__init__() sets self.optimizer = None
             self._all_optimizers = None
@@ -144,7 +146,9 @@ class NatGradModel(tf.keras.Model):
     ) -> Tuple[List[Tuple[Parameter, Parameter]], List[tf.Variable]]:
         # NOTE the structure of variational_params is directly linked to the _natgrad_step,
         # do not change out of sync
-        variational_params = [(layer.q_mu, layer.q_sqrt) for layer in self.natgrad_layers]
+        variational_params = [
+            (layer.q_mu, layer.q_sqrt) for layer in self.natgrad_layers
+        ]
         # NOTE could use a natgrad_parameters attribute on a layer or a
         # singledispatch function to make this more flexible for other layers
 
@@ -152,7 +156,9 @@ class NatGradModel(tf.keras.Model):
         variational_vars_set = ObjectIdentitySet(
             p.unconstrained_variable for vp in variational_params for p in vp
         )
-        other_vars = [v for v in self.trainable_variables if v not in variational_vars_set]
+        other_vars = [
+            v for v in self.trainable_variables if v not in variational_vars_set
+        ]
 
         return variational_params, other_vars
 
@@ -185,7 +191,9 @@ class NatGradModel(tf.keras.Model):
         for (natgrad_optimizer, (q_mu_grad, q_sqrt_grad), (q_mu, q_sqrt)) in zip(
             self.natgrad_optimizers, variational_params_grads, variational_params
         ):
-            natgrad_optimizer._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt)
+            natgrad_optimizer._natgrad_apply_gradients(
+                q_mu_grad, q_sqrt_grad, q_mu, q_sqrt
+            )
 
         self.optimizer.apply_gradients(zip(other_grads, other_vars))
 
@@ -203,7 +211,9 @@ class NatGradModel(tf.keras.Model):
 
         with tf.GradientTape() as tape:
             y_pred = self.__call__(x, training=True)
-            loss = self.compiled_loss(y, y_pred, sample_weight, regularization_losses=self.losses)
+            loss = self.compiled_loss(
+                y, y_pred, sample_weight, regularization_losses=self.losses
+            )
 
         self._apply_backwards_pass(loss, tape=tape)
 
@@ -243,7 +253,9 @@ class NatGradWrapper(NatGradModel):
         else:
             return self.base_model.layers
 
-    def call(self, data: Any, training: Optional[bool] = None) -> Union[tf.Tensor, MeanAndVariance]:
+    def call(
+        self, data: Any, training: Optional[bool] = None
+    ) -> Union[tf.Tensor, MeanAndVariance]:
         """
         Calls the model on new inputs. Simply passes through to the ``base_model``.
         """

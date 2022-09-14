@@ -88,9 +88,14 @@ def _construct_kernel(input_dim: int, is_last_layer: bool) -> SquaredExponential
     # something where the value scaled with the number of dimensions before
     lengthscales = [2.0] * input_dim
     return SquaredExponential(lengthscales=lengthscales, variance=variance)
+
+
 construct_kernel
 
-def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Config) -> DeepGP:
+
+def build_constant_input_dim_deep_gp(
+    X: np.ndarray, num_layers: int, config: Config
+) -> DeepGP:
     r"""
     Build a Deep GP consisting of ``num_layers`` :class:`GPLayer`\ s.
     All the hidden layers have the same input dimension as the data, that is, ``X.shape[1]``.
@@ -127,7 +132,10 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True, z_init=centroids
+            num_inducing=config.num_inducing,
+            input_dim=D_in,
+            share_variables=True,
+            z_init=centroids,
         )
 
         kernel = construct_basic_kernel(

@@ -58,5 +58,7 @@ def compute_A_inv_b(A: TensorType, b: TensorType) -> tf.Tensor:
     L = tf.linalg.cholesky(A)
     # A⁻¹ = L⁻ᵀ L⁻¹
     L_inv_b = tf.linalg.triangular_solve(L, b)
-    A_inv_b = tf.linalg.triangular_solve(L, L_inv_b, adjoint=True)  # adjoint = transpose
+    A_inv_b = tf.linalg.triangular_solve(
+        L, L_inv_b, adjoint=True
+    )  # adjoint = transpose
     return A_inv_b

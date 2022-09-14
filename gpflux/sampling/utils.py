@@ -24,7 +24,9 @@ from gpflow.conditionals.util import sample_mvn
 from gpflux.math import _cholesky_with_jitter
 
 
-def draw_conditional_sample(mean: TensorType, cov: TensorType, f_old: TensorType) -> tf.Tensor:
+def draw_conditional_sample(
+    mean: TensorType, cov: TensorType, f_old: TensorType
+) -> tf.Tensor:
     r"""
     Draw a sample :math:`\tilde{f}_\text{new}` from the conditional
     multivariate Gaussian :math:`p(f_\text{new} | f_\text{old})`, where the
