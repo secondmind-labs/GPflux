@@ -139,9 +139,7 @@ def construct_basic_inducing_variables(
                 assert len(z_init[i]) == num_ind_var
                 z_init_i = z_init[i]
             else:
-                z_init_i = np.random.randn(num_ind_var, input_dim).astype(
-                    dtype=default_float()
-                )
+                z_init_i = np.random.randn(num_ind_var, input_dim).astype(dtype=default_float())
             assert z_init_i.shape == (num_ind_var, input_dim)
             inducing_variables.append(InducingPoints(z_init_i))
         return SeparateIndependentInducingVariables(inducing_variables)
@@ -157,9 +155,7 @@ def construct_basic_inducing_variables(
                     )
                 z_init_o = z_init[o]
             else:
-                z_init_o = np.random.randn(num_inducing, input_dim).astype(
-                    dtype=default_float()
-                )
+                z_init_o = np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
             inducing_variables.append(InducingPoints(z_init_o))
         return SeparateIndependentInducingVariables(inducing_variables)
 
@@ -244,15 +240,9 @@ def construct_gp_layer(
     """
     lengthscale = float(input_dim) ** 0.5
     base_kernel = kernel_class(lengthscales=np.full(input_dim, lengthscale))
-    kernel = construct_basic_kernel(
-        base_kernel, output_dim=output_dim, share_hyperparams=True
-    )
+    kernel = construct_basic_kernel(base_kernel, output_dim=output_dim, share_hyperparams=True)
     inducing_variable = construct_basic_inducing_variables(
-        num_inducing,
-        input_dim,
-        output_dim=output_dim,
-        share_variables=True,
-        z_init=z_init,
+        num_inducing, input_dim, output_dim=output_dim, share_variables=True, z_init=z_init,
     )
     gp_layer = GPLayer(
         kernel=kernel,
@@ -267,9 +257,7 @@ def construct_gp_layer(
 T = TypeVar("T")
 
 
-def make_dataclass_from_class(
-    dataclass: Type[T], instance: object, **updates: object
-) -> T:
+def make_dataclass_from_class(dataclass: Type[T], instance: object, **updates: object) -> T:
     """
     Take a regular object ``instance`` with a superset of fields for a
     :class:`dataclasses.dataclass` (``@dataclass``-decorated class), and return an
@@ -295,6 +283,4 @@ def xavier_initialization_numpy(input_dim: int, output_dim: int) -> np.ndarray:
     Draw samples from a normal distribution centred on :math:`0` with standard deviation
     :math:`\sqrt(2 / (\text{input_dim} + \text{output_dim}))`.
     """
-    return (
-        np.random.randn(input_dim, output_dim) * (2.0 / (input_dim + output_dim)) ** 0.5
-    )
+    return np.random.randn(input_dim, output_dim) * (2.0 / (input_dim + output_dim)) ** 0.5

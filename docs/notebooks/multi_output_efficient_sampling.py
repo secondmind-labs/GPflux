@@ -36,9 +36,7 @@ import gpflux
 
 from gpflow.config import default_float
 
-from gpflux.layers.basis_functions.fourier_features import (
-    MultiOutputRandomFourierFeaturesCosine,
-)
+from gpflux.layers.basis_functions.fourier_features import MultiOutputRandomFourierFeaturesCosine
 from gpflux.feature_decomposition_kernels import (
     KernelWithFeatureDecomposition,
     SharedMultiOutputKernelWithFeatureDecomposition,
@@ -89,9 +87,7 @@ inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables
 gpflow.utilities.set_trainable(inducing_variable, False)
 P = 2
 num_rff = 1000
-eigenfunctions = MultiOutputRandomFourierFeaturesCosine(
-    kernel, num_rff, dtype=default_float()
-)
+eigenfunctions = MultiOutputRandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((P, num_rff, 1), dtype=default_float())
 # kernel_with_features = SeparateMultiOutputKernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
 kernel_with_features = SharedMultiOutputKernelWithFeatureDecomposition(
@@ -113,9 +109,7 @@ layer = gpflux.layers.GPLayer(
     num_latent_gps=2,
     mean_function=gpflow.mean_functions.Zero(),
 )
-likelihood_layer = gpflux.layers.LikelihoodLayer(
-    gpflow.likelihoods.Gaussian()
-)  # noqa: E231
+likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
 dgp = gpflux.models.DeepGP([layer], likelihood_layer)
 model = dgp.as_training_model()
 # %% [markdown]

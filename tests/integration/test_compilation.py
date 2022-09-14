@@ -153,9 +153,7 @@ def test_model_compilation(deep_gp_model_builder):
 
     if loss is None:  # build_gpflux_deep_gp
         test_batch_dict = next(iter(train_dataset))
-        test_batch_dict["targets"] = np.full_like(
-            test_batch_dict["targets"].shape, np.nan
-        )
+        test_batch_dict["targets"] = np.full_like(test_batch_dict["targets"].shape, np.nan)
         output = deep_gp_model(test_batch_dict)
         mean, var = output.f_mean, output.f_var
     else:
@@ -211,9 +209,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
         objective = tf.function(objective)
 
     def optimization_step(data_minibatch):
-        optimizer.minimize(
-            lambda: objective(data_minibatch), deep_gp_model.trainable_weights
-        )
+        optimizer.minimize(lambda: objective(data_minibatch), deep_gp_model.trainable_weights)
 
     if use_tf_function:
         optimization_step = tf.function(optimization_step)
@@ -229,9 +225,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
     # Check outputs
     if loss is None:  # build_gpflux_deep_gp
         test_batch_dict = next(iter(train_dataset))
-        test_batch_dict["targets"] = np.full_like(
-            test_batch_dict["targets"].shape, np.nan
-        )
+        test_batch_dict["targets"] = np.full_like(test_batch_dict["targets"].shape, np.nan)
         output = deep_gp_model(test_batch_dict)
         mean, var = output.f_mean, output.f_var
     else:

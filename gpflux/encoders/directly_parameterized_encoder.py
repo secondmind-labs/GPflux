@@ -66,9 +66,7 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
     Initialised to ``1e-5 * np.ones((N, W))``.
     """
 
-    def __init__(
-        self, num_data: int, latent_dim: int, means: Optional[np.ndarray] = None
-    ):
+    def __init__(self, num_data: int, latent_dim: int, means: Optional[np.ndarray] = None):
         """
         Directly parameterise the posterior of the latent variables associated with
         each datapoint with a diagonal multivariate Normal distribution. Note that across
@@ -101,9 +99,7 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
 
         # TODO: Rename to `scale` and `loc` to match tfp.distributions
         self.means = Parameter(means, dtype=default_float(), name="w_means")
-        self.stds = Parameter(
-            stds, transform=positive(), dtype=default_float(), name="w_stds"
-        )
+        self.stds = Parameter(stds, transform=positive(), dtype=default_float(), name="w_stds")
 
     def call(
         self, inputs: Optional[TensorType] = None, *args: Any, **kwargs: Any
@@ -113,10 +109,6 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
         """
         if inputs is not None:
             tf.debugging.assert_shapes(
-                [
-                    (self.means, ["N", "W"]),
-                    (self.stds, ["N", "W"]),
-                    (inputs, ["N", "D"]),
-                ]
+                [(self.means, ["N", "W"]), (self.stds, ["N", "W"]), (inputs, ["N", "D"]),]
             )
         return self.means, self.stds

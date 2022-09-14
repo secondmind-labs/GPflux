@@ -93,9 +93,7 @@ def _construct_kernel(input_dim: int, is_last_layer: bool) -> SquaredExponential
 construct_kernel
 
 
-def build_constant_input_dim_deep_gp(
-    X: np.ndarray, num_layers: int, config: Config
-) -> DeepGP:
+def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Config) -> DeepGP:
     r"""
     Build a Deep GP consisting of ``num_layers`` :class:`GPLayer`\ s.
     All the hidden layers have the same input dimension as the data, that is, ``X.shape[1]``.
@@ -157,11 +155,7 @@ def build_constant_input_dim_deep_gp(
             q_sqrt_scaling = config.inner_layer_qsqrt_factor
 
         layer = GPLayer(
-            kernel,
-            inducing_var,
-            num_data,
-            mean_function=mean_function,
-            name=f"gp_{i_layer}",
+            kernel, inducing_var, num_data, mean_function=mean_function, name=f"gp_{i_layer}",
         )
         layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
         gp_layers.append(layer)

@@ -98,9 +98,7 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
     ]
     history = model.fit(dataset, epochs=CONFIG.num_epochs, callbacks=callbacks)
 
-    tb_files_pattern = (
-        f"{tmp_path}/train/events.out.tfevents*"  # notice the glob pattern
-    )
+    tb_files_pattern = f"{tmp_path}/train/events.out.tfevents*"  # notice the glob pattern
 
     # Maps tensorboard tags (e.g. kernel.variance) to list containing
     # their successive values during optimisation.
@@ -150,9 +148,7 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
         assert len(record) == CONFIG.num_epochs
 
     # Check that recorded TensorBoard loss matches Keras history
-    np.testing.assert_array_almost_equal(
-        records["epoch_loss"], history.history["loss"], decimal=5
-    )
+    np.testing.assert_array_almost_equal(records["epoch_loss"], history.history["loss"], decimal=5)
 
     # Check correctness of fixed likelihood variance
     tag = ("layers[3].likelihood.variance",)

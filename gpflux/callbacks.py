@@ -159,9 +159,7 @@ class KerasModelToTensorBoard(gpflow.monitor.ModelToTensorBoard):
                 # skip parameters
                 continue
             # check if the parameter name matches any of the specified keywords
-            if self.summarize_all or any(
-                (keyword in name) for keyword in self.keywords_to_monitor
-            ):
+            if self.summarize_all or any((keyword in name) for keyword in self.keywords_to_monitor):
                 # keys are sometimes prepended with a character, which we strip
                 name = name.lstrip(self.left_strip_character)
                 self._summarize_parameter(name, parameter)

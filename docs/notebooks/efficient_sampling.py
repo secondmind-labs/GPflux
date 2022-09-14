@@ -75,9 +75,7 @@ num_rff = 1000
 eigenfunctions = RandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
 
-kernel_with_features = KernelWithFeatureDecomposition(
-    kernel, eigenfunctions, eigenvalues
-)
+kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
 
 
 # %% [markdown]
@@ -96,9 +94,7 @@ layer = gpflux.layers.GPLayer(
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )
-likelihood_layer = gpflux.layers.LikelihoodLayer(
-    gpflow.likelihoods.Gaussian()
-)  # noqa: E231
+likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
 dgp = gpflux.models.DeepGP([layer], likelihood_layer)
 model = dgp.as_training_model()
 # %% [markdown]
@@ -116,11 +112,7 @@ callbacks = [
 ]
 
 history = model.fit(
-    {"inputs": X, "targets": Y},
-    batch_size=num_data,
-    epochs=100,
-    callbacks=callbacks,
-    verbose=0,
+    {"inputs": X, "targets": Y}, batch_size=num_data, epochs=100, callbacks=callbacks, verbose=0,
 )
 # %% [markdown]
 """

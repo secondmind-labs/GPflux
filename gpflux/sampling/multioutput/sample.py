@@ -91,15 +91,13 @@ def _efficient_multi_output_sample_matheron_rule(
     )  # [L, P]
 
     u_sample_noise = tf.matmul(
-        q_sqrt,
-        tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
+        q_sqrt, tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
     tf.debugging.assert_equal(tf.shape(u_sample_noise), [P, M, 1])
 
     if isinstance(kernel, SharedIndependent):
         Kmm = tf.tile(
-            Kuu(inducing_variable, kernel, jitter=default_jitter())[None, ...],
-            [P, 1, 1],
+            Kuu(inducing_variable, kernel, jitter=default_jitter())[None, ...], [P, 1, 1],
         )  # [P,M,M]
         tf.debugging.assert_equal(tf.shape(Kmm), [P, M, M])
     elif isinstance(kernel, SeparateIndependent):
@@ -120,9 +118,7 @@ def _efficient_multi_output_sample_matheron_rule(
         tf.debugging.assert_equal(tf.shape(Kmm), [P, M, M])
 
         u_sample = tf.transpose(
-            tf.matmul(Luu, tf.transpose(u_sample)[..., None])[  # [P, M, M]  # [P, M, 1]
-                ..., 0
-            ]
+            tf.matmul(Luu, tf.transpose(u_sample)[..., None])[..., 0]  # [P, M, M]  # [P, M, 1]
         )  # [M, P]
         tf.debugging.assert_equal(tf.shape(u_sample), [M, P])
 
@@ -138,9 +134,7 @@ def _efficient_multi_output_sample_matheron_rule(
 
     elif isinstance(inducing_variable, SharedIndependentInducingVariables):
 
-        phi_Z = kernel.feature_functions(
-            inducing_variable.inducing_variable.Z
-        )  # [P, M, L]
+        phi_Z = kernel.feature_functions(inducing_variable.inducing_variable.Z)  # [P, M, L]
         tf.debugging.assert_equal(tf.shape(phi_Z), [P, M, L])
     else:
         raise ValueError(
@@ -153,9 +147,7 @@ def _efficient_multi_output_sample_matheron_rule(
     weight_space_prior_Z = tf.transpose(weight_space_prior_Z[..., 0])  # [M, P]
 
     diff = tf.transpose(u_sample - weight_space_prior_Z)[..., None]  # [P, M, 1]
-    v = tf.transpose(
-        compute_A_inv_b(Kmm, diff)[..., 0]  # [P, M, M]  # [P, M, 1]
-    )  # [M, P]
+    v = tf.transpose(compute_A_inv_b(Kmm, diff)[..., 0])  # [P, M, M]  # [P, M, 1]  # [M, P]
 
     tf.debugging.assert_equal(tf.shape(v), [M, P])
 
@@ -169,10 +161,9 @@ def _efficient_multi_output_sample_matheron_rule(
             phi_X = kernel.feature_functions(X)  # [P, N, L]
 
             weight_space_prior_X = tf.transpose(
-                tf.matmul(
-                    phi_X,  # [P, N, L]
-                    tf.transpose(prior_weights)[..., None],  # [P, L, 1]
-                )[..., 0]
+                tf.matmul(phi_X, tf.transpose(prior_weights)[..., None],)[  # [P, N, L]  # [P, L, 1]
+                    ..., 0
+                ]
             )  # [N, P]
 
             Knm = tf.linalg.matrix_transpose(
@@ -182,9 +173,7 @@ def _efficient_multi_output_sample_matheron_rule(
                 Knm = tf.tile(Knm[None, ...], [P, 1, 1])
             tf.debugging.assert_equal(tf.shape(Knm), [P, N, M])
             function_space_update_X = tf.transpose(
-                tf.matmul(Knm, tf.transpose(v)[..., None])[  # [P, N, M]  # [P, M, 1]
-                    ..., 0
-                ]
+                tf.matmul(Knm, tf.transpose(v)[..., None])[..., 0]  # [P, N, M]  # [P, M, 1]
             )  # [N, P]
 
             tf.debugging.assert_equal(tf.shape(weight_space_prior_X), [N, P])

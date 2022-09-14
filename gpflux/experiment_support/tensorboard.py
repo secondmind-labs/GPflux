@@ -34,9 +34,7 @@ class Event:
     dtype: Type
 
 
-def tensorboard_event_iterator(
-    file_pattern: Union[str, List[str], tf.Tensor]
-) -> Iterator[Event]:
+def tensorboard_event_iterator(file_pattern: Union[str, List[str], tf.Tensor]) -> Iterator[Event]:
     """
     Iterator yielding preprocessed tensorboard Events.
 

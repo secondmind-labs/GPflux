@@ -26,9 +26,7 @@ from gpflux.layers.basis_functions.fourier_features.random import (
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.random.base import (
-    RFF_SUPPORTED_KERNELS,
-)
+from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 from tests.conftest import skip_serialization_tests
 
 
@@ -63,8 +61,7 @@ def _kernel_cls_fixture(request):
 
 
 @pytest.fixture(
-    name="random_basis_func_cls",
-    params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
+    name="random_basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
 )
 def _random_basis_func_cls_fixture(request):
     return request.param
@@ -72,11 +69,7 @@ def _random_basis_func_cls_fixture(request):
 
 @pytest.fixture(
     name="basis_func_cls",
-    params=[
-        RandomFourierFeatures,
-        RandomFourierFeaturesCosine,
-        OrthogonalRandomFeatures,
-    ],
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, OrthogonalRandomFeatures,],
 )
 def _basis_func_cls_fixture(request):
     return request.param
@@ -114,9 +107,7 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_orthogonal_random_features_can_approximate_kernel_multidim(
-    variance, lengthscale, n_dims
-):
+def test_orthogonal_random_features_can_approximate_kernel_multidim(variance, lengthscale, n_dims):
     n_components = 20000
 
     x_rows = 20
@@ -124,9 +115,7 @@ def test_orthogonal_random_features_can_approximate_kernel_multidim(
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    kernel = gpflow.kernels.SquaredExponential(
-        variance=variance, lengthscales=lengthscales
-    )
+    kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
     fourier_features = OrthogonalRandomFeatures(kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
@@ -193,9 +182,7 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
 
 
 @skip_serialization_tests
-def test_keras_testing_util_layer_test_multidim(
-    kernel_cls, batch_size, n_dims, n_components
-):
+def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, n_components):
     kernel = kernel_cls()
 
     tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures

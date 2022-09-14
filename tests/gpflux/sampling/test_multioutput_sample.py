@@ -20,9 +20,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import default_float, default_jitter
 
-from gpflux.layers.basis_functions.fourier_features import (
-    MultiOutputRandomFourierFeaturesCosine,
-)
+from gpflux.layers.basis_functions.fourier_features import MultiOutputRandomFourierFeaturesCosine
 from gpflux.feature_decomposition_kernels import (
     SharedMultiOutputKernelWithFeatureDecomposition,
     SeparateMultiOutputKernelWithFeatureDecomposition,
@@ -52,9 +50,7 @@ def _shared_inducing_variable_fixture():
 
     ind_var = gpflow.inducing_variables.InducingPoints(Z)
 
-    return gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducing_variable=ind_var
-    )
+    return gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable=ind_var)
 
 
 @pytest.fixture(name="separate_inducing_variable")
@@ -99,14 +95,10 @@ def test_shared_wilson_efficient_sample(base_kernel, shared_inducing_variable, w
     """Smoke and consistency test for efficient sampling using Wilson"""
     kernel = _get_shared_kernel(base_kernel)
 
-    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(
-        kernel, 100, dtype=default_float()
-    )
+    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(kernel, 100, dtype=default_float())
     eigenvalues = np.ones((2, 100, 1), dtype=default_float())
     # To apply Wilson sampling we require the features and eigenvalues of the kernel
-    kernel2 = SharedMultiOutputKernelWithFeatureDecomposition(
-        kernel, eigenfunctions, eigenvalues
-    )
+    kernel2 = SharedMultiOutputKernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
     q_mu, q_sqrt = _get_shared_qmu_qsqrt(kernel, shared_inducing_variable)
 
     sample_func = efficient_sample(
@@ -125,20 +117,14 @@ def test_shared_wilson_efficient_sample(base_kernel, shared_inducing_variable, w
     )
 
 
-def test_separate_wilson_efficient_sample(
-    base_kernel, separate_inducing_variable, whiten
-):
+def test_separate_wilson_efficient_sample(base_kernel, separate_inducing_variable, whiten):
     """Smoke and consistency test for efficient sampling using Wilson"""
     kernel = _get_separate_kernel(base_kernel)
 
-    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(
-        kernel, 100, dtype=default_float()
-    )
+    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(kernel, 100, dtype=default_float())
     eigenvalues = np.ones((2, 100, 1), dtype=default_float())
     # To apply Wilson sampling we require the features and eigenvalues of the kernel
-    kernel2 = SeparateMultiOutputKernelWithFeatureDecomposition(
-        kernel, eigenfunctions, eigenvalues
-    )
+    kernel2 = SeparateMultiOutputKernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
     q_mu, q_sqrt = _get_separate_qmu_qsqrt(kernel, separate_inducing_variable)
 
     sample_func = efficient_sample(

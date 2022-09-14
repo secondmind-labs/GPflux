@@ -27,12 +27,10 @@ from gpflux.layers.basis_functions.fourier_features import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.random.orthogonal import (
-    ORF_SUPPORTED_KERNELS,
-)
+from gpflux.layers.basis_functions.fourier_features.random.orthogonal import ORF_SUPPORTED_KERNELS
 from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
     MultiOutputRandomFourierFeatures,
-    MultiOutputOrthogonalRandomFeatures
+    MultiOutputOrthogonalRandomFeatures,
 )
 
 from gpflux.feature_decomposition_kernels.multioutput import (
@@ -66,9 +64,11 @@ def _batch_size_fixture(request):
 def _n_features_fixture(request):
     return request.param
 
+
 @pytest.fixture(name="base_kernel_cls", params=list(ORF_SUPPORTED_KERNELS))
 def _base_kernel_cls_fixture(request):
     return request.param
+
 
 def test_orthogonal_fourier_features_can_approximate_multi_output_separate_kernel_multidim(
     base_kernel_cls, variance, lengthscale, n_dims
@@ -92,7 +92,7 @@ def test_orthogonal_fourier_features_can_approximate_multi_output_separate_kerne
 
     actual_kernel_matrix = kernel.K(x, y, full_output_cov=False).numpy()
 
-    #fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
+    # fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
     fourier_features = MultiOutputOrthogonalRandomFeatures(kernel, n_components, dtype=tf.float64)
 
     feature_coefficients = np.ones((2, 2 * n_components, 1), dtype=np.float64)
@@ -131,7 +131,7 @@ def test_orthogonal_fourier_features_can_approximate_multi_output_shared_kernel_
 
     actual_kernel_matrix = kernel.K(x, y, full_output_cov=False).numpy()
 
-    #fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
+    # fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
     fourier_features = MultiOutputOrthogonalRandomFeatures(kernel, n_components, dtype=tf.float64)
 
     feature_coefficients = np.ones((2, 2 * n_components, 1), dtype=np.float64)
@@ -146,9 +146,6 @@ def test_orthogonal_fourier_features_can_approximate_multi_output_shared_kernel_
     approx_kernel_matrix = kernel(x, y).numpy()
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
-
-
-
 
 
 """

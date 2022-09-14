@@ -61,9 +61,7 @@ from gpflow.kernels import SquaredExponential, Matern52
 from gpflow.likelihoods import Gaussian
 from gpflow.inducing_variables import InducingPoints
 
-from gpflux.layers.basis_functions.fourier_features import (
-    MultiOutputRandomFourierFeaturesCosine,
-)
+from gpflux.layers.basis_functions.fourier_features import MultiOutputRandomFourierFeaturesCosine
 from gpflux.feature_decomposition_kernels import (
     KernelWithFeatureDecomposition,
     SeparateMultiOutputKernelWithFeatureDecomposition,
@@ -148,9 +146,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
                 noise_variance = 1.0
             likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, Y_data = data
-        super().__init__(
-            kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1]
-        )
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data_input_to_tensor(data)
 
     # type-ignore is because of changed method signature:
@@ -169,9 +165,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         X, Y = self.data
         K = self.kernel(X)
-        ks = add_likelihood_noise_cov(
-            K, self.likelihood, tf.tile(X[None, ...], [2, 1, 1])
-        )
+        ks = add_likelihood_noise_cov(K, self.likelihood, tf.tile(X[None, ...], [2, 1, 1]))
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(X)
 
@@ -208,9 +202,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         # NOTE -- this onlty works for a single latent Full GP
         # conditional = gpflow.conditionals.base_conditional
 
-        conditional = (
-            gpflow.conditionals.util.separate_independent_conditional_implementation
-        )
+        conditional = gpflow.conditionals.util.separate_independent_conditional_implementation
 
         f_mean_zero, f_var = conditional(
             kmn, kmm_plus_s, knn, err, full_cov=full_cov, white=False
@@ -234,12 +226,8 @@ X_interval = [0.14, 0.5]  # interval where training points live
 lengthscale = [
     0.1
 ]  # lengthscale for the kernel (which is not learned in all experiments, the kernel variance is 1)
-number_of_features = (
-    2000  # number of basis functions for weight-space approximated kernels
-)
-noise_variance = (
-    1e-3  # noise variance of the likelihood (which is not learned in all experiments)
-)
+number_of_features = 2000  # number of basis functions for weight-space approximated kernels
+noise_variance = 1e-3  # noise variance of the likelihood (which is not learned in all experiments)
 number_of_test_samples = 1024  # number of evaluation points for prediction
 number_of_function_samples = (
     20  # number of function samples to be drawn from (approximate) posteriors
@@ -285,32 +273,25 @@ for i in range(len(number_of_train_samples)):
 
     # training pointsnumber_of_train_samples
     X.append(
-        np.linspace(
-            start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]
-        )[..., None]
+        np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i])[
+            ..., None
+        ]
     )
 
     for j in range(len(list_kernels)):
 
         # training observations generated from a zero-mean GP corrupted with Gaussian noise
         kXX = list_kernels[j].K(X[-1])
-        kXX_plus_noise_var = (
-            kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
-        )
+        kXX_plus_noise_var = kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
         lXX = tf.linalg.cholesky(kXX_plus_noise_var)
         y_temp.append(
-            tf.matmul(
-                lXX,
-                tf.random.normal([number_of_train_samples[i], 1], dtype=X[-1].dtype),
-            )[..., 0][..., None]
+            tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[-1].dtype),)[
+                ..., 0
+            ][..., None]
         )
 
     # test points for evaluation
-    X_star.append(
-        np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples)[
-            ..., None
-        ]
-    )
+    X_star.append(np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples)[..., None])
     y.append(np.concatenate(y_temp, axis=-1))
 
 
@@ -348,9 +329,7 @@ for experiment in range(len(number_of_train_samples)):
     if (
         experiment == 0
     ):  # as vertical lines for the first set of experiments with few training samples
-        axs[experiment, i].vlines(
-            X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors="lightgrey"
-        )
+        axs[experiment, i].vlines(X[experiment], ymin=y_lim[0], ymax=y_lim[1], colors="lightgrey")
     else:  # as fill plots for the second set of experiments with many training samples
         axs[experiment, 1].fill_between(
             X[experiment].ravel(), y_lim[0], y_lim[1], color="gray", alpha=0.2
@@ -390,9 +369,7 @@ for experiment in range(len(number_of_train_samples)):
     print(X_star[experiment].shape)
 
     gpr_model = GPR_deprecated(
-        data=(X[experiment], y[experiment]),
-        kernel=kernel,
-        noise_variance=noise_variance,
+        data=(X[experiment], y[experiment]), kernel=kernel, noise_variance=noise_variance,
     )
 
     # predict function mean and variance, and draw function samples (without observation noise)#
@@ -422,10 +399,7 @@ for experiment in range(len(number_of_train_samples)):
     )
     for i in range(f_samples.shape[0]):
         axs[experiment, 0].plot(
-            X_star[experiment][..., 0],
-            f_samples[i, ..., 0],
-            color="orange",
-            linewidth=0.2,
+            X_star[experiment][..., 0], f_samples[i, ..., 0], color="orange", linewidth=0.2,
         )
     axs[experiment, 0].plot(X_star[experiment][..., 0], f_mean[..., 0], color="orange")
 
@@ -440,10 +414,7 @@ for experiment in range(len(number_of_train_samples)):
     )
     for i in range(f_samples.shape[0]):
         axs[experiment, 1].plot(
-            X_star[experiment][..., 0],
-            f_samples[i, ..., 1],
-            color="orange",
-            linewidth=0.2,
+            X_star[experiment][..., 0], f_samples[i, ..., 1], color="orange", linewidth=0.2,
         )
     axs[experiment, 1].plot(X_star[experiment][..., 0], f_mean[..., 1], color="orange")
 

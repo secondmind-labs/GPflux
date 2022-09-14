@@ -63,14 +63,10 @@ def model(data) -> tf.keras.models.Model:
     num_data = len(X)
     input_dim = X.shape[-1]
 
-    layer1 = construct_gp_layer(
-        num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim
-    )
+    layer1 = construct_gp_layer(num_data, CONFIG.num_inducing, input_dim, CONFIG.hidden_dim)
 
     output_dim = Y.shape[-1]
-    layer2 = construct_gp_layer(
-        num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim
-    )
+    layer2 = construct_gp_layer(num_data, CONFIG.num_inducing, CONFIG.hidden_dim, output_dim)
 
     likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))
 
@@ -95,23 +91,15 @@ _MODEL_PARAMS_AND_SIZE = {
     "._self_tracked_trackables[1].inducing_variable.inducing_variable.Z": (
         CONFIG.num_inducing * CONFIG.input_dim
     ),
-    "._self_tracked_trackables[1].q_mu": _size_q_mu(
-        CONFIG.num_inducing, CONFIG.hidden_dim
-    ),
-    "._self_tracked_trackables[1].q_sqrt": _size_q_sqrt(
-        CONFIG.num_inducing, CONFIG.hidden_dim
-    ),
+    "._self_tracked_trackables[1].q_mu": _size_q_mu(CONFIG.num_inducing, CONFIG.hidden_dim),
+    "._self_tracked_trackables[1].q_sqrt": _size_q_sqrt(CONFIG.num_inducing, CONFIG.hidden_dim),
     "._self_tracked_trackables[2].kernel.kernel.variance": 1,
     "._self_tracked_trackables[2].kernel.kernel.lengthscales": CONFIG.hidden_dim,
     "._self_tracked_trackables[2].inducing_variable.inducing_variable.Z": (
         CONFIG.num_inducing * CONFIG.hidden_dim
     ),
-    "._self_tracked_trackables[2].q_mu": _size_q_mu(
-        CONFIG.num_inducing, CONFIG.output_dim
-    ),
-    "._self_tracked_trackables[2].q_sqrt": _size_q_sqrt(
-        CONFIG.num_inducing, CONFIG.output_dim
-    ),
+    "._self_tracked_trackables[2].q_mu": _size_q_mu(CONFIG.num_inducing, CONFIG.output_dim),
+    "._self_tracked_trackables[2].q_sqrt": _size_q_sqrt(CONFIG.num_inducing, CONFIG.output_dim),
     "._self_tracked_trackables[3].likelihood.variance": 1,
 }
 
@@ -152,9 +140,7 @@ def test_weights_equals_deduplicated_parameter_dict(model):
     """
     # We filter out the parameters of type ResourceVariable.
     # They have been added to the model by the `add_metric` call in the layer.
-    parameters = [
-        p for p in parameter_dict(model).values() if not isinstance(p, ResourceVariable)
-    ]
+    parameters = [p for p in parameter_dict(model).values() if not isinstance(p, ResourceVariable)]
     variables = map(lambda p: p.unconstrained_variable, parameters)
     deduplicate_variables = object_identity.ObjectIdentitySet(variables)
 

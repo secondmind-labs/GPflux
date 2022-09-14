@@ -20,11 +20,11 @@ from gpflux.layers.basis_functions.fourier_features.multioutput.random.base impo
     MultiOutputRandomFourierFeaturesCosine,
 )
 from gpflux.layers.basis_functions.fourier_features.multioutput.random.orthogonal import (
-    MultiOutputOrthogonalRandomFeatures
+    MultiOutputOrthogonalRandomFeatures,
 )
 
 __all__ = [
     "MultiOutputRandomFourierFeatures",
     "MultiOutputRandomFourierFeaturesCosine",
-    "MultiOutputOrthogonalRandomFeatures"
+    "MultiOutputOrthogonalRandomFeatures",
 ]

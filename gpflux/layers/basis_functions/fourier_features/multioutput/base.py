@@ -28,10 +28,7 @@ from gpflux.types import ShapeType
 
 class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
     def __init__(
-        self,
-        kernel: gpflow.kernels.MultioutputKernel,
-        n_components: int,
-        **kwargs: Mapping
+        self, kernel: gpflow.kernels.MultioutputKernel, n_components: int, **kwargs: Mapping
     ):
         """
         :param kernel: kernel to approximate using a set of Fourier bases. Expects a Multioutput Kernel
@@ -81,10 +78,7 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
             # NOTE -- each kernel.kernel.lengthscales has to be of the shape [D,]
             _lengthscales = tf.tile(
                 self.kernel.kernel.lengthscales[None, None, ...]
-                if tf.rank(
-                    self.kernel.kernel.lengthscales.unconstrained_variable.value()
-                )
-                == 1
+                if tf.rank(self.kernel.kernel.lengthscales.unconstrained_variable.value()) == 1
                 else self.kernel.kernel.lengthscales[None, None, None, ...],
                 [P, 1, 1],
             )  # [P, 1, D]

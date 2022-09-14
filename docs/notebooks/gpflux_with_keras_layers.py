@@ -117,10 +117,7 @@ def plot(model, X, Y, ax=None):
     f_distribution = model(X_test)
 
     mean = f_distribution.mean().numpy().squeeze()
-    var = (
-        f_distribution.variance().numpy().squeeze()
-        + model.layers[-1].likelihood.variance.numpy()
-    )
+    var = f_distribution.variance().numpy().squeeze() + model.layers[-1].likelihood.variance.numpy()
     X_test = X_test.squeeze()
     lower = mean - 2 * np.sqrt(var)
     upper = mean + 2 * np.sqrt(var)

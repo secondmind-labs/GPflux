@@ -39,6 +39,7 @@ ORF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
 )
 
+
 def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
     Draw samples from Chi-squared distribution with `nu` degrees of freedom.
@@ -70,31 +71,21 @@ class MultiOutputOrthogonalRandomFeatures(MultiOutputRandomFourierFeatures):
     efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
     """
 
-    def __init__(
-        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
-    ):
-
-
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
 
         if isinstance(kernel, gpflow.kernels.SeparateIndependent):
             for ker in kernel.kernels:
                 assert isinstance(ker, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
         elif isinstance(kernel, gpflow.kernels.SharedIndependent):
-            assert isinstance(
-                kernel.kernel, ORF_SUPPORTED_KERNELS
-            ), "Unsupported Kernel"
+            assert isinstance(kernel.kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
         else:
             raise ValueError("kernel specified is not supported.")
-            
+
         super(MultiOutputOrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
 
-    def _weights_init(
-        self, shape: TensorType, dtype: Optional[DType] = None
-    ) -> TensorType:
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         n_out, n_components, input_dim = shape  # P, M, D
-        n_reps = _ceil_divide(
-            n_components, input_dim
-        )  # K, smallest integer s.t. K*D >= M
+        n_reps = _ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
 
         W = tf.random.normal(shape=(n_out, n_reps, input_dim, input_dim), dtype=dtype)
         Q, _ = tf.linalg.qr(W)  # throw away R; shape [P, K, D, D]
@@ -102,9 +93,7 @@ class MultiOutputOrthogonalRandomFeatures(MultiOutputRandomFourierFeatures):
         s = _sample_chi(
             nu=input_dim, shape=(n_out, n_reps, input_dim), dtype=dtype
         )  # shape [P, K, D]
-        U = (
-            tf.expand_dims(s, axis=-1) * Q
-        )  # equiv: S @ Q where S = diag(s); shape [P, K, D, D]
+        U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [P, K, D, D]
         V = tf.reshape(U, shape=(n_out, -1, input_dim))  # shape [P, K*D, D]
 
         return V[:, : self.n_components, :]  # shape [P, M, D] (throw away K*D - M rows)

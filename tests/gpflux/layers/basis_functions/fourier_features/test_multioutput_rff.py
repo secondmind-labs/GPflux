@@ -27,9 +27,7 @@ from gpflux.layers.basis_functions.fourier_features import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.random.base import (
-    RFF_SUPPORTED_KERNELS,
-)
+from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
     MultiOutputRandomFourierFeatures,
 )
@@ -266,9 +264,7 @@ def test_random_multi_output_fourier_feature_layer_compute_covariance_of_separat
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_multi_output_fourier_features_shapes(
-    basis_func_cls, n_components, n_dims, batch_size
-):
+def test_multi_output_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_size):
     input_shape = (2, batch_size, n_dims)
     base_kernel = gpflow.kernels.SquaredExponential(lengthscales=[1.0] * n_dims)
     kernel = SeparateIndependent(kernels=[base_kernel, base_kernel])

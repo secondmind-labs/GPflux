@@ -131,11 +131,7 @@ def test_construct_inducing_shared_independent_duplicates(z_init):
         z_init = None
 
     moiv = construct_basic_inducing_variables(
-        num_inducing,
-        input_dim,
-        output_dim=output_dim,
-        share_variables=True,
-        z_init=z_init,
+        num_inducing, input_dim, output_dim=output_dim, share_variables=True, z_init=z_init,
     )
 
     assert isinstance(moiv, SharedIndependentInducingVariables)
@@ -169,9 +165,7 @@ def test_construct_gp_layer():
     # kernel
     assert isinstance(layer.kernel, SharedIndependent)
     assert isinstance(layer.kernel.kernel, SquaredExponential)
-    assert (
-        len(layer.kernel.kernel.lengthscales.numpy()) == input_dim
-    ), "expected ARD kernel"
+    assert len(layer.kernel.kernel.lengthscales.numpy()) == input_dim, "expected ARD kernel"
 
     # inducing variable
     assert isinstance(layer.inducing_variable, SharedIndependentInducingVariables)
@@ -200,9 +194,7 @@ def test_make_dataclass_from_class():
     overwritten = "overwritten"
     assert PopulatedClass.bar != overwritten
 
-    result = make_dataclass_from_class(
-        BlankDataclass, PopulatedClass(), bar=overwritten
-    )
+    result = make_dataclass_from_class(BlankDataclass, PopulatedClass(), bar=overwritten)
     assert isinstance(result, BlankDataclass)
     assert result.foo == PopulatedClass.foo
     assert result.bar == overwritten

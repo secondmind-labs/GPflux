@@ -33,9 +33,7 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
     data = make_data(input_dim, output_dim, num_data=num_data)
 
     kernel = construct_basic_kernel(RBF(), output_dim)
-    inducing_vars = construct_basic_inducing_variables(
-        num_inducing, input_dim, output_dim
-    )
+    inducing_vars = construct_basic_inducing_variables(num_inducing, input_dim, output_dim)
     mean_function = Zero(output_dim)
 
     gp_layer = GPLayer(
@@ -50,10 +48,7 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
 
     X = np.random.random(size=(num_data, input_dim)) * lim[1]
     cov = RBF().K(X) + np.eye(num_data) * sigma ** 2
-    Y = [
-        np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
-        for _ in range(output_dim)
-    ]
+    Y = [np.random.multivariate_normal(np.zeros(num_data), cov)[:, None] for _ in range(output_dim)]
     Y = np.hstack(Y)
     return X, Y
 
@@ -103,25 +98,19 @@ def test_call_shapes():
     assert not gp_layer.full_cov and not gp_layer.full_output_cov
 
     distribution = gp_layer(X, training=False)
-    assert isinstance(
-        unwrap_dist(distribution), tfp.distributions.MultivariateNormalDiag
-    )
+    assert isinstance(unwrap_dist(distribution), tfp.distributions.MultivariateNormalDiag)
     assert distribution.shape == (batch_size, output_dim)
 
     gp_layer.full_cov = True
     distribution = gp_layer(X, training=False)
-    assert isinstance(
-        unwrap_dist(distribution), tfp.distributions.MultivariateNormalTriL
-    )
+    assert isinstance(unwrap_dist(distribution), tfp.distributions.MultivariateNormalTriL)
     assert distribution.shape == (batch_size, output_dim)
     assert distribution.covariance().shape == (output_dim, batch_size, batch_size)
 
     gp_layer.full_output_cov = True
     gp_layer.full_cov = False
     distribution = gp_layer(X, training=False)
-    assert isinstance(
-        unwrap_dist(distribution), tfp.distributions.MultivariateNormalTriL
-    )
+    assert isinstance(unwrap_dist(distribution), tfp.distributions.MultivariateNormalTriL)
     assert distribution.shape == (batch_size, output_dim)
     assert distribution.covariance().shape == (batch_size, output_dim, output_dim)
 

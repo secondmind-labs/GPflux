@@ -77,24 +77,17 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 class MultiOutputRandomFourierFeaturesBase(MultiOutputFourierFeaturesBase):
     def __init__(
-        self,
-        kernel: gpflow.kernels.MultioutputKernel,
-        n_components: int,
-        **kwargs: Mapping
+        self, kernel: gpflow.kernels.MultioutputKernel, n_components: int, **kwargs: Mapping
     ):
 
         if isinstance(kernel, gpflow.kernels.SeparateIndependent):
             for ker in kernel.kernels:
                 assert isinstance(ker, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         elif isinstance(kernel, gpflow.kernels.SharedIndependent):
-            assert isinstance(
-                kernel.kernel, RFF_SUPPORTED_KERNELS
-            ), "Unsupported Kernel"
+            assert isinstance(kernel.kernel, RFF_SUPPORTED_KERNELS), "Unsupported Kernel"
         else:
             raise ValueError("kernel specified is not supported.")
-        super(MultiOutputRandomFourierFeaturesBase, self).__init__(
-            kernel, n_components, **kwargs
-        )
+        super(MultiOutputRandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
         """
@@ -119,9 +112,7 @@ class MultiOutputRandomFourierFeaturesBase(MultiOutputFourierFeaturesBase):
         )
         tf.ensure_shape(self.W, shape)
 
-    def _weights_init(
-        self, shape: TensorType, dtype: Optional[DType] = None
-    ) -> TensorType:
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
 
         if isinstance(self.kernel, gpflow.kernels.SeparateIndependent):
 
@@ -209,9 +200,7 @@ class MultiOutputRandomFourierFeatures(MultiOutputRandomFourierFeaturesBase):
         """
 
         if hasattr(self.kernel, "kernels"):
-            _kernel_variance = tf.stack(
-                [ker.variance for ker in self.kernel.kernels], axis=0
-            )
+            _kernel_variance = tf.stack([ker.variance for ker in self.kernel.kernels], axis=0)
             tf.ensure_shape(_kernel_variance, [self.kernel.num_latent_gps,])
 
         else:
@@ -271,9 +260,7 @@ class MultiOutputRandomFourierFeaturesCosine(MultiOutputRandomFourierFeaturesBas
             initializer=self._bias_init,
         )
 
-    def _bias_init(
-        self, shape: TensorType, dtype: Optional[DType] = None
-    ) -> TensorType:
+    def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
 
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
@@ -295,9 +282,7 @@ class MultiOutputRandomFourierFeaturesCosine(MultiOutputRandomFourierFeaturesBas
         """
 
         if hasattr(self.kernel, "kernels"):
-            _kernel_variance = tf.stack(
-                [ker.variance for ker in self.kernel.kernels], axis=0
-            )
+            _kernel_variance = tf.stack([ker.variance for ker in self.kernel.kernels], axis=0)
             tf.ensure_shape(_kernel_variance, [self.kernel.num_latent_gps,])
         else:
             _kernel_variance = self.kernel.kernel.variance

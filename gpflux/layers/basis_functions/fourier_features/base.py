@@ -26,9 +26,7 @@ from gpflux.types import ShapeType
 
 
 class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
-    def __init__(
-        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
-    ):
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
         :param n_components: number of components (e.g. Monte Carlo samples,

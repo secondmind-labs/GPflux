@@ -51,9 +51,7 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
     """
 
     def __init__(
-        self,
-        feature_functions: tf.keras.layers.Layer,
-        feature_coefficients: TensorType,
+        self, feature_functions: tf.keras.layers.Layer, feature_coefficients: TensorType,
     ):
         r"""
         :param feature_functions: A Keras layer for which the call evaluates the
@@ -74,9 +72,7 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
             phi2 = self._feature_functions(X2)  # [N2, L]
 
         r = tf.linalg.matmul(
-            phi,
-            tf.linalg.matrix_transpose(self._feature_coefficients) * phi2,
-            transpose_b=True,
+            phi, tf.linalg.matrix_transpose(self._feature_coefficients) * phi2, transpose_b=True,
         )  # [N, N2]
 
         N1, N2 = tf.shape(phi)[0], tf.shape(phi2)[0]
@@ -87,9 +83,7 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
     def K_diag(self, X: TensorType) -> tf.Tensor:
         """Approximate the true kernel by an inner product between feature functions."""
         phi_squared = self._feature_functions(X) ** 2  # [N, L]
-        r = tf.reduce_sum(
-            phi_squared * tf.transpose(self._feature_coefficients), axis=-1
-        )  # [N,]
+        r = tf.reduce_sum(phi_squared * tf.transpose(self._feature_coefficients), axis=-1)  # [N,]
         N = tf.shape(X)[0] if tf.experimental.numpy.ndim(X) == 1 else tf.shape(X)[0]
 
         tf.debugging.assert_equal(tf.shape(r), [N])  # noqa: E231

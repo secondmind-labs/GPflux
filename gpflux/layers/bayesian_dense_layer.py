@@ -88,10 +88,7 @@ class BayesianDenseLayer(TrackableLayer):
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
             if not is_mean_field:
-                assert w_sqrt.shape == (
-                    (input_dim + 1) * output_dim,
-                    (input_dim + 1) * output_dim,
-                )
+                assert w_sqrt.shape == ((input_dim + 1) * output_dim, (input_dim + 1) * output_dim,)
             else:
                 assert w_sqrt.shape == ((input_dim + 1) * output_dim,)
         assert temperature > 0.0
@@ -111,14 +108,10 @@ class BayesianDenseLayer(TrackableLayer):
         self.full_output_cov = False
         self.full_cov = False
 
-        self.w_mu = Parameter(
-            np.zeros((self.dim,)), dtype=default_float(), name="w_mu"
-        )  # [dim]
+        self.w_mu = Parameter(np.zeros((self.dim,)), dtype=default_float(), name="w_mu")  # [dim]
 
         self.w_sqrt = Parameter(
-            np.zeros((self.dim, self.dim))
-            if not self.is_mean_field
-            else np.ones((self.dim,)),
+            np.zeros((self.dim, self.dim)) if not self.is_mean_field else np.ones((self.dim,)),
             transform=triangular() if not self.is_mean_field else positive(),
             dtype=default_float(),
             name="w_sqrt",
@@ -154,9 +147,7 @@ class BayesianDenseLayer(TrackableLayer):
         :returns: Samples, shape ``[S, N, Q]`` if S is not None else ``[N, Q]``.
         """
         _num_samples = num_samples or 1
-        z = tf.random.normal(
-            (self.dim, _num_samples), dtype=default_float()
-        )  # [dim, S]
+        z = tf.random.normal((self.dim, _num_samples), dtype=default_float())  # [dim, S]
         if not self.is_mean_field:
             w = self.w_mu[:, None] + tf.matmul(self.w_sqrt, z)  # [dim, S]
         else:
@@ -168,9 +159,7 @@ class BayesianDenseLayer(TrackableLayer):
         )  # [N, D+1]
         samples = tf.tensordot(
             inputs_concat_1,
-            tf.reshape(
-                tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)
-            ),
+            tf.reshape(tf.transpose(w), (_num_samples, self.input_dim + 1, self.output_dim)),
             [[-1], [1]],
         )  # [N, S, Q]
         if num_samples is None:
