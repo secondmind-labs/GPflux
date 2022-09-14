@@ -36,7 +36,9 @@ def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):
     data = make_data(input_dim, output_dim, num_data=num_data)
 
     kernel = construct_basic_kernel(Matern52(), output_dim)
-    inducing_vars = construct_basic_inducing_variables(num_inducing, input_dim, output_dim)
+    inducing_vars = construct_basic_inducing_variables(
+        num_inducing, input_dim, output_dim
+    )
     mean_function = Zero(output_dim)
 
     gp_layer = GPLayer(
@@ -51,9 +53,15 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
 
     X = np.random.random(size=(num_data, input_dim)) * lim[1]
     cov = Matern52()(X) + np.eye(num_data) * sigma ** 2
-    Y = [np.random.multivariate_normal(np.zeros(num_data), cov)[:, None] for _ in range(output_dim)]
+    Y = [
+        np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
+        for _ in range(output_dim)
+    ]
     Y = np.hstack(Y)
-    return X, Y  # TODO: improve this test; for most of the likelihoods, Y won't actually be valid
+    return (
+        X,
+        Y,
+    )  # TODO: improve this test; for most of the likelihoods, Y won't actually be valid
 
 
 @pytest.mark.parametrize("GPflowLikelihood", TEST_GPFLOW_LIKELIHOODS)
@@ -110,13 +118,17 @@ def test_likelihood_loss(GPflowLikelihood):
     f_var = f_distribution.scale.diag
 
     expected_loss = np.mean(-likelihood.variational_expectations(f_mean, f_var, Y))
-    np.testing.assert_almost_equal(likelihood_loss(Y, f_distribution), expected_loss, decimal=5)
+    np.testing.assert_almost_equal(
+        likelihood_loss(Y, f_distribution), expected_loss, decimal=5
+    )
 
     # 2. Run tests with gp_layer output coerced to sample
     f_sample = tf.convert_to_tensor(gp_layer(X))
 
     expected_loss = np.mean(-likelihood.log_prob(f_sample, Y))
-    np.testing.assert_almost_equal(likelihood_loss(Y, f_sample), expected_loss, decimal=5)
+    np.testing.assert_almost_equal(
+        likelihood_loss(Y, f_sample), expected_loss, decimal=5
+    )
 
 
 def test_tensor_coercible():

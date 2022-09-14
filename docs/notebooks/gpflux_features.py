@@ -68,7 +68,10 @@ from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 from gpflux.models import DeepGP
 
 config = Config(
-    num_inducing=25, inner_layer_qsqrt_factor=1e-5, likelihood_noise_variance=1e-2, whiten=True
+    num_inducing=25,
+    inner_layer_qsqrt_factor=1e-5,
+    likelihood_noise_variance=1e-2,
+    whiten=True,
 )
 deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, num_layers=2, config=config)
 
@@ -89,11 +92,15 @@ training_model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.01))
 
 callbacks = [
     # Create callback that reduces the learning rate every time the ELBO plateaus
-    tf.keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0),
+    tf.keras.callbacks.ReduceLROnPlateau(
+        "loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0
+    ),
     # Create a callback that writes logs (e.g., hyperparameters, KLs, etc.) to TensorBoard
     gpflux.callbacks.TensorBoard(),
     # Create a callback that saves the model's weights
-    tf.keras.callbacks.ModelCheckpoint(filepath="ckpts/", save_weights_only=True, verbose=0),
+    tf.keras.callbacks.ModelCheckpoint(
+        filepath="ckpts/", save_weights_only=True, verbose=0
+    ),
 ]
 
 history = training_model.fit(

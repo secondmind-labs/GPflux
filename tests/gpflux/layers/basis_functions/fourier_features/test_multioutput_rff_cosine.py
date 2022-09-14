@@ -27,11 +27,17 @@ from gpflux.layers.basis_functions.fourier_features import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
-from gpflux.layers.basis_functions.fourier_features.multioutput.random import MultiOutputRandomFourierFeatures
-from gpflux.feature_decomposition_kernels.multioutput import SharedMultiOutputKernelWithFeatureDecomposition, SeparateMultiOutputKernelWithFeatureDecomposition
+from gpflux.layers.basis_functions.fourier_features.random.base import (
+    RFF_SUPPORTED_KERNELS,
+)
+from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
+    MultiOutputRandomFourierFeatures,
+)
+from gpflux.feature_decomposition_kernels.multioutput import (
+    SharedMultiOutputKernelWithFeatureDecomposition,
+    SeparateMultiOutputKernelWithFeatureDecomposition,
+)
 from tests.conftest import skip_serialization_tests
-
 
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])
@@ -63,40 +69,39 @@ def _n_features_fixture(request):
 def _base_kernel_cls_fixture(request):
     return request.param
 
+
 @pytest.fixture(
-    name="random_basis_func_cls",
-    params=[MultiOutputRandomFourierFeaturesCosine],
+    name="random_basis_func_cls", params=[MultiOutputRandomFourierFeaturesCosine],
 )
 def _random_basis_func_cls_fixture(request):
     return request.param
 
 
 @pytest.fixture(
-    name="basis_func_cls",
-    params=[MultiOutputRandomFourierFeaturesCosine],
+    name="basis_func_cls", params=[MultiOutputRandomFourierFeaturesCosine],
 )
 def _basis_func_cls_fixture(request):
     return request.param
 
 
-
 def test_throw_for_unsupported_separate_kernel(basis_func_cls):
     base_kernel = gpflow.kernels.Constant()
-    kernel = gpflow.kernels.SeparateIndependent(kernels = [base_kernel])
+    kernel = gpflow.kernels.SeparateIndependent(kernels=[base_kernel])
     with pytest.raises(AssertionError) as excinfo:
         basis_func_cls(kernel, n_components=1)
     assert "Unsupported Kernel" in str(excinfo.value)
 
+
 def test_throw_for_unsupported_shared_kernel(basis_func_cls):
     base_kernel = gpflow.kernels.Constant()
-    kernel = SharedIndependent(kernel = base_kernel, output_dim=1) 
+    kernel = SharedIndependent(kernel=base_kernel, output_dim=1)
     with pytest.raises(AssertionError) as excinfo:
         basis_func_cls(kernel, n_components=1)
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
 def test_random_fourier_features_can_approximate_multi_output_separate_kernel_multidim(
-    random_basis_func_cls, base_kernel_cls,  variance, lengthscale, n_dims
+    random_basis_func_cls, base_kernel_cls, variance, lengthscale, n_dims
 ):
     n_components = 40000
 
@@ -105,36 +110,36 @@ def test_random_fourier_features_can_approximate_multi_output_separate_kernel_mu
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    print('size of sampled lengthscales')
+    print("size of sampled lengthscales")
     print(lengthscales.shape)
 
     base_kernel = base_kernel_cls(variance=variance, lengthscales=lengthscales)
 
-    kernel = SeparateIndependent(kernels = [base_kernel, base_kernel])
+    kernel = SeparateIndependent(kernels=[base_kernel, base_kernel])
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
 
-    actual_kernel_matrix = kernel.K(x, y, full_output_cov = False).numpy()
+    actual_kernel_matrix = kernel.K(x, y, full_output_cov=False).numpy()
 
     fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
 
     feature_coefficients = np.ones((2, n_components, 1), dtype=np.float64)
 
     kernel = SeparateMultiOutputKernelWithFeatureDecomposition(
-        kernel=None, feature_functions=fourier_features, feature_coefficients=feature_coefficients, 
-        output_dim = 2
+        kernel=None,
+        feature_functions=fourier_features,
+        feature_coefficients=feature_coefficients,
+        output_dim=2,
     )
 
-    approx_kernel_matrix = kernel(x,y).numpy()
-
+    approx_kernel_matrix = kernel(x, y).numpy()
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-
 def test_random_fourier_features_can_approximate_multi_output_shared_kernel_multidim(
-    random_basis_func_cls, base_kernel_cls,  variance, lengthscale, n_dims
+    random_basis_func_cls, base_kernel_cls, variance, lengthscale, n_dims
 ):
     n_components = 40000
 
@@ -143,34 +148,32 @@ def test_random_fourier_features_can_approximate_multi_output_shared_kernel_mult
     # ARD
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    print('size of sampled lengthscales')
+    print("size of sampled lengthscales")
     print(lengthscales.shape)
 
     base_kernel = base_kernel_cls(variance=variance, lengthscales=lengthscales)
 
-    kernel = SharedIndependent(kernel = base_kernel, output_dim = 2) 
+    kernel = SharedIndependent(kernel=base_kernel, output_dim=2)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
 
-    actual_kernel_matrix = kernel.K(x, y, full_output_cov = False).numpy()
+    actual_kernel_matrix = kernel.K(x, y, full_output_cov=False).numpy()
 
     fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
 
     feature_coefficients = np.ones((2, n_components, 1), dtype=np.float64)
 
     kernel = SharedMultiOutputKernelWithFeatureDecomposition(
-        kernel=None, feature_functions=fourier_features, feature_coefficients=feature_coefficients, 
-        output_dim = 2
+        kernel=None,
+        feature_functions=fourier_features,
+        feature_coefficients=feature_coefficients,
+        output_dim=2,
     )
-    
 
-    approx_kernel_matrix = kernel(x,y).numpy()
-
+    approx_kernel_matrix = kernel(x, y).numpy()
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
-
-
 
 
 """
@@ -199,6 +202,7 @@ def test_orthogonal_random_features_can_approximate_kernel_multidim(variance, le
 
 """
 
+
 def test_random_multi_output_fourier_feature_layer_compute_covariance_of_shared_inducing_variables(
     basis_func_cls, batch_size
 ):
@@ -210,13 +214,15 @@ def test_random_multi_output_fourier_feature_layer_compute_covariance_of_shared_
     n_components = 10000
 
     base_kernel = gpflow.kernels.SquaredExponential()
-    kernel = SharedIndependent(kernel = base_kernel, output_dim = 2)
+    kernel = SharedIndependent(kernel=base_kernel, output_dim=2)
     fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
     feature_coefficients = np.ones((2, n_components, 1), dtype=np.float64)
 
     feature_decomposition_kernel = SharedMultiOutputKernelWithFeatureDecomposition(
-        kernel=None, feature_functions=fourier_features, feature_coefficients=feature_coefficients, 
-        output_dim = 2
+        kernel=None,
+        feature_functions=fourier_features,
+        feature_coefficients=feature_coefficients,
+        output_dim=2,
     )
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
@@ -237,13 +243,15 @@ def test_random_multi_output_fourier_feature_layer_compute_covariance_of_separat
     n_components = 10000
 
     base_kernel = gpflow.kernels.SquaredExponential()
-    kernel = SeparateIndependent(kernels = [base_kernel, base_kernel])
+    kernel = SeparateIndependent(kernels=[base_kernel, base_kernel])
     fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
     feature_coefficients = np.ones((2, n_components, 1), dtype=np.float64)
 
     feature_decomposition_kernel = SharedMultiOutputKernelWithFeatureDecomposition(
-        kernel=None, feature_functions=fourier_features, feature_coefficients=feature_coefficients, 
-        output_dim = 2
+        kernel=None,
+        feature_functions=fourier_features,
+        feature_coefficients=feature_coefficients,
+        output_dim=2,
     )
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
@@ -253,16 +261,16 @@ def test_random_multi_output_fourier_feature_layer_compute_covariance_of_separat
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_multi_output_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_size):
+def test_multi_output_fourier_features_shapes(
+    basis_func_cls, n_components, n_dims, batch_size
+):
     input_shape = (2, batch_size, n_dims)
-    base_kernel = gpflow.kernels.SquaredExponential(lengthscales= [1.0] * n_dims)
-    kernel = SeparateIndependent(kernels = [base_kernel, base_kernel])
+    base_kernel = gpflow.kernels.SquaredExponential(lengthscales=[1.0] * n_dims)
+    kernel = SeparateIndependent(kernels=[base_kernel, base_kernel])
     feature_functions = basis_func_cls(kernel, n_components, dtype=tf.float64)
-    output_shape = feature_functions.compute_output_shape(input_shape) 
+    output_shape = feature_functions.compute_output_shape(input_shape)
     features = feature_functions(tf.ones(shape=(batch_size, n_dims)))
     np.testing.assert_equal(features.shape, output_shape)
-
-
 
 
 """

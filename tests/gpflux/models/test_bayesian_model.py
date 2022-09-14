@@ -22,7 +22,9 @@ from gpflow import default_float
 from gpflow.likelihoods import Gaussian
 
 from gpflux.layers import LatentVariableLayer, LikelihoodLayer
-from tests.integration.test_latent_variable_integration import build_gp_layers  # noqa: F401
+from tests.integration.test_latent_variable_integration import (
+    build_gp_layers,
+)  # noqa: F401
 
 tf.keras.backend.set_floatx("float64")
 

@@ -21,7 +21,9 @@ import gpflow
 from gpflow.config import default_float, default_jitter
 
 from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import (
+    KernelWithFeatureDecomposition,
+)
 from gpflux.sampling.sample import Sample, efficient_sample
 
 
@@ -95,8 +97,7 @@ def test_wilson_efficient_sample(kernel, inducing_variable, whiten):
     # Check for consistency - i.e. evaluating the sample at the
     # same locations (X) returns the same value
     np.testing.assert_array_almost_equal(
-        sample_func(X),
-        sample_func(X),
+        sample_func(X), sample_func(X),
     )
 
 
@@ -125,4 +126,6 @@ def test_adding_sample_and_mean_function():
 
     sample_and_mean_function = sample + mean_function
 
-    np.testing.assert_array_almost_equal(sample_and_mean_function(X), sample(X) + mean_function(X))
+    np.testing.assert_array_almost_equal(
+        sample_and_mean_function(X), sample(X) + mean_function(X)
+    )

@@ -41,10 +41,7 @@ df = df.rename(columns={"model_name": "model"})
 
 # %% {"nbsphinx": "hidden"}
 table = df.groupby(["dataset", "model"]).agg(
-    {
-        "split": "count",
-        **{metric: ["mean", "std"] for metric in ["mse", "nlpd"]},
-    }
+    {"split": "count", **{metric: ["mean", "std"] for metric in ["mse", "nlpd"]},}
 )
 # %% [markdown]
 """

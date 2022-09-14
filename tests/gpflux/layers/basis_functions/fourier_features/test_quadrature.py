@@ -23,8 +23,12 @@ import gpflow
 from gpflow.quadrature.gauss_hermite import NDiagGHQuadrature
 from gpflow.utilities.ops import difference_matrix
 
-from gpflux.layers.basis_functions.fourier_features.quadrature import QuadratureFourierFeatures
-from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import QFF_SUPPORTED_KERNELS
+from gpflux.layers.basis_functions.fourier_features.quadrature import (
+    QuadratureFourierFeatures,
+)
+from gpflux.layers.basis_functions.fourier_features.quadrature.gaussian import (
+    QFF_SUPPORTED_KERNELS,
+)
 from tests.conftest import skip_serialization_tests
 
 
@@ -97,7 +101,9 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix)
 
 
-def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_components):
+def test_feature_map_decomposition(
+    kernel_cls, variance, lengthscale, n_dims, n_components
+):
     """
     Verify that the inner product of the feature map yields exactly the same
     result as that of the direct Gauss-Hermite quadrature scheme.
@@ -138,7 +144,9 @@ def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_
 def test_fourier_features_shapes(n_components, n_dims, batch_size):
     input_shape = (batch_size, n_dims)
     kernel = gpflow.kernels.SquaredExponential()
-    feature_functions = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
+    feature_functions = QuadratureFourierFeatures(
+        kernel, n_components, dtype=tf.float64
+    )
     output_shape = feature_functions.compute_output_shape(input_shape)
     output_dim = output_shape[-1]
     assert output_dim == 2 * n_components ** n_dims
@@ -150,7 +158,9 @@ def test_fourier_features_shapes(n_components, n_dims, batch_size):
 def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
     kernel = kernel_cls()
 
-    tf.keras.utils.get_custom_objects()["QuadratureFourierFeatures"] = QuadratureFourierFeatures
+    tf.keras.utils.get_custom_objects()[
+        "QuadratureFourierFeatures"
+    ] = QuadratureFourierFeatures
     layer_test(
         QuadratureFourierFeatures,
         kwargs={
@@ -166,10 +176,14 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
 
 
 @skip_serialization_tests
-def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, n_components):
+def test_keras_testing_util_layer_test_multidim(
+    kernel_cls, batch_size, n_dims, n_components
+):
     kernel = kernel_cls()
 
-    tf.keras.utils.get_custom_objects()["QuadratureFourierFeatures"] = QuadratureFourierFeatures
+    tf.keras.utils.get_custom_objects()[
+        "QuadratureFourierFeatures"
+    ] = QuadratureFourierFeatures
     layer_test(
         QuadratureFourierFeatures,
         kwargs={

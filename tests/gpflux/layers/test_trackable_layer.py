@@ -99,7 +99,9 @@ def test_submodule_variables():
         modules,
         module_variables,
     ) = setup_layer_modules_variables()
-    assert to_tensor_set(trackable_layer.variables) == to_tensor_set(variables + module_variables)
+    assert to_tensor_set(trackable_layer.variables) == to_tensor_set(
+        variables + module_variables
+    )
 
 
 def test_submodule_trainable_variables():
@@ -120,7 +122,9 @@ def test_submodule_non_trainable_variables():
         modules,
         module_variables,
     ) = setup_layer_modules_variables()
-    non_trainable_attributes = [v for v in variables + module_variables if not v.trainable]
+    non_trainable_attributes = [
+        v for v in variables + module_variables if not v.trainable
+    ]
     assert trackable_layer.non_trainable_variables == non_trainable_attributes
 
 
@@ -133,7 +137,9 @@ def test_trainable_weights():
     ) = setup_layer_modules_variables()
     all_vars = variables + module_variables
     trainable_weights = [v for v in all_vars if v.trainable]
-    assert to_tensor_set(trackable_layer.trainable_weights) == to_tensor_set(trainable_weights)
+    assert to_tensor_set(trackable_layer.trainable_weights) == to_tensor_set(
+        trainable_weights
+    )
 
 
 def test_non_trainable_weights():
@@ -159,7 +165,9 @@ def test_trainable_variables():
     ) = setup_layer_modules_variables()
     all_vars = variables + module_variables
     trainable_variables = [v for v in all_vars if v.trainable]
-    assert to_tensor_set(trackable_layer.trainable_variables) == to_tensor_set(trainable_variables)
+    assert to_tensor_set(trackable_layer.trainable_variables) == to_tensor_set(
+        trainable_variables
+    )
 
 
 def test_variables():
@@ -174,8 +182,7 @@ def test_variables():
 
 
 @pytest.mark.parametrize(
-    "composite_class",
-    [CompositeModule, UntrackableCompositeLayer],
+    "composite_class", [CompositeModule, UntrackableCompositeLayer],
 )
 def test_tensorflow_classes_trackable(composite_class):
     composite_object = composite_class([Matern52()])

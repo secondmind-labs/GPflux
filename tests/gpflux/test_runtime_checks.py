@@ -31,8 +31,12 @@ num_inducing = 35
 def make_kernels(num_latent_k):
     return [
         construct_basic_kernel([Matern52() for _ in range(num_latent_k)]),
-        construct_basic_kernel(Matern52(), output_dim=num_latent_k, share_hyperparams=False),
-        construct_basic_kernel(Matern52(), output_dim=num_latent_k, share_hyperparams=True),
+        construct_basic_kernel(
+            Matern52(), output_dim=num_latent_k, share_hyperparams=False
+        ),
+        construct_basic_kernel(
+            Matern52(), output_dim=num_latent_k, share_hyperparams=True
+        ),
     ]
 
 

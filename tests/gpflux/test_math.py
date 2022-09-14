@@ -32,7 +32,5 @@ def test_compute_A_inv_x():
     A = _get_psd_matrix(N)
     b = np.random.randn(N, 2) / 100
     np.testing.assert_array_almost_equal(
-        np.linalg.inv(A) @ b,
-        compute_A_inv_b(A, b).numpy(),
-        decimal=3,
+        np.linalg.inv(A) @ b, compute_A_inv_b(A, b).numpy(), decimal=3,
     )

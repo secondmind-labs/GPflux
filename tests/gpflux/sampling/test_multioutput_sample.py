@@ -20,18 +20,26 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import default_float, default_jitter
 
-from gpflux.layers.basis_functions.fourier_features import MultiOutputRandomFourierFeaturesCosine
-from gpflux.feature_decomposition_kernels import SharedMultiOutputKernelWithFeatureDecomposition, SeparateMultiOutputKernelWithFeatureDecomposition
+from gpflux.layers.basis_functions.fourier_features import (
+    MultiOutputRandomFourierFeaturesCosine,
+)
+from gpflux.feature_decomposition_kernels import (
+    SharedMultiOutputKernelWithFeatureDecomposition,
+    SeparateMultiOutputKernelWithFeatureDecomposition,
+)
 from gpflux.sampling.sample import Sample, efficient_sample
+
 
 @pytest.fixture(name="base_kernel")
 def _base_kernel_fixture():
-    
+
     return gpflow.kernels.SquaredExponential()
+
 
 def _get_shared_kernel(base_kernel):
 
-    return gpflow.kernels.SharedIndependent(kernel=base_kernel, output_dim = 2)
+    return gpflow.kernels.SharedIndependent(kernel=base_kernel, output_dim=2)
+
 
 def _get_separate_kernel(base_kernel):
 
@@ -41,18 +49,24 @@ def _get_separate_kernel(base_kernel):
 @pytest.fixture(name="shared_inducing_variable")
 def _shared_inducing_variable_fixture():
     Z = np.linspace(-1, 1, 10).reshape(-1, 1)
-    
+
     ind_var = gpflow.inducing_variables.InducingPoints(Z)
 
-    return gpflow.inducing_variables.SharedIndependentInducingVariables(inducing_variable=ind_var)
+    return gpflow.inducing_variables.SharedIndependentInducingVariables(
+        inducing_variable=ind_var
+    )
+
 
 @pytest.fixture(name="separate_inducing_variable")
 def _separate_inducing_variable_fixture():
     Z = np.linspace(-1, 1, 10).reshape(-1, 1)
-    
+
     ind_var = gpflow.inducing_variables.InducingPoints(Z)
 
-    return gpflow.inducing_variables.SeparateIndependentInducingVariables(inducing_variable_list=[ind_var, ind_var])
+    return gpflow.inducing_variables.SeparateIndependentInducingVariables(
+        inducing_variable_list=[ind_var, ind_var]
+    )
+
 
 @pytest.fixture(name="whiten", params=[True])
 def _whiten_fixture(request):
@@ -62,33 +76,38 @@ def _whiten_fixture(request):
 def _get_shared_qmu_qsqrt(kernel, inducing_variable):
     """Returns q_mu and q_sqrt for a kernel and inducing_variable"""
     Z = inducing_variable.inducing_variable.Z.numpy()
-    Kzz = kernel(Z, full_cov=True, full_output_cov = False).numpy()
+    Kzz = kernel(Z, full_cov=True, full_output_cov=False).numpy()
 
     q_sqrt = np.linalg.cholesky(Kzz) + default_jitter() * np.eye(Z.shape[0])[None, ...]
-    q_mu = q_sqrt @ np.random.randn(2, Z.shape[0], 1) 
+    q_mu = q_sqrt @ np.random.randn(2, Z.shape[0], 1)
 
-    return np.transpose(q_mu[...,0]), q_sqrt
+    return np.transpose(q_mu[..., 0]), q_sqrt
+
 
 def _get_separate_qmu_qsqrt(kernel, inducing_variable):
     """Returns q_mu and q_sqrt for a kernel and inducing_variable"""
     Z = inducing_variable.inducing_variable_list[0].Z.numpy()
-    Kzz = kernel(Z, full_cov=True, full_output_cov = False).numpy()
+    Kzz = kernel(Z, full_cov=True, full_output_cov=False).numpy()
 
     q_sqrt = np.linalg.cholesky(Kzz) + default_jitter() * np.eye(Z.shape[0])[None, ...]
-    q_mu = q_sqrt @ np.random.randn(2, Z.shape[0], 1) 
+    q_mu = q_sqrt @ np.random.randn(2, Z.shape[0], 1)
 
-    return np.transpose(q_mu[...,0]), q_sqrt
+    return np.transpose(q_mu[..., 0]), q_sqrt
+
 
 def test_shared_wilson_efficient_sample(base_kernel, shared_inducing_variable, whiten):
     """Smoke and consistency test for efficient sampling using Wilson"""
     kernel = _get_shared_kernel(base_kernel)
-    
-    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(kernel, 100, dtype=default_float())
-    eigenvalues = np.ones((2,100, 1), dtype=default_float())
-    # To apply Wilson sampling we require the features and eigenvalues of the kernel
-    kernel2 = SharedMultiOutputKernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
-    q_mu, q_sqrt = _get_shared_qmu_qsqrt(kernel, shared_inducing_variable)
 
+    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(
+        kernel, 100, dtype=default_float()
+    )
+    eigenvalues = np.ones((2, 100, 1), dtype=default_float())
+    # To apply Wilson sampling we require the features and eigenvalues of the kernel
+    kernel2 = SharedMultiOutputKernelWithFeatureDecomposition(
+        kernel, eigenfunctions, eigenvalues
+    )
+    q_mu, q_sqrt = _get_shared_qmu_qsqrt(kernel, shared_inducing_variable)
 
     sample_func = efficient_sample(
         shared_inducing_variable,
@@ -102,22 +121,24 @@ def test_shared_wilson_efficient_sample(base_kernel, shared_inducing_variable, w
     # Check for consistency - i.e. evaluating the sample at the
     # same locations (X) returns the same value
     np.testing.assert_array_almost_equal(
-        sample_func(X),
-        sample_func(X),
+        sample_func(X), sample_func(X),
     )
 
 
-
-
-
-def test_separate_wilson_efficient_sample(base_kernel, separate_inducing_variable, whiten):
+def test_separate_wilson_efficient_sample(
+    base_kernel, separate_inducing_variable, whiten
+):
     """Smoke and consistency test for efficient sampling using Wilson"""
     kernel = _get_separate_kernel(base_kernel)
-    
-    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(kernel, 100, dtype=default_float())
-    eigenvalues = np.ones((2,100, 1), dtype=default_float())
+
+    eigenfunctions = MultiOutputRandomFourierFeaturesCosine(
+        kernel, 100, dtype=default_float()
+    )
+    eigenvalues = np.ones((2, 100, 1), dtype=default_float())
     # To apply Wilson sampling we require the features and eigenvalues of the kernel
-    kernel2 = SeparateMultiOutputKernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
+    kernel2 = SeparateMultiOutputKernelWithFeatureDecomposition(
+        kernel, eigenfunctions, eigenvalues
+    )
     q_mu, q_sqrt = _get_separate_qmu_qsqrt(kernel, separate_inducing_variable)
 
     sample_func = efficient_sample(
@@ -132,11 +153,8 @@ def test_separate_wilson_efficient_sample(base_kernel, separate_inducing_variabl
     # Check for consistency - i.e. evaluating the sample at the
     # same locations (X) returns the same value
     np.testing.assert_array_almost_equal(
-        sample_func(X),
-        sample_func(X),
+        sample_func(X), sample_func(X),
     )
-
-
 
 
 """

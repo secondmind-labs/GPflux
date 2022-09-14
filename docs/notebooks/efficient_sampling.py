@@ -75,7 +75,9 @@ num_rff = 1000
 eigenfunctions = RandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
 
-kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
+kernel_with_features = KernelWithFeatureDecomposition(
+    kernel, eigenfunctions, eigenvalues
+)
 
 
 # %% [markdown]
@@ -94,7 +96,9 @@ layer = gpflux.layers.GPLayer(
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Zero(),
 )
-likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
+likelihood_layer = gpflux.layers.LikelihoodLayer(
+    gpflow.likelihoods.Gaussian()
+)  # noqa: E231
 dgp = gpflux.models.DeepGP([layer], likelihood_layer)
 model = dgp.as_training_model()
 # %% [markdown]
@@ -107,11 +111,7 @@ model.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss",
-        patience=5,
-        factor=0.95,
-        verbose=0,
-        min_lr=1e-6,
+        monitor="loss", patience=5, factor=0.95, verbose=0, min_lr=1e-6,
     )
 ]
 

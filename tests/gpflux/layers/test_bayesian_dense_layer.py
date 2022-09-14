@@ -56,7 +56,10 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
 
     X = np.random.random(size=(num_data, input_dim)) * lim[1]
     cov = RBF().K(X) + np.eye(num_data) * sigma ** 2
-    Y = [np.random.multivariate_normal(np.zeros(num_data), cov)[:, None] for _ in range(output_dim)]
+    Y = [
+        np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
+        for _ in range(output_dim)
+    ]
     Y = np.hstack(Y)
     return X, Y
 
@@ -146,7 +149,9 @@ def test_losses_are_added(is_mean_field):
     assert len(bnn_layer.losses) == 0
 
     _ = bnn_layer(X, training=True)
-    assert bnn_layer.losses == [bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data]
+    assert bnn_layer.losses == [
+        bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data
+    ]
 
     # Check loss is 0 when training is False
     _ = bnn_layer(X, training=False)
@@ -156,4 +161,6 @@ def test_losses_are_added(is_mean_field):
     _ = bnn_layer(X, training=True)
     _ = bnn_layer(X, training=True)
     assert len(bnn_layer.losses) == 1
-    assert bnn_layer.losses == [bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data]
+    assert bnn_layer.losses == [
+        bnn_layer.temperature * bnn_layer.prior_kl() / bnn_layer.num_data
+    ]

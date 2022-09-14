@@ -35,7 +35,9 @@ tf.keras.backend.set_floatx("float64")
 
 def _zero_one_normal_prior(w_dim):
     """N(0, I) prior"""
-    return tfp.distributions.MultivariateNormalDiag(loc=np.zeros(w_dim), scale_diag=np.ones(w_dim))
+    return tfp.distributions.MultivariateNormalDiag(
+        loc=np.zeros(w_dim), scale_diag=np.ones(w_dim)
+    )
 
 
 def get_distributions_with_w_dim():
@@ -174,13 +176,19 @@ def test_latent_variable_layer_samples(mocker, test_data, w_dim, seed2):
     tf.random.set_seed(seed)
     sample_prior = lv(inputs, seed=seed2)
     tf.random.set_seed(seed)
-    prior_expected = np.concatenate([inputs, prior.sample(num_data, seed=seed2)], axis=-1)
+    prior_expected = np.concatenate(
+        [inputs, prior.sample(num_data, seed=seed2)], axis=-1
+    )
     np.testing.assert_array_equal(sample_prior, prior_expected)
 
     tf.random.set_seed(seed)
-    sample_posterior = lv(inputs, observations=[inputs, targets], training=True, seed=seed2)
+    sample_posterior = lv(
+        inputs, observations=[inputs, targets], training=True, seed=seed2
+    )
     tf.random.set_seed(seed)
-    posterior_expected = np.concatenate([inputs, posteriors.sample(seed=seed2)], axis=-1)
+    posterior_expected = np.concatenate(
+        [inputs, posteriors.sample(seed=seed2)], axis=-1
+    )
     np.testing.assert_array_equal(sample_posterior, posterior_expected)
 
 

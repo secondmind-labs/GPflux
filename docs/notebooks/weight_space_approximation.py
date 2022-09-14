@@ -77,8 +77,12 @@ The only aspect that is different across both experimental settings is the numbe
 # experiment parameters that are the same for both sets of experiments
 X_interval = [0.14, 0.5]  # interval where training points live
 lengthscale = 0.1  # lengthscale for the kernel (which is not learned in all experiments, the kernel variance is 1)
-number_of_features = 2000  # number of basis functions for weight-space approximated kernels
-noise_variance = 1e-3  # noise variance of the likelihood (which is not learned in all experiments)
+number_of_features = (
+    2000  # number of basis functions for weight-space approximated kernels
+)
+noise_variance = (
+    1e-3  # noise variance of the likelihood (which is not learned in all experiments)
+)
 number_of_test_samples = 1024  # number of evaluation points for prediction
 number_of_function_samples = (
     20  # number of function samples to be drawn from (approximate) posteriors
@@ -102,25 +106,41 @@ We proceed by generating the training data for both experimental settings from a
 
 # %%
 # generate training data and evaluation points for both sets of experiments
-kernel = kernel_class(lengthscales=lengthscale)  # kernel object to draw training dataset from
-X, y, X_star = [], [], []  # training points, training observations, and test points for evaluation
+kernel = kernel_class(
+    lengthscales=lengthscale
+)  # kernel object to draw training dataset from
+X, y, X_star = (
+    [],
+    [],
+    [],
+)  # training points, training observations, and test points for evaluation
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
 for i in range(len(number_of_train_samples)):
 
     # training pointsnumber_of_train_samples
-    X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]))
+    X.append(
+        np.linspace(
+            start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]
+        )
+    )
 
     # training observations generated from a zero-mean GP corrupted with Gaussian noise
     kXX = kernel.K(X[i][..., None])
-    kXX_plus_noise_var = kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
+    kXX_plus_noise_var = (
+        kXX + tf.eye(tf.shape(kXX)[0], dtype=kXX.dtype) * noise_variance
+    )
     lXX = tf.linalg.cholesky(kXX_plus_noise_var)
     y.append(
-        tf.matmul(lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[i].dtype))[..., 0]
+        tf.matmul(
+            lXX, tf.random.normal([number_of_train_samples[i], 1], dtype=X[i].dtype)
+        )[..., 0]
     )
 
     # test points for evaluation
-    X_star.append(np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples))
+    X_star.append(
+        np.linspace(start=x_lim[0], stop=x_lim[1], num=number_of_test_samples)
+    )
 
 # %% [markdown]
 """
@@ -139,8 +159,12 @@ fig, axs = plt.subplots(2, 3)
 for experiment in range(len(number_of_train_samples)):
 
     # subplot titles and axis labels
-    axs[experiment, 0].set_title("Exact GP $N=" + str(number_of_train_samples[experiment]) + "$")
-    axs[experiment, 1].set_title("Sparse GP $N=" + str(number_of_train_samples[experiment]) + "$")
+    axs[experiment, 0].set_title(
+        "Exact GP $N=" + str(number_of_train_samples[experiment]) + "$"
+    )
+    axs[experiment, 1].set_title(
+        "Sparse GP $N=" + str(number_of_train_samples[experiment]) + "$"
+    )
     axs[experiment, 2].set_title(
         "Weight Space GP $N=" + str(number_of_train_samples[experiment]) + "$"
     )
@@ -182,7 +206,9 @@ for experiment in range(len(number_of_train_samples)):
 
     # plot mean and std lines from the GPR model as "ground truth" in all three plots
     for i in range(3):
-        axs[experiment, i].plot(X_star[experiment], f_mean[..., 0], linestyle="--", color="black")
+        axs[experiment, i].plot(
+            X_star[experiment], f_mean[..., 0], linestyle="--", color="black"
+        )
         axs[experiment, i].plot(
             X_star[experiment], f_mean_minus_2std[..., 0], linestyle="--", color="black"
         )
@@ -209,9 +235,9 @@ for experiment in range(len(number_of_train_samples)):
     ):  # inducing points equal the training data for the first experiment with few training points
         Z = X[experiment].copy()[..., None]
     else:  # inducing points are randomly chosen for the second experiment with many training points
-        Z = np.linspace(X_interval[0], X_interval[1], number_of_inducing_points[experiment])[
-            ..., None
-        ]
+        Z = np.linspace(
+            X_interval[0], X_interval[1], number_of_inducing_points[experiment]
+        )[..., None]
     svgp_model = SVGP(
         kernel=kernel_class(lengthscales=lengthscale),
         likelihood=Gaussian(variance=noise_variance),
@@ -221,12 +247,16 @@ for experiment in range(len(number_of_train_samples)):
         svgp_model.kernel, False
     )  # the training data has been sampled from a known kernel!
     gpf.set_trainable(svgp_model.likelihood, False)  # the likelihood variance is known!
-    gpf.set_trainable(svgp_model.inducing_variable, False)  # inducing point locations are fixed!
+    gpf.set_trainable(
+        svgp_model.inducing_variable, False
+    )  # inducing point locations are fixed!
 
     def optimize_model_with_scipy(model):
         optimizer = gpf.optimizers.Scipy()
         optimizer.minimize(
-            model.training_loss_closure((X[experiment][..., None], y[experiment][..., None])),
+            model.training_loss_closure(
+                (X[experiment][..., None], y[experiment][..., None])
+            ),
             variables=model.trainable_variables,
             method="l-bfgs-b",
             options={"disp": False, "maxiter": 10000},
@@ -271,7 +301,9 @@ for experiment in range(len(number_of_train_samples)):
     )
     feature_coefficients = np.ones((number_of_features, 1), dtype=default_float())
     kernel = KernelWithFeatureDecomposition(
-        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
+        kernel=None,
+        feature_functions=feature_functions,
+        feature_coefficients=feature_coefficients,
     )
     gpr_model = GPR(
         data=(X[experiment][..., None], y[experiment][..., None]),

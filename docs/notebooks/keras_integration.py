@@ -55,7 +55,9 @@ def create_layers():
     layer1 = gpflux.helpers.construct_gp_layer(
         num_data, num_inducing, input_dim, hidden_dim, z_init=Z.copy()
     )
-    layer1.mean_function = gpflow.mean_functions.Identity()  # TODO: pass layer_type instead
+    layer1.mean_function = (
+        gpflow.mean_functions.Identity()
+    )  # TODO: pass layer_type instead
     layer1.q_sqrt.assign(layer1.q_sqrt * 0.01)
 
     layer2 = gpflux.helpers.construct_gp_layer(
@@ -76,7 +78,9 @@ def create_model(model_class):
     a constructor that has the same semantics as `tf.keras.Model.__init__`.
     """
     layer1, layer2, likelihood_layer = create_layers()
-    dgp = gpflux.models.DeepGP([layer1, layer2], likelihood_layer, default_model_class=model_class)
+    dgp = gpflux.models.DeepGP(
+        [layer1, layer2], likelihood_layer, default_model_class=model_class
+    )
     return dgp
 
 
@@ -89,11 +93,7 @@ dgp = create_model(tf.keras.Model)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss",
-        patience=5,
-        factor=0.95,
-        verbose=1,
-        min_lr=1e-6,
+        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
     )
 ]
 
@@ -101,7 +101,10 @@ dgp_train = dgp.as_training_model()
 dgp_train.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 history = dgp_train.fit(
-    {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+    {"inputs": X, "targets": Y},
+    batch_size=batch_size,
+    epochs=num_epochs,
+    callbacks=callbacks,
 )
 
 # %%
@@ -109,11 +112,7 @@ dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
 
 callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="loss",
-        patience=5,
-        factor=0.95,
-        verbose=1,
-        min_lr=1e-6,
+        monitor="loss", patience=5, factor=0.95, verbose=1, min_lr=1e-6,
     )
 ]
 
@@ -131,7 +130,10 @@ dgp_natgrad_train.compile(
 )
 
 history_natgrad = dgp_natgrad_train.fit(
-    {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
+    {"inputs": X, "targets": Y},
+    batch_size=batch_size,
+    epochs=num_epochs,
+    callbacks=callbacks,
 )
 
 # %%

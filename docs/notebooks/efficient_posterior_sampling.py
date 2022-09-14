@@ -80,7 +80,9 @@ from gpflow.kernels import RBF, Matern52
 from gpflow.models import GPR
 
 from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.sampling.kernel_with_feature_decomposition import (
+    KernelWithFeatureDecomposition,
+)
 
 # %% [markdown]
 """
@@ -96,8 +98,16 @@ num_experiment_runs = 4  # number of experiment repetitions (64 in the paper)
 
 # settings that vary across experiments
 num_input_dimensions = [2, 4, 8]  # number of input dimensions
-train_sample_exponents = [2, 4, 6, 8, 10]  # num_train_samples = 2 ** train_sample_exponents
-num_train_samples = [2 ** train_sample_exponent for train_sample_exponent in train_sample_exponents]
+train_sample_exponents = [
+    2,
+    4,
+    6,
+    8,
+    10,
+]  # num_train_samples = 2 ** train_sample_exponents
+num_train_samples = [
+    2 ** train_sample_exponent for train_sample_exponent in train_sample_exponents
+]
 num_features = [
     1024,
     4096,
@@ -140,7 +150,9 @@ The method below analytically computes the mean and the covariance matrix of an 
 """
 
 # %%
-def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, noise_variance, X_star):
+def compute_hybrid_rule_predictions(
+    X, y, exact_kernel, approximate_kernel, noise_variance, X_star
+):
     """
     Identify the mean and covariance using the hybrid Matheron approximation of the exact posterior.
 
@@ -164,7 +176,9 @@ def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, nois
     assert kXstarX.shape == (X_star.shape[0], X.shape[0])
 
     KXX = exact_kernel.K(X)
-    kXX_plus_noise_var = tf.linalg.set_diag(KXX, tf.linalg.diag_part(KXX) + noise_variance)
+    kXX_plus_noise_var = tf.linalg.set_diag(
+        KXX, tf.linalg.diag_part(KXX) + noise_variance
+    )
     assert kXX_plus_noise_var.shape == (X.shape[0], X.shape[0])
 
     kXX_inv_mul_phi = tf.linalg.solve(kXX_plus_noise_var, phi)
@@ -214,9 +228,12 @@ def log10_Wasserstein_distance(
     square_root_covariance = tf.linalg.sqrtm(
         covariance + tf.eye(tf.shape(covariance)[0], dtype=covariance.dtype) * jitter
     )
-    matrix_product = square_root_covariance @ approximate_covariance @ square_root_covariance
+    matrix_product = (
+        square_root_covariance @ approximate_covariance @ square_root_covariance
+    )
     square_root_matrix_product = tf.linalg.sqrtm(
-        matrix_product + tf.eye(tf.shape(matrix_product)[0], dtype=matrix_product.dtype) * jitter
+        matrix_product
+        + tf.eye(tf.shape(matrix_product)[0], dtype=matrix_product.dtype) * jitter
     )
     term = covariance + approximate_covariance - 2 * square_root_matrix_product
     trace = tf.linalg.trace(term)
@@ -260,18 +277,24 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())
     approximate_kernel = KernelWithFeatureDecomposition(
-        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
+        kernel=None,
+        feature_functions=feature_functions,
+        feature_coefficients=feature_coefficients,
     )
 
     # create training data set and test points for evaluation
     X = []
     for i in range(num_input_dimensions):
-        random_samples = np.random.uniform(low=0.15, high=0.85, size=(num_train_samples,))
+        random_samples = np.random.uniform(
+            low=0.15, high=0.85, size=(num_train_samples,)
+        )
         X.append(random_samples)
     X = np.array(X).transpose()
 
     kXX = exact_kernel.K(X)
-    kXX_plus_noise_var = tf.linalg.set_diag(kXX, tf.linalg.diag_part(kXX) + noise_variance)
+    kXX_plus_noise_var = tf.linalg.set_diag(
+        kXX, tf.linalg.diag_part(kXX) + noise_variance
+    )
     lXX = tf.linalg.cholesky(kXX_plus_noise_var)
     y = tf.matmul(lXX, tf.random.normal([num_train_samples, 1], dtype=X.dtype))
 
@@ -281,9 +304,9 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     for i in range(num_input_dimensions):
         random_samples = np.random.uniform(low=0.0, high=0.3, size=(num_test_samples,))
         indices = np.random.uniform(size=(num_test_samples,)) < 0.5
-        random_samples[indices] = np.random.uniform(low=0.7, high=1.0, size=(num_test_samples,))[
-            indices
-        ]
+        random_samples[indices] = np.random.uniform(
+            low=0.7, high=1.0, size=(num_test_samples,)
+        )[indices]
         X_star.append(random_samples)
     X_star = np.array(X_star).transpose()
 
@@ -294,7 +317,11 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
 
     # identify mean and covariance of the analytic GPR posterior when using the weight space approximated kernel
     f_mean_weight, f_var_weight = compute_analytic_GP_predictions(
-        X=X, y=y, kernel=approximate_kernel, noise_variance=noise_variance, X_star=X_star
+        X=X,
+        y=y,
+        kernel=approximate_kernel,
+        noise_variance=noise_variance,
+        X_star=X_star,
     )
 
     # identify mean and covariance using the hybrid approximation
@@ -327,7 +354,9 @@ This helper function repeats an individual experiment several times and returns 
 """
 
 # %%
-def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples, num_features):
+def conduct_experiment_for_multiple_runs(
+    num_input_dimensions, num_train_samples, num_features
+):
     """
     Conduct the experiment as specified above `num_experiment_runs` times and identify the quartiles for
     the log10 Wassertein distance between the weight space approximated GP and the exact GP,
@@ -352,8 +381,12 @@ def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples
         list_of_log10_ws_dist_weight.append(log10_ws_dist_weight)
         list_of_log10_ws_dist_hybrid.append(log10_ws_dist_hybrid)
 
-    log10_ws_dist_weight_quarts = np.quantile(list_of_log10_ws_dist_weight, q=(0.25, 0.5, 0.75))
-    log10_ws_dist_hybrid_quarts = np.quantile(list_of_log10_ws_dist_hybrid, q=(0.25, 0.5, 0.75))
+    log10_ws_dist_weight_quarts = np.quantile(
+        list_of_log10_ws_dist_weight, q=(0.25, 0.5, 0.75)
+    )
+    log10_ws_dist_hybrid_quarts = np.quantile(
+        list_of_log10_ws_dist_hybrid, q=(0.25, 0.5, 0.75)
+    )
     return log10_ws_dist_weight_quarts, log10_ws_dist_hybrid_quarts
 
 
@@ -363,7 +396,9 @@ Since we conduct different experiments with different training data sizes, we ne
 """
 
 # %%
-def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_features):
+def conduct_experiment_for_different_train_data_sizes(
+    num_input_dimensions, num_features
+):
     """
     Conduct the experiment as specified above for different training dataset sizes and store the results in lists.
 
@@ -396,8 +431,12 @@ def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_
         list_log10_ws_dist_weight_quarts.append(log10_ws_dist_weight_quarts)
         list_log10_ws_dist_hybrid_quarts.append(log10_ws_dist_hybrid_quarts)
 
-    list_log10_ws_dist_weight_quarts = np.array(list_log10_ws_dist_weight_quarts).transpose()
-    list_log10_ws_dist_hybrid_quarts = np.array(list_log10_ws_dist_hybrid_quarts).transpose()
+    list_log10_ws_dist_weight_quarts = np.array(
+        list_log10_ws_dist_weight_quarts
+    ).transpose()
+    list_log10_ws_dist_hybrid_quarts = np.array(
+        list_log10_ws_dist_hybrid_quarts
+    ).transpose()
     return list_log10_ws_dist_weight_quarts, list_log10_ws_dist_hybrid_quarts
 
 
@@ -421,7 +460,10 @@ def conduct_experiment_for_different_num_features(num_input_dimensions):
     )  # for the analytic solution using the weight space approximated kernel
     list_of_hybrid_results = []  # for the hybrid-rule approximation
     for nf in num_features:
-        weight_results, hybrid_results = conduct_experiment_for_different_train_data_sizes(
+        (
+            weight_results,
+            hybrid_results,
+        ) = conduct_experiment_for_different_train_data_sizes(
             num_input_dimensions=num_input_dimensions, num_features=nf
         )
         print()
@@ -454,22 +496,34 @@ for i in range(
 
     # plot the results for the analytic solution using the weight space approximated kernel
     colors = ["bisque", "orange", "peru"]
-    assert len(colors) == len(num_features), "Number of colors must equal the number of features!"
+    assert len(colors) == len(
+        num_features
+    ), "Number of colors must equal the number of features!"
     for j in range(len(weight_results)):
         weight_result = weight_results[j]
         axs[i].fill_between(
-            num_train_samples, weight_result[0], weight_result[2], color=colors[j], alpha=0.1
+            num_train_samples,
+            weight_result[0],
+            weight_result[2],
+            color=colors[j],
+            alpha=0.1,
         )
         axs[i].plot(num_train_samples, weight_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, weight_result[1], color=colors[j], linewidth=0.5)
 
     # plot the results for the hybrid-rule approximation
     colors = ["lightblue", "blue", "darkblue"]
-    assert len(colors) == len(num_features), "Number of colors must equal the number of features!"
+    assert len(colors) == len(
+        num_features
+    ), "Number of colors must equal the number of features!"
     for j in range(len(hybrid_results)):
         hybrid_result = hybrid_results[j]
         axs[i].fill_between(
-            num_train_samples, hybrid_result[0], hybrid_result[2], color=colors[j], alpha=0.1
+            num_train_samples,
+            hybrid_result[0],
+            hybrid_result[2],
+            color=colors[j],
+            alpha=0.1,
         )
         axs[i].plot(num_train_samples, hybrid_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, hybrid_result[1], color=colors[j], linewidth=0.5)
