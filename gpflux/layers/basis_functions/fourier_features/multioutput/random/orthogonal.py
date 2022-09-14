@@ -22,8 +22,8 @@ import tensorflow as tf
 import gpflow
 from gpflow.base import DType, TensorType
 
-from gpflux.layers.basis_functions.fourier_features.random.base import (
-    RandomFourierFeatures,
+from gpflux.layers.basis_functions.fourier_features.multioutput.random.base import (
+    MultiOutputRandomFourierFeatures,
 )
 from gpflux.types import ShapeType
 
@@ -38,7 +38,6 @@ or :class:`RandomFourierFeaturesCosine`.
 ORF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.SquaredExponential,
 )
-
 
 def _sample_chi_squared(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
@@ -65,9 +64,7 @@ def _ceil_divide(a: float, b: float) -> int:
     return -np.floor_divide(-a, b)
 
 
-# TODO -- this class has to be updated
-# NOTE -- I am not sure if the shapes are fine here, check the actual paper
-class OrthogonalRandomFeatures(RandomFourierFeatures):
+class MultiOutputOrthogonalRandomFeatures(MultiOutputRandomFourierFeatures):
     r"""
     Orthogonal random Fourier features (ORF) :cite:p:`yu2016orthogonal` for more
     efficient and accurate kernel approximations than :class:`RandomFourierFeatures`.
@@ -76,8 +73,20 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
     def __init__(
         self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
     ):
-        assert isinstance(kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
-        super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
+
+
+
+        if isinstance(kernel, gpflow.kernels.SeparateIndependent):
+            for ker in kernel.kernels:
+                assert isinstance(ker, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
+        elif isinstance(kernel, gpflow.kernels.SharedIndependent):
+            assert isinstance(
+                kernel.kernel, ORF_SUPPORTED_KERNELS
+            ), "Unsupported Kernel"
+        else:
+            raise ValueError("kernel specified is not supported.")
+            
+        super(MultiOutputOrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
 
     def _weights_init(
         self, shape: TensorType, dtype: Optional[DType] = None
@@ -98,4 +107,4 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
         )  # equiv: S @ Q where S = diag(s); shape [P, K, D, D]
         V = tf.reshape(U, shape=(n_out, -1, input_dim))  # shape [P, K*D, D]
 
-        return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)
+        return V[:, : self.n_components, :]  # shape [P, M, D] (throw away K*D - M rows)

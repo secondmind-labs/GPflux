@@ -19,8 +19,12 @@ from gpflux.layers.basis_functions.fourier_features.multioutput.random.base impo
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
+from gpflux.layers.basis_functions.fourier_features.multioutput.random.orthogonal import (
+    MultiOutputOrthogonalRandomFeatures
+)
 
 __all__ = [
     "MultiOutputRandomFourierFeatures",
     "MultiOutputRandomFourierFeaturesCosine",
+    "MultiOutputOrthogonalRandomFeatures"
 ]
