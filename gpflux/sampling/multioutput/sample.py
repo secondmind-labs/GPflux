@@ -28,24 +28,20 @@ from gpflow.config import default_float, default_jitter
 from gpflow.covariances import Kuf, Kuu
 from gpflow.inducing_variables import (
     MultioutputInducingVariables,
-    SharedIndependentInducingVariables,
     SeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
 )
-from gpflow.kernels import (
-    Kernel,
-    SeparateIndependent,
-    SharedIndependent,
-    MultioutputKernel,
-)
+from gpflow.kernels import Kernel, MultioutputKernel, SeparateIndependent, SharedIndependent
 from gpflow.utilities import Dispatcher
 
-from gpflux.math import compute_A_inv_b
 from gpflux.feature_decomposition_kernels import (
-    SharedMultiOutputKernelWithFeatureDecomposition,
     SeparateMultiOutputKernelWithFeatureDecomposition,
+    SharedMultiOutputKernelWithFeatureDecomposition,
 )
-from ..sample import Sample
+from gpflux.math import compute_A_inv_b
+
 from ..dispatch import efficient_sample
+from ..sample import Sample
 
 
 @efficient_sample.register(

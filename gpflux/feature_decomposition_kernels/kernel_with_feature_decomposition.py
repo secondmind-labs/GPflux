@@ -28,13 +28,12 @@ and `Weight Space Approximation with Random Fourier Features
 <../../../../notebooks/weight_space_approximation.ipynb>`_
 for an in-depth overview.
 """
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Tuple, Union
 
 import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
-
 
 NoneType = type(None)
 

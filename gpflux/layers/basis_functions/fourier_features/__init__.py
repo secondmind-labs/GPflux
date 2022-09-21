@@ -18,16 +18,15 @@ A kernel's features for efficient sampling, used by
 :class:`gpflux.sampling.KernelWithFeatureDecomposition`
 """
 
+from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
+    MultiOutputRandomFourierFeatures,
+    MultiOutputRandomFourierFeaturesCosine,
+)
 from gpflux.layers.basis_functions.fourier_features.quadrature import QuadratureFourierFeatures
 from gpflux.layers.basis_functions.fourier_features.random import (
     OrthogonalRandomFeatures,
     RandomFourierFeatures,
     RandomFourierFeaturesCosine,
-)
-
-from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
-    MultiOutputRandomFourierFeatures,
-    MultiOutputRandomFourierFeaturesCosine,
 )
 
 __all__ = [

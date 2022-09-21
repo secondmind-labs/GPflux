@@ -20,21 +20,21 @@ from tensorflow.python.keras.testing_utils import layer_test
 from tensorflow.python.keras.utils.kernelized_utils import inner_product
 
 import gpflow
+from gpflow.kernels import SeparateIndependent, SharedIndependent
 
-from gpflow.kernels import SharedIndependent, SeparateIndependent
 from gpflux import feature_decomposition_kernels
+from gpflux.feature_decomposition_kernels.multioutput import (
+    SeparateMultiOutputKernelWithFeatureDecomposition,
+    SharedMultiOutputKernelWithFeatureDecomposition,
+)
 from gpflux.layers.basis_functions.fourier_features import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
     MultiOutputRandomFourierFeatures,
 )
-from gpflux.feature_decomposition_kernels.multioutput import (
-    SharedMultiOutputKernelWithFeatureDecomposition,
-    SeparateMultiOutputKernelWithFeatureDecomposition,
-)
+from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 from tests.conftest import skip_serialization_tests
 
 

@@ -28,7 +28,7 @@ and `Weight Space Approximation with Random Fourier Features
 <../../../../notebooks/weight_space_approximation.ipynb>`_
 for an in-depth overview.
 """
-from typing import Any, List, Optional, Union, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 import tensorflow as tf
 

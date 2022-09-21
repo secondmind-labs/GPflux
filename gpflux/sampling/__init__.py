@@ -17,7 +17,7 @@
 This module enables you to sample from (Deep) GPs efficiently and consistently.
 """
 
-from . import sample, multioutput
+from . import multioutput, sample
 from .dispatch import efficient_sample
 
 __all__ = [

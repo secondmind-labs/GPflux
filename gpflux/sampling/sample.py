@@ -29,11 +29,8 @@ from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
 from gpflow.utilities import Dispatcher
 
+from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition, _ApproximateKernel
 from gpflux.math import compute_A_inv_b
-from gpflux.feature_decomposition_kernels import (
-    KernelWithFeatureDecomposition,
-    _ApproximateKernel,
-)
 from gpflux.sampling.utils import draw_conditional_sample
 
 from .dispatch import efficient_sample

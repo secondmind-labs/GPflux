@@ -1,7 +1,7 @@
 from .kernel_with_feature_decomposition import (
-    _MultiOutputApproximateKernel,
-    SharedMultiOutputKernelWithFeatureDecomposition,
     SeparateMultiOutputKernelWithFeatureDecomposition,
+    SharedMultiOutputKernelWithFeatureDecomposition,
+    _MultiOutputApproximateKernel,
 )
 
 __all__ = [

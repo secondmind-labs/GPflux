@@ -23,6 +23,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
+
 from gpflux.types import ShapeType
 
 
