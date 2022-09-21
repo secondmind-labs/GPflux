@@ -88,7 +88,10 @@ class BayesianDenseLayer(TrackableLayer):
             assert w_mu.shape == ((input_dim + 1) * output_dim,)
         if w_sqrt is not None:
             if not is_mean_field:
-                assert w_sqrt.shape == ((input_dim + 1) * output_dim, (input_dim + 1) * output_dim,)
+                assert w_sqrt.shape == (
+                    (input_dim + 1) * output_dim,
+                    (input_dim + 1) * output_dim,
+                )
             else:
                 assert w_sqrt.shape == ((input_dim + 1) * output_dim,)
         assert temperature > 0.0
@@ -137,7 +140,10 @@ class BayesianDenseLayer(TrackableLayer):
         self.initialize_variational_distribution()
 
     def predict_samples(
-        self, inputs: TensorType, *, num_samples: Optional[int] = None,
+        self,
+        inputs: TensorType,
+        *,
+        num_samples: Optional[int] = None,
     ) -> tf.Tensor:
         """
         Samples from the approximate posterior at N test inputs, with input_dim = D, output_dim = Q.
@@ -178,7 +184,10 @@ class BayesianDenseLayer(TrackableLayer):
         """
         The default behaviour upon calling this layer.
         """
-        sample = self.predict_samples(inputs, num_samples=None,)
+        sample = self.predict_samples(
+            inputs,
+            num_samples=None,
+        )
 
         # TF quirk: add_loss must add a tensor to compile
         if training:

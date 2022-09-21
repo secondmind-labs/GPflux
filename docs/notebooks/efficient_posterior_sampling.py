@@ -266,7 +266,9 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())
     approximate_kernel = KernelWithFeatureDecomposition(
-        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients,
+        kernel=None,
+        feature_functions=feature_functions,
+        feature_coefficients=feature_coefficients,
     )
 
     # create training data set and test points for evaluation
@@ -300,7 +302,11 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
 
     # identify mean and covariance of the analytic GPR posterior when using the weight space approximated kernel
     f_mean_weight, f_var_weight = compute_analytic_GP_predictions(
-        X=X, y=y, kernel=approximate_kernel, noise_variance=noise_variance, X_star=X_star,
+        X=X,
+        y=y,
+        kernel=approximate_kernel,
+        noise_variance=noise_variance,
+        X_star=X_star,
     )
 
     # identify mean and covariance using the hybrid approximation
@@ -464,7 +470,11 @@ for i in range(
     for j in range(len(weight_results)):
         weight_result = weight_results[j]
         axs[i].fill_between(
-            num_train_samples, weight_result[0], weight_result[2], color=colors[j], alpha=0.1,
+            num_train_samples,
+            weight_result[0],
+            weight_result[2],
+            color=colors[j],
+            alpha=0.1,
         )
         axs[i].plot(num_train_samples, weight_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, weight_result[1], color=colors[j], linewidth=0.5)
@@ -475,7 +485,11 @@ for i in range(
     for j in range(len(hybrid_results)):
         hybrid_result = hybrid_results[j]
         axs[i].fill_between(
-            num_train_samples, hybrid_result[0], hybrid_result[2], color=colors[j], alpha=0.1,
+            num_train_samples,
+            hybrid_result[0],
+            hybrid_result[2],
+            color=colors[j],
+            alpha=0.1,
         )
         axs[i].plot(num_train_samples, hybrid_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, hybrid_result[1], color=colors[j], linewidth=0.5)

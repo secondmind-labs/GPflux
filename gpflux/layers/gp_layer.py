@@ -228,7 +228,11 @@ class GPLayer(tfp.layers.DistributionLambda):
         self.num_samples = num_samples
 
     def predict(
-        self, inputs: TensorType, *, full_cov: bool = False, full_output_cov: bool = False,
+        self,
+        inputs: TensorType,
+        *,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Make a prediction at N test inputs for the Q outputs of this layer,
@@ -307,7 +311,11 @@ class GPLayer(tfp.layers.DistributionLambda):
         :attr:`whiten`\ ed representation, returns ``KL[q(v)∥p(v)]``.
         """
         return prior_kl(
-            self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten,
+            self.inducing_variable,
+            self.kernel,
+            self.q_mu,
+            self.q_sqrt,
+            whiten=self.whiten,
         )
 
     def _make_distribution_fn(
@@ -321,7 +329,9 @@ class GPLayer(tfp.layers.DistributionLambda):
             which should be coercible to a `tf.Tensor`
         """
         mean, cov = self.predict(
-            previous_layer_outputs, full_cov=self.full_cov, full_output_cov=self.full_output_cov,
+            previous_layer_outputs,
+            full_cov=self.full_cov,
+            full_output_cov=self.full_output_cov,
         )
 
         if self.full_cov and not self.full_output_cov:

@@ -242,7 +242,11 @@ def construct_gp_layer(
     base_kernel = kernel_class(lengthscales=np.full(input_dim, lengthscale))
     kernel = construct_basic_kernel(base_kernel, output_dim=output_dim, share_hyperparams=True)
     inducing_variable = construct_basic_inducing_variables(
-        num_inducing, input_dim, output_dim=output_dim, share_variables=True, z_init=z_init,
+        num_inducing,
+        input_dim,
+        output_dim=output_dim,
+        share_variables=True,
+        z_init=z_init,
     )
     gp_layer = GPLayer(
         kernel=kernel,

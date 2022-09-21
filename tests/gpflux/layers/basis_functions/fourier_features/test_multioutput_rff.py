@@ -74,14 +74,16 @@ def _base_kernel_cls_fixture(request):
 
 
 @pytest.fixture(
-    name="random_basis_func_cls", params=[MultiOutputRandomFourierFeatures],
+    name="random_basis_func_cls",
+    params=[MultiOutputRandomFourierFeatures],
 )
 def _random_basis_func_cls_fixture(request):
     return request.param
 
 
 @pytest.fixture(
-    name="basis_func_cls", params=[MultiOutputRandomFourierFeatures],
+    name="basis_func_cls",
+    params=[MultiOutputRandomFourierFeatures],
 )
 def _basis_func_cls_fixture(request):
     return request.param

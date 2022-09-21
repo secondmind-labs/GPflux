@@ -275,7 +275,9 @@ for experiment in range(len(number_of_train_samples)):
     )
     feature_coefficients = np.ones((number_of_features, 1), dtype=default_float())
     kernel = KernelWithFeatureDecomposition(
-        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients,
+        kernel=None,
+        feature_functions=feature_functions,
+        feature_coefficients=feature_coefficients,
     )
     gpr_model = GPR(
         data=(X[experiment][..., None], y[experiment][..., None]),

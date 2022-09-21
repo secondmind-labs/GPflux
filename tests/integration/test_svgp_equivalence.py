@@ -134,7 +134,10 @@ def test_svgp_equivalence_after_assign():
 
 
 def fit_adam(
-    model: Union[gpflow.models.SVGP, gpflux.models.DeepGP], data, maxiter, adam_learning_rate=0.01,
+    model: Union[gpflow.models.SVGP, gpflux.models.DeepGP],
+    data,
+    maxiter,
+    adam_learning_rate=0.01,
 ):
     X, Y = data
     num_data = len(X)
@@ -173,20 +176,33 @@ def keras_fit_adam(sldgp: gpflux.models.DeepGP, data, maxiter, adam_learning_rat
 
 
 def _keras_fit_natgrad(
-    base_model, dataset, maxiter, adam_learning_rate=0.01, gamma=1.0, loss=None, run_eagerly=None,
+    base_model,
+    dataset,
+    maxiter,
+    adam_learning_rate=0.01,
+    gamma=1.0,
+    loss=None,
+    run_eagerly=None,
 ):
     model = gpflux.optimization.NatGradWrapper(base_model)
     model.natgrad_layers = True  # Shortcut to apply natural gradients to all layers
     natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
     adam = tf.optimizers.Adam(adam_learning_rate)
     model.compile(
-        optimizer=[natgrad, adam], loss=loss, run_eagerly=run_eagerly,
+        optimizer=[natgrad, adam],
+        loss=loss,
+        run_eagerly=run_eagerly,
     )
     model.fit(dataset, epochs=maxiter)
 
 
 def keras_fit_natgrad(
-    sldgp, data, maxiter, adam_learning_rate=0.01, gamma=1.0, run_eagerly=None,
+    sldgp,
+    data,
+    maxiter,
+    adam_learning_rate=0.01,
+    gamma=1.0,
+    run_eagerly=None,
 ):
     base_model = sldgp.as_training_model()
     dataset = make_dataset(data)
@@ -273,7 +289,10 @@ def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
 
 @pytest.mark.parametrize(
     "svgp_fitter, keras_fitter, tol_kw",
-    [(fit_adam, _keras_fit_adam, {}), (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-8)),],
+    [
+        (fit_adam, _keras_fit_adam, {}),
+        (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-8)),
+    ],
 )
 def test_svgp_equivalence_with_keras_sequential(svgp_fitter, keras_fitter, tol_kw, maxiter=10):
     X, Y = data = load_data()
@@ -327,7 +346,8 @@ def run_gpflow_svgp(data, optimizer, maxiter):
 
 
 @pytest.mark.parametrize(
-    "optimizer", ["natgrad", "adam", "scipy", "keras_adam", "keras_natgrad"],
+    "optimizer",
+    ["natgrad", "adam", "scipy", "keras_adam", "keras_natgrad"],
 )
 def test_run_gpflux_sldgp(optimizer):
     data = load_data()

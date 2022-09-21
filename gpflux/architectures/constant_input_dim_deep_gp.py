@@ -155,7 +155,11 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
             q_sqrt_scaling = config.inner_layer_qsqrt_factor
 
         layer = GPLayer(
-            kernel, inducing_var, num_data, mean_function=mean_function, name=f"gp_{i_layer}",
+            kernel,
+            inducing_var,
+            num_data,
+            mean_function=mean_function,
+            name=f"gp_{i_layer}",
         )
         layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
         gp_layers.append(layer)

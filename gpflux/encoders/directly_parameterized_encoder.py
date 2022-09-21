@@ -109,6 +109,10 @@ class DirectlyParameterizedNormalDiag(TrackableLayer):
         """
         if inputs is not None:
             tf.debugging.assert_shapes(
-                [(self.means, ["N", "W"]), (self.stds, ["N", "W"]), (inputs, ["N", "D"]),]
+                [
+                    (self.means, ["N", "W"]),
+                    (self.stds, ["N", "W"]),
+                    (inputs, ["N", "D"]),
+                ]
             )
         return self.means, self.stds

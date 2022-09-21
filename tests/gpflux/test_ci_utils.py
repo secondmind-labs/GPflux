@@ -32,7 +32,12 @@ def test_is_continuous_integration(os_environ, is_ci):
 
 
 @pytest.mark.parametrize(
-    "is_ci, args, expected_result", [(True, (13,), 2), (True, (13, 5), 5), (False, (13,), 13),],
+    "is_ci, args, expected_result",
+    [
+        (True, (13,), 2),
+        (True, (13, 5), 5),
+        (False, (13,), 13),
+    ],
 )
 def test_notebook_niter(is_ci, args, expected_result):
     with mock_ci_state(is_ci):

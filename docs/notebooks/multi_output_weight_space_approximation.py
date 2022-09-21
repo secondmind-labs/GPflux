@@ -128,7 +128,8 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     """
 
     @check_shapes(
-        "data[0]: [N, D]", "data[1]: [N, P]",
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
     )
     def __init__(
         self,
@@ -154,7 +155,9 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_marginal_likelihood()
 
-    @check_shapes("return: []",)
+    @check_shapes(
+        "return: []",
+    )
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -369,7 +372,9 @@ for experiment in range(len(number_of_train_samples)):
     print(X_star[experiment].shape)
 
     gpr_model = GPR_deprecated(
-        data=(X[experiment], y[experiment]), kernel=kernel, noise_variance=noise_variance,
+        data=(X[experiment], y[experiment]),
+        kernel=kernel,
+        noise_variance=noise_variance,
     )
 
     # predict function mean and variance, and draw function samples (without observation noise)#
@@ -399,7 +404,10 @@ for experiment in range(len(number_of_train_samples)):
     )
     for i in range(f_samples.shape[0]):
         axs[experiment, 0].plot(
-            X_star[experiment][..., 0], f_samples[i, ..., 0], color="orange", linewidth=0.2,
+            X_star[experiment][..., 0],
+            f_samples[i, ..., 0],
+            color="orange",
+            linewidth=0.2,
         )
     axs[experiment, 0].plot(X_star[experiment][..., 0], f_mean[..., 0], color="orange")
 
@@ -414,7 +422,10 @@ for experiment in range(len(number_of_train_samples)):
     )
     for i in range(f_samples.shape[0]):
         axs[experiment, 1].plot(
-            X_star[experiment][..., 0], f_samples[i, ..., 1], color="orange", linewidth=0.2,
+            X_star[experiment][..., 0],
+            f_samples[i, ..., 1],
+            color="orange",
+            linewidth=0.2,
         )
     axs[experiment, 1].plot(X_star[experiment][..., 0], f_mean[..., 1], color="orange")
 

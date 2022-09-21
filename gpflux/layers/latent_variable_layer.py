@@ -152,7 +152,9 @@ class LatentVariableLayer(LayerWithObservations):
         return self.compositor([layer_inputs, samples])
 
     def _inference_posteriors(
-        self, observations: ObservationType, training: Optional[bool] = None,
+        self,
+        observations: ObservationType,
+        training: Optional[bool] = None,
     ) -> tfp.distributions.Distribution:
         """
         Return the posterior distributions parametrised by the :attr:`encoder`, which gets called
@@ -176,7 +178,10 @@ class LatentVariableLayer(LayerWithObservations):
         return posteriors
 
     def _inference_latent_samples_and_loss(
-        self, layer_inputs: TensorType, observations: ObservationType, seed: Optional[int] = None,
+        self,
+        layer_inputs: TensorType,
+        observations: ObservationType,
+        seed: Optional[int] = None,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""
         Sample latent variables during the *training* forward pass, hence requiring

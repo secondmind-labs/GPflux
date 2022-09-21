@@ -131,7 +131,10 @@ class DeepGP(Module):
         return num_data
 
     def _evaluate_deep_gp(
-        self, inputs: TensorType, targets: Optional[TensorType], training: Optional[bool] = None,
+        self,
+        inputs: TensorType,
+        targets: Optional[TensorType],
+        training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
         Evaluate ``f(x) = fₙ(⋯ (f₂(f₁(x))))`` on the *inputs* argument.
@@ -160,7 +163,10 @@ class DeepGP(Module):
         return features
 
     def _evaluate_likelihood(
-        self, f_outputs: TensorType, targets: Optional[TensorType], training: Optional[bool] = None,
+        self,
+        f_outputs: TensorType,
+        targets: Optional[TensorType],
+        training: Optional[bool] = None,
     ) -> tf.Tensor:
         """
         Call the `likelihood_layer` on *f_outputs*, which adds the
@@ -263,7 +269,9 @@ class DeepGP(Module):
         return model_class(self.inputs, outputs)
 
 
-def sample_dgp(model: DeepGP,) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
+def sample_dgp(
+    model: DeepGP,
+) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
     function_draws = [layer.sample() for layer in model.f_layers]
     # TODO: error check that all layers implement .sample()?
 

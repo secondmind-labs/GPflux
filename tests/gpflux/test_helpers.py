@@ -131,7 +131,11 @@ def test_construct_inducing_shared_independent_duplicates(z_init):
         z_init = None
 
     moiv = construct_basic_inducing_variables(
-        num_inducing, input_dim, output_dim=output_dim, share_variables=True, z_init=z_init,
+        num_inducing,
+        input_dim,
+        output_dim=output_dim,
+        share_variables=True,
+        z_init=z_init,
     )
 
     assert isinstance(moiv, SharedIndependentInducingVariables)

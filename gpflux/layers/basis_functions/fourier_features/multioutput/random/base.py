@@ -201,7 +201,12 @@ class MultiOutputRandomFourierFeatures(MultiOutputRandomFourierFeaturesBase):
 
         if hasattr(self.kernel, "kernels"):
             _kernel_variance = tf.stack([ker.variance for ker in self.kernel.kernels], axis=0)
-            tf.ensure_shape(_kernel_variance, [self.kernel.num_latent_gps,])
+            tf.ensure_shape(
+                _kernel_variance,
+                [
+                    self.kernel.num_latent_gps,
+                ],
+            )
 
         else:
             _kernel_variance = self.kernel.kernel.variance
@@ -283,7 +288,12 @@ class MultiOutputRandomFourierFeaturesCosine(MultiOutputRandomFourierFeaturesBas
 
         if hasattr(self.kernel, "kernels"):
             _kernel_variance = tf.stack([ker.variance for ker in self.kernel.kernels], axis=0)
-            tf.ensure_shape(_kernel_variance, [self.kernel.num_latent_gps,])
+            tf.ensure_shape(
+                _kernel_variance,
+                [
+                    self.kernel.num_latent_gps,
+                ],
+            )
         else:
             _kernel_variance = self.kernel.kernel.variance
 

@@ -140,7 +140,11 @@ def run_demo(maxiter=int(80e3), plotter_interval=60):
     deep_gp = build_deep_gp(input_dim, num_data)
     fig, plotter = get_live_plotter(data, deep_gp)
     train_deep_gp(
-        deep_gp, data, maxiter=maxiter, plotter=plotter, plotter_interval=plotter_interval,
+        deep_gp,
+        data,
+        maxiter=maxiter,
+        plotter=plotter,
+        plotter_interval=plotter_interval,
     )
 
 

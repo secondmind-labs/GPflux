@@ -113,7 +113,8 @@ def test_shared_wilson_efficient_sample(base_kernel, shared_inducing_variable, w
     # Check for consistency - i.e. evaluating the sample at the
     # same locations (X) returns the same value
     np.testing.assert_array_almost_equal(
-        sample_func(X), sample_func(X),
+        sample_func(X),
+        sample_func(X),
     )
 
 
@@ -139,7 +140,8 @@ def test_separate_wilson_efficient_sample(base_kernel, separate_inducing_variabl
     # Check for consistency - i.e. evaluating the sample at the
     # same locations (X) returns the same value
     np.testing.assert_array_almost_equal(
-        sample_func(X), sample_func(X),
+        sample_func(X),
+        sample_func(X),
     )
 
 

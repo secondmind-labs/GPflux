@@ -61,7 +61,8 @@ def _kernel_cls_fixture(request):
 
 
 @pytest.fixture(
-    name="random_basis_func_cls", params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
+    name="random_basis_func_cls",
+    params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
 )
 def _random_basis_func_cls_fixture(request):
     return request.param
@@ -69,7 +70,11 @@ def _random_basis_func_cls_fixture(request):
 
 @pytest.fixture(
     name="basis_func_cls",
-    params=[RandomFourierFeatures, RandomFourierFeaturesCosine, OrthogonalRandomFeatures,],
+    params=[
+        RandomFourierFeatures,
+        RandomFourierFeaturesCosine,
+        OrthogonalRandomFeatures,
+    ],
 )
 def _basis_func_cls_fixture(request):
     return request.param

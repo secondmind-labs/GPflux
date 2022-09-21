@@ -60,7 +60,11 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
         self,
         log_dir: str = "logs",
         *,
-        keywords_to_monitor: List[str] = ["kernel", "mean_function", "likelihood",],
+        keywords_to_monitor: List[str] = [
+            "kernel",
+            "mean_function",
+            "likelihood",
+        ],
         max_size: int = 3,
         histogram_freq: int = 0,
         write_graph: bool = True,
