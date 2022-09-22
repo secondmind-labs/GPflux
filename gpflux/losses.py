@@ -72,6 +72,7 @@ class LikelihoodLoss(tf.keras.losses.Loss):
 
     def call(
         self,
+        x: TensorType,
         y_true: TensorType,
         f_prediction: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
     ) -> tf.Tensor:
@@ -83,7 +84,7 @@ class LikelihoodLoss(tf.keras.losses.Loss):
 
             F_mu = f_prediction.loc
             F_var = f_prediction.scale.diag ** 2
-            return -self.likelihood.variational_expectations(F_mu, F_var, y_true)
+            return -self.likelihood.variational_expectations(x, F_mu, F_var, y_true)
         else:  # Tensor
             f_samples = f_prediction
-            return -self.likelihood.log_prob(f_samples, y_true)
+            return -self.likelihood.log_prob(x, f_samples, y_true)

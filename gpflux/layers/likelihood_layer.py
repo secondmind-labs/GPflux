@@ -84,12 +84,12 @@ class LikelihoodLayer(TrackableLayer):
             assert targets is not None
             # TODO: re-use LikelihoodLoss to remove code duplication
             loss_per_datapoint = tf.reduce_mean(
-                -self.likelihood.variational_expectations(F_mean, F_var, targets)
+                -self.likelihood.variational_expectations(inputs, F_mean, F_var, targets)
             )
             Y_mean = Y_var = None
         else:
             loss_per_datapoint = tf.constant(0.0, dtype=default_float())
-            Y_mean, Y_var = self.likelihood.predict_mean_and_var(F_mean, F_var)
+            Y_mean, Y_var = self.likelihood.predict_mean_and_var(inputs, F_mean, F_var)
 
         self.add_loss(loss_per_datapoint)
 
