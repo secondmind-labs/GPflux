@@ -28,7 +28,7 @@ and `Weight Space Approximation with Random Fourier Features
 <../../../../notebooks/weight_space_approximation.ipynb>`_
 for an in-depth overview.
 """
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 
 import tensorflow as tf
 
@@ -72,7 +72,8 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
 
     @property
     def latent_kernels(self) -> Any:
-        """In this scenario we do not have access to the underlying kernels, so we are just returning the feature_functions"""
+        """In this scenario we do not have access to the underlying kernels,
+        so we are just returning the feature_functions"""
         return self._feature_functions
 
     def K(
@@ -85,7 +86,8 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
         phi = self._feature_functions(X)  # [P, N, L]
 
         L = tf.shape(phi)[-1]
-        # NOTE - there are some differences between using FourierFeatures and FourierFeaturesCosine, extra check to ensure right shape and to guide debugging in notebooks
+        # NOTE - there are some differences between using FourierFeatures and FourierFeaturesCosine,
+        # extra check to ensure right shape and to guide debugging in notebooks
         tf.debugging.assert_equal(tf.shape(self._feature_coefficients), [self.num_latent_gps, L, 1])
 
         if X2 is None:
@@ -120,9 +122,10 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
 class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedIndependent):
 
     """
-    'Wrapper' class to solve the issue with full_cov:bool = False inherited from gpflow.kernels.MultiOutputKernel
-    which doesn't work well with GPRPosterior, as it does not use dispatchers from gpflow.covariances.
-    #NOTE -- I think in general GPR in GPflow is only meant to be used in univariate regression settings or multivariate case but with common covariance
+    'Wrapper' class to solve the issue with full_cov:bool = False
+    inherited from gpflow.kernels.MultiOutputKernel
+    which doesn't work well with GPRPosterior,
+    as it does not use dispatchers from gpflow.covariances.
     """
 
     # Overriding __call__ from gpflow.kernels.MultioutputKernel
@@ -131,7 +134,7 @@ class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedI
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True,  # NOTE -- this needs to be set to True as not to throw errors later on
+        full_cov: bool = True,  # NOTE -- otherwise will throw errors
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -150,7 +153,8 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
     SharedMultiOutputKernelWithFeatureDecompositionBase
 ):
     r"""
-    This class represents a gpflow.kernels.SharedIndependent kernel together with its finite feature decomposition:
+    This class represents a gpflow.kernels.SharedIndependent kernel together
+    with its finite feature decomposition:
 
     .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
 
@@ -212,8 +216,9 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
         """
 
         if kernel is None:
-            # NOTE -- this is a subclass of gpflow.kernels.SharedIndependent (needed to be used with dispatchers from gpflow.covariances)
-            # so it needs to be initialized somehow. Not sure if this is the best approach though
+            # NOTE -- this is a subclass of gpflow.kernels.SharedIndependent
+            # (needed to be used with dispatchers from gpflow.covariances)
+            # so it needs to be initialized somehow. Not sure if efficient
             _dummy_kernel = SquaredExponential()
             super().__init__(_dummy_kernel, output_dim)
             self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)
@@ -265,9 +270,10 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
 class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SeparateIndependent):
 
     """
-    'Wrapper' class to solve the issue with full_cov:bool = False inherited from gpflow.kernels.MultiOutputKernel
-    which doesn't work well with GPRPosterior, as it does not use dispatchers from gpflow.covariances.
-    #NOTE -- I think in general GPR in GPflow is only meant to be used in univariate regression settings or multivariate case but with common covariance
+    'Wrapper' class to solve the issue with full_cov:bool = False
+    inherited from gpflow.kernels.MultiOutputKernel
+    which doesn't work well with GPRPosterior,
+    as it does not use dispatchers from gpflow.covariances.
     """
 
     # Overriding __call__ from gpflow.kernels.MultioutputKernel
@@ -276,7 +282,7 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True,  # NOTE -- this needs to be set to True as not to throw errors later on
+        full_cov: bool = True,  # NOTE -- otherwise will throw errors
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -295,7 +301,8 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(
     SeparateMultiOutputKernelWithFeatureDecompositionBase
 ):
     r"""
-    This class represents a gpflow.kernel.SeparateIndependent together with its finite feature decomposition:
+    This class represents a gpflow.kernel.SeparateIndependent
+    together with its finite feature decomposition:
 
     .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
 
@@ -357,8 +364,9 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(
         """
 
         if kernel is None:
-            # NOTE -- this is a subclass of gpflow.kernels.SeparateIndependent (needed to be used with dispatchers from gpflow.covariances)
-            # so it needs to be initialized somehow. Not sure if this is the best approach though
+            # NOTE -- this is a subclass of gpflow.kernels.SeparateIndependent
+            # (needed to be used with dispatchers from gpflow.covariances)
+            # so it needs to be initialized somehow. Not sure if efficient
             _dummy_kernels = [SquaredExponential() for _ in range(output_dim)]
             super().__init__(_dummy_kernels)
             self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)

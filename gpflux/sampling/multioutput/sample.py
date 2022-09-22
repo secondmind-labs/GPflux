@@ -15,15 +15,11 @@
 #
 """ This module enables you to sample from (Deep) GPs using different approaches. """
 
-import abc
-from multiprocessing.sharedctypes import Value
-from pickle import TRUE
-from typing import Callable, Optional, Union
+from typing import Optional, Union
 
 import tensorflow as tf
 
 from gpflow.base import TensorType
-from gpflow.conditionals import conditional
 from gpflow.config import default_float, default_jitter
 from gpflow.covariances import Kuf, Kuu
 from gpflow.inducing_variables import (
@@ -31,8 +27,7 @@ from gpflow.inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from gpflow.kernels import Kernel, MultioutputKernel, SeparateIndependent, SharedIndependent
-from gpflow.utilities import Dispatcher
+from gpflow.kernels import SeparateIndependent, SharedIndependent
 
 from gpflux.feature_decomposition_kernels import (
     SeparateMultiOutputKernelWithFeatureDecomposition,
@@ -135,13 +130,9 @@ def _efficient_multi_output_sample_matheron_rule(
         phi_Z = kernel.feature_functions(inducing_variable.inducing_variable.Z)  # [P, M, L]
         tf.debugging.assert_equal(tf.shape(phi_Z), [P, M, L])
     else:
-        raise ValueError(
-            "inducing variable is not supported. Must be either SharedIndependentInducingVariables or SeparateIndependentInducingVariables"
-        )
+        raise ValueError("inducing variable is not supported.")
 
-    weight_space_prior_Z = tf.matmul(
-        phi_Z, tf.transpose(prior_weights)[..., None]  #  [P, M, L]  # [P, L, 1]
-    )  # [P, M, 1]
+    weight_space_prior_Z = tf.matmul(phi_Z, tf.transpose(prior_weights)[..., None])  # [P, M, 1]
     weight_space_prior_Z = tf.transpose(weight_space_prior_Z[..., 0])  # [M, P]
 
     diff = tf.transpose(u_sample - weight_space_prior_Z)[..., None]  # [P, M, 1]

@@ -16,7 +16,6 @@
 """ This module enables you to sample from (Deep) GPs using different approaches. """
 
 import abc
-from pickle import TRUE
 from typing import Callable, Optional, Union
 
 import tensorflow as tf
@@ -26,10 +25,9 @@ from gpflow.conditionals import conditional
 from gpflow.config import default_float, default_jitter
 from gpflow.covariances import Kuf, Kuu
 from gpflow.inducing_variables import InducingVariables
-from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
-from gpflow.utilities import Dispatcher
+from gpflow.kernels import Kernel
 
-from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition, _ApproximateKernel
+from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition
 from gpflux.math import compute_A_inv_b
 from gpflux.sampling.utils import draw_conditional_sample
 

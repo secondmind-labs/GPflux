@@ -17,7 +17,6 @@
 
 from abc import ABC, abstractmethod
 from typing import Mapping
-from warnings import WarningMessage
 
 import tensorflow as tf
 
@@ -32,7 +31,8 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         self, kernel: gpflow.kernels.MultioutputKernel, n_components: int, **kwargs: Mapping
     ):
         """
-        :param kernel: kernel to approximate using a set of Fourier bases. Expects a Multioutput Kernel
+        :param kernel: kernel to approximate using a set of Fourier bases.
+        Expects a Multioutput Kernel
         :param n_components: number of components (e.g. Monte Carlo samples,
             quadrature nodes, etc.) used to numerically approximate the kernel.
         """
@@ -85,12 +85,10 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
             )  # [P, 1, D]
             tf.debugging.assert_equal(tf.shape(_lengthscales), [P, 1, D])
         else:
-            raise ValueError(
-                "kernel is not supported. Must be either gpflow.kernels.SharedIndependent or gpflow.kernels.SeparateIndependent"
-            )
+            raise ValueError("kernel is not supported.")
 
         X = tf.divide(
-            inputs,  # [N, D] in the case that we predict at X*, in case we want to get the Fourier Features for Z, this would correspond to [P, M, D]
+            inputs,  # [N, D] or [P, M, D]
             _lengthscales,  # [P, 1, D]
         )  # [P, N, D] or [P, M, D]
         const = self._compute_constant()[..., None, None]  # [P,1,1]

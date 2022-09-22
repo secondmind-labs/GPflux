@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from multiprocessing.sharedctypes import Value
 from typing import Mapping, Optional, Tuple, Type
 
 import numpy as np
@@ -135,9 +134,7 @@ class MultiOutputRandomFourierFeaturesBase(MultiOutputFourierFeaturesBase):
                 nu = 2.0 * p + 1.0  # degrees of freedom
                 return _sample_students_t(nu, shape, dtype)
         else:
-            raise ValueError(
-                "kernel is not supported. Must be either gpflow.kernels.SharedIndependent or gpflow.kernels.SeparateIndependent"
-            )
+            raise ValueError("kernel is not supported.")
 
     @staticmethod
     def rff_constant(variance: TensorType, output_dim: int) -> tf.Tensor:
