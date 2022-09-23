@@ -80,7 +80,10 @@ from gpflow.kernels import RBF, Matern52
 from gpflow.models import GPR
 
 from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.feature_decomposition_kernels.kernel_with_feature_decomposition import (
+    KernelWithFeatureDecomposition,
+)
+
 
 # %% [markdown]
 """

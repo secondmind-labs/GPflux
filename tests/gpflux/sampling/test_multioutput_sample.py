@@ -64,7 +64,7 @@ def _separate_inducing_variable_fixture():
     )
 
 
-@pytest.fixture(name="whiten", params=[True])
+@pytest.fixture(name="whiten", params=[True, False])
 def _whiten_fixture(request):
     return request.param
 
@@ -89,6 +89,58 @@ def _get_separate_qmu_qsqrt(kernel, inducing_variable):
     q_mu = q_sqrt @ np.random.randn(2, Z.shape[0], 1)
 
     return np.transpose(q_mu[..., 0]), q_sqrt
+
+
+def test_shared_conditional_sample(base_kernel, shared_inducing_variable, whiten):
+    """Smoke and consistency test for efficient sampling using MVN Conditioning"""
+    kernel = _get_shared_kernel(base_kernel)
+    q_mu, q_sqrt = _get_shared_qmu_qsqrt(kernel, shared_inducing_variable)
+
+    sample_func = efficient_sample(
+        shared_inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=1e-3 * tf.convert_to_tensor(q_sqrt),
+        whiten=whiten,
+    )
+
+    X = np.linspace(-1, 1, 100).reshape(-1, 1)
+    # Check for consistency - i.e. evaluating the sample at the
+    # same locations (X) returns the same value
+    np.testing.assert_array_almost_equal(
+        sample_func(X),
+        sample_func(X),
+        # MVN conditioning is numerically unstable.
+        # Notice how in the Wilson sampling we can use the default
+        # of decimal=7.
+        decimal=2,
+    )
+
+
+def test_separate_conditional_sample(base_kernel, separate_inducing_variable, whiten):
+    """Smoke and consistency test for efficient sampling using MVN Conditioning"""
+    kernel = _get_separate_kernel(base_kernel)
+    q_mu, q_sqrt = _get_separate_qmu_qsqrt(kernel, separate_inducing_variable)
+
+    sample_func = efficient_sample(
+        separate_inducing_variable,
+        kernel,
+        q_mu,
+        q_sqrt=1e-3 * tf.convert_to_tensor(q_sqrt),
+        whiten=whiten,
+    )
+
+    X = np.linspace(-1, 1, 100).reshape(-1, 1)
+    # Check for consistency - i.e. evaluating the sample at the
+    # same locations (X) returns the same value
+    np.testing.assert_array_almost_equal(
+        sample_func(X),
+        sample_func(X),
+        # MVN conditioning is numerically unstable.
+        # Notice how in the Wilson sampling we can use the default
+        # of decimal=7.
+        decimal=2,
+    )
 
 
 def test_shared_wilson_efficient_sample(base_kernel, shared_inducing_variable, whiten):
@@ -145,7 +197,6 @@ def test_separate_wilson_efficient_sample(base_kernel, separate_inducing_variabl
     )
 
 
-"""
 class SampleMock(Sample):
     def __init__(self, a):
         self.a = a
@@ -172,4 +223,3 @@ def test_adding_sample_and_mean_function():
     sample_and_mean_function = sample + mean_function
 
     np.testing.assert_array_almost_equal(sample_and_mean_function(X), sample(X) + mean_function(X))
-"""

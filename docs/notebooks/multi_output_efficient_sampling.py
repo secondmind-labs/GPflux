@@ -52,7 +52,7 @@ tf.keras.backend.set_floatx("float64")
 """
 
 # %%
-d = np.load("./tests/snelson1d.npz")
+d = np.load("../../tests/snelson1d.npz")
 X, Y = data = d["X"], d["Y"]
 num_data, input_dim = X.shape
 
