@@ -6,7 +6,7 @@ from setuptools import find_namespace_packages, setup
 
 requirements = [
     "deprecated",
-    "gpflow>=2.1",
+    "gpflow>=2.1,<=2.5.2",
     "numpy",
     "scipy",
     "tensorflow>=2.5.0,<2.9.0; platform_system!='Darwin' or platform_machine!='arm64'",
