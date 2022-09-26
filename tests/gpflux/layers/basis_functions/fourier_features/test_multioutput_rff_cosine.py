@@ -31,9 +31,6 @@ from gpflux.layers.basis_functions.fourier_features import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
-    MultiOutputRandomFourierFeatures,
-)
 from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 from tests.conftest import skip_serialization_tests
 

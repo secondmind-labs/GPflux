@@ -27,13 +27,8 @@ from gpflux.feature_decomposition_kernels.multioutput import (
     SeparateMultiOutputKernelWithFeatureDecomposition,
     SharedMultiOutputKernelWithFeatureDecomposition,
 )
-from gpflux.layers.basis_functions.fourier_features import (
-    MultiOutputRandomFourierFeatures,
-    MultiOutputRandomFourierFeaturesCosine,
-)
 from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
     MultiOutputOrthogonalRandomFeatures,
-    MultiOutputRandomFourierFeatures,
 )
 from gpflux.layers.basis_functions.fourier_features.random.orthogonal import ORF_SUPPORTED_KERNELS
 from tests.conftest import skip_serialization_tests
