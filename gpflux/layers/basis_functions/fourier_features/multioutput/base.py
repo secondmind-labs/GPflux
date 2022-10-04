@@ -71,7 +71,7 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
                 ],
                 axis=0,
             )  # [P, 1, D]
-            print("size -f _lengthscales")
+            print("size of _lengthscales")
             print(_lengthscales)
             tf.debugging.assert_equal(tf.shape(_lengthscales), [P, 1, D])
 
@@ -87,10 +87,16 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         else:
             raise ValueError("kernel is not supported.")
 
+        print('-- size of inputs ---')
+        print(inputs)
+
         X = tf.divide(
-            inputs,  # [N, D] or [P, M, D]
+            tf.cast(inputs, tf.float64),  # [N, D] or [P, M, D]
             _lengthscales,  # [P, 1, D]
         )  # [P, N, D] or [P, M, D]
+        print('--- size of X ---')
+        print(X)
+
         const = self._compute_constant()[..., None, None]  # [P,1,1]
         bases = self._compute_bases(X)  # [P, N, L] for X*, or [P,M,L] in the case of Z
         output = const * bases  # [P, N, L] for X*, or [P,M,L] in the case of Z
