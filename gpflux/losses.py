@@ -79,11 +79,12 @@ class LikelihoodLoss(tf.keras.losses.Loss):
         Note that we deviate from the Keras Loss interface by calling the
         second argument *f_prediction* rather than *y_pred*.
         """
+        no_X = None
         if isinstance(unwrap_dist(f_prediction), tfp.distributions.MultivariateNormalDiag):
 
             F_mu = f_prediction.loc
             F_var = f_prediction.scale.diag ** 2
-            return -self.likelihood.variational_expectations(F_mu, F_var, y_true)
+            return -self.likelihood.variational_expectations(no_X, F_mu, F_var, y_true)
         else:  # Tensor
             f_samples = f_prediction
-            return -self.likelihood.log_prob(f_samples, y_true)
+            return -self.likelihood.log_prob(no_X, f_samples, y_true)
