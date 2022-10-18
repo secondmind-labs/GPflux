@@ -6,14 +6,14 @@ from setuptools import find_namespace_packages, setup
 
 requirements = [
     "deprecated",
-    "gpflow>=2.1",
+    "gpflow>=2.6.3",
     "numpy",
     "scipy",
-    "tensorflow>=2.5.0,<2.9.0; platform_system!='Darwin' or platform_machine!='arm64'",
+    "tensorflow>=2.5.0,<2.11.0; platform_system!='Darwin' or platform_machine!='arm64'",
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
-    "tensorflow-macos>=2.5.0,<2.9.0; platform_system=='Darwin' and platform_machine=='arm64'",
+    "tensorflow-macos>=2.5.0,<2.11.0; platform_system=='Darwin' and platform_machine=='arm64'",
     # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
-    "tensorflow-probability>=0.13.0,<0.17.0",
+    "tensorflow-probability>=0.13.0,<0.19.0",
     "protobuf~=3.19.0"
 ]
 
