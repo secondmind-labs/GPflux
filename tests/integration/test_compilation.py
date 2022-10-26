@@ -27,9 +27,6 @@ from gpflux.layers import GPLayer, LikelihoodLayer, TrackableLayer
 from gpflux.losses import LikelihoodLoss
 from gpflux.models import DeepGP
 
-tf.keras.backend.set_floatx("float64")
-
-
 #########################################
 # Helpers
 #########################################

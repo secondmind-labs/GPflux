@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import numpy as np
+import pytest
 import tensorflow as tf
 import tqdm
 
@@ -81,7 +82,7 @@ def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval
                 plotter()
 
 
-def setup_dataset(input_dim: int, num_data: int):
+def setup_dataset(input_dim: int, num_data: int, dtype: np.dtype = np.float64):
     lim = [0, 100]
     kernel = RBF(lengthscales=20)
     sigma = 0.01
@@ -89,7 +90,7 @@ def setup_dataset(input_dim: int, num_data: int):
     cov = kernel.K(X) + np.eye(num_data) * sigma ** 2
     Y = np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
     Y = np.clip(Y, -0.5, 0.5)
-    return X, Y
+    return X.astype(dtype), Y.astype(dtype)
 
 
 def get_live_plotter(train_data, model):
@@ -133,7 +134,6 @@ def get_live_plotter(train_data, model):
 
 
 def run_demo(maxiter=int(80e3), plotter_interval=60):
-    tf.keras.backend.set_floatx("float64")
     input_dim = 2
     num_data = 1000
     data = setup_dataset(input_dim, num_data)
@@ -153,6 +153,23 @@ def test_smoke():
 
     matplotlib.use("PS")  # Agg does not support 3D
     run_demo(maxiter=2, plotter_interval=1)
+
+
+@pytest.mark.parametrize("dtype", [np.float16, np.float32, np.int32])
+def test_deep_gp_raises_on_incorrect_dtype(dtype):
+    input_dim = 2
+    num_data = 1000
+    X, Y = setup_dataset(input_dim, num_data, dtype)
+    model = build_deep_gp(input_dim, num_data)
+
+    with pytest.raises(ValueError):
+        model.predict_f(X)
+
+    with pytest.raises(ValueError):
+        model.call(X)
+
+    with pytest.raises(ValueError):
+        model.call(X, Y)
 
 
 if __name__ == "__main__":

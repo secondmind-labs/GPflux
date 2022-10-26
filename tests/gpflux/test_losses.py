@@ -7,8 +7,6 @@ import gpflow
 from gpflux.layers import LikelihoodLayer
 from gpflux.losses import LikelihoodLoss
 
-tf.keras.backend.set_floatx("float64")
-
 
 def test_likelihood_layer_and_likelihood_loss_give_equal_results():
     np.random.seed(123)

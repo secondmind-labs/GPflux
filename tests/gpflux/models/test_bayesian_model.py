@@ -24,8 +24,6 @@ from gpflow.likelihoods import Gaussian
 from gpflux.layers import LatentVariableLayer, LikelihoodLayer
 from tests.integration.test_latent_variable_integration import build_gp_layers  # noqa: F401
 
-tf.keras.backend.set_floatx("float64")
-
 MAXITER = int(80e3)
 PLOTTER_INTERVAL = 60
 

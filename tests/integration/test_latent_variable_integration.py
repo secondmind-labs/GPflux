@@ -30,8 +30,6 @@ from gpflux.helpers import construct_basic_inducing_variables, construct_basic_k
 from gpflux.layers import GPLayer, LatentVariableLayer, LikelihoodLayer
 from gpflux.models import DeepGP
 
-tf.keras.backend.set_floatx("float64")
-
 ############
 # Utilities
 ############
