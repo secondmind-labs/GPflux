@@ -32,10 +32,9 @@ from gpflux.types import TensorLike
 
 
 class NonstationaryGPLayer(GPLayer):
-    def __init__(self,
-                 kernel: NonstationaryKernel,
-                 feature: gpflow.features.InducingFeature,
-                 *args, **kwargs):
+    def __init__(
+        self, kernel: NonstationaryKernel, feature: gpflow.features.InducingFeature, *args, **kwargs
+    ):
         assert isinstance(kernel, NonstationaryKernel)
         if isinstance(feature, gpflow.features.InducingPoints):
             assert feature.Z.shape[1] == kernel.input_dim

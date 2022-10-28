@@ -43,15 +43,23 @@ def test_nonstationary_gp_1d(session_tf):
     # Layer 2
     Z2 = Xlam.copy()
     feat2 = gpflow.features.InducingPoints(Z2)
-    kern2 = NonstationaryKernel(gpflow.kernels.RBF(D1), D_in, scaling_offset=-0.1,
-                                positivity=gpflow.transforms.positive.forward_tensor)
+    kern2 = NonstationaryKernel(
+        gpflow.kernels.RBF(D1),
+        D_in,
+        scaling_offset=-0.1,
+        positivity=gpflow.transforms.positive.forward_tensor,
+    )
     layer2 = gpflux.layers.NonstationaryGPLayer(kern2, feat2, D2)
 
     # Layer 3
     Z3 = Xlam.copy()
     feat3 = gpflow.features.InducingPoints(Z3)
-    kern3 = NonstationaryKernel(gpflow.kernels.RBF(D2), D1, scaling_offset=-0.1,
-                                positivity=gpflow.transforms.positive.forward_tensor)
+    kern3 = NonstationaryKernel(
+        gpflow.kernels.RBF(D2),
+        D1,
+        scaling_offset=-0.1,
+        positivity=gpflow.transforms.positive.forward_tensor,
+    )
     layer3 = gpflux.layers.NonstationaryGPLayer(kern3, feat3, D_out)
 
     model = DeepGP(X, Y, [layer1, layer2, layer3])

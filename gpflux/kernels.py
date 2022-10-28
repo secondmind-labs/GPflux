@@ -61,8 +61,8 @@ class NonstationaryKernel(gpflow.kernels.Kernel):
         """
         X has data_dim + lengthscales_dim elements
         """
-        original_input = X[..., :self.data_dim]
-        log_lengthscales = X[..., self.data_dim:]
+        original_input = X[..., : self.data_dim]
+        log_lengthscales = X[..., self.data_dim :]
         lengthscales = self._positivity(log_lengthscales + self.scaling_offset)
         return original_input, lengthscales
 
@@ -82,10 +82,11 @@ class NonstationaryKernel(gpflow.kernels.Kernel):
         # axis=0 and axis=-3 are equivalent, and axis=1 and axis=-2 are equivalent
         lengthscales1 = tf.expand_dims(lengthscales1, axis=-2)  # [N, 1, d]
         lengthscales2 = tf.expand_dims(lengthscales2, axis=-3)  # [1, M, d]
-        squared_lengthscales_sum = (lengthscales1 ** 2 + lengthscales2 ** 2)  # [N, M, d]
+        squared_lengthscales_sum = lengthscales1 ** 2 + lengthscales2 ** 2  # [N, M, d]
 
-        q = tf.reduce_prod(tf.sqrt(2 * lengthscales1 * lengthscales2 / squared_lengthscales_sum),
-                           axis=-1)  # [N, M]
+        q = tf.reduce_prod(
+            tf.sqrt(2 * lengthscales1 * lengthscales2 / squared_lengthscales_sum), axis=-1
+        )  # [N, M]
 
         if self.lengthscales_dim == 1:  # also use this when data_dim==1
             # Last dimension should be 1, so the reduce_prod above *should* have no effect here.
