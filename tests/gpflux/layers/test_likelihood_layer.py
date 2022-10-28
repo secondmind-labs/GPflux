@@ -93,7 +93,7 @@ def test_likelihood_layer_losses(GPflowLikelihood):
 
     f_mean = f_distribution.loc
     f_var = f_distribution.scale.diag ** 2
-    expected_loss = np.mean(-likelihood.variational_expectations(f_mean, f_var, Y))
+    expected_loss = np.mean(-likelihood.variational_expectations(X, f_mean, f_var, Y))
 
     np.testing.assert_almost_equal(keras_loss, expected_loss, decimal=5)
 
@@ -109,13 +109,13 @@ def test_likelihood_loss(GPflowLikelihood):
     f_mean = f_distribution.loc
     f_var = f_distribution.scale.diag
 
-    expected_loss = np.mean(-likelihood.variational_expectations(f_mean, f_var, Y))
+    expected_loss = np.mean(-likelihood.variational_expectations(X, f_mean, f_var, Y))
     np.testing.assert_almost_equal(likelihood_loss(Y, f_distribution), expected_loss, decimal=5)
 
     # 2. Run tests with gp_layer output coerced to sample
     f_sample = tf.convert_to_tensor(gp_layer(X))
 
-    expected_loss = np.mean(-likelihood.log_prob(f_sample, Y))
+    expected_loss = np.mean(-likelihood.log_prob(X, f_sample, Y))
     np.testing.assert_almost_equal(likelihood_loss(Y, f_sample), expected_loss, decimal=5)
 
 

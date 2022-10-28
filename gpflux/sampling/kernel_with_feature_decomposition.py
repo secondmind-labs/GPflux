@@ -65,7 +65,7 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
         self._feature_coefficients = feature_coefficients  # [L, 1]
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        """ Approximate the true kernel by an inner product between feature functions. """
+        """Approximate the true kernel by an inner product between feature functions."""
         phi = self._feature_functions(X)  # [N, L]
         if X2 is None:
             phi2 = phi
@@ -81,7 +81,7 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
         return r
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        """ Approximate the true kernel by an inner product between feature functions. """
+        """Approximate the true kernel by an inner product between feature functions."""
         phi_squared = self._feature_functions(X) ** 2  # [N, L]
         r = tf.reduce_sum(phi_squared * tf.transpose(self._feature_coefficients), axis=1)  # [N,]
         N = tf.shape(X)[0]
@@ -162,12 +162,12 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
 
     @property
     def feature_functions(self) -> tf.keras.layers.Layer:
-        r""" Return the kernel's features :math:`\phi_i(\cdot)`. """
+        r"""Return the kernel's features :math:`\phi_i(\cdot)`."""
         return self._feature_functions
 
     @property
     def feature_coefficients(self) -> tf.Tensor:
-        r""" Return the kernel's coefficients :math:`\lambda_i`. """
+        r"""Return the kernel's coefficients :math:`\lambda_i`."""
         return self._feature_coefficients
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:

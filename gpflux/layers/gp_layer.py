@@ -112,7 +112,7 @@ class GPLayer(tfp.layers.DistributionLambda):
         num_latent_gps: int = None,
         whiten: bool = True,
         name: Optional[str] = None,
-        verbose: bool = False,
+        verbose: bool = True,
     ):
         """
         :param kernel: The multioutput kernel for this layer.
@@ -171,6 +171,13 @@ class GPLayer(tfp.layers.DistributionLambda):
 
         if mean_function is None:
             mean_function = Identity()
+            if verbose:
+                warnings.warn(
+                    "Beware, no mean function was specified in the construction of the `GPLayer` "
+                    "so the default `gpflow.mean_functions.Identity` is being used. "
+                    "This mean function will only work if the input dimensionality "
+                    "matches the number of latent Gaussian processes in the layer."
+                )
         self.mean_function = mean_function
 
         self.full_output_cov = full_output_cov
@@ -187,7 +194,7 @@ class GPLayer(tfp.layers.DistributionLambda):
             if num_latent_gps is None:
                 raise e
 
-            if self.verbose:
+            if verbose:
                 warnings.warn(
                     "Could not verify the compatibility of the `kernel`, `inducing_variable` "
                     "and `mean_function`. We advise using `gpflux.helpers.construct_*` to create "
@@ -197,7 +204,7 @@ class GPLayer(tfp.layers.DistributionLambda):
                 )
 
             num_inducing, self.num_latent_gps = (
-                len(inducing_variable),
+                inducing_variable.num_inducing,
                 num_latent_gps,
             )
 
@@ -277,7 +284,10 @@ class GPLayer(tfp.layers.DistributionLambda):
         outputs = super().call(inputs, *args, **kwargs)
 
         if kwargs.get("training"):
-            loss_per_datapoint = self.prior_kl() / self.num_data
+            log_prior = tf.add_n([p.log_prior_density() for p in self.kernel.trainable_parameters])
+            loss = self.prior_kl() - log_prior
+            loss_per_datapoint = loss / self.num_data
+
         else:
             # TF quirk: add_loss must always add a tensor to compile
             loss_per_datapoint = tf.constant(0.0, dtype=default_float())

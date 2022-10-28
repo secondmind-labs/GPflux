@@ -9,7 +9,7 @@
 [Documentation](https://secondmind-labs.github.io/GPflux/) |
 [Tutorials](https://secondmind-labs.github.io/GPflux/tutorials.html) |
 [API reference](https://secondmind-labs.github.io/GPflux/autoapi/gpflux/index.html) |
-[Slack](https://join.slack.com/t/secondmind-labs/shared_invite/zt-oevvuosg-HMJeTtIIQUkNtpBu40wKvg)
+[Slack](https://join.slack.com/t/secondmind-labs/shared_invite/zt-ph07nuie-gMlkle__tjvXBay4FNSLkw)
 
 ## What does GPflux do?
 
@@ -59,7 +59,7 @@ Please use [GitHub issues](https://github.com/secondmind-labs/GPflux/issues/) to
 
 ### Slack workspace
 
-We have a public [Secondmind Labs slack workspace](https://secondmind-labs.slack.com/). Please use this [invite link](https://join.slack.com/t/secondmind-labs/shared_invite/zt-oevvuosg-HMJeTtIIQUkNtpBu40wKvg) and join the #gpflux channel, whether you'd just like to ask short informal questions or want to be involved in the discussion and future development of GPflux.
+We have a public [Secondmind Labs slack workspace](https://secondmind-labs.slack.com/). Please use this [invite link](https://join.slack.com/t/secondmind-labs/shared_invite/zt-ph07nuie-gMlkle__tjvXBay4FNSLkw) and join the #gpflux channel, whether you'd just like to ask short informal questions or want to be involved in the discussion and future development of GPflux.
 
 
 ### Contributing

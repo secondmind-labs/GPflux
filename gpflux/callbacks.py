@@ -135,7 +135,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
             self.monitor(batch)
 
     def on_epoch_end(self, epoch: int, logs: Optional[Mapping] = None) -> None:
-        """ Write to TensorBoard if :attr:`update_freq` equals ``"epoch"``. """
+        """Write to TensorBoard if :attr:`update_freq` equals ``"epoch"``."""
         super().on_epoch_end(epoch, logs=logs)
 
         if self.update_freq == "epoch":
@@ -148,14 +148,15 @@ class KerasModelToTensorBoard(gpflow.monitor.ModelToTensorBoard):
     :attr:`parameter_dict`.
     """
 
-    # Keras automatically saves all layers in `self._layers[\d]` attribute of the model.
-    _LAYER_PARAMETER_REGEXP = re.compile(r"\._layers\[\d+\]\.")
+    # Keras automatically saves all layers in the `self._self_tracked_trackables`
+    # attribute of the model, which is a list of sub-modules.
+    _LAYER_PARAMETER_REGEXP = re.compile(r"\._self_tracked_trackables\[\d+\]\.")
 
     def _parameter_of_interest(self, match: str) -> bool:
         return self._LAYER_PARAMETER_REGEXP.match(match) is not None
 
     def run(self, **unused_kwargs: Any) -> None:
-        """ Write the model's parameters to TensorBoard. """
+        """Write the model's parameters to TensorBoard."""
 
         for name, parameter in parameter_dict(self.model).items():
             if not self._parameter_of_interest(name):

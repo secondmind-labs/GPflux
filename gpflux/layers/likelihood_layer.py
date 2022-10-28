@@ -28,6 +28,7 @@ from gpflow.base import TensorType
 from gpflow.likelihoods import Likelihood
 
 from gpflux.layers.trackable_layer import TrackableLayer
+from gpflux.types import unwrap_dist
 
 
 class LikelihoodLayer(TrackableLayer):
@@ -75,7 +76,8 @@ class LikelihoodLayer(TrackableLayer):
             containing mean and variance only.
         """
         # TODO: add support for non-distribution inputs? or other distributions?
-        assert isinstance(inputs, tfp.distributions.MultivariateNormalDiag)
+        assert isinstance(unwrap_dist(inputs), tfp.distributions.MultivariateNormalDiag)
+        no_X = None
         F_mean = inputs.loc
         F_var = inputs.scale.diag ** 2
 
@@ -83,12 +85,12 @@ class LikelihoodLayer(TrackableLayer):
             assert targets is not None
             # TODO: re-use LikelihoodLoss to remove code duplication
             loss_per_datapoint = tf.reduce_mean(
-                -self.likelihood.variational_expectations(F_mean, F_var, targets)
+                -self.likelihood.variational_expectations(no_X, F_mean, F_var, targets)
             )
             Y_mean = Y_var = None
         else:
             loss_per_datapoint = tf.constant(0.0, dtype=default_float())
-            Y_mean, Y_var = self.likelihood.predict_mean_and_var(F_mean, F_var)
+            Y_mean, Y_var = self.likelihood.predict_mean_and_var(no_X, F_mean, F_var)
 
         self.add_loss(loss_per_datapoint)
 

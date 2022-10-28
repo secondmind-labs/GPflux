@@ -26,15 +26,13 @@ from gpflow.kullback_leiblers import gauss_kl
 from gpflux.encoders import DirectlyParameterizedNormalDiag
 from gpflux.layers import LatentVariableLayer, LayerWithObservations, TrackableLayer
 
-tf.keras.backend.set_floatx("float64")
-
 ############
 # Utilities
 ############
 
 
 def _zero_one_normal_prior(w_dim):
-    """ N(0, I) prior """
+    """N(0, I) prior"""
     return tfp.distributions.MultivariateNormalDiag(loc=np.zeros(w_dim), scale_diag=np.ones(w_dim))
 
 

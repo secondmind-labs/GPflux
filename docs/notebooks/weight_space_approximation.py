@@ -42,7 +42,7 @@ where we assume $p(\textbf{w})$ to be a standard normal multivariate prior and $
 
 The advantage of expressing a Gaussian process in weight space is that functions are represented as weight vectors $\textbf{w}$ (rather than actual functions $f(\cdot)$) from which samples can be obtained a priori without knowing where the function should be evaluated. When expressing a Gaussian process in function space view the latter is not possible, i.e. a function $f(\cdot)$ cannot be sampled without knowing where to evaluate the function, namely at $\{X_{n^\star}^\star\}_{n^\star=1,...,N^\star}$. Weight space approximated Gaussian processes therefore hold the potential to sample efficiently from Gaussian process posteriors, which is desirable in vanilla supervised learning but also in domains such as Bayesian optimisation or model-based reinforcement learning.
 
-In the following example, we compare a weight space approximated GPR model (WSA model) with both a proper GPR model and a sparse variational Gaussian Process model (SVGP). GPR models and SVGP models are implemented in `gpflow`, but the two necessary ingredients for building the WSA model are part of `gpflux`: these are random Fourier feature functions via the `RandomFourierFeatures` class, and approximate kernels based on Bochner's theorem (or any other theorem that approximates a kernel with a finite number of feature functions, e.g. Mercer) via the `KernelWithFeatureDecomposition` class.
+In the following example, we compare a weight space approximated GPR model (WSA model) with both a proper GPR model and a sparse variational Gaussian Process model (SVGP). GPR models and SVGP models are implemented in `gpflow`, but the two necessary ingredients for building the WSA model are part of `gpflux`: these are random Fourier feature functions via the `RandomFourierFeaturesCosine` class, and approximate kernels based on Bochner's theorem (or any other theorem that approximates a kernel with a finite number of feature functions, e.g. Mercer) via the `KernelWithFeatureDecomposition` class.
 """
 
 # %%
@@ -61,7 +61,7 @@ from gpflow.kernels import RBF, Matern52
 from gpflow.likelihoods import Gaussian
 from gpflow.inducing_variables import InducingPoints
 
-from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
+from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
 from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 
 # %% [markdown]
@@ -77,7 +77,7 @@ The only aspect that is different across both experimental settings is the numbe
 # experiment parameters that are the same for both sets of experiments
 X_interval = [0.14, 0.5]  # interval where training points live
 lengthscale = 0.1  # lengthscale for the kernel (which is not learned in all experiments, the kernel variance is 1)
-number_of_basis_functions = 2000  # number of basis functions for weight-space approximated kernels
+number_of_features = 2000  # number of basis functions for weight-space approximated kernels
 noise_variance = 1e-3  # noise variance of the likelihood (which is not learned in all experiments)
 number_of_test_samples = 1024  # number of evaluation points for prediction
 number_of_function_samples = (
@@ -264,12 +264,12 @@ for experiment in range(len(number_of_train_samples)):
     )
 
     # create exact GPR model with weight-space approximated kernel (WSA model)
-    feature_functions = RandomFourierFeatures(
+    feature_functions = RandomFourierFeaturesCosine(
         kernel=kernel_class(lengthscales=lengthscale),
-        output_dim=number_of_basis_functions,
+        n_components=number_of_features,
         dtype=default_float(),
     )
-    feature_coefficients = np.ones((number_of_basis_functions, 1), dtype=default_float())
+    feature_coefficients = np.ones((number_of_features, 1), dtype=default_float())
     kernel = KernelWithFeatureDecomposition(
         kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
     )

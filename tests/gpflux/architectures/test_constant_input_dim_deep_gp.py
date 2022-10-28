@@ -5,8 +5,6 @@ import tensorflow as tf
 from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 from gpflux.helpers import make_dataclass_from_class
 
-tf.keras.backend.set_floatx("float64")
-
 
 class DemoConfig:
     num_inducing = 7
@@ -28,3 +26,12 @@ def test_smoke_build_constant_input_dim_deep_gp(input_dim, num_layers):
     model_train.fit((X, Y), epochs=1)
     model_test = dgp.as_prediction_model()
     _ = model_test(X)
+
+
+@pytest.mark.parametrize("dtype", [np.float16, np.float32, np.int32])
+def test_build_constant_input_dim_deep_gp_raises_on_incorrect_dtype(dtype):
+    config = make_dataclass_from_class(Config, DemoConfig)
+    X = np.random.randn(13, 2).astype(dtype)
+
+    with pytest.raises(ValueError):
+        build_constant_input_dim_deep_gp(X, 2, config)

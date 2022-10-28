@@ -95,7 +95,7 @@ def test_construct_inducing_separate_independent_custom_list(z_init):
     assert isinstance(moiv, SeparateIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
     for i, iv in enumerate(moiv.inducing_variable_list):
-        assert len(iv) == num_inducing[i]
+        assert iv.num_inducing == num_inducing[i]
 
 
 @pytest.mark.parametrize("z_init", [True, False])
@@ -116,7 +116,7 @@ def test_construct_inducing_separate_independent_duplicates(z_init):
     assert isinstance(moiv, SeparateIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
     for iv in moiv.inducing_variable_list:
-        assert len(iv) == num_inducing
+        assert iv.num_inducing == num_inducing
 
 
 @pytest.mark.parametrize("z_init", [True, False])
@@ -136,7 +136,7 @@ def test_construct_inducing_shared_independent_duplicates(z_init):
 
     assert isinstance(moiv, SharedIndependentInducingVariables)
     assert isinstance(moiv, MultioutputInducingVariables)
-    assert len(moiv.inducing_variable) == num_inducing
+    assert moiv.inducing_variable.num_inducing == num_inducing
 
 
 def test_construct_mean_function_Identity():
@@ -170,7 +170,7 @@ def test_construct_gp_layer():
     # inducing variable
     assert isinstance(layer.inducing_variable, SharedIndependentInducingVariables)
     assert isinstance(layer.inducing_variable.inducing_variable, InducingPoints)
-    assert len(layer.inducing_variable.inducing_variable) == num_inducing
+    assert layer.inducing_variable.inducing_variable.num_inducing == num_inducing
 
     # mean function
     assert isinstance(layer.mean_function, gpflow.mean_functions.Zero)

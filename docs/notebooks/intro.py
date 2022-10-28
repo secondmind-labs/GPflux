@@ -26,7 +26,6 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-tf.keras.backend.set_floatx("float64")
 tf.get_logger().setLevel("INFO")
 
 # %% [markdown]
@@ -39,10 +38,11 @@ We are going to model a one-dimensional dataset containing observations from a s
 
 # %%
 def motorcycle_data():
-    """ Return inputs and outputs for the motorcycle dataset. We normalise the outputs. """
+    """Return inputs and outputs for the motorcycle dataset. We normalise the outputs."""
     df = pd.read_csv("./data/motor.csv", index_col=0)
     X, Y = df["times"].values.reshape(-1, 1), df["accel"].values.reshape(-1, 1)
     Y = (Y - Y.mean()) / Y.std()
+    X /= X.max()
     return X, Y
 
 

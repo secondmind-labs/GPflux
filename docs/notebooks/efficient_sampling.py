@@ -36,11 +36,10 @@ import gpflux
 
 from gpflow.config import default_float
 
-from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
+from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
 from gpflux.sampling import KernelWithFeatureDecomposition
 from gpflux.models.deep_gp import sample_dgp
 
-tf.keras.backend.set_floatx("float64")
 
 # %% [markdown]
 """
@@ -71,7 +70,7 @@ inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
 gpflow.utilities.set_trainable(inducing_variable, False)
 
 num_rff = 1000
-eigenfunctions = RandomFourierFeatures(kernel, num_rff, dtype=default_float())
+eigenfunctions = RandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
 kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
 

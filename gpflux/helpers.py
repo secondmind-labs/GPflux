@@ -119,7 +119,7 @@ def construct_basic_inducing_variables(
 
     if z_init is None:
         warnings.warn(
-            "No `z_init` has been specified in `construct_basic_inducing_variables`."
+            "No `z_init` has been specified in `construct_basic_inducing_variables`. "
             "Default initialization using random normal N(0, 1) will be used."
         )
 

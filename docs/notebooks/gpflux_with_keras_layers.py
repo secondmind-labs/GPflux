@@ -30,7 +30,6 @@ import gpflux
 
 from gpflow.config import default_float
 
-tf.keras.backend.set_floatx("float64")
 
 # %% [markdown]
 """
@@ -73,7 +72,7 @@ We construct a model that consists of three `tf.keras.layers.Dense` layers and a
 """
 
 # %%
-likelihood = gpflow.likelihoods.Gaussian(0.001)
+likelihood = gpflow.likelihoods.Gaussian(0.1)
 
 # So that Keras can track the likelihood variance, we need to provide the likelihood as part of a "dummy" layer:
 likelihood_container = gpflux.layers.TrackableLayer()
@@ -111,13 +110,13 @@ def plot(model, X, Y, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
 
-    x_margin = 1.0
+    x_margin = 2.0
     N_test = 100
     X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, N_test).reshape(-1, 1)
     f_distribution = model(X_test)
 
     mean = f_distribution.mean().numpy().squeeze()
-    var = f_distribution.variance().numpy().squeeze()
+    var = f_distribution.variance().numpy().squeeze() + model.layers[-1].likelihood.variance.numpy()
     X_test = X_test.squeeze()
     lower = mean - 2 * np.sqrt(var)
     upper = mean + 2 * np.sqrt(var)
@@ -130,3 +129,6 @@ def plot(model, X, Y, ax=None):
 
 
 plot(model, X, Y)
+
+# %%
+gpflow.utilities.print_summary(model, fmt="notebook")

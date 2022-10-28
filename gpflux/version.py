@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-Basis functions.
-"""
-from gpflux.layers.basis_functions import fourier_features
+"""Adds __version__"""
+
+__version__ = "0.3.0"

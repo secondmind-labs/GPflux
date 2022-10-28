@@ -19,6 +19,7 @@ from typing import Tuple
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
 
@@ -39,7 +40,7 @@ class CONFIG:
 
 @pytest.fixture
 def data() -> Tuple[np.ndarray, np.ndarray]:
-    """ Step function: f(x) = -1 for x <= 0 and 1 for x > 0. """
+    """Step function: f(x) = -1 for x <= 0 and 1 for x > 0."""
     X = np.linspace(-1, 1, CONFIG.num_data)
     Y = np.where(X > 0, np.ones_like(X), -np.ones_like(X))
     return (X.reshape(-1, 1), Y.reshape(-1, 1))
@@ -116,26 +117,32 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
     del records["batch_2"]
 
     expected_tags = {
-        # TODO(VD) investigate why epoch_lr is not in tensorboard files
-        # "epoch_lr",
+        "epoch_lr",
         "epoch_loss",
         "epoch_gp0_prior_kl",
         "epoch_gp1_prior_kl",
-        "layers[1].kernel.kernel.lengthscales",
-        "layers[1].kernel.kernel.variance",
-        "layers[2].kernel.kernel.lengthscales[0]",
-        "layers[2].kernel.kernel.lengthscales[1]",
-        "layers[2].kernel.kernel.lengthscales[2]",
-        "layers[2].kernel.kernel.variance",
-        "layers[3].likelihood.variance",
+        "self_tracked_trackables[1].kernel.kernel.lengthscales",
+        "self_tracked_trackables[1].kernel.kernel.variance",
+        "self_tracked_trackables[1]._self_tracked_trackables[1].kernel.lengthscales",
+        "self_tracked_trackables[1]._self_tracked_trackables[1].kernel.variance",
+        "self_tracked_trackables[2].kernel.kernel.lengthscales[0]",
+        "self_tracked_trackables[2].kernel.kernel.lengthscales[1]",
+        "self_tracked_trackables[2].kernel.kernel.lengthscales[2]",
+        "self_tracked_trackables[2].kernel.kernel.variance",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.lengthscales[0]",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.lengthscales[1]",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.lengthscales[2]",
+        "self_tracked_trackables[2]._self_tracked_trackables[1].kernel.variance",
+        "self_tracked_trackables[3].likelihood.variance",
     }
 
-    if update_freq == "batch":
-        expected_tags |= {
-            "batch_loss",
-            "batch_gp0_prior_kl",
-            "batch_gp1_prior_kl",
-        }
+    if Version(tf.__version__) < Version("2.8"):
+        if update_freq == "batch":
+            expected_tags |= {
+                "batch_loss",
+                "batch_gp0_prior_kl",
+                "batch_gp1_prior_kl",
+            }
 
     # Check all model variables, loss and lr are in tensorboard.
     assert set(records.keys()) == expected_tags

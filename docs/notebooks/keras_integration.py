@@ -24,12 +24,10 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 import gpflux
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 import matplotlib.pyplot as plt
 
-# %%
-tf.keras.backend.set_floatx("float64")
 
 # %%
 # %matplotlib inline
@@ -82,7 +80,7 @@ def create_model(model_class):
 
 # %%
 batch_size = 2
-num_epochs = ci_niter(200)
+num_epochs = reduce_in_tests(200)
 
 # %%
 dgp = create_model(tf.keras.Model)
@@ -118,6 +116,10 @@ callbacks = [
 ]
 
 dgp_natgrad_train = dgp_natgrad.as_training_model()
+dgp_natgrad_train.natgrad_layers = (
+    True  # we want all (here two) GPLayer instances trained by NaturalGradient
+)
+# alternatively, we could set `natgrad_layers` explicitly to the GPLayer instances inside the model
 dgp_natgrad_train.compile(
     [
         gpflow.optimizers.NaturalGradient(gamma=0.05),

@@ -19,12 +19,24 @@ from typing import Union
 import numpy as np
 import pytest
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
+from gpflow import Parameter
+from gpflow.models.model import RegressionData
+from gpflow.utilities import positive, to_default_float
 
 import gpflux
 
-tf.keras.backend.set_floatx("float64")
+
+class LogPrior_ELBO_SVGP(gpflow.models.SVGP):
+    """
+    SVGP model that takes into account the log_prior in the ELBO
+    """
+
+    def elbo(self, data: RegressionData) -> tf.Tensor:
+        loss_prior = tf.add_n([p.log_prior_density() for p in self.trainable_parameters])
+        return super().elbo(data) + loss_prior
 
 
 def load_data():
@@ -48,6 +60,9 @@ def make_dataset(data, as_dict=True):
 
 def make_kernel_likelihood_iv():
     kernel = gpflow.kernels.SquaredExponential(variance=0.7, lengthscales=0.6)
+    kernel.lengthscales.prior = tfp.distributions.LogNormal(
+        to_default_float(1.0), to_default_float(0.5)
+    )
     likelihood = gpflow.likelihoods.Gaussian(variance=0.08)
     Z = np.linspace(0, 6, 20)[:, np.newaxis]
     inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
@@ -56,7 +71,7 @@ def make_kernel_likelihood_iv():
 
 
 def create_gpflow_svgp(kernel, likelihood, inducing_variable):
-    return gpflow.models.SVGP(kernel, likelihood, inducing_variable)
+    return LogPrior_ELBO_SVGP(kernel, likelihood, inducing_variable)
 
 
 def create_gp_layer(kernel, inducing_variable, num_data):
@@ -165,6 +180,7 @@ def _keras_fit_natgrad(
     run_eagerly=None,
 ):
     model = gpflux.optimization.NatGradWrapper(base_model)
+    model.natgrad_layers = True  # Shortcut to apply natural gradients to all layers
     natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
     adam = tf.optimizers.Adam(adam_learning_rate)
     model.compile(
@@ -246,15 +262,15 @@ def fit_natgrad(model, data, maxiter, adam_learning_rate=0.01, gamma=1.0):
 
 
 @pytest.mark.parametrize(
-    "svgp_fitter, sldgp_fitter",
+    "svgp_fitter, sldgp_fitter, tol_kw",
     [
-        (fit_adam, fit_adam),
-        (fit_adam, keras_fit_adam),
-        (fit_natgrad, fit_natgrad),
-        (fit_natgrad, keras_fit_natgrad),
+        (fit_adam, fit_adam, {}),
+        (fit_adam, keras_fit_adam, {}),
+        (fit_natgrad, fit_natgrad, {}),
+        (fit_natgrad, keras_fit_natgrad, dict(atol=1e-7)),
     ],
 )
-def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
+def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, tol_kw, maxiter=20):
     data = load_data()
 
     svgp = create_gpflow_svgp(*make_kernel_likelihood_iv())
@@ -263,14 +279,14 @@ def test_svgp_equivalence_with_sldgp(svgp_fitter, sldgp_fitter, maxiter=20):
     sldgp = create_gpflux_sldgp(*make_kernel_likelihood_iv(), get_num_data(data))
     sldgp_fitter(sldgp, data, maxiter=maxiter)
 
-    assert_equivalence(svgp, sldgp, data)
+    assert_equivalence(svgp, sldgp, data, **tol_kw)
 
 
 @pytest.mark.parametrize(
     "svgp_fitter, keras_fitter, tol_kw",
     [
         (fit_adam, _keras_fit_adam, {}),
-        (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-8)),
+        (fit_natgrad, _keras_fit_natgrad, dict(atol=1e-6)),
     ],
 )
 def test_svgp_equivalence_with_keras_sequential(svgp_fitter, keras_fitter, tol_kw, maxiter=10):

@@ -17,11 +17,13 @@ from typing import List
 
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 from tensorflow.keras.layers import Layer
 
 from gpflow import default_float
 from gpflow.kernels import RBF, Matern12, Matern52
 
+import gpflux
 from gpflux.layers import TrackableLayer
 
 
@@ -90,11 +92,6 @@ def to_tensor_set(tensor_set: List[tf.Tensor]):
     return set([t.experimental_ref() for t in tensor_set])
 
 
-def test_submodules():
-    trackable_layer, variables, modules, _ = setup_layer_modules_variables()
-    assert trackable_layer._submodules == modules
-
-
 def test_submodule_variables():
     (
         trackable_layer,
@@ -102,7 +99,7 @@ def test_submodule_variables():
         modules,
         module_variables,
     ) = setup_layer_modules_variables()
-    assert trackable_layer.submodule_variables() == module_variables
+    assert to_tensor_set(trackable_layer.variables) == to_tensor_set(variables + module_variables)
 
 
 def test_submodule_trainable_variables():
@@ -112,8 +109,8 @@ def test_submodule_trainable_variables():
         modules,
         module_variables,
     ) = setup_layer_modules_variables()
-    submodule_trainable_attributes = [v for v in module_variables if v.trainable]
-    assert trackable_layer.submodule_trainable_variables() == submodule_trainable_attributes
+    trainable_attributes = [v for v in variables + module_variables if v.trainable]
+    assert trackable_layer.trainable_variables == trainable_attributes
 
 
 def test_submodule_non_trainable_variables():
@@ -123,8 +120,8 @@ def test_submodule_non_trainable_variables():
         modules,
         module_variables,
     ) = setup_layer_modules_variables()
-    submodule_non_trainable_attributes = [v for v in module_variables if not v.trainable]
-    assert trackable_layer.submodule_non_trainable_variables() == submodule_non_trainable_attributes
+    non_trainable_attributes = [v for v in variables + module_variables if not v.trainable]
+    assert trackable_layer.non_trainable_variables == non_trainable_attributes
 
 
 def test_trainable_weights():
@@ -178,26 +175,18 @@ def test_variables():
 
 @pytest.mark.parametrize(
     "composite_class",
-    [CompositeModule, pytest.param(UntrackableCompositeLayer, marks=pytest.mark.xfail)],
+    [CompositeModule, UntrackableCompositeLayer],
 )
 def test_tensorflow_classes_trackable(composite_class):
     composite_object = composite_class([Matern52()])
     assert len(composite_object.trainable_variables) == 2
 
 
-def test_if_trackable_layer_workaround_still_required():
-    """
-    With the release of TensorFlow 2.5, our TrackableLayer workaround is no
-    longer needed. Remove trackable_layer module, tests and references to it.
-    See https://github.com/Prowler-io/gpflux/issues/189
-    """
-    layer = UntrackableCompositeLayer([Matern52()])
-    assert len(layer.trainable_variables) == 0
+@pytest.mark.skipif(
+    Version(gpflux.__version__) < Version("1.0.0"), reason="Only relevant for v1.0.0"
+)
+def test_trackable_layer_is_removed_version_1_0_0():
+    with pytest.raises(ImportError):
+        from gpflux.layers.trackable_layer import TrackableLayer  # noqa: F401
 
-
-if __name__ == "__main__":
-    test_submodules()
-    test_submodule_variables()
-    test_submodule_trainable_variables()
-    test_submodule_non_trainable_variables()
-    test_trainable_weights()
+        _ = TrackableLayer()

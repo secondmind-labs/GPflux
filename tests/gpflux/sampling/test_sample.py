@@ -20,7 +20,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import default_float, default_jitter
 
-from gpflux.layers.basis_functions.random_fourier_features import RandomFourierFeatures
+from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
 from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 from gpflux.sampling.sample import Sample, efficient_sample
 
@@ -77,7 +77,7 @@ def test_conditional_sample(kernel, inducing_variable, whiten):
 
 def test_wilson_efficient_sample(kernel, inducing_variable, whiten):
     """Smoke and consistency test for efficient sampling using Wilson"""
-    eigenfunctions = RandomFourierFeatures(kernel, 100, dtype=default_float())
+    eigenfunctions = RandomFourierFeaturesCosine(kernel, 100, dtype=default_float())
     eigenvalues = np.ones((100, 1), dtype=default_float())
     # To apply Wilson sampling we require the features and eigenvalues of the kernel
     kernel2 = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
