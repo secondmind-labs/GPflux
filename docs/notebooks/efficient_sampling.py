@@ -40,7 +40,6 @@ from gpflux.layers.basis_functions.fourier_features import RandomFourierFeatures
 from gpflux.sampling import KernelWithFeatureDecomposition
 from gpflux.models.deep_gp import sample_dgp
 
-tf.keras.backend.set_floatx("float64")
 
 # %% [markdown]
 """

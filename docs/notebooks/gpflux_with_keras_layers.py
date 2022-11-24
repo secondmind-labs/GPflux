@@ -30,7 +30,6 @@ import gpflux
 
 from gpflow.config import default_float
 
-tf.keras.backend.set_floatx("float64")
 
 # %% [markdown]
 """

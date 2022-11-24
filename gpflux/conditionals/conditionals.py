@@ -23,63 +23,6 @@ from gpflow.kernels import Kernel
 from gpflux.posteriors import BasePosterior, get_posterior_class
 from gpflux.conditionals.dispatch import conditional
 
-@conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)
-def _sparse_conditional(
-    Xnew: tf.Tensor,
-    inducing_variable: InducingVariables,
-    kernel: Kernel,
-    f: tf.Tensor,
-    *,
-    full_cov: bool = False,
-    full_output_cov: bool = False,
-    q_sqrt: Optional[tf.Tensor] = None,
-    white: bool = False
-) -> MeanAndVariance:
-    """
-    Single-output GP conditional.
-
-    The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: [M, M]
-    - Kuf: [M, N]
-    - Kff: [N, N]
-
-    Further reference
-    -----------------
-    - See `gpflow.conditionals._dense_conditional` (below) for a detailed explanation of
-      conditional in the single-output case.
-    - See the multiouput notebook for more information about the multiouput framework.
-
-    Parameters
-    ----------
-    :param Xnew: data matrix, size [N, D].
-    :param f: data matrix, [M, R]
-    :param full_cov: return the covariance between the datapoints
-    :param full_output_cov: return the covariance between the outputs.
-           NOTE: as we are using a single-output kernel with repetitions
-                 these covariances will be zero.
-    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-        size [M, R] or [R, M, M].
-    :param white: boolean of whether to use the whitened representation
-    :return:
-        - mean:     [N, R]
-        - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]
-        Please see `gpflow.conditional._expand_independent_outputs` for more information
-        about the shape of the variance, depending on `full_cov` and `full_output_cov`.
-    """
-    posterior_class = get_posterior_class(kernel, inducing_variable)
-
-    posterior: BasePosterior = posterior_class(
-        kernel,
-        inducing_variable,
-        f,
-        q_sqrt,
-        whiten=white,
-        mean_function=None,
-        precompute_cache=None,
-    )
-    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-
-
 
 @conditional._gpflow_internal_register(object, InducingVariables, InducingVariables, Kernel, object, object)
 def _sparse_orthogonal_conditional(

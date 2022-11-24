@@ -36,6 +36,9 @@ class DeepGP(Module):
     inheriting from :class:`~gpflux.layers.LayerWithObservations`; those will
     be passed the argument ``observations=[inputs, targets]``.
 
+    When data is used with methods in this class (e.g. :meth:`predict_f` method), it needs to
+    be with ``dtype`` corresponding to GPflow's default dtype as in :meth:`~gpflow.default_float()`.
+
     .. note:: This class is **not** a `tf.keras.Model` subclass itself. To access
        Keras features, call either :meth:`as_training_model` or :meth:`as_prediction_model`
        (depending on the use-case) to create a `tf.keras.Model` instance. See the method docstrings
@@ -95,8 +98,8 @@ class DeepGP(Module):
             If you do not specify a value for this parameter explicitly, it is automatically
             detected from the :attr:`~gpflux.layers.GPLayer.num_data` attribute in the GP layers.
         """
-        self.inputs = tf.keras.Input((input_dim,), name="inputs")
-        self.targets = tf.keras.Input((target_dim,), name="targets")
+        self.inputs = tf.keras.Input((input_dim,), dtype=gpflow.default_float(), name="inputs")
+        self.targets = tf.keras.Input((target_dim,), dtype=gpflow.default_float(), name="targets")
         self.f_layers = f_layers
         if isinstance(likelihood, gpflow.likelihoods.Likelihood):
             self.likelihood_layer = LikelihoodLayer(likelihood)
@@ -128,6 +131,20 @@ class DeepGP(Module):
         if num_data is None:
             raise ValueError("Could not determine num_data; please provide explicitly")
         return num_data
+
+    @staticmethod
+    def _validate_dtype(x: TensorType) -> None:
+        """
+        Check that data ``x`` is of correct ``dtype``, corresponding to GPflow's default dtype as
+        defined by :meth:`~gpflow.default_float()`.
+
+        :raise ValueError: If ``x`` is of incorrect ``dtype``.
+        """
+        if x.dtype != gpflow.default_float():
+            raise ValueError(
+                f"x needs to have dtype {gpflow.default_float()} (according to "
+                f"gpflow.default_float()), however got x with {x.dtype} dtype."
+            )
 
     def _evaluate_deep_gp(
         self,
@@ -199,6 +216,9 @@ class DeepGP(Module):
         targets: Optional[TensorType] = None,
         training: Optional[bool] = None,
     ) -> tf.Tensor:
+        self._validate_dtype(inputs)
+        if targets is not None:
+            self._validate_dtype(targets)
         f_outputs = self._evaluate_deep_gp(inputs, targets=targets, training=training)
         y_outputs = self._evaluate_likelihood(f_outputs, targets=targets, training=training)
         return y_outputs
@@ -207,9 +227,11 @@ class DeepGP(Module):
         """
         :returns: The mean and variance (not the scale!) of ``f``, for compatibility with GPflow
            models.
+        :raise ValueError: If ``x`` is of incorrect ``dtype``.
 
         .. note:: This method does **not** support ``full_cov`` or ``full_output_cov``.
         """
+        self._validate_dtype(inputs)
         f_distribution = self._evaluate_deep_gp(inputs, targets=None)
         return f_distribution.loc, f_distribution.scale.diag ** 2
 
@@ -288,6 +310,11 @@ class DeepGP(Module):
         return model_class(self.inputs, outputs)
 
 
+class OrthDeepGP(DeepGP):
+    """
+    Orthogonal Deep Gaussian Processes
+    """
+
 def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
     function_draws = [layer.sample() for layer in model.f_layers]
     # TODO: error check that all layers implement .sample()?
@@ -301,3 +328,4 @@ def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vani
             return X
 
     return ChainedSample()
+

@@ -24,12 +24,10 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 import gpflux
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 import matplotlib.pyplot as plt
 
-# %%
-tf.keras.backend.set_floatx("float64")
 
 # %%
 # %matplotlib inline
@@ -82,7 +80,7 @@ def create_model(model_class):
 
 # %%
 batch_size = 2
-num_epochs = ci_niter(200)
+num_epochs = reduce_in_tests(200)
 
 # %%
 dgp = create_model(tf.keras.Model)

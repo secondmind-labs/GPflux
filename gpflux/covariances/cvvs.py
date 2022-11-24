@@ -24,13 +24,14 @@ from gpflow.base import TensorLike
 from gpflow.kernels import Kernel
 from gpflux.covariances.dispatch import Cvv
 
-
 @Cvv.register(InducingPoints, InducingPoints, Kernel)
-def Kuu_kernel_inducingpoints(
-    inducing_variable_u: InducingPoints, 
+def Cvv_kernel_inducingpoints(
+    inducing_variable_u: InducingPoints,
     inducing_variable_v: InducingPoints,
-    kernel: Kernel, *, jitter: float = 0.0,
-    L_Kuu: Optional[tf.Tensor] = None
+    kernel: Kernel,
+    *,
+    jitter: float = 0.0,
+    L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
 
     Kvv = kernel(inducing_variable_v.Z)
@@ -46,9 +47,8 @@ def Kuu_kernel_inducingpoints(
     Kuv = kernel(inducing_variable_u.Z, inducing_variable_v.Z)
 
     L_Kuu_inv_Kuv = tf.linalg.triangular_solve(L_Kuu, Kuv)
-    Cvv = Kvv - tf.linalg.matmul(
-        L_Kuu_inv_Kuv, L_Kuu_inv_Kuv, transpose_a=True)
+    Cvv = Kvv - tf.linalg.matmul(L_Kuu_inv_Kuv, L_Kuu_inv_Kuv, transpose_a=True)
 
     Cvv += jitter * tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)
-    
+
     return Cvv

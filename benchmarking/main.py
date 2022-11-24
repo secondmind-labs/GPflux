@@ -29,8 +29,6 @@ from utils import ExperimentName, git_version
 
 from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 
-tf.keras.backend.set_floatx("float64")
-
 THIS_DIR = Path(__file__).parent
 LOGS = THIS_DIR / "tmp"
 EXPERIMENT = Experiment("UCI")

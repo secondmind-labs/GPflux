@@ -113,6 +113,12 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
     :param num_layers: The number of layers in the Deep GP.
     :param config: The configuration for (hyper)parameters. See :class:`Config` for details.
     """
+    if X.dtype != gpflow.default_float():
+        raise ValueError(
+            f"X needs to have dtype according to gpflow.default_float() = {gpflow.default_float()} "
+            f"however got X with {X.dtype} dtype."
+        )
+
     num_data, input_dim = X.shape
     X_running = X
 

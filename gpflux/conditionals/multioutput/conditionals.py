@@ -34,70 +34,10 @@ from gpflow.kernels import (
     SharedIndependent,
 )
 
-from gpflux.posteriors import (
-    IndependentPosteriorMultiOutput,
-    #TODO -- probably need to add the Orthogonal version here
-)
+
 from  gpflux.conditionals.dispatch import conditional
 
 from gpflux.posteriors import BasePosterior, get_posterior_class
-
-
-@conditional._gpflow_internal_register(
-    object, SharedIndependentInducingVariables, SharedIndependent, object
-)
-def shared_independent_conditional(
-    Xnew: tf.Tensor,
-    inducing_variable: SharedIndependentInducingVariables,
-    kernel: SharedIndependent,
-    f: tf.Tensor,
-    *,
-    full_cov: bool = False,
-    full_output_cov: bool = False,
-    q_sqrt: Optional[tf.Tensor] = None,
-    white: bool = False
-) -> MeanAndVariance:
-    """Multioutput conditional for an independent kernel and shared inducing inducing.
-    Same behaviour as conditional with non-multioutput kernels.
-    The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: [M, M]
-    - Kuf: [M, N]
-    - Kff: N or [N, N]
-
-    Further reference
-    -----------------
-    - See `gpflow.conditionals._conditional` for a detailed explanation of
-      conditional in the single-output case.
-    - See the multioutput notebook for more information about the multioutput framework.
-    Parameters
-    ----------
-    :param Xnew: data matrix, size [N, D].
-    :param f: data matrix, [M, P]
-    :param full_cov: return the covariance between the datapoints
-    :param full_output_cov: return the covariance between the outputs.
-        Note: as we are using a independent kernel these covariances will be zero.
-    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-        size [M, P] or [P, M, M].
-    :param white: boolean of whether to use the whitened representation
-    :return:
-        - mean:     [N, P]
-        - variance: [N, P], [P, N, N], [N, P, P] or [N, P, N, P]
-        Please see `gpflow.conditional._expand_independent_outputs` for more information
-        about the shape of the variance, depending on `full_cov` and `full_output_cov`.
-    """
-
-    posterior_class = get_posterior_class(kernel, inducing_variable, None)
-
-    posterior = posterior_class(
-        kernel,
-        inducing_variable,
-        f,
-        q_sqrt,
-        whiten=white,
-        mean_function=None
-    )
-    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-
 
 
 @conditional._gpflow_internal_register(

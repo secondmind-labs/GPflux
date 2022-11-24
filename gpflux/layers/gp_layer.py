@@ -383,54 +383,10 @@ class GPLayer(tfp.layers.DistributionLambda):
         )
 
 
-
-
-
-class OrthGPLayer(tfp.layers.DistributionLambda):
+class OrthGPLayer(GPLayer):
     """
     A sparse orthogonal variational multioutput GP layer. This layer holds the kernel,
     inducing variables and variational distribution, and mean function.
-    """
-
-    num_data: int
-    """
-    The number of points in the training dataset. This information is used to
-    obtain the correct scaling between the data-fit and the KL term in the
-    evidence lower bound (ELBO).
-    """
-
-    whiten: bool
-    """
-    This parameter determines the parameterisation of the inducing variables.
-
-    If `True`, this layer uses the whitened (or non-centred) representation, in
-    which (at the example of inducing point inducing variables) ``u = f(Z) =
-    cholesky(Kuu) v``, and we parameterise an approximate posterior on ``v`` as
-    ``q(v) = N(q_mu, q_sqrt q_sqrtᵀ)``. The prior on ``v`` is ``p(v) = N(0, I)``.
-
-    If `False`, this layer uses the non-whitened (or centred) representation,
-    in which we directly parameterise ``q(u) = N(q_mu, q_sqrt q_sqrtᵀ)``. The
-    prior on ``u`` is ``p(u) = N(0, Kuu)``.
-    """
-
-    num_samples: Optional[int]
-    """
-    The number of samples drawn when coercing the output distribution of
-    this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)
-    """
-
-    full_cov: bool
-    """
-    This parameter determines the behaviour of calling this layer. If `False`, only
-    predict or sample marginals (diagonal of covariance) with respect to inputs.
-    If `True`, predict or sample with the full covariance over the inputs.
-    """
-
-    full_output_cov: bool
-    """
-    This parameter determines the behaviour of calling this layer. If `False`, only
-    predict or sample marginals (diagonal of covariance) with respect to outputs.
-    If `True`, predict or sample with the full covariance over the outputs.
     """
 
     q_mu_u: Parameter
@@ -456,7 +412,6 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
     The lower-triangular Cholesky factor of the covariance of ``q(v)`` or ``q(u)``
     (depending on whether :attr:`whiten`\ ed parametrisation is used).
     """
-
 
     def __init__(
         self,
@@ -518,34 +473,21 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
         """
 
         super().__init__(
-            make_distribution_fn=self._make_distribution_fn,
-            convert_to_tensor_fn=self._convert_to_tensor_fn,
-            dtype=default_float(),
+            kernel=kernel,
+            inducing_variable=inducing_variable_u,
+            num_data=num_data,
+            mean_function=mean_function,
+            num_samples=num_samples,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov,
+            num_latent_gps=num_latent_gps,
+            whiten=whiten,
             name=name,
+            verbose=verbose,
         )
 
-        self.kernel = kernel
         self.inducing_variable_u = inducing_variable_u
         self.inducing_variable_v = inducing_variable_v
-
-        self.num_data = num_data
-
-        if mean_function is None:
-            mean_function = Identity()
-            if verbose:
-                warnings.warn(
-                    "Beware, no mean function was specified in the construction of the `GPLayer` "
-                    "so the default `gpflow.mean_functions.Identity` is being used. "
-                    "This mean function will only work if the input dimensionality "
-                    "matches the number of latent Gaussian processes in the layer."
-                )
-        self.mean_function = mean_function
-
-        self.full_output_cov = full_output_cov
-        self.full_cov = full_cov
-        self.whiten = whiten
-        self.verbose = verbose
-
 
         """
         try:
@@ -573,14 +515,15 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
         """
         num_inducing_u = self.inducing_variable_u.num_inducing
         num_inducing_v = self.inducing_variable_v.num_inducing
-        self.num_latent_gps = num_latent_gps
 
         ########################################################
         ###### Introduce variational parameters for q(U) #######
         ########################################################
 
         self.q_mu_u = Parameter(
-            np.random.uniform(-0.5, 0.5, (num_inducing_u, self.num_latent_gps)), # np.zeros((num_inducing, self.num_latent_gps)),
+            np.random.uniform(
+                -0.5, 0.5, (num_inducing_u, self.num_latent_gps)
+            ),  # np.zeros((num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name=f"{self.name}_q_mu_u" if self.name else "q_mu_u",
         )  # [num_inducing, num_latent_gps]
@@ -597,7 +540,9 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
         ########################################################
 
         self.q_mu_v = Parameter(
-            np.random.uniform(-0.5, 0.5, (num_inducing_v, self.num_latent_gps)), # np.zeros((num_inducing, self.num_latent_gps)),
+            np.random.uniform(
+                -0.5, 0.5, (num_inducing_v, self.num_latent_gps)
+            ),  # np.zeros((num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name=f"{self.name}_q_mu_v" if self.name else "q_mu_v",
         )  # [num_inducing, num_latent_gps]
@@ -612,11 +557,7 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
         self.num_samples = num_samples
 
     def predict(
-        self,
-        inputs: TensorType,
-        *,
-        full_cov: bool = False,
-        full_output_cov: bool = False,
+        self, inputs: TensorType, *, full_cov: bool = False, full_output_cov: bool = False,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Make a prediction at N test inputs for the Q outputs of this layer,
@@ -658,39 +599,6 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
 
         return mean_cond + mean_function, cov
 
-    def call(self, inputs: TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tf.Tensor:
-        """
-        The default behaviour upon calling this layer.
-
-        This method calls the `tfp.layers.DistributionLambda` super-class
-        `call` method, which constructs a `tfp.distributions.Distribution`
-        for the predictive distributions at the input points
-        (see :meth:`_make_distribution_fn`).
-        You can pass this distribution to `tf.convert_to_tensor`, which will return
-        samples from the distribution (see :meth:`_convert_to_tensor_fn`).
-
-        This method also adds a layer-specific loss function, given by the KL divergence between
-        this layer and the GP prior (scaled to per-datapoint).
-        """
-        outputs = super().call(inputs, *args, **kwargs)
-
-        if kwargs.get("training"):
-            log_prior = tf.add_n([p.log_prior_density() for p in self.kernel.trainable_parameters])
-            loss = self.prior_kl() - log_prior
-            loss_per_datapoint = loss / self.num_data
-
-        else:
-            # TF quirk: add_loss must always add a tensor to compile
-            loss_per_datapoint = tf.constant(0.0, dtype=default_float())
-        self.add_loss(loss_per_datapoint)
-
-        # Metric names should be unique; otherwise they get overwritten if you
-        # have multiple with the same name
-        name = f"{self.name}_prior_kl" if self.name else "prior_kl"
-        self.add_metric(loss_per_datapoint, name=name, aggregation="mean")
-
-        return outputs
-
     def prior_kl(self) -> tf.Tensor:
         r"""
         Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u)`` to
@@ -700,77 +608,5 @@ class OrthGPLayer(tfp.layers.DistributionLambda):
         return prior_kl(
             self.inducing_variable_u, self.kernel, self.q_mu_u, self.q_sqrt_u, whiten=self.whiten
         ) + prior_kl(
-            self.inducing_variable_v, self.kernel, self.q_mu_v, self.q_sqrt_v, whiten=self.whiten)
-
-    def _make_distribution_fn(
-        self, previous_layer_outputs: TensorType
-    ) -> tfp.distributions.Distribution:
-        """
-        Construct the posterior distributions at the output points of the previous layer,
-        depending on :attr:`full_cov` and :attr:`full_output_cov`.
-
-        :param previous_layer_outputs: The output from the previous layer,
-            which should be coercible to a `tf.Tensor`
-        """
-        mean, cov = self.predict(
-            previous_layer_outputs,
-            full_cov=self.full_cov,
-            full_output_cov=self.full_output_cov,
-        )
-
-        if self.full_cov and not self.full_output_cov:
-            # mean: [N, Q], cov: [Q, N, N]
-            return tfp.distributions.MultivariateNormalTriL(
-                loc=tf.linalg.adjoint(mean), scale_tril=_cholesky_with_jitter(cov)
-            )  # loc: [Q, N], scale: [Q, N, N]
-        elif self.full_output_cov and not self.full_cov:
-            # mean: [N, Q], cov: [N, Q, Q]
-            return tfp.distributions.MultivariateNormalTriL(
-                loc=mean, scale_tril=_cholesky_with_jitter(cov)
-            )  # loc: [N, Q], scale: [N, Q, Q]
-        elif not self.full_cov and not self.full_output_cov:
-            # mean: [N, Q], cov: [N, Q]
-            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov))
-        else:
-            raise NotImplementedError(
-                "The combination of both `full_cov` and `full_output_cov` is not permitted."
-            )
-
-    def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution) -> tf.Tensor:
-        """
-        Convert the predictive distributions at the input points (see
-        :meth:`_make_distribution_fn`) to a tensor of :attr:`num_samples`
-        samples from that distribution.
-        Whether the samples are correlated or marginal (uncorrelated) depends
-        on :attr:`full_cov` and :attr:`full_output_cov`.
-        """
-        # N input points
-        # S = self.num_samples
-        # Q = output dimensionality
-        if self.num_samples is not None:
-            samples = distribution.sample(
-                (self.num_samples,)
-            )  # [S, Q, N] if full_cov else [S, N, Q]
-        else:
-            samples = distribution.sample()  # [Q, N] if full_cov else [N, Q]
-
-        if self.full_cov:
-            samples = tf.linalg.adjoint(samples)  # [S, N, Q] or [N, Q]
-
-        return samples
-
-    def sample(self) -> Sample:
-        """
-        .. todo:: TODO: Document this.
-        """
-        return (
-            efficient_sample(
-                self.inducing_variable,
-                self.kernel,
-                self.q_mu,
-                q_sqrt=self.q_sqrt,
-                whiten=self.whiten,
-            )
-            # Makes use of the magic __add__ of the Sample class
-            + self.mean_function
+            self.inducing_variable_v, self.kernel, self.q_mu_v, self.q_sqrt_v, whiten=self.whiten
         )

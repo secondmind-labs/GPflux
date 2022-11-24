@@ -11,15 +11,14 @@ from gpflow.kernels import Kernel
 from gpflux.covariances.dispatch import Cvf
 
 @Cvf.register(InducingPoints, InducingPoints, Kernel, TensorLike)
-def Kuf_kernel_inducingpoints(
-    inducing_variable_u: InducingPoints, 
+def Cvf_kernel_inducingpoints(
+    inducing_variable_u: InducingPoints,
     inducing_variable_v: InducingPoints,
-    kernel: Kernel, 
+    kernel: Kernel,
     Xnew: TensorType,
     *,
-    L_Kuu: Optional[tf.Tensor] = None
+    L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
-
 
     Kvf = kernel(inducing_variable_v.Z, Xnew)
 
@@ -37,7 +36,6 @@ def Kuf_kernel_inducingpoints(
     L_Kuu_inv_Kuv = tf.linalg.triangular_solve(L_Kuu, Kuv)
     L_Kuu_inv_Kuf = tf.linalg.triangular_solve(L_Kuu, Kuf)
 
-    Cvf = Kvf - tf.linalg.matmul(
-        L_Kuu_inv_Kuv, L_Kuu_inv_Kuf, transpose_a=True)
+    Cvf = Kvf - tf.linalg.matmul(L_Kuu_inv_Kuv, L_Kuu_inv_Kuf, transpose_a=True)
 
     return Cvf
