@@ -46,7 +46,6 @@ from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
 
 from .misc import LikelihoodOutputs, batch_predict
 from .plotting_functions import get_regression_detailed_plot, plot_to_image
-from gpflow.ci_utils import ci_niter
 import gpflux
 from tensorflow import keras
 
@@ -178,9 +177,6 @@ if __name__ == '__main__':
 
     ### TRAIN MODEL ###
 
-
-
-
     config = Config(
         num_inducing_u=NUM_INDUCING, num_inducing_v=NUM_INDUCING, inner_layer_qsqrt_factor=INNER_LAYER_QSQRT_FACTOR, likelihood_noise_variance=1e-2, whiten=True
     )
@@ -217,8 +213,8 @@ if __name__ == '__main__':
     """
 
     LOGGING_EPOCH_FREQ = 100
-    PLOTTING_EPOCH_FREQ = 50
-    EPOCH_MULTIPLIER = 500
+    PLOTTING_EPOCH_FREQ = 10
+    EPOCH_MULTIPLIER = 50
 
     model = deep_gp.as_training_model()
     model.compile(tf.optimizers.Adam(1e-2))
@@ -281,18 +277,16 @@ if __name__ == '__main__':
             verbose=1)
         epoch_id+= EPOCH_MULTIPLIER
 
-        if epoch_id % LOGGING_EPOCH_FREQ == 0:
+
+        #if epoch_id % LOGGING_EPOCH_FREQ == 0:
             
-            _elbo = deep_gp.elbo(data, training = False)
-            #tf.print(f"Epoch {epoch_id}: ELBO (train) {_elbo[0]}- Exp. ll. (train) {_elbo[1]}- KLs (train) {_elbo[2]}")
-            tf.print(f"Epoch {epoch_id}: ELBO (train) {_elbo}")
+        #    _elbo = deep_gp.elbo(data, training = False)
+        #tf.print(f"Epoch {epoch_id}: ELBO (train) {_elbo[0]}- Exp. ll. (train) {_elbo[1]}- KLs (train) {_elbo[2]}")
+        #    tf.print(f"Epoch {epoch_id}: ELBO (train) {_elbo}")
 
         ########### Get results on testing set and produce plots #########################
         #model_testing = deep_gp.as_prediction_model()
 
-        #if epoch_id % PLOTTING_EPOCH_FREQ == 0:
-        #    produce_regression_plots(deep_gp, epoch_id, x_training.min() - X_MARGIN, x_training.max() + X_MARGIN, DATASET_NAME, filename)
-
-
-
+        if epoch_id % PLOTTING_EPOCH_FREQ == 0:
+            produce_regression_plots(deep_gp, epoch_id, x_training.min() - X_MARGIN, x_training.max() + X_MARGIN, DATASET_NAME, filename)
 

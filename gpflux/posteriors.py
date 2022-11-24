@@ -344,8 +344,6 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
 
-
-
 @get_posterior_class.register(kernels.Kernel, InducingVariables, InducingVariables)
 def _get_posterior_base_case(
     kernel: Kernel, inducing_variable_u: InducingVariables,  inducing_variable_v: InducingVariables
