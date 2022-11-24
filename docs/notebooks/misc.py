@@ -9,6 +9,7 @@ from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
 from typing import Callable, Tuple, Optional
 from functools import wraps
 
+
 class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
     """
     This class encapsulates the outputs of a :class:`~gpflux.layers.LikelihoodLayer`.
@@ -49,6 +50,7 @@ class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
     def dtype(self) -> tf.dtypes.DType:
         return self.f_mean.dtype
 
+
 def batch_predict(
     predict_callable: Callable[[np.ndarray], Tuple[np.ndarray, ...]], batch_size: int = 1000
 ) -> Callable[[np.ndarray], Tuple[np.ndarray, ...]]:
@@ -80,29 +82,27 @@ def batch_predict(
             tf.concat(batches_f_mean, axis=0),
             tf.concat(batches_f_var, axis=0),
             tf.concat(batches_y_mean, axis=0),
-            tf.concat(batches_y_var, axis=0)
+            tf.concat(batches_y_var, axis=0),
         )
 
     return wrapper
-
-
-
-
 
 
 """
 NOTE -- I think these functions are completely redunant now 
 """
 
+
 def draw_gaussian_at(support, sd=1.0, height=1.0, xpos=0.0, ypos=0.0, ax=None, **kwargs):
     if ax is None:
         ax = plt.gca()
-    gaussian = np.exp((-support ** 2.0) / (2 * sd ** 2.0))
+    gaussian = np.exp((-(support ** 2.0)) / (2 * sd ** 2.0))
     gaussian /= gaussian.max()
     gaussian *= height
     return ax.plot(gaussian + xpos, support + ypos, **kwargs)
 
-def timer(start,end):
-       hours, rem = divmod(end-start, 3600)
-       minutes, seconds = divmod(rem, 60)
-       print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds))
+
+def timer(start, end):
+    hours, rem = divmod(end - start, 3600)
+    minutes, seconds = divmod(rem, 60)
+    print("{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))

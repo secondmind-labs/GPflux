@@ -13,13 +13,12 @@
 # limitations under the License.
 
 from typing import Optional
-from pkg_resources import Distribution
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from pkg_resources import Distribution
 
 from gpflow.base import MeanAndVariance
-
 from gpflow.inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -28,20 +27,19 @@ from gpflow.inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from gpflow.kernels import (
-    MultioutputKernel,
-    SeparateIndependent,
-    SharedIndependent,
-)
+from gpflow.kernels import MultioutputKernel, SeparateIndependent, SharedIndependent
 
-
-from  gpflux.conditionals.dispatch import conditional
-
+from gpflux.conditionals.dispatch import conditional
 from gpflux.posteriors import BasePosterior, get_posterior_class
 
 
 @conditional._gpflow_internal_register(
-    object, SharedIndependentInducingVariables, SharedIndependentInducingVariables, SharedIndependent, object, object
+    object,
+    SharedIndependentInducingVariables,
+    SharedIndependentInducingVariables,
+    SharedIndependent,
+    object,
+    object,
 )
 def shared_independent_orthogonal_conditional(
     Xnew: tf.Tensor,
@@ -100,5 +98,3 @@ def shared_independent_orthogonal_conditional(
         mean_function=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-
-

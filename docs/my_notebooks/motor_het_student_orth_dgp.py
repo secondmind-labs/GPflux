@@ -1,55 +1,65 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
+from __future__ import division, print_function
+
 from distutils.command.build import build
+
 #from subprocess import HIGH_PRIORITY_CLASS
 import matplotlib as mpl
 
-
 mpl.use('Agg')
-import tensorflow as tf
-import numpy as np
-from collections import defaultdict
-import random
 import argparse
-import matplotlib.pyplot as plt
-import sys
 import os
+import random
+import sys
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
 DTYPE=tf.float32
-import seaborn as sns
-from sklearn.cluster import  KMeans
-from matplotlib import rcParams
 import itertools
-from scipy.stats import norm
+
 import pandas as pd
 import scipy
+import seaborn as sns
+from matplotlib import rcParams
+from scipy.stats import norm
+from sklearn.cluster import KMeans
+
 sys.setrecursionlimit(10000)
 
 from time import perf_counter
-from gpflow.base import TensorType
 
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from gpflow.base import TensorType
+
 tf.keras.backend.set_floatx("float64")
 
 
+from functools import wraps
+from typing import Callable, Optional, Tuple
+
 from sklearn.linear_model import LinearRegression
+from tensorflow import keras
+from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
+
 import gpflow
+from gpflow.ci_utils import ci_niter
 from gpflow.kernels import SquaredExponential
-from gpflux.models import *
+
+import gpflux
 from gpflux.architectures import build_constant_input_dim_het_orth_deep_gp
 from gpflux.architectures.constant_input_dim_het_orthogonal_deep_gp import Config
-from typing import Callable, Tuple, Optional
-from functools import wraps
-from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
+from gpflux.models import *
 
 from .misc import LikelihoodOutputs, batch_predict
 from .plotting_functions import get_regression_detailed_plot, plot_to_image
-from gpflow.ci_utils import ci_niter
-import gpflux
-from tensorflow import keras
+
 
 def produce_regression_plots(model, num_epoch, start_point, end_point, dataset_name, file_name):
 

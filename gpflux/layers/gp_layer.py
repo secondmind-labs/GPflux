@@ -27,17 +27,18 @@ import tensorflow_probability as tfp
 
 from gpflow import Parameter, default_float
 from gpflow.base import TensorType
-from gpflux.conditionals import conditional
 from gpflow.inducing_variables import MultioutputInducingVariables
 from gpflow.kernels import MultioutputKernel
 from gpflow.kullback_leiblers import prior_kl
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
 
+from gpflux.conditionals import conditional
 from gpflux.exceptions import GPLayerIncompatibilityException
 from gpflux.math import _cholesky_with_jitter
 from gpflux.runtime_checks import verify_compatibility
 from gpflux.sampling.sample import Sample, efficient_sample
+
 
 class GPLayer(tfp.layers.DistributionLambda):
     """
@@ -557,7 +558,11 @@ class OrthGPLayer(GPLayer):
         self.num_samples = num_samples
 
     def predict(
-        self, inputs: TensorType, *, full_cov: bool = False, full_output_cov: bool = False,
+        self,
+        inputs: TensorType,
+        *,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Make a prediction at N test inputs for the Q outputs of this layer,

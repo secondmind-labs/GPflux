@@ -27,6 +27,7 @@ import gpflux
 from gpflux.layers import LayerWithObservations, LikelihoodLayer
 from gpflux.sampling.sample import Sample
 
+
 class DeepGP(Module):
     """
     This class combines a sequential function model ``f(x) = fₙ(⋯ (f₂(f₁(x))))``
@@ -191,8 +192,8 @@ class DeepGP(Module):
         hidden_layers = []
 
         for count, layer in enumerate(self.f_layers):
-            
-            features = layer(features, training=training)            
+
+            features = layer(features, training=training)
             moments = features.mean(), features.variance()
             hidden_layers.append(moments)
 
@@ -315,6 +316,7 @@ class OrthDeepGP(DeepGP):
     Orthogonal Deep Gaussian Processes
     """
 
+
 def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
     function_draws = [layer.sample() for layer in model.f_layers]
     # TODO: error check that all layers implement .sample()?
@@ -328,4 +330,3 @@ def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vani
             return X
 
     return ChainedSample()
-

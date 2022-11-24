@@ -1,14 +1,15 @@
+from typing import Any, Optional, Union
+
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from typing import Any, Optional, Union
-
-
-from gpflow.config import default_float, default_jitter
 from gpflow.base import TensorLike, TensorType
+from gpflow.config import default_float, default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
+
 from gpflux.covariances.dispatch import Cvf
+
 
 @Cvf.register(InducingPoints, InducingPoints, Kernel, TensorLike)
 def Cvf_kernel_inducingpoints(

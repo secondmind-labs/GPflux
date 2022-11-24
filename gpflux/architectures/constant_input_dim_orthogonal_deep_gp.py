@@ -123,10 +123,10 @@ def build_constant_input_dim_orth_deep_gp(X: np.ndarray, num_layers: int, config
     X_running = X
 
     gp_layers = []
-    centroids, _ = kmeans2(X, k=config.num_inducing_u+config.num_inducing_v, minit="points")
-    
-    centroids_u = centroids[:config.num_inducing_u, ...]
-    centroids_v = centroids[config.num_inducing_u:, ...]
+    centroids, _ = kmeans2(X, k=config.num_inducing_u + config.num_inducing_v, minit="points")
+
+    centroids_u = centroids[: config.num_inducing_u, ...]
+    centroids_v = centroids[config.num_inducing_u :, ...]
 
     for i_layer in range(num_layers):
         is_last_layer = i_layer == num_layers - 1
@@ -136,11 +136,17 @@ def build_constant_input_dim_orth_deep_gp(X: np.ndarray, num_layers: int, config
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var_u = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing_u, input_dim=D_in, share_variables=True, z_init=centroids_u
+            num_inducing=config.num_inducing_u,
+            input_dim=D_in,
+            share_variables=True,
+            z_init=centroids_u,
         )
 
         inducing_var_v = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing_v, input_dim=D_in, share_variables=True, z_init=centroids_v
+            num_inducing=config.num_inducing_v,
+            input_dim=D_in,
+            share_variables=True,
+            z_init=centroids_v,
         )
 
         kernel = construct_basic_kernel(
@@ -168,12 +174,12 @@ def build_constant_input_dim_orth_deep_gp(X: np.ndarray, num_layers: int, config
             num_data,
             mean_function=mean_function,
             name=f"orth_gp_{i_layer}",
-            num_latent_gps=D_out
+            num_latent_gps=D_out,
         )
         layer.q_sqrt_u.assign(layer.q_sqrt_u * q_sqrt_scaling)
         layer.q_sqrt_v.assign(layer.q_sqrt_v * q_sqrt_scaling)
         gp_layers.append(layer)
 
     likelihood = Gaussian(config.likelihood_noise_variance)
-    
+
     return DeepGP(gp_layers, LikelihoodLayer(likelihood))

@@ -18,10 +18,10 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import TensorType
-from gpflow.utilities import positive
-from gpflow.likelihoods.base import QuadratureLikelihood
-
 from gpflow.likelihoods import MultiLatentTFPConditional
+from gpflow.likelihoods.base import QuadratureLikelihood
+from gpflow.utilities import positive
+
 
 class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
     """
@@ -37,7 +37,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.StudentT,
         scale_transform: Optional[tfp.bijectors.Bijector] = None,
-        df = 4,
+        df=4,
         **kwargs: Any,
     ) -> None:
         """
@@ -51,7 +51,6 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             scale_transform = positive(base="exp")
         self.scale_transform = scale_transform
         self.df = df
-       
 
         def conditional_distribution(Fs: TensorType) -> tfp.distributions.Distribution:
             tf.debugging.assert_equal(tf.shape(Fs)[-1], 2)

@@ -1,21 +1,14 @@
+from typing import Any, Optional, Union
+
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from typing import Any, Optional, Union
-
-
 from gpflow.base import TensorLike, TensorType
-
-from gpflow.inducing_variables import (
-    InducingPoints,
-    SharedIndependentInducingVariables,
-)
-from gpflow.kernels import (
-    MultioutputKernel,
-    SharedIndependent,
-)
+from gpflow.inducing_variables import InducingPoints, SharedIndependentInducingVariables
+from gpflow.kernels import MultioutputKernel, SharedIndependent
 
 from gpflux.covariances.dispatch import Cvf
+
 
 @Cvf.register(
     SharedIndependentInducingVariables,

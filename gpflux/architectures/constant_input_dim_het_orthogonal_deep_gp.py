@@ -27,7 +27,7 @@ import tensorflow as tf
 from scipy.cluster.vq import kmeans2
 
 import gpflow
-from gpflow.kernels import SquaredExponential, Matern52, Kernel
+from gpflow.kernels import Kernel, Matern52, SquaredExponential
 from gpflow.likelihoods import Gaussian
 
 from gpflux.helpers import (
@@ -37,8 +37,9 @@ from gpflux.helpers import (
 )
 from gpflux.layers.gp_layer import OrthGPLayer
 from gpflux.layers.likelihood_layer import LikelihoodLayer
-from gpflux.models import OrthDeepGP
 from gpflux.likelihoods import HeteroskedasticTFPConditional
+from gpflux.models import OrthDeepGP
+
 
 @dataclass
 class Config:
@@ -88,6 +89,7 @@ class Config:
     .. seealso:: :attr:`gpflux.layers.GPLayer.whiten`
     """
 
+
 def _construct_kernel(input_dim: int, is_last_layer: bool, underlying_kernel: Kernel) -> Kernel:
     """
     Return a :class:`gpflow.kernels.SquaredExponential` kernel with ARD lengthscales set to
@@ -106,7 +108,9 @@ def _construct_kernel(input_dim: int, is_last_layer: bool, underlying_kernel: Ke
     return underlying_kernel(lengthscales=lengthscales, variance=variance)
 
 
-def build_constant_input_dim_het_orth_deep_gp(X: np.ndarray, num_layers: int, config: Config) -> OrthDeepGP:
+def build_constant_input_dim_het_orth_deep_gp(
+    X: np.ndarray, num_layers: int, config: Config
+) -> OrthDeepGP:
     r"""
     Build a Deep GP consisting of ``num_layers`` :class:`GPLayer`\ s.
     All the hidden layers have the same input dimension as the data, that is, ``X.shape[1]``.
@@ -134,25 +138,33 @@ def build_constant_input_dim_het_orth_deep_gp(X: np.ndarray, num_layers: int, co
 
     gp_layers = []
 
-    #NOTE -- this is the initalization scheme adopted in Shi,2019
-    centroids, _ = kmeans2(X, k=config.num_inducing_u+config.num_inducing_v, minit="points")
-    
-    centroids_u = centroids[:config.num_inducing_u, ...]
-    centroids_v = centroids[config.num_inducing_u:, ...]
+    # NOTE -- this is the initalization scheme adopted in Shi,2019
+    centroids, _ = kmeans2(X, k=config.num_inducing_u + config.num_inducing_v, minit="points")
+
+    centroids_u = centroids[: config.num_inducing_u, ...]
+    centroids_v = centroids[config.num_inducing_u :, ...]
 
     for i_layer in range(num_layers):
         is_last_layer = i_layer == num_layers - 1
         D_in = input_dim
-        D_out = 2 if is_last_layer else input_dim #NOTE -- this is the heteroskedastic likelihood, hence why dim_output=2
+        D_out = (
+            2 if is_last_layer else input_dim
+        )  # NOTE -- this is the heteroskedastic likelihood, hence why dim_output=2
 
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var_u = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing_u, input_dim=D_in, share_variables=True, z_init=centroids_u
+            num_inducing=config.num_inducing_u,
+            input_dim=D_in,
+            share_variables=True,
+            z_init=centroids_u,
         )
 
         inducing_var_v = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing_v, input_dim=D_in, share_variables=True, z_init=centroids_v
+            num_inducing=config.num_inducing_v,
+            input_dim=D_in,
+            share_variables=True,
+            z_init=centroids_v,
         )
 
         kernel = construct_basic_kernel(
@@ -180,17 +192,19 @@ def build_constant_input_dim_het_orth_deep_gp(X: np.ndarray, num_layers: int, co
             num_data,
             mean_function=mean_function,
             name=f"orth_gp_{i_layer}",
-            num_latent_gps=D_out
+            num_latent_gps=D_out,
         )
         layer.q_sqrt_u.assign(layer.q_sqrt_u * q_sqrt_scaling)
         layer.q_sqrt_v.assign(layer.q_sqrt_v * q_sqrt_scaling)
         gp_layers.append(layer)
 
-    #TODO -- need to add support for Student-T likelihood
-    if config.likelihood == 'Gaussian':
+    # TODO -- need to add support for Student-T likelihood
+    if config.likelihood == "Gaussian":
         likelihood = gpflow.likelihoods.HeteroskedasticTFPConditional()
-    elif config.likelihood == 'StudentT':
+    elif config.likelihood == "StudentT":
         likelihood = HeteroskedasticTFPConditional()
     else:
-        raise WarningMessage(f"Current likelihood invoked {config.likelihood} is not supported in the heteroskedastic case")
+        raise WarningMessage(
+            f"Current likelihood invoked {config.likelihood} is not supported in the heteroskedastic case"
+        )
     return OrthDeepGP(gp_layers, LikelihoodLayer(likelihood))

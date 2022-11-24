@@ -19,14 +19,15 @@ from packaging.version import Version
 
 from gpflow.base import TensorType
 from gpflow.config import default_float, default_jitter
-from gpflux.covariances import Kuu
 from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
 from gpflow.utilities import Dispatcher, to_default_float
 
+from gpflux.covariances import Kuu
+
 prior_kl = Dispatcher("prior_kl")
 
-#TODO -- need to add a separate dispatch here where we treat the un-whitened case for V, since we actually need the covariance dipatch for Cvv
+# TODO -- need to add a separate dispatch here where we treat the un-whitened case for V, since we actually need the covariance dipatch for Cvv
 @prior_kl.register(InducingVariables, Kernel, object, object)
 def _(
     inducing_variable: InducingVariables,

@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Optional, Union
+
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from typing import Any, Union, Optional
-
+from gpflow.base import TensorLike
 from gpflow.config import default_float, default_jitter
 from gpflow.inducing_variables import InducingPoints
-
-from gpflow.base import TensorLike
 from gpflow.kernels import Kernel
+
 from gpflux.covariances.dispatch import Cvv
+
 
 @Cvv.register(InducingPoints, InducingPoints, Kernel)
 def Cvv_kernel_inducingpoints(

@@ -19,9 +19,9 @@ import os
 tf.keras.backend.set_floatx("float64")  # we want to carry out GP calculations in 64 bit
 tf.get_logger().setLevel("INFO")
 
+
 class ToyData1D(object):
-    def __init__(self, train_x, train_y, test_x, normalize=False, 
-                 dtype=np.float64):
+    def __init__(self, train_x, train_y, test_x, normalize=False, dtype=np.float64):
         self.train_x = np.array(train_x, dtype=dtype)[:, None]
         self.train_y = np.array(train_y, dtype=dtype)[:, None]
         self.n_train = self.train_x.shape[0]
@@ -49,12 +49,19 @@ class ToyData1D(object):
         self.train_y -= self.mean_y
         self.train_y /= self.std_y
 
-    
+
 def load_snelson_data(n=100, dtype=np.float64):
     def _load_snelson(filename):
-        with open(os.path.join("/home/sebastian.popescu/Desktop/my_code/GP_package/docs/notebooks","data", "snelson", filename), "r") as f:
-            return np.array([float(i) for i in f.read().strip().split("\n")],
-                            dtype=dtype)
+        with open(
+            os.path.join(
+                "/home/sebastian.popescu/Desktop/my_code/GP_package/docs/notebooks",
+                "data",
+                "snelson",
+                filename,
+            ),
+            "r",
+        ) as f:
+            return np.array([float(i) for i in f.read().strip().split("\n")], dtype=dtype)
 
     np.random.seed(7)
 
@@ -146,6 +153,7 @@ $ tensorboard --logdir logs
 ```
 """
 
+
 def plot(model, X, Y, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
@@ -166,9 +174,9 @@ def plot(model, X, Y, ax=None):
     ax.plot(X_test, mu, "C1")
 
     ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
-    plt.savefig('./snelson_preds.png')
+    plt.savefig("./snelson_preds.png")
     plt.close()
+
 
 prediction_model = deep_gp.as_prediction_model()
 plot(prediction_model, X, Y)
-

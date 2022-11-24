@@ -1,13 +1,10 @@
+from typing import Optional, Union
+
 import tensorflow as tf
-from typing import Union, Optional
-from gpflow.inducing_variables import FallbackSharedIndependentInducingVariables
 
 from gpflow.base import TensorLike
-
-
-from gpflow.kernels import (
-    SharedIndependent,
-)
+from gpflow.inducing_variables import FallbackSharedIndependentInducingVariables
+from gpflow.kernels import SharedIndependent
 
 from gpflux.covariances.dispatch import Cvv
 

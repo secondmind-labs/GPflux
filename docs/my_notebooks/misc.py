@@ -1,13 +1,14 @@
+from functools import wraps
+from typing import Callable, Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
 import scipy
-
-from gpflow.base import TensorType
+import tensorflow as tf
 from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
 
-from typing import Callable, Tuple, Optional
-from functools import wraps
+from gpflow.base import TensorType
+
 
 class LikelihoodOutputs(tf.Module, metaclass=TensorMetaClass):
     """

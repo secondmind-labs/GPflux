@@ -20,11 +20,14 @@ import tensorflow_probability as tfp
 from gpflow.base import MeanAndVariance
 from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
-from gpflux.posteriors import BasePosterior, get_posterior_class
+
 from gpflux.conditionals.dispatch import conditional
+from gpflux.posteriors import BasePosterior, get_posterior_class
 
 
-@conditional._gpflow_internal_register(object, InducingVariables, InducingVariables, Kernel, object, object)
+@conditional._gpflow_internal_register(
+    object, InducingVariables, InducingVariables, Kernel, object, object
+)
 def _sparse_orthogonal_conditional(
     Xnew: tf.Tensor,
     inducing_variable_u: InducingVariables,
@@ -85,4 +88,3 @@ def _sparse_orthogonal_conditional(
         precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-

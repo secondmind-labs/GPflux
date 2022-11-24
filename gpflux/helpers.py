@@ -28,23 +28,21 @@ import numpy as np
 
 import gpflow
 from gpflow import default_float
-
-
 from gpflow.inducing_variables import (
     InducingPoints,
+    MultioutputInducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
-    MultioutputInducingVariables,
-    )
-
-
-from gpflow.kernels import (
-    SeparateIndependent, SharedIndependent, Kernel, MultioutputKernel, Stationary
 )
-
-
-
+from gpflow.kernels import (
+    Kernel,
+    MultioutputKernel,
+    SeparateIndependent,
+    SharedIndependent,
+    Stationary,
+)
 from gpflow.utilities import deepcopy
+
 from gpflux.layers.gp_layer import GPLayer
 
 
@@ -148,7 +146,9 @@ def construct_basic_inducing_variables(
                 assert len(z_init[i]) == num_ind_var
                 z_init_i = z_init[i]
             else:
-                z_init_i = np.random.uniform(-0.5,0.5, (num_inducing, input_dim)).astype(dtype=default_float())
+                z_init_i = np.random.uniform(-0.5, 0.5, (num_inducing, input_dim)).astype(
+                    dtype=default_float()
+                )
             assert z_init_i.shape == (num_ind_var, input_dim)
             inducing_variables.append(InducingPoints(z_init_i))
         return SeparateIndependentInducingVariables(inducing_variables)
@@ -164,7 +164,9 @@ def construct_basic_inducing_variables(
                     )
                 z_init_o = z_init[o]
             else:
-                z_init_o = np.random.uniform(-0.5,0.5, (num_inducing, input_dim)).astype(dtype=default_float())
+                z_init_o = np.random.uniform(-0.5, 0.5, (num_inducing, input_dim)).astype(
+                    dtype=default_float()
+                )
             inducing_variables.append(InducingPoints(z_init_o))
         return SeparateIndependentInducingVariables(inducing_variables)
 
@@ -174,15 +176,15 @@ def construct_basic_inducing_variables(
         z_init = (
             z_init
             if z_init_is_given
-            else np.random.uniform(-0.5,0.5, (num_inducing, input_dim)).astype(dtype=default_float())
+            else np.random.uniform(-0.5, 0.5, (num_inducing, input_dim)).astype(
+                dtype=default_float()
+            )
         )
         shared_ip = InducingPoints(z_init)
         return SharedIndependentInducingVariables(shared_ip)
 
 
-def construct_mean_function(
-    X: np.ndarray, D_out: int
-) -> gpflow.mean_functions.MeanFunction:
+def construct_mean_function(X: np.ndarray, D_out: int) -> gpflow.mean_functions.MeanFunction:
     """
     Return :class:`gpflow.mean_functions.Identity` when ``D_in`` and ``D_out`` are
     equal. Otherwise, use the principal components of the inputs matrix ``X`` to build a

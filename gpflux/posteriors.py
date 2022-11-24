@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union
 
+import numpy as np
 import tensorflow as tf
 from check_shapes import (
     ErrorContext,
@@ -13,26 +14,30 @@ from check_shapes import (
     register_get_shape,
 )
 
+from gpflow import kernels
 from gpflow.base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
 from gpflow.conditionals.util import *
 from gpflow.config import default_float, default_jitter
 from gpflow.covariances import Kuf, Kuu
-from gpflux.covariances import Cvf, Cvv
 from gpflow.inducing_variables import (
     InducingPoints,
     InducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from gpflux.conditionals.util import *
-
-from gpflow import kernels
-
-from gpflow.kernels import Kernel
+from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
 from gpflow.mean_functions import MeanFunction
-import numpy as np
-from gpflow.kernels import SharedIndependent, SeparateIndependent
-from gpflow.posteriors import BasePosterior, AbstractPosterior, get_posterior_class, _DeltaDist, _DiagNormal, _MvNormal
+from gpflow.posteriors import (
+    AbstractPosterior,
+    BasePosterior,
+    _DeltaDist,
+    _DiagNormal,
+    _MvNormal,
+    get_posterior_class,
+)
+
+from gpflux.conditionals.util import *
+from gpflux.covariances import Cvf, Cvv
 
 """
 #NOTE -- I don't think we need this
@@ -73,7 +78,6 @@ class AbstractOrthogonalPosterior(AbstractPosterior):
         """
         super().__init__(kernel, inducing_variable_u, mean_function=mean_function)
 
-
         self.kernel = kernel
         self.inducing_variable_u = inducing_variable_u
         self.inducing_variable_v = inducing_variable_v
@@ -82,12 +86,12 @@ class AbstractOrthogonalPosterior(AbstractPosterior):
 
 
 class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
-    #TODO -- introduce a suitable check_shapes here
-    #@check_shapes(
+    # TODO -- introduce a suitable check_shapes here
+    # @check_shapes(
     #    "inducing_variable_u: [M, D, broadcast P]",
     #    "q_mu_u: [N, P]",
     #    "q_sqrt_U: [N_P_or_P_N_N...]",
-    #)
+    # )
     def __init__(
         self,
         kernel: Kernel,
@@ -101,11 +105,12 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
         mean_function: Optional[MeanFunction] = None,
     ):
 
-        super().__init__(kernel, inducing_variable_u, inducing_variable_v, mean_function=mean_function)
+        super().__init__(
+            kernel, inducing_variable_u, inducing_variable_v, mean_function=mean_function
+        )
         self.whiten = whiten
         self._set_qdist(q_mu_u, q_sqrt_u, q_mu_v, q_sqrt_v)
 
-    
     @property
     def q_mu_u(self) -> tf.Tensor:
         return self._q_dist_u.q_mu
@@ -122,10 +127,10 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
     def q_sqrt_v(self) -> tf.Tensor:
         return self._q_dist_v.q_sqrt
 
+    def _set_qdist(
+        self, q_mu_u: TensorType, q_sqrt_u: TensorType, q_mu_v: TensorType, q_sqrt_v: TensorType
+    ) -> tf.Tensor:
 
-    def _set_qdist(self, q_mu_u: TensorType, q_sqrt_u: TensorType,
-        q_mu_v: TensorType, q_sqrt_v: TensorType) -> tf.Tensor:
-        
         if q_sqrt_u is None:
             self._q_dist_u = _DeltaDist(q_mu_u)
         elif len(q_sqrt_u.shape) == 2:  # q_diag
@@ -139,7 +144,6 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
             self._q_dist_v = _DiagNormal(q_mu_v, q_sqrt_v)
         else:
             self._q_dist_v = _MvNormal(q_mu_v, q_sqrt_v)
-    
 
     def _precompute(self):
 
@@ -149,8 +153,8 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
 
         pass
 
+
 class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
-    
     @check_shapes(
         "mean: [batch..., N, P]",
         "cov: [batch..., P, N, N] if full_cov",
@@ -194,7 +198,6 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         return Kff
 
-
     @check_shapes(
         "Xnew: [N, D]",
         "return: [broadcast P, N, N] if full_cov",
@@ -205,17 +208,17 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
 
         if isinstance(self.kernel, SeparateIndependent):
-            
+
             # TODO -- need to finish this at one point
             # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would
             # return
             # if full_cov: [P, N, N] -- this is what we want
             # else: [N, P] instead of [P, N] as we get from the explicit stack below
-            #Kff = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
+            # Kff = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
 
             raise NotImplementedError
 
-        #elif isinstance(self.kernel, kernels.MultioutputKernel):
+        # elif isinstance(self.kernel, kernels.MultioutputKernel):
         else:
             # effectively, SharedIndependent path
             Kff = self.kernel.kernel(Xnew, full_cov=full_cov)
@@ -227,24 +230,26 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
             Kmm = Kuu(self.inducing_variable_u, self.kernel, jitter=default_jitter())
             L_Kmm = tf.linalg.cholesky(Kmm)
 
-            Kmf = Kuf(self.inducing_variable_u,self.kernel, Xnew)
+            Kmf = Kuf(self.inducing_variable_u, self.kernel, Xnew)
             L_Kmm_inv_Kmf = tf.linalg.triangular_solve(L_Kmm, Kmf)
 
             # compute the covariance due to the conditioning
             if full_cov:
-                #TODO -- need to add broadcasting capability
-                Cff = Kff - tf.linalg.matmul(L_Kmm_inv_Kmf, L_Kmm_inv_Kmf, transpose_a=True)  # [..., N, N]
-                #num_func = tf.shape(self.q_mu_u)[-1]
-                #N = tf.shape(Kuf)[-1]
-                #cov_shape = [num_func, N, N]
-                #Cff = tf.broadcast_to(tf.expand_dims(Cff, -3), cov_shape)  # [..., R, N, N]
+                # TODO -- need to add broadcasting capability
+                Cff = Kff - tf.linalg.matmul(
+                    L_Kmm_inv_Kmf, L_Kmm_inv_Kmf, transpose_a=True
+                )  # [..., N, N]
+                # num_func = tf.shape(self.q_mu_u)[-1]
+                # N = tf.shape(Kuf)[-1]
+                # cov_shape = [num_func, N, N]
+                # Cff = tf.broadcast_to(tf.expand_dims(Cff, -3), cov_shape)  # [..., R, N, N]
             else:
-                #TODO -- need to add broadcasting capability
+                # TODO -- need to add broadcasting capability
                 Cff = Kff - tf.reduce_sum(tf.square(L_Kmm_inv_Kmf), -2)  # [..., N]
-                #num_func = tf.shape(self.q_mu_u)[-1]
-                #N = tf.shape(Kuf)[-1]
-                #cov_shape = [num_func, N]  # [..., R, N]
-                #Cff = tf.broadcast_to(tf.expand_dims(Cff, -2), cov_shape)  # [..., R, N]
+                # num_func = tf.shape(self.q_mu_u)[-1]
+                # N = tf.shape(Kuf)[-1]
+                # cov_shape = [num_func, N]  # [..., R, N]
+                # Cff = tf.broadcast_to(tf.expand_dims(Cff, -2), cov_shape)  # [..., R, N]
         """
         #TODO -- this needs to be implememented
         else:
@@ -268,7 +273,6 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         return Cff, L_Kmm
 
-
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -285,10 +289,10 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
 
 class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior):
-    
+
     # could almost be the same as IndependentPosteriorMultiOutput ...
-    #TODO -- @inherit_check_shapes results in an error atm
-    #@inherit_check_shapes
+    # TODO -- @inherit_check_shapes results in an error atm
+    # @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -301,24 +305,38 @@ class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior)
         Kmm = Kuu(self.inducing_variable_u, self.kernel, jitter=default_jitter())  # [M_u, M_u]
         Kmn = Kuf(self.inducing_variable_u, self.kernel, Xnew)  # [M_U, N]
 
-        Cmm = Cvv(self.inducing_variable_u, self.inducing_variable_v, self.kernel, jitter=default_jitter())  # [M_v, M_v]
+        Cmm = Cvv(
+            self.inducing_variable_u, self.inducing_variable_v, self.kernel, jitter=default_jitter()
+        )  # [M_v, M_v]
         Cmn = Cvf(self.inducing_variable_u, self.inducing_variable_v, self.kernel, Xnew)  # [M_v, N]
 
         fmean, fvar = base_orthogonal_conditional(
-            Kmn, Kmm, Knn, Cmn, Cmm, Cnn,
-            self.q_mu_u, self.q_mu_v, full_cov=full_cov, q_sqrt_u=self.q_sqrt_u, q_sqrt_v=self.q_sqrt_v , white=self.whiten
+            Kmn,
+            Kmm,
+            Knn,
+            Cmn,
+            Cmm,
+            Cnn,
+            self.q_mu_u,
+            self.q_mu_v,
+            full_cov=full_cov,
+            q_sqrt_u=self.q_sqrt_u,
+            q_sqrt_v=self.q_sqrt_v,
+            white=self.whiten,
         )  # [N, P],  [P, N, N] or [N, P]
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
+
 class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
-    #TODO -- @inherit_check_shapes results in an error atm
-    #@inherit_check_shapes
+    # TODO -- @inherit_check_shapes results in an error atm
+    # @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
 
         if isinstance(self.inducing_variable_u, SharedIndependentInducingVariables) and isinstance(
-            self.kernel, SharedIndependent):
+            self.kernel, SharedIndependent
+        ):
             # same as IndependentPosteriorSingleOutput except for following line
 
             Knn = self._get_Kff(Xnew, full_cov=full_output_cov)
@@ -327,18 +345,35 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
             Kmm = Kuu(self.inducing_variable_u, self.kernel, jitter=default_jitter())  # [M_u, M_u]
             Kmn = Kuf(self.inducing_variable_u, self.kernel, Xnew)  # [M_U, N]
 
-            Cmm = Cvv(self.inducing_variable_u, self.inducing_variable_v, self.kernel, jitter=default_jitter(), L_Kuu = L_Kuu)  # [M_v, M_v]
-            Cmn = Cvf(self.inducing_variable_u, self.inducing_variable_v, self.kernel, Xnew, L_Kuu = L_Kuu)  # [M_v, N]
+            Cmm = Cvv(
+                self.inducing_variable_u,
+                self.inducing_variable_v,
+                self.kernel,
+                jitter=default_jitter(),
+                L_Kuu=L_Kuu,
+            )  # [M_v, M_v]
+            Cmn = Cvf(
+                self.inducing_variable_u, self.inducing_variable_v, self.kernel, Xnew, L_Kuu=L_Kuu
+            )  # [M_v, N]
 
             fmean, fvar = base_orthogonal_conditional(
-                Kmn, Kmm, Knn, Cmn, Cmm, Cnn,
-                self.q_mu_u, self.q_mu_v, full_cov=full_cov, 
-                q_sqrt_u=self.q_sqrt_u, q_sqrt_v=self.q_sqrt_v , 
-                white=self.whiten, Lm=L_Kuu
+                Kmn,
+                Kmm,
+                Knn,
+                Cmn,
+                Cmm,
+                Cnn,
+                self.q_mu_u,
+                self.q_mu_v,
+                full_cov=full_cov,
+                q_sqrt_u=self.q_sqrt_u,
+                q_sqrt_v=self.q_sqrt_v,
+                white=self.whiten,
+                Lm=L_Kuu,
             )  # [N, P],  [P, N, N] or [N, P]
 
         else:
-            #TODO -- this needs to be implemented
+            # TODO -- this needs to be implemented
             raise NotImplementedError
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
@@ -346,7 +381,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
 
 @get_posterior_class.register(kernels.Kernel, InducingVariables, InducingVariables)
 def _get_posterior_base_case(
-    kernel: Kernel, inducing_variable_u: InducingVariables,  inducing_variable_v: InducingVariables
+    kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
 ) -> Type[BasePosterior]:
     # independent single output
     return IndependentOrthogonalPosteriorSingleOutput
@@ -358,11 +393,7 @@ def _get_posterior_base_case(
     (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
 )
 def _get_posterior_independent_mo(
-    kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables 
+    kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
 ) -> Type[BasePosterior]:
     # independent multi-output
     return IndependentOrthogonalPosteriorMultiOutput
-
-
-
-

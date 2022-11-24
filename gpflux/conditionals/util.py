@@ -21,7 +21,7 @@ def base_orthogonal_conditional(
     q_sqrt_u: Optional[tf.Tensor] = None,
     q_sqrt_v: Optional[tf.Tensor] = None,
     white: bool = False,
-    Lm: Optional[tf.Tensor] = None
+    Lm: Optional[tf.Tensor] = None,
 ) -> MeanAndVariance:
     r"""
 
@@ -48,17 +48,24 @@ def base_orthogonal_conditional(
     :param white: bool
     :return: [N, R]  or [R, N, N]
     """
-    
-    #NOTE -- this is now passed from _get_Cnn method of posterior class
-    #Lm = tf.linalg.cholesky(Kmm)
+
+    # NOTE -- this is now passed from _get_Cnn method of posterior class
+    # Lm = tf.linalg.cholesky(Kmm)
     return base_orthogonal_conditional_with_lm(
-        Kmn=Kmn, Lm=Lm, Knn=Knn, 
-        L_Cmm = tf.linalg.cholesky(Cmm), Cmn = Cmn, Cnn = Cnn,
-        f_u=f_u, f_v = f_v, 
-        full_cov=full_cov, 
-        q_sqrt_u=q_sqrt_u, q_sqrt_v = q_sqrt_v, 
-        white=white
+        Kmn=Kmn,
+        Lm=Lm,
+        Knn=Knn,
+        L_Cmm=tf.linalg.cholesky(Cmm),
+        Cmn=Cmn,
+        Cnn=Cnn,
+        f_u=f_u,
+        f_v=f_v,
+        full_cov=full_cov,
+        q_sqrt_u=q_sqrt_u,
+        q_sqrt_v=q_sqrt_v,
+        white=white,
     )
+
 
 def base_orthogonal_conditional_with_lm(
     Kmn: tf.Tensor,
@@ -98,7 +105,7 @@ def base_orthogonal_conditional_with_lm(
         0,
     )  # [N]
     Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
-    Cmn = tf.transpose(Cmn, perm) # [..., M, N]
+    Cmn = tf.transpose(Cmn, perm)  # [..., M, N]
 
     shape_constraints = [
         (Kmn, [..., "M", "N"]),
@@ -132,31 +139,35 @@ def base_orthogonal_conditional_with_lm(
 
     ###################################################################################
 
-    fmean_u, fvar_u = conditional_GP_maths(leading_dims = leading_dims, Lm = Lm,
-        Kmn = Kmn,
-        Knn = Knn,
-        num_func = num_func,
-        M = M,
-        N = N,
-        f = f_u,
-        q_sqrt =q_sqrt_u,
-        white = white,
-        full_cov = full_cov,
-        just_parametric = True
-        )
+    fmean_u, fvar_u = conditional_GP_maths(
+        leading_dims=leading_dims,
+        Lm=Lm,
+        Kmn=Kmn,
+        Knn=Knn,
+        num_func=num_func,
+        M=M,
+        N=N,
+        f=f_u,
+        q_sqrt=q_sqrt_u,
+        white=white,
+        full_cov=full_cov,
+        just_parametric=True,
+    )
 
-    fmean_v, fvar_v = conditional_GP_maths(leading_dims = leading_dims, Lm = L_Cmm,
-        Kmn = Cmn,
-        Knn = Cnn,
-        num_func = num_func,
-        M = tf.shape(f_v)[-2],
-        N = N,
-        f = f_v,
-        q_sqrt =q_sqrt_v,
-        white = white,
-        full_cov = full_cov,
-        just_parametric = False
-        )
+    fmean_v, fvar_v = conditional_GP_maths(
+        leading_dims=leading_dims,
+        Lm=L_Cmm,
+        Kmn=Cmn,
+        Knn=Cnn,
+        num_func=num_func,
+        M=tf.shape(f_v)[-2],
+        N=N,
+        f=f_v,
+        q_sqrt=q_sqrt_v,
+        white=white,
+        full_cov=full_cov,
+        just_parametric=False,
+    )
 
     ###################################################################################
 
@@ -168,9 +179,12 @@ def base_orthogonal_conditional_with_lm(
         (fmean_v, [..., "N", "R"]),
         (fvar_v, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
     ]
-    tf.debugging.assert_shapes(shape_constraints, message="base_orthogonal_)conditional() return values")
+    tf.debugging.assert_shapes(
+        shape_constraints, message="base_orthogonal_)conditional() return values"
+    )
 
     return fmean_u + fmean_v, fvar_u + fvar_v
+
 
 def base_heteroskedastic_orthogonal_conditional(
     Kmn: tf.Tensor,
@@ -214,13 +228,20 @@ def base_heteroskedastic_orthogonal_conditional(
     """
     Lm = tf.linalg.cholesky(Kmm)
     return base_heteroskedastic_orthogonal_conditional_with_lm(
-        Kmn=Kmn, Lm=Lm, Knn=Knn, 
-        L_Cmm = tf.linalg.cholesky(Cmm), Cmn = Cmn, Cnn = Cnn,
-        f_u=f_u, f_v = f_v, 
-        full_cov=full_cov, 
-        q_sqrt_u=q_sqrt_u, q_sqrt_v = q_sqrt_v, 
-        white=white
+        Kmn=Kmn,
+        Lm=Lm,
+        Knn=Knn,
+        L_Cmm=tf.linalg.cholesky(Cmm),
+        Cmn=Cmn,
+        Cnn=Cnn,
+        f_u=f_u,
+        f_v=f_v,
+        full_cov=full_cov,
+        q_sqrt_u=q_sqrt_u,
+        q_sqrt_v=q_sqrt_v,
+        white=white,
     )
+
 
 def base_heteroskedastic_orthogonal_conditional_with_lm(
     Kmn: tf.Tensor,
@@ -260,7 +281,7 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
         0,
     )  # [N]
     Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
-    Cmn = tf.transpose(Cmn, perm) # [..., M, N]
+    Cmn = tf.transpose(Cmn, perm)  # [..., M, N]
 
     shape_constraints = [
         (Kmn, [..., "M", "N"]),
@@ -294,31 +315,35 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
 
     ###################################################################################
 
-    fmean_u, fvar_u = conditional_GP_maths(leading_dims = leading_dims, Lm = Lm,
-        Kmn = Kmn,
-        Knn = Knn,
-        num_func = num_func,
-        M = M,
-        N = N,
-        f = f_u,
-        q_sqrt =q_sqrt_u,
-        white = white,
-        full_cov = full_cov,
-        just_parametric = True
-        )
+    fmean_u, fvar_u = conditional_GP_maths(
+        leading_dims=leading_dims,
+        Lm=Lm,
+        Kmn=Kmn,
+        Knn=Knn,
+        num_func=num_func,
+        M=M,
+        N=N,
+        f=f_u,
+        q_sqrt=q_sqrt_u,
+        white=white,
+        full_cov=full_cov,
+        just_parametric=True,
+    )
 
-    fmean_v, fvar_v = conditional_GP_maths(leading_dims = leading_dims, Lm = L_Cmm,
-        Kmn = Cmn,
-        Knn = Cnn,
-        num_func = num_func,
-        M = tf.shape(f_v)[-2],
-        N = N,
-        f = f_v,
-        q_sqrt =q_sqrt_v,
-        white = white,
-        full_cov = full_cov,
-        just_parametric = False
-        )
+    fmean_v, fvar_v = conditional_GP_maths(
+        leading_dims=leading_dims,
+        Lm=L_Cmm,
+        Kmn=Cmn,
+        Knn=Cnn,
+        num_func=num_func,
+        M=tf.shape(f_v)[-2],
+        N=N,
+        f=f_v,
+        q_sqrt=q_sqrt_v,
+        white=white,
+        full_cov=full_cov,
+        just_parametric=False,
+    )
 
     ###################################################################################
 
@@ -330,11 +355,15 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
         (fmean_v, [..., "N", "R"]),
         (fvar_v, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
     ]
-    tf.debugging.assert_shapes(shape_constraints, message="base_orthogonal_)conditional() return values")
+    tf.debugging.assert_shapes(
+        shape_constraints, message="base_orthogonal_)conditional() return values"
+    )
 
-    return tf.concat([fmean_u, fmean_v], axis = -1), tf.concat([fvar_u, fvar_v], axis = -1)
+    return tf.concat([fmean_u, fmean_v], axis=-1), tf.concat([fvar_u, fvar_v], axis=-1)
 
-def conditional_GP_maths(leading_dims,
+
+def conditional_GP_maths(
+    leading_dims,
     Lm,
     Kmn,
     Knn,
@@ -344,10 +373,9 @@ def conditional_GP_maths(leading_dims,
     f,
     q_sqrt,
     just_parametric,
-    white = True,
-    full_cov = False,
-    ):
-
+    white=True,
+    full_cov=False,
+):
 
     # Compute the projection matrix A
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
@@ -391,7 +419,7 @@ def conditional_GP_maths(leading_dims,
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.shape.ndims))
 
-        #NOTE -- very ineffective at the moment
+        # NOTE -- very ineffective at the moment
         if just_parametric:
 
             if full_cov:
@@ -413,7 +441,8 @@ def conditional_GP_maths(leading_dims,
 
     return fmean, fvar
 
-#NOTE -- this is probably a duplicate
+
+# NOTE -- this is probably a duplicate
 def sample_mvn(
     mean: tf.Tensor, cov: tf.Tensor, full_cov: bool, num_samples: Optional[int] = None
 ) -> tf.Tensor:
@@ -464,7 +493,8 @@ def sample_mvn(
         return tf.squeeze(samples, axis=-3)  # [..., N, D]
     return samples  # [..., S, N, D]
 
-#NOTE -- this is probably a duplicate
+
+# NOTE -- this is probably a duplicate
 def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov: bool) -> tf.Tensor:
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
@@ -491,6 +521,3 @@ def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov:
         pass  # [N, P]
 
     return fvar
-
-
-

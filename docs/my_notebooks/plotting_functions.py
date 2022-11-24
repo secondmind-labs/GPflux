@@ -1,7 +1,9 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import tensorflow as tf
 import io
+
+import matplotlib.pyplot as plt
+import numpy as np
+import tensorflow as tf
+
 
 def get_classification_detailed_plot(
     num_layers,
