@@ -203,7 +203,13 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
         "return: [broadcast P, N, N] if full_cov",
         "return: [broadcast P, N] if (not full_cov)",
     )
-    def _get_single_Cff(self, Xnew: TensorType, kernel: Kernel, inducing_variable_u: InducingVariables, full_cov: bool) -> tf.Tensor:
+    def _get_single_Cff(
+        self,
+        Xnew: TensorType,
+        kernel: Kernel,
+        inducing_variable_u: InducingVariables,
+        full_cov: bool,
+    ) -> tf.Tensor:
 
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
 
@@ -236,11 +242,8 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
             # N = tf.shape(Kuf)[-1]
             # cov_shape = [num_func, N]  # [..., R, N]
             # Cff = tf.broadcast_to(tf.expand_dims(Cff, -2), cov_shape)  # [..., R, N]
-        
+
         return Cff, L_Kmm
-
-
-
 
     @check_shapes(
         "Xnew: [N, D]",
@@ -256,17 +259,31 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
             # return
             # if full_cov: [P, N, N] -- this is what we want
             # else: [N, P] instead of [P, N] as we get from the explicit stack below
-            #TODO -- this could probably be done in a smarter way
-            Cff= tf.stack([self._get_single_Cff(Xnew, k, self.inducing_variable_u, full_cov)[0]  for k in self.kernel.kernels], axis=0)
-            L_Kmm = tf.stack([self._get_single_Cff(Xnew, k, self.inducing_variable_u, full_cov)[1]  for k in self.kernel.kernels], axis=0)
+            # TODO -- this could probably be done in a smarter way
+            Cff = tf.stack(
+                [
+                    self._get_single_Cff(Xnew, k, self.inducing_variable_u, full_cov)[0]
+                    for k in self.kernel.kernels
+                ],
+                axis=0,
+            )
+            L_Kmm = tf.stack(
+                [
+                    self._get_single_Cff(Xnew, k, self.inducing_variable_u, full_cov)[1]
+                    for k in self.kernel.kernels
+                ],
+                axis=0,
+            )
 
         elif isinstance(self.kernel, kernels.MultioutputKernel):
             # effectively, SharedIndependent path
-            Cff, L_Kmm = self._get_single_Cff(Xnew, self.kernel, self.inducing_variable_u, full_cov) 
+            Cff, L_Kmm = self._get_single_Cff(Xnew, self.kernel, self.inducing_variable_u, full_cov)
 
         else:
             # standard ("single-output") kernels
-            Cff, L_Kmm = self._get_single_Cff(Xnew, self.kernel, self.inducing_variable_u, full_cov)   # [N, N] if full_cov else [N]
+            Cff, L_Kmm = self._get_single_Cff(
+                Xnew, self.kernel, self.inducing_variable_u, full_cov
+            )  # [N, N] if full_cov else [N]
 
         return Cff, L_Kmm
 
@@ -370,14 +387,14 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
             )  # [N, P],  [P, N, N] or [N, P]
 
         else:
-            #TODO -- this needs to be implemented
+            # TODO -- this needs to be implemented
 
             # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
             Kmms = Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [P, M, M]
             Kmns = Kuf(self.X_data, self.kernel, Xnew)  # [P, M, N]
-            Knns = self._get_Kff(Xnew, full_cov=full_output_cov) # [P, N](x N)
+            Knns = self._get_Kff(Xnew, full_cov=full_output_cov)  # [P, N](x N)
 
-            Cnns, L_Kuus = self._get_Cff(Xnew, full_cov=full_output_cov) # [P, N](x N)
+            Cnns, L_Kuus = self._get_Cff(Xnew, full_cov=full_output_cov)  # [P, N](x N)
             Cmms = Cvv(
                 self.inducing_variable_u,
                 self.inducing_variable_v,
@@ -389,8 +406,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 self.inducing_variable_u, self.inducing_variable_v, self.kernel, Xnew, L_Kuu=L_Kuus
             )  # [P, M_v, N]
 
-
-            #TODO -- this needs to be implemented
+            # TODO -- this needs to be implemented
             fmean, fvar = separate_independent_orthogonal_conditional_implementation(
                 Kmns,
                 Kmms,
@@ -405,9 +421,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 q_sqrt_v=self.q_sqrt_v,
                 white=self.whiten,
                 Lm=L_Kuus,
-            )  
-
-
+            )
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 

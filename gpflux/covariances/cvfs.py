@@ -22,13 +22,12 @@ def Cvf_kernel_inducingpoints(
 ) -> tf.Tensor:
 
     Kvf = kernel(inducing_variable_v.Z, Xnew)
-    
+
     if L_Kuu is None:
         Kuu = kernel(inducing_variable_u.Z)
         jittermat = tf.eye(inducing_variable_u.num_inducing, dtype=Kuu.dtype) * default_jitter()
-        Kuu+= jittermat
+        Kuu += jittermat
         L_Kuu = tf.linalg.cholesky(Kuu)
-    
 
     Kuv = kernel(inducing_variable_u.Z, inducing_variable_v.Z)
     Kuf = kernel(inducing_variable_u.Z, Xnew)

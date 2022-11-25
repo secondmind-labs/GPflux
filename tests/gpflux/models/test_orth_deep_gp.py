@@ -23,7 +23,7 @@ from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
-from gpflux.layers import OrthGPLayer, LikelihoodLayer
+from gpflux.layers import LikelihoodLayer, OrthGPLayer
 from gpflux.models import OrthDeepGP
 
 MAXITER = int(80e3)
@@ -39,8 +39,12 @@ def build_orth_deep_gp(input_dim, num_data):
     num_inducing_u = [25, 25]
     num_inducing_v = [10, 10]
     l1_kernel = construct_basic_kernel(kernels=kernel_list)
-    l1_inducing_u = construct_basic_inducing_variables(num_inducing=num_inducing_u, input_dim=layers[0])
-    l1_inducing_v = construct_basic_inducing_variables(num_inducing=num_inducing_v, input_dim=layers[0])
+    l1_inducing_u = construct_basic_inducing_variables(
+        num_inducing=num_inducing_u, input_dim=layers[0]
+    )
+    l1_inducing_v = construct_basic_inducing_variables(
+        num_inducing=num_inducing_v, input_dim=layers[0]
+    )
 
     # 2. Pass in kernels, specificy output dims (shared hyperparams/variables)
     l2_kernel = construct_basic_kernel(kernels=RBF(), output_dim=layers[2], share_hyperparams=True)
@@ -51,7 +55,6 @@ def build_orth_deep_gp(input_dim, num_data):
     l2_inducing_v = construct_basic_inducing_variables(
         num_inducing=10, input_dim=layers[1], share_variables=True
     )
-
 
     # 3. Pass in kernels, specificy output dims (independent hyperparams/vars)
     # By default and the constructor will make indep. copies
@@ -72,7 +75,9 @@ def build_orth_deep_gp(input_dim, num_data):
     return OrthDeepGP(gp_layers, Gaussian(0.1))
 
 
-def train_orth_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
+def train_orth_deep_gp(
+    deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL
+):
     optimizer = tf.optimizers.Adam()
 
     @tf.function(autograph=False)

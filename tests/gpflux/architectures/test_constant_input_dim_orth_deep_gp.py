@@ -2,7 +2,10 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from gpflux.architectures.constant_input_dim_orthogonal_deep_gp import Config, build_constant_input_dim_orth_deep_gp
+from gpflux.architectures.constant_input_dim_orthogonal_deep_gp import (
+    Config,
+    build_constant_input_dim_orth_deep_gp,
+)
 from gpflux.helpers import make_dataclass_from_class
 
 

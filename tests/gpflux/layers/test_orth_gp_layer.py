@@ -38,7 +38,12 @@ def setup_orth_gp_layer_and_data(num_inducing_u: int, num_inducing_v: int, **gp_
     mean_function = Zero(output_dim)
 
     gp_layer = OrthGPLayer(
-        kernel, inducing_vars_u, inducing_vars_v, num_data, mean_function=mean_function, **gp_layer_kwargs
+        kernel,
+        inducing_vars_u,
+        inducing_vars_v,
+        num_data,
+        mean_function=mean_function,
+        **gp_layer_kwargs
     )
     return gp_layer, data
 
@@ -132,7 +137,9 @@ def test_call_shapes():
 
 def test_call_shapes_num_samples():
     num_samples = 10
-    gp_layer, (X, Y) = setup_orth_gp_layer_and_data(num_inducing_u=5, num_inducing_v=5, num_samples=num_samples)
+    gp_layer, (X, Y) = setup_orth_gp_layer_and_data(
+        num_inducing_u=5, num_inducing_v=5, num_samples=num_samples
+    )
     gp_layer.build(X.shape)
 
     output_dim = Y.shape[-1]

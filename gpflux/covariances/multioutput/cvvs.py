@@ -1,24 +1,22 @@
 from typing import Optional, Union
 
 import tensorflow as tf
+from check_shapes import check_shapes
 
 from gpflow.base import TensorLike
 from gpflow.inducing_variables import (
-    InducingPoints,
-    FallbackSharedIndependentInducingVariables, 
     FallbackSeparateIndependentInducingVariables,
+    FallbackSharedIndependentInducingVariables,
+    InducingPoints,
 )
-
-
 from gpflow.kernels import (
+    IndependentLatent,
     MultioutputKernel,
-    SharedIndependent, 
     SeparateIndependent,
-    IndependentLatent
+    SharedIndependent,
 )
 
 from gpflux.covariances.dispatch import Cvv
-from check_shapes import check_shapes
 
 
 @Cvv.register(InducingPoints, InducingPoints, MultioutputKernel)
@@ -28,7 +26,12 @@ from check_shapes import check_shapes
     "return: [M_v, P, M_v, P]",
 )
 def Kuu_generic(
-    inducing_variable_u: InducingPoints, inducing_variable_v: InducingPoints, kernel: MultioutputKernel, *, jitter: float = 0.0, L_Kuu: Optional[tf.Tensor] = None,
+    inducing_variable_u: InducingPoints,
+    inducing_variable_v: InducingPoints,
+    kernel: MultioutputKernel,
+    *,
+    jitter: float = 0.0,
+    L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
 
     _Cvv = Cvv(
@@ -39,6 +42,7 @@ def Kuu_generic(
     )  # [M, M]
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=_Cvv.dtype) * jitter
     return _Cvv + jittermat
+
 
 @Cvv.register(
     FallbackSharedIndependentInducingVariables,
@@ -62,6 +66,7 @@ def Cvv_shared_shared(
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=_Cvv.dtype) * jitter
     return _Cvv + jittermat
 
+
 @Cvv.register(FallbackSharedIndependentInducingVariables, SeparateIndependent)
 @check_shapes(
     "inducing_variable_u: [M_u, D, P]",
@@ -77,18 +82,28 @@ def Cvv_fallback_shared(
     L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
 
-
-    Cvv = tf.stack([Cvv(
-        inducing_variable_u.inducing_variable,
-        inducing_variable_v.inducing_variable,
-        kernel.kernel,
-        L_Kuu=l_kuu) for k, l_kuu in zip(kernel.kernels, L_Kuu)], axis = 0)
+    Cvv = tf.stack(
+        [
+            Cvv(
+                inducing_variable_u.inducing_variable,
+                inducing_variable_v.inducing_variable,
+                kernel.kernel,
+                L_Kuu=l_kuu,
+            )
+            for k, l_kuu in zip(kernel.kernels, L_Kuu)
+        ],
+        axis=0,
+    )
 
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
     return Cvv + jittermat
 
 
-@Cvv.register(FallbackSeparateIndependentInducingVariables, FallbackSeparateIndependentInducingVariables, SharedIndependent)
+@Cvv.register(
+    FallbackSeparateIndependentInducingVariables,
+    FallbackSeparateIndependentInducingVariables,
+    SharedIndependent,
+)
 @check_shapes(
     "inducing_variable_u: [M_u, D, P]",
     "inducing_variable_v: [M_v, D, P]",
@@ -103,18 +118,26 @@ def Kuu_fallback_separate_shared(
     L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
 
-    Cvv = tf.stack([Cvv(
-        ind_var_u,
-        ind_var_v,
-        kernel.kernel,
-        L_Kuu=l_kuu) for ind_var_u, ind_var_v, l_kuu in zip(inducing_variable_u.inducing_variable_list, inducing_variable_v.inducing_variable_list, L_Kuu)], axis = 0)
+    Cvv = tf.stack(
+        [
+            Cvv(ind_var_u, ind_var_v, kernel.kernel, L_Kuu=l_kuu)
+            for ind_var_u, ind_var_v, l_kuu in zip(
+                inducing_variable_u.inducing_variable_list,
+                inducing_variable_v.inducing_variable_list,
+                L_Kuu,
+            )
+        ],
+        axis=0,
+    )
 
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
     return Cvv + jittermat
 
 
 @Cvv.register(
-    FallbackSeparateIndependentInducingVariables, FallbackSeparateIndependentInducingVariables, SeparateIndependent
+    FallbackSeparateIndependentInducingVariables,
+    FallbackSeparateIndependentInducingVariables,
+    SeparateIndependent,
 )
 @check_shapes(
     "inducing_variable_u: [M_u, D, P]",
@@ -140,25 +163,23 @@ def Kuu_fallback_separate(
         n_iv_v == n_k
     ), f"Must have same number of inducing variables and kernels. Found {n_iv_v} and {n_k}."
 
-    Cvv = tf.stack([Cvv(
-        ind_var_u,
-        ind_var_v,
-        k,
-        L_Kuu=l_kuu) for ind_var_u, ind_var_v, l_kuu, k in zip(inducing_variable_u.inducing_variable_list, inducing_variable_v.inducing_variable_list, L_Kuu, kernel.kernels)], axis = 0)
+    Cvv = tf.stack(
+        [
+            Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu)
+            for ind_var_u, ind_var_v, l_kuu, k in zip(
+                inducing_variable_u.inducing_variable_list,
+                inducing_variable_v.inducing_variable_list,
+                L_Kuu,
+                kernel.kernels,
+            )
+        ],
+        axis=0,
+    )
 
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
     return Cvv + jittermat
-
-
-
-
 
     Kmms = [Kuu(f, k) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)]
     Kmm = tf.stack(Kmms, axis=0)
     jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat
-
-
-
-
-

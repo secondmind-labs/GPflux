@@ -3,9 +3,10 @@ from typing import Callable, Optional, Tuple
 import tensorflow as tf
 
 from gpflow.base import MeanAndVariance
+from gpflow.conditionals.util import rollaxis_left
 from gpflow.config import default_float, default_jitter
 from gpflow.utilities.ops import leading_transpose
-from gpflow.conditionals.util import rollaxis_left
+
 
 def base_orthogonal_conditional(
     Kmn: tf.Tensor,
@@ -559,10 +560,14 @@ def separate_independent_orthogonal_conditional_implementation(
 
     if q_sqrt_u is not None and q_sqrt_v is not None:
         q_sqrts_u = (
-            tf.transpose(q_sqrt_u)[:, :, None] if q_sqrt_u.shape.ndims == 2 else q_sqrt_u[:, None, :, :]
+            tf.transpose(q_sqrt_u)[:, :, None]
+            if q_sqrt_u.shape.ndims == 2
+            else q_sqrt_u[:, None, :, :]
         )
         q_sqrts_v = (
-            tf.transpose(q_sqrt_v)[:, :, None] if q_sqrt_v.shape.ndims == 2 else q_sqrt_v[:, None, :, :]
+            tf.transpose(q_sqrt_v)[:, :, None]
+            if q_sqrt_v.shape.ndims == 2
+            else q_sqrt_v[:, None, :, :]
         )
 
         base_conditional_args_to_map = (
@@ -571,7 +576,7 @@ def separate_independent_orthogonal_conditional_implementation(
             Knns,
             Cmms,
             Cmns,
-            Cnns, 
+            Cnns,
             fs_u,
             fs_v,
             q_sqrts_u,
@@ -581,8 +586,21 @@ def separate_independent_orthogonal_conditional_implementation(
         def single_orthogonal_gp_conditional(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
-            Kmm, Kmn, Knn, Cmm, Cmn, Cnn,  f_u, f_v, q_sqrt_u, q_sqrt_v = t
-            return base_orthogonal_conditional(Kmn, Kmm, Knn, Cmn, Cmm, Cnn, f_u, f_v, full_cov=full_cov, q_sqrt_u=q_sqrt_u, q_sqrt_v=q_sqrt_v, white=white)
+            Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, q_sqrt_u, q_sqrt_v = t
+            return base_orthogonal_conditional(
+                Kmn,
+                Kmm,
+                Knn,
+                Cmn,
+                Cmm,
+                Cnn,
+                f_u,
+                f_v,
+                full_cov=full_cov,
+                q_sqrt_u=q_sqrt_u,
+                q_sqrt_v=q_sqrt_v,
+                white=white,
+            )
 
     else:
         base_conditional_args_to_map = (Kmms, Kmns, Knns, Cmms, Cmns, Cnns, fs_u, fs_v)
@@ -591,10 +609,25 @@ def separate_independent_orthogonal_conditional_implementation(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v = t
-            return base_orthogonal_conditional(Kmn, Kmm, Knn, Cmn, Cmm, Cnn, f_u, f_v, full_cov=full_cov, q_sqrt_u=q_sqrt_u, q_sqrt_v=q_sqrt_v, white=white)
+            return base_orthogonal_conditional(
+                Kmn,
+                Kmm,
+                Knn,
+                Cmn,
+                Cmm,
+                Cnn,
+                f_u,
+                f_v,
+                full_cov=full_cov,
+                q_sqrt_u=q_sqrt_u,
+                q_sqrt_v=q_sqrt_v,
+                white=white,
+            )
 
     rmu, rvar = tf.map_fn(
-        single_orthogonal_gp_conditional, base_conditional_args_to_map, (default_float(), default_float())
+        single_orthogonal_gp_conditional,
+        base_conditional_args_to_map,
+        (default_float(), default_float()),
     )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
 
     fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
@@ -605,5 +638,3 @@ def separate_independent_orthogonal_conditional_implementation(
         fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
 
     return fmu, fvar
-
-
