@@ -1,2 +1,0 @@
-model_checkpoint_path: "OrthDGP(layers:2,units:1,lik.:Gaussian)"
-all_model_checkpoint_paths: "OrthDGP(layers:2,units:1,lik.:Gaussian)"
