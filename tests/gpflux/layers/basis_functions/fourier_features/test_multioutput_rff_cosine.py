@@ -106,23 +106,12 @@ def test_throw_for_unsupported_shared_kernel(basis_func_cls):
 @pytest.mark.parametrize("n_components", [100])
 @pytest.mark.parametrize("size_dataset", [10])
 def test_separate_kernel_multioutput_rff_cosine(
-    n_components: int, output_dim: int, size_dataset: int, variance, lengthscale
+    n_components: int, output_dim: int, size_dataset: int, variance: float, lengthscale: float
 ) -> None:
-
-    # search_space = Box([0.0], [1.0]) ** output_dim
-    # x = search_space.sample(size_dataset)
-    # print('--- shape of samples ----')
-    # print(x.shape)
-
     x = tf.random.uniform((size_dataset, output_dim), dtype=tf.float64)
-    print("----x ----")
-    print(x)
+    
     lengthscales = np.random.rand((output_dim)) * lengthscale
     lengthscales = tf.cast(lengthscales, dtype=tf.float64)
-
-    print(lengthscales)
-    print("size of sampled lengthscales")
-    print(lengthscales.shape)
 
     base_kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
 
@@ -132,11 +121,8 @@ def test_separate_kernel_multioutput_rff_cosine(
 
     kernel = SeparateIndependent(kernels=[base_kernel for _ in range(output_dim)])
 
-    rff = MultiOutputRandomFourierFeaturesCosine(kernel=kernel, n_components=n_components)
-    output = rff(inputs=tf.cast(x, tf.float64))
-
-    print("---- shape of output ----")
-    print(output)
+    rff = MultiOutputRandomFourierFeaturesCosine(kernel=kernel, n_components=n_components, dtype=tf.float64)
+    output = rff(inputs=x)
 
     tf.debugging.assert_shapes([(output, [output_dim, size_dataset, n_components])])
 
@@ -146,14 +132,10 @@ def test_random_fourier_features_can_approximate_multi_output_separate_kernel_mu
     random_basis_func_cls, base_kernel_cls, variance, lengthscale, n_dims
 ):
     n_components = 40000
-
     x_rows = 20
     y_rows = 30
-    # ARD
-    lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    print("size of sampled lengthscales")
-    print(lengthscales.shape)
+    lengthscales = np.random.rand((n_dims)) * lengthscale
 
     base_kernel = base_kernel_cls(variance=variance, lengthscales=lengthscales)
 
@@ -185,14 +167,10 @@ def test_random_fourier_features_can_approximate_multi_output_shared_kernel_mult
     random_basis_func_cls, base_kernel_cls, variance, lengthscale, n_dims
 ):
     n_components = 40000
-
     x_rows = 20
     y_rows = 30
-    # ARD
-    lengthscales = np.random.rand((n_dims)) * lengthscale
 
-    print("size of sampled lengthscales")
-    print(lengthscales.shape)
+    lengthscales = np.random.rand((n_dims)) * lengthscale
 
     base_kernel = base_kernel_cls(variance=variance, lengthscales=lengthscales)
 
