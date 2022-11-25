@@ -27,6 +27,7 @@ from gpflux.feature_decomposition_kernels.multioutput import (
     SeparateMultiOutputKernelWithFeatureDecomposition,
     SharedMultiOutputKernelWithFeatureDecomposition,
 )
+from gpflux.helpers import construct_basic_kernel
 from gpflux.layers.basis_functions.fourier_features import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
@@ -34,21 +35,19 @@ from gpflux.layers.basis_functions.fourier_features import (
 from gpflux.layers.basis_functions.fourier_features.random.base import RFF_SUPPORTED_KERNELS
 from tests.conftest import skip_serialization_tests
 
-from gpflux.helpers import construct_basic_kernel
 
 @pytest.fixture(name="n_dims", params=[1, 2, 3, 5, 10, 20])
 def _n_dims_fixture(request):
     return request.param
 
 
-
-#@pytest.fixture(name="variance", params=[0.5, 1.0, 2.0])
+# @pytest.fixture(name="variance", params=[0.5, 1.0, 2.0])
 @pytest.fixture(name="variance", params=[0.5])
 def _variance_fixture(request):
     return request.param
 
 
-#@pytest.fixture(name="lengthscale", params=[0.1, 1.0, 5.0])
+# @pytest.fixture(name="lengthscale", params=[0.1, 1.0, 5.0])
 @pytest.fixture(name="lengthscale", params=[0.1])
 def _lengthscale_fixture(request):
     return request.param
@@ -84,6 +83,7 @@ def _random_basis_func_cls_fixture(request):
 def _basis_func_cls_fixture(request):
     return request.param
 
+
 @pytest.mark.skip
 def test_throw_for_unsupported_separate_kernel(basis_func_cls):
     base_kernel = gpflow.kernels.Constant()
@@ -91,6 +91,7 @@ def test_throw_for_unsupported_separate_kernel(basis_func_cls):
     with pytest.raises(AssertionError) as excinfo:
         basis_func_cls(kernel, n_components=1)
     assert "Unsupported Kernel" in str(excinfo.value)
+
 
 @pytest.mark.skip
 def test_throw_for_unsupported_shared_kernel(basis_func_cls):
@@ -101,25 +102,23 @@ def test_throw_for_unsupported_shared_kernel(basis_func_cls):
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
-
-
-
-
 @pytest.mark.parametrize("output_dim", [2])
 @pytest.mark.parametrize("n_components", [100])
 @pytest.mark.parametrize("size_dataset", [10])
-def test_separate_kernel_multioutput_rff_cosine(n_components: int, output_dim : int, size_dataset : int, variance, lengthscale) -> None:
+def test_separate_kernel_multioutput_rff_cosine(
+    n_components: int, output_dim: int, size_dataset: int, variance, lengthscale
+) -> None:
 
-    #search_space = Box([0.0], [1.0]) ** output_dim
-    #x = search_space.sample(size_dataset)
-    #print('--- shape of samples ----')
-    #print(x.shape)
-    
+    # search_space = Box([0.0], [1.0]) ** output_dim
+    # x = search_space.sample(size_dataset)
+    # print('--- shape of samples ----')
+    # print(x.shape)
+
     x = tf.random.uniform((size_dataset, output_dim), dtype=tf.float64)
-    print('----x ----')
+    print("----x ----")
     print(x)
     lengthscales = np.random.rand((output_dim)) * lengthscale
-    lengthscales = tf.cast(lengthscales, dtype = tf.float64)
+    lengthscales = tf.cast(lengthscales, dtype=tf.float64)
 
     print(lengthscales)
     print("size of sampled lengthscales")
@@ -127,20 +126,20 @@ def test_separate_kernel_multioutput_rff_cosine(n_components: int, output_dim : 
 
     base_kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
 
-    #kernel = construct_basic_kernel(
+    # kernel = construct_basic_kernel(
     #    [base_kernel for _ in range(output_dim)], share_hyperparams=False
-    #)
+    # )
 
     kernel = SeparateIndependent(kernels=[base_kernel for _ in range(output_dim)])
 
-    rff = MultiOutputRandomFourierFeaturesCosine(kernel = kernel, n_components = n_components)
-    output = rff(inputs = tf.cast(x, tf.float64))
+    rff = MultiOutputRandomFourierFeaturesCosine(kernel=kernel, n_components=n_components)
+    output = rff(inputs=tf.cast(x, tf.float64))
 
-    print('---- shape of output ----')
+    print("---- shape of output ----")
     print(output)
 
     tf.debugging.assert_shapes([(output, [output_dim, size_dataset, n_components])])
-        
+
 
 @pytest.mark.skip
 def test_random_fourier_features_can_approximate_multi_output_separate_kernel_multidim(

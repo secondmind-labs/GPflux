@@ -87,14 +87,14 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         else:
             raise ValueError("kernel is not supported.")
 
-        print('-- size of inputs ---')
+        print("-- size of inputs ---")
         print(inputs)
 
         X = tf.divide(
             tf.cast(inputs, tf.float64),  # [N, D] or [P, M, D]
             _lengthscales,  # [P, 1, D]
         )  # [P, N, D] or [P, M, D]
-        print('--- size of X ---')
+        print("--- size of X ---")
         print(X)
 
         const = self._compute_constant()[..., None, None]  # [P,1,1]
