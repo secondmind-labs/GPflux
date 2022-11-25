@@ -11,7 +11,11 @@ Because GitHub's [graph of contributors](http://github.com/secondmind-labs/GPflu
 [James A. Leedham](https://github.com/JamesALeedham)
 [Felix Leibfried](https://github.com/fleibfried), 
 [John A. McLeod](https://github.com/johnamcleod), 
+[Jesper Nielsen](https://github.com/jesnie), 
+[Sebastian Ober](https://github.com/sebastianober), 
+[Sebastian Popescu](https://github.com/SebastianPopescu), 
 [Hugh Salimbeni](https://github.com/hughsalimbeni), 
+[Hrvoje Stojic](https://github.com/hstojic), 
 [Marcin B. Tomczak](https://github.com/marctom)
 
 
