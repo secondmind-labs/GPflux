@@ -53,10 +53,7 @@ def make_data(input_dim: int, output_dim: int, num_data: int):
     cov = Matern52()(X) + np.eye(num_data) * sigma ** 2
     Y = [np.random.multivariate_normal(np.zeros(num_data), cov)[:, None] for _ in range(output_dim)]
     Y = np.hstack(Y)
-    return (
-        X,
-        Y,
-    )  # TODO: improve this test; for most of the likelihoods, Y won't actually be valid
+    return X, Y  # TODO: improve this test; for most of the likelihoods, Y won't actually be valid
 
 
 @pytest.mark.parametrize("GPflowLikelihood", TEST_GPFLOW_LIKELIHOODS)

@@ -67,15 +67,12 @@ kernel = gpflow.kernels.Matern52()
 Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
 
 inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
-
 gpflow.utilities.set_trainable(inducing_variable, False)
 
 num_rff = 1000
 eigenfunctions = RandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
 eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-
 kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
-
 
 # %% [markdown]
 """

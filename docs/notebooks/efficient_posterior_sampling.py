@@ -80,10 +80,7 @@ from gpflow.kernels import RBF, Matern52
 from gpflow.models import GPR
 
 from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.feature_decomposition_kernels.kernel_with_feature_decomposition import (
-    KernelWithFeatureDecomposition,
-)
-
+from gpflux.feature_decomposition_kernels.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 
 # %% [markdown]
 """
@@ -99,13 +96,7 @@ num_experiment_runs = 4  # number of experiment repetitions (64 in the paper)
 
 # settings that vary across experiments
 num_input_dimensions = [2, 4, 8]  # number of input dimensions
-train_sample_exponents = [
-    2,
-    4,
-    6,
-    8,
-    10,
-]  # num_train_samples = 2 ** train_sample_exponents
+train_sample_exponents = [2, 4, 6, 8, 10]  # num_train_samples = 2 ** train_sample_exponents
 num_train_samples = [2 ** train_sample_exponent for train_sample_exponent in train_sample_exponents]
 num_features = [
     1024,
@@ -269,9 +260,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
     )
     feature_coefficients = np.ones((num_features, 1), dtype=default_float())
     approximate_kernel = KernelWithFeatureDecomposition(
-        kernel=None,
-        feature_functions=feature_functions,
-        feature_coefficients=feature_coefficients,
+        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
     )
 
     # create training data set and test points for evaluation
@@ -305,11 +294,7 @@ def conduct_experiment(num_input_dimensions, num_train_samples, num_features):
 
     # identify mean and covariance of the analytic GPR posterior when using the weight space approximated kernel
     f_mean_weight, f_var_weight = compute_analytic_GP_predictions(
-        X=X,
-        y=y,
-        kernel=approximate_kernel,
-        noise_variance=noise_variance,
-        X_star=X_star,
+        X=X, y=y, kernel=approximate_kernel, noise_variance=noise_variance, X_star=X_star
     )
 
     # identify mean and covariance using the hybrid approximation
@@ -436,7 +421,7 @@ def conduct_experiment_for_different_num_features(num_input_dimensions):
     )  # for the analytic solution using the weight space approximated kernel
     list_of_hybrid_results = []  # for the hybrid-rule approximation
     for nf in num_features:
-        (weight_results, hybrid_results,) = conduct_experiment_for_different_train_data_sizes(
+        weight_results, hybrid_results = conduct_experiment_for_different_train_data_sizes(
             num_input_dimensions=num_input_dimensions, num_features=nf
         )
         print()
@@ -473,11 +458,7 @@ for i in range(
     for j in range(len(weight_results)):
         weight_result = weight_results[j]
         axs[i].fill_between(
-            num_train_samples,
-            weight_result[0],
-            weight_result[2],
-            color=colors[j],
-            alpha=0.1,
+            num_train_samples, weight_result[0], weight_result[2], color=colors[j], alpha=0.1
         )
         axs[i].plot(num_train_samples, weight_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, weight_result[1], color=colors[j], linewidth=0.5)
@@ -488,11 +469,7 @@ for i in range(
     for j in range(len(hybrid_results)):
         hybrid_result = hybrid_results[j]
         axs[i].fill_between(
-            num_train_samples,
-            hybrid_result[0],
-            hybrid_result[2],
-            color=colors[j],
-            alpha=0.1,
+            num_train_samples, hybrid_result[0], hybrid_result[2], color=colors[j], alpha=0.1
         )
         axs[i].plot(num_train_samples, hybrid_result[1], "o", color=colors[j])
         axs[i].plot(num_train_samples, hybrid_result[1], color=colors[j], linewidth=0.5)

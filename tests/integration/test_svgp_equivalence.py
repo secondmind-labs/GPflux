@@ -132,10 +132,7 @@ def test_svgp_equivalence_after_assign():
 
 
 def fit_adam(
-    model: Union[gpflow.models.SVGP, gpflux.models.DeepGP],
-    data,
-    maxiter,
-    adam_learning_rate=0.01,
+    model: Union[gpflow.models.SVGP, gpflux.models.DeepGP], data, maxiter, adam_learning_rate=0.01
 ):
     X, Y = data
     num_data = len(X)

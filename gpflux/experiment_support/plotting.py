@@ -63,10 +63,7 @@ def plot_layer(
 
 
 def plot_layers(
-    X: TensorType,
-    means: List[TensorType],
-    covs: List[TensorType],
-    samples: List[TensorType],
+    X: TensorType, means: List[TensorType], covs: List[TensorType], samples: List[TensorType]
 ) -> None:  # pragma: no cover
     L = len(means)
     fig, axes = plt.subplots(3, L, figsize=(L * 3.33, 10))

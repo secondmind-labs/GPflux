@@ -183,10 +183,7 @@ class LatentVariableLayer(LayerWithObservations):
         return posteriors
 
     def _inference_latent_samples_and_loss(
-        self,
-        layer_inputs: TensorType,
-        observations: ObservationType,
-        seed: Optional[int] = None,
+        self, layer_inputs: TensorType, observations: ObservationType, seed: Optional[int] = None
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         r"""
         Sample latent variables during the *training* forward pass, hence requiring

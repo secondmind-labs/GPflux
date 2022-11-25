@@ -48,9 +48,8 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``.mypy
+        :return: A tensor with the shape ``[N, M]``.
         """
-
         X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
         const = self._compute_constant()
         bases = self._compute_bases(X)
@@ -66,7 +65,6 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
-
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
         output_dim = self._compute_output_dim(input_shape)
         return tensor_shape[:-1].concatenate(output_dim)
@@ -79,11 +77,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         config = super(FourierFeaturesBase, self).get_config()
         config.update(
-            {
-                "kernel": self.kernel,
-                "n_components": self.n_components,
-                "input_dim": self._input_dim,
-            }
+            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
         )
 
         return config

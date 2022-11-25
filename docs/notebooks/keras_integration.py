@@ -99,10 +99,7 @@ dgp_train = dgp.as_training_model()
 dgp_train.compile(tf.optimizers.Adam(learning_rate=0.1))
 
 history = dgp_train.fit(
-    {"inputs": X, "targets": Y},
-    batch_size=batch_size,
-    epochs=num_epochs,
-    callbacks=callbacks,
+    {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
 )
 
 # %%
@@ -132,10 +129,7 @@ dgp_natgrad_train.compile(
 )
 
 history_natgrad = dgp_natgrad_train.fit(
-    {"inputs": X, "targets": Y},
-    batch_size=batch_size,
-    epochs=num_epochs,
-    callbacks=callbacks,
+    {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
 )
 
 # %%

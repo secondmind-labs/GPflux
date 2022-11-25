@@ -103,16 +103,12 @@ We proceed by generating the training data for both experimental settings from a
 # %%
 # generate training data and evaluation points for both sets of experiments
 kernel = kernel_class(lengthscales=lengthscale)  # kernel object to draw training dataset from
-X, y, X_star = (
-    [],
-    [],
-    [],
-)  # training points, training observations, and test points for evaluation
+X, y, X_star = [], [], []  # training points, training observations, and test points for evaluation
 
 # 1st iteration: experiments with few training points -- 2nd iteration: experiments with many training points
 for i in range(len(number_of_train_samples)):
 
-    # training pointsnumber_of_train_samples
+    # training points
     X.append(np.linspace(start=X_interval[0], stop=X_interval[1], num=number_of_train_samples[i]))
 
     # training observations generated from a zero-mean GP corrupted with Gaussian noise
@@ -275,9 +271,7 @@ for experiment in range(len(number_of_train_samples)):
     )
     feature_coefficients = np.ones((number_of_features, 1), dtype=default_float())
     kernel = KernelWithFeatureDecomposition(
-        kernel=None,
-        feature_functions=feature_functions,
-        feature_coefficients=feature_coefficients,
+        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients
     )
     gpr_model = GPR(
         data=(X[experiment][..., None], y[experiment][..., None]),

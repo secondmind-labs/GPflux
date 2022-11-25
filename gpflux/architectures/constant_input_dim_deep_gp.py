@@ -133,10 +133,7 @@ def build_constant_input_dim_deep_gp(X: np.ndarray, num_layers: int, config: Con
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var = construct_basic_inducing_variables(
-            num_inducing=config.num_inducing,
-            input_dim=D_in,
-            share_variables=True,
-            z_init=centroids,
+            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True, z_init=centroids
         )
 
         kernel = construct_basic_kernel(

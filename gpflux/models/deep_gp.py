@@ -291,9 +291,7 @@ class DeepGP(Module):
         return model_class(self.inputs, outputs)
 
 
-def sample_dgp(
-    model: DeepGP,
-) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
+def sample_dgp(model: DeepGP) -> Sample:  # TODO: should this be part of a [Vanilla]DeepGP class?
     function_draws = [layer.sample() for layer in model.f_layers]
     # TODO: error check that all layers implement .sample()?
 
