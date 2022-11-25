@@ -83,7 +83,7 @@ def test_quadrature_fourier_features_can_approximate_kernel_multidim(
     lengthscales = np.random.uniform(low=0.75, size=n_dims) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
-    fourier_features = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
+    fourier_features = QuadratureFourierFeatures(kernel, n_components)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -108,7 +108,7 @@ def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_
     lengthscales = np.random.rand(n_dims) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
-    fourier_features = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
+    fourier_features = QuadratureFourierFeatures(kernel, n_components)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -138,7 +138,7 @@ def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_
 def test_fourier_features_shapes(n_components, n_dims, batch_size):
     input_shape = (batch_size, n_dims)
     kernel = gpflow.kernels.SquaredExponential()
-    feature_functions = QuadratureFourierFeatures(kernel, n_components, dtype=tf.float64)
+    feature_functions = QuadratureFourierFeatures(kernel, n_components)
     output_shape = feature_functions.compute_output_shape(input_shape)
     output_dim = output_shape[-1]
     assert output_dim == 2 * n_components ** n_dims
@@ -157,7 +157,6 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
             "kernel": kernel,
             "n_components": n_components,
             "input_dim": 1,
-            "dtype": "float64",
             "dynamic": True,
         },
         input_shape=(batch_size, 1),
@@ -176,7 +175,6 @@ def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, 
             "kernel": kernel,
             "n_components": n_components,
             "input_dim": n_dims,
-            "dtype": "float64",
             "dynamic": True,
         },
         input_shape=(batch_size, n_dims),

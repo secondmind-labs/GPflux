@@ -33,7 +33,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         :param n_components: number of components (e.g. Monte Carlo samples,
             quadrature nodes, etc.) used to numerically approximate the kernel.
         """
+        if kwargs.get("dtype") is None:
+            kwargs["dtype"] = gpflow.default_float()
+
         super(FourierFeaturesBase, self).__init__(**kwargs)
+
         self.kernel = kernel
         self.n_components = n_components
         if kwargs.get("input_dim", None):
@@ -47,7 +51,6 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         Evaluate the basis functions at ``inputs``.
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
-
         :return: A tensor with the shape ``[N, M]``.
         """
         X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
