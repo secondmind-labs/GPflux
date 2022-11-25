@@ -109,7 +109,7 @@ def test_separate_kernel_multioutput_rff_cosine(
     n_components: int, output_dim: int, size_dataset: int, variance: float, lengthscale: float
 ) -> None:
     x = tf.random.uniform((size_dataset, output_dim), dtype=tf.float64)
-    
+
     lengthscales = np.random.rand((output_dim)) * lengthscale
     lengthscales = tf.cast(lengthscales, dtype=tf.float64)
 
@@ -121,7 +121,9 @@ def test_separate_kernel_multioutput_rff_cosine(
 
     kernel = SeparateIndependent(kernels=[base_kernel for _ in range(output_dim)])
 
-    rff = MultiOutputRandomFourierFeaturesCosine(kernel=kernel, n_components=n_components, dtype=tf.float64)
+    rff = MultiOutputRandomFourierFeaturesCosine(
+        kernel=kernel, n_components=n_components, dtype=tf.float64
+    )
     output = rff(inputs=x)
 
     tf.debugging.assert_shapes([(output, [output_dim, size_dataset, n_components])])
