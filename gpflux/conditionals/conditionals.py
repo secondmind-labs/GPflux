@@ -85,6 +85,5 @@ def _sparse_orthogonal_conditional(
         q_sqrt_v,
         whiten=white,
         mean_function=None,
-        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

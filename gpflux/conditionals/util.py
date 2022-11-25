@@ -5,7 +5,7 @@ import tensorflow as tf
 from gpflow.base import MeanAndVariance
 from gpflow.config import default_float, default_jitter
 from gpflow.utilities.ops import leading_transpose
-
+from gpflow.conditionals.util import rollaxis_left
 
 def base_orthogonal_conditional(
     Kmn: tf.Tensor,
@@ -50,6 +50,7 @@ def base_orthogonal_conditional(
     """
 
     # NOTE -- this is now passed from _get_Cnn method of posterior class
+    # hence the Kmm argumnent is a bit redundant now
     # Lm = tf.linalg.cholesky(Kmm)
     return base_orthogonal_conditional_with_lm(
         Kmn=Kmn,
@@ -442,7 +443,7 @@ def conditional_GP_maths(
     return fmean, fvar
 
 
-# NOTE -- this is probably a duplicate
+# TODO -- this is probably a duplicate
 def sample_mvn(
     mean: tf.Tensor, cov: tf.Tensor, full_cov: bool, num_samples: Optional[int] = None
 ) -> tf.Tensor:
@@ -494,7 +495,7 @@ def sample_mvn(
     return samples  # [..., S, N, D]
 
 
-# NOTE -- this is probably a duplicate
+# TODO -- this is probably a duplicate
 def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov: bool) -> tf.Tensor:
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
@@ -521,3 +522,88 @@ def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov:
         pass  # [N, P]
 
     return fvar
+
+
+def separate_independent_orthogonal_conditional_implementation(
+    Kmns: tf.Tensor,
+    Kmms: tf.Tensor,
+    Knns: tf.Tensor,
+    Cmns: tf.Tensor,
+    Cmms: tf.Tensor,
+    Cnns: tf.Tensor,
+    f_u: tf.Tensor,
+    f_v: tf.Tensor,
+    *,
+    full_cov: bool = False,
+    q_sqrt_u: Optional[tf.Tensor] = None,
+    q_sqrt_v: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
+    """
+    Multi-output GP with independent GP priors.
+
+    Number of latent processes equals the number of outputs (L = P).
+
+    Further reference:
+
+    - See `gpflow.conditionals._conditional` for a detailed explanation of
+      conditional in the single-output case.
+    - See the multioutput notebook for more information about the multioutput framework.
+    - See above for the parameters and the return value.
+    """
+    fs_u = tf.transpose(f_u)[:, :, None]  # [P, M_u, 1]
+    # [P, 1, M_u, M_u]  or  [P, M_u, 1]
+
+    fs_v = tf.transpose(f_v)[:, :, None]  # [P, M_v, 1]
+    # [P, 1, M_v, M_v]  or  [P, M_v, 1]
+
+    if q_sqrt_u is not None and q_sqrt_v is not None:
+        q_sqrts_u = (
+            tf.transpose(q_sqrt_u)[:, :, None] if q_sqrt_u.shape.ndims == 2 else q_sqrt_u[:, None, :, :]
+        )
+        q_sqrts_v = (
+            tf.transpose(q_sqrt_v)[:, :, None] if q_sqrt_v.shape.ndims == 2 else q_sqrt_v[:, None, :, :]
+        )
+
+        base_conditional_args_to_map = (
+            Kmms,
+            Kmns,
+            Knns,
+            Cmms,
+            Cmns,
+            Cnns, 
+            fs_u,
+            fs_v,
+            q_sqrts_u,
+            q_sqrts_v,
+        )  # type: Tuple[tf.Tensor, ...]
+
+        def single_orthogonal_gp_conditional(
+            t: Tuple[tf.Tensor, ...]
+        ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
+            Kmm, Kmn, Knn, Cmm, Cmn, Cnn,  f_u, f_v, q_sqrt_u, q_sqrt_v = t
+            return base_orthogonal_conditional(Kmn, Kmm, Knn, Cmn, Cmm, Cnn, f_u, f_v, full_cov=full_cov, q_sqrt_u=q_sqrt_u, q_sqrt_v=q_sqrt_v, white=white)
+
+    else:
+        base_conditional_args_to_map = (Kmms, Kmns, Knns, Cmms, Cmns, Cnns, fs_u, fs_v)
+
+        def single_orthogonal_gp_conditional(
+            t: Tuple[tf.Tensor, ...]
+        ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
+            Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v = t
+            return base_orthogonal_conditional(Kmn, Kmm, Knn, Cmn, Cmm, Cnn, f_u, f_v, full_cov=full_cov, q_sqrt_u=q_sqrt_u, q_sqrt_v=q_sqrt_v, white=white)
+
+    rmu, rvar = tf.map_fn(
+        single_orthogonal_gp_conditional, base_conditional_args_to_map, (default_float(), default_float())
+    )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
+
+    fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
+
+    if full_cov:
+        fvar = tf.squeeze(rvar, axis=-3)  # [..., 0, :, :]  # [P, N, N]
+    else:
+        fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
+
+    return fmu, fvar
+
+
