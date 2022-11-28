@@ -32,7 +32,7 @@ from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
 from gpflow.mean_functions import MeanFunction
 from gpflow.posteriors import (
     AbstractPosterior,
-    BasePosterior,
+    PrecomputedValue,
     _DeltaDist,
     _DiagNormal,
     _MvNormal,
@@ -151,13 +151,11 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
         else:
             self._q_dist_v = _MvNormal(q_mu_v, q_sqrt_v)
 
-    def _precompute(self):
-
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         """
         #TODO -- needs to be implemented
         """
-
-        pass
+        raise NotImplementedError
 
 
 class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
@@ -299,13 +297,11 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
         Xnew: TensorType,
         full_cov: bool = False,
         full_output_cov: bool = False,
-    ):
-
+    ) -> MeanAndVariance:
         """
         #TODO -- need to implement this
         """
-
-        pass
+        raise NotImplementedError
 
 
 class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior):
@@ -344,6 +340,7 @@ class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior)
             q_sqrt_v=self.q_sqrt_v,
             white=self.whiten,
         )  # [N, P],  [P, N, N] or [N, P]
+
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
 
@@ -426,7 +423,6 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 q_sqrt_u=self.q_sqrt_u,
                 q_sqrt_v=self.q_sqrt_v,
                 white=self.whiten,
-                Lm=L_Kuus,
             )
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
@@ -435,7 +431,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
 @get_posterior_class.register(kernels.Kernel, InducingVariables, InducingVariables)
 def _get_posterior_base_case(
     kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
-) -> Type[BasePosterior]:
+) -> Type[BaseOrthogonalPosterior]:
     # independent single output
     return IndependentOrthogonalPosteriorSingleOutput
 
@@ -447,6 +443,6 @@ def _get_posterior_base_case(
 )
 def _get_posterior_independent_mo(
     kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
-) -> Type[BasePosterior]:
+) -> Type[BaseOrthogonalPosterior]:
     # independent multi-output
     return IndependentOrthogonalPosteriorMultiOutput

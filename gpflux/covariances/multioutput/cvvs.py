@@ -1,3 +1,18 @@
+#
+# Copyright (c) 2022 The GPflux Contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 from typing import Optional, Union
 
 import tensorflow as tf
@@ -63,6 +78,7 @@ def Cvv_shared_shared(
         L_Kuu=L_Kuu,
     )  # [M, M]
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=_Cvv.dtype) * jitter
+
     return _Cvv + jittermat
 
 
@@ -81,7 +97,7 @@ def Cvv_fallback_shared(
     L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
 
-    Cvv = tf.stack(
+    _Cvv = tf.stack(
         [
             Cvv(
                 inducing_variable_u.inducing_variable,
@@ -95,7 +111,8 @@ def Cvv_fallback_shared(
     )
 
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
-    return Cvv + jittermat
+
+    return _Cvv + jittermat
 
 
 @Cvv.register(
@@ -117,7 +134,7 @@ def Kuu_fallback_separate_shared(
     L_Kuu: Optional[tf.Tensor] = None,
 ) -> tf.Tensor:
 
-    Cvv = tf.stack(
+    _Cvv = tf.stack(
         [
             Cvv(ind_var_u, ind_var_v, kernel.kernel, L_Kuu=l_kuu)
             for ind_var_u, ind_var_v, l_kuu in zip(
@@ -130,7 +147,8 @@ def Kuu_fallback_separate_shared(
     )
 
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
-    return Cvv + jittermat
+
+    return _Cvv + jittermat
 
 
 @Cvv.register(
@@ -162,7 +180,7 @@ def Kuu_fallback_separate(
         n_iv_v == n_k
     ), f"Must have same number of inducing variables and kernels. Found {n_iv_v} and {n_k}."
 
-    Cvv = tf.stack(
+    _Cvv = tf.stack(
         [
             Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu)
             for ind_var_u, ind_var_v, l_kuu, k in zip(
@@ -176,9 +194,5 @@ def Kuu_fallback_separate(
     )
 
     jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
-    return Cvv + jittermat
 
-    Kmms = [Kuu(f, k) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)]
-    Kmm = tf.stack(Kmms, axis=0)
-    jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype)[None, :, :] * jitter
-    return Kmm + jittermat
+    return _Cvv + jittermat

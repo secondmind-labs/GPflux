@@ -21,7 +21,7 @@ from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
 
 from gpflux.conditionals.dispatch import conditional
-from gpflux.posteriors import BasePosterior, get_posterior_class
+from gpflux.posteriors import get_posterior_class
 
 
 @conditional._gpflow_internal_register(
@@ -74,7 +74,7 @@ def _sparse_orthogonal_conditional(
     """
     posterior_class = get_posterior_class(kernel, inducing_variable_u, inducing_variable_v)
 
-    posterior: BasePosterior = posterior_class(
+    posterior = posterior_class(
         kernel,
         inducing_variable_u,
         inducing_variable_v,
@@ -85,4 +85,5 @@ def _sparse_orthogonal_conditional(
         whiten=white,
         mean_function=None,
     )
+
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

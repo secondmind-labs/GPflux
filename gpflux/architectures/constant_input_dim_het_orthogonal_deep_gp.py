@@ -19,15 +19,14 @@ arbitrary depth where each hidden layer has the same input dimensionality as the
 """
 
 from dataclasses import dataclass
-from typing import cast
-from warnings import WarningMessage
+from typing import Type, cast
 
 import numpy as np
 import tensorflow as tf
 from scipy.cluster.vq import kmeans2
 
 import gpflow
-from gpflow.kernels import Kernel
+from gpflow.kernels import Stationary
 
 from gpflux.helpers import (
     construct_basic_inducing_variables,
@@ -71,7 +70,7 @@ class Config:
     by the Deep GP.
     """
 
-    underlying_kernel: Kernel
+    underlying_kernel: Type[Stationary]
     """
     Either SquaredExponential or Matern52
     """
@@ -87,7 +86,13 @@ class Config:
     """
 
 
-def _construct_kernel(input_dim: int, is_last_layer: bool, underlying_kernel: Kernel) -> Kernel:
+class UnsupportedLikelihood(Exception):
+    """Exception raised when the config specifies a likelihood which is not supported"""
+
+
+def _construct_kernel(
+    input_dim: int, is_last_layer: bool, underlying_kernel: Type[Stationary]
+) -> Stationary:
     """
     Return a :class:`gpflow.kernels.SquaredExponential` kernel with ARD lengthscales set to
     2 and a small kernel variance of 1e-6 if the kernel is part of a hidden layer;
@@ -102,6 +107,7 @@ def _construct_kernel(input_dim: int, is_last_layer: bool, underlying_kernel: Ke
     # data) seems a bit weird - that's really long lengthscales? And I remember seeing
     # something where the value scaled with the number of dimensions before
     lengthscales = [0.351] * input_dim
+
     return underlying_kernel(lengthscales=lengthscales, variance=variance)
 
 
@@ -201,5 +207,7 @@ def build_constant_input_dim_het_orth_deep_gp(
     elif config.likelihood == "StudentT":
         likelihood = HeteroskedasticTFPConditional()
     else:
-        raise WarningMessage(f"{config.likelihood} is not supported in the heteroskedastic case")
+        raise UnsupportedLikelihood(
+            f"{config.likelihood} is not supported in the heteroskedastic case"
+        )
     return OrthDeepGP(gp_layers, LikelihoodLayer(likelihood))

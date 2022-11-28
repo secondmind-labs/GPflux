@@ -36,7 +36,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.StudentT,
         scale_transform: Optional[tfp.bijectors.Bijector] = None,
-        df=4,
+        df: int = 4,
         **kwargs: Any,
     ) -> None:
         """

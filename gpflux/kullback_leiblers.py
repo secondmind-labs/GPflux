@@ -19,11 +19,10 @@ from packaging.version import Version
 
 from gpflow.base import TensorType
 from gpflow.config import default_float, default_jitter
+from gpflow.covariances import Kuu
 from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
 from gpflow.utilities import Dispatcher, to_default_float
-
-from gpflux.covariances import Kuu
 
 prior_kl = Dispatcher("prior_kl")
 

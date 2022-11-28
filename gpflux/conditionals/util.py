@@ -365,19 +365,19 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
 
 
 def conditional_GP_maths(  # noqa: C901
-    leading_dims,
-    Lm,
-    Kmn,
-    Knn,
-    num_func,
-    M,
-    N,
-    f,
-    q_sqrt,
-    just_parametric,
-    white=True,
-    full_cov=False,
-):
+    leading_dims: tf.Tensor,
+    Lm: tf.Tensor,
+    Kmn: tf.Tensor,
+    Knn: tf.Tensor,
+    num_func: int,
+    M: int,
+    N: int,
+    f: tf.Tensor,
+    q_sqrt: tf.Tensor,
+    just_parametric: bool,
+    white: bool = True,
+    full_cov: bool = False,
+) -> MeanAndVariance:
 
     # Compute the projection matrix A
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
@@ -570,7 +570,7 @@ def separate_independent_orthogonal_conditional_implementation(
             else q_sqrt_v[:, None, :, :]
         )
 
-        base_conditional_args_to_map = (
+        base_conditional_args_to_map: Tuple[tf.Tensor, ...] = (
             Kmms,
             Kmns,
             Knns,
@@ -581,7 +581,7 @@ def separate_independent_orthogonal_conditional_implementation(
             fs_v,
             q_sqrts_u,
             q_sqrts_v,
-        )  # type: Tuple[tf.Tensor, ...]
+        )
 
         def single_orthogonal_gp_conditional(
             t: Tuple[tf.Tensor, ...]
