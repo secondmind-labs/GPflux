@@ -182,15 +182,13 @@ def Kuu_fallback_separate(
 
     lista = []
     for ind_var_u, ind_var_v, l_kuu, k in zip(
-                inducing_variable_u.inducing_variable_list,
-                inducing_variable_v.inducing_variable_list,
-                L_Kuu,
-                kernel.kernels,
-        ):
+        inducing_variable_u.inducing_variable_list,
+        inducing_variable_v.inducing_variable_list,
+        L_Kuu,
+        kernel.kernels,
+    ):
 
-        lista.append(
-            Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu)
-        )
+        lista.append(Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu))
 
     """
     lista =  [

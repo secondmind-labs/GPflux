@@ -588,20 +588,20 @@ def separate_independent_orthogonal_conditional_implementation(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, q_sqrt_u, q_sqrt_v, Lm = t
-            
-            print('---- inside single_orthogonal_gp_conditional ----')
-            print(Kmm) 
-            print(Kmn) 
-            print(Knn) 
-            print(Cmm) 
-            print(Cmn) 
-            print(Cnn) 
-            print(f_u) 
-            print(f_v) 
-            print(q_sqrt_u) 
-            print(q_sqrt_v) 
+
+            print("---- inside single_orthogonal_gp_conditional ----")
+            print(Kmm)
+            print(Kmn)
+            print(Knn)
+            print(Cmm)
+            print(Cmn)
+            print(Cnn)
+            print(f_u)
+            print(f_v)
+            print(q_sqrt_u)
+            print(q_sqrt_v)
             print(Lm)
-            
+
             return base_orthogonal_conditional(
                 Kmn,
                 Kmm,
@@ -615,7 +615,7 @@ def separate_independent_orthogonal_conditional_implementation(
                 q_sqrt_u=q_sqrt_u,
                 q_sqrt_v=q_sqrt_v,
                 white=white,
-                Lm = Lm
+                Lm=Lm,
             )
 
     else:
@@ -638,7 +638,7 @@ def separate_independent_orthogonal_conditional_implementation(
                 q_sqrt_u=q_sqrt_u,
                 q_sqrt_v=q_sqrt_v,
                 white=white,
-                Lm = Lm
+                Lm=Lm,
             )
 
     rmu, rvar = tf.map_fn(
