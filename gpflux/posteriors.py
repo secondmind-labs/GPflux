@@ -1,26 +1,29 @@
-import enum
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+#
+# Copyright (c) 2021 The GPflux Contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 from typing import Optional, Tuple, Type, Union
 
-import numpy as np
 import tensorflow as tf
-from check_shapes import (
-    ErrorContext,
-    Shape,
-    check_shapes,
-    get_shape,
-    inherit_check_shapes,
-    register_get_shape,
-)
 
 from gpflow import kernels
-from gpflow.base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
-from gpflow.conditionals.util import *
-from gpflow.config import default_float, default_jitter
+from gpflow.base import MeanAndVariance, TensorType
+from gpflow.conditionals.util import expand_independent_outputs
+from gpflow.config import default_jitter
 from gpflow.covariances import Kuf, Kuu
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import (
-    InducingPoints,
     InducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
@@ -36,7 +39,10 @@ from gpflow.posteriors import (
     get_posterior_class,
 )
 
-from gpflux.conditionals.util import *
+from gpflux.conditionals.util import (
+    base_orthogonal_conditional,
+    separate_independent_orthogonal_conditional_implementation,
+)
 from gpflux.covariances import Cvf, Cvv
 
 """
