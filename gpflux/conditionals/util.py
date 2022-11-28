@@ -367,19 +367,19 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
 
 
 def conditional_GP_maths(  # noqa: C901
-    leading_dims,
-    Lm,
-    Kmn,
-    Knn,
-    num_func,
-    M,
-    N,
-    f,
-    q_sqrt,
-    just_parametric,
-    white=True,
-    full_cov=False,
-):
+    leading_dims: tf.Tensor,
+    Lm: tf.Tensor,
+    Kmn: tf.Tensor,
+    Knn: tf.Tensor,
+    num_func: int,
+    M: int,
+    N: int,
+    f: tf.Tensor,
+    q_sqrt: tf.Tensor,
+    just_parametric: bool,
+    white: bool = True,
+    full_cov: bool = False,
+) -> MeanAndVariance:
 
     # Compute the projection matrix A
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
@@ -573,7 +573,7 @@ def separate_independent_orthogonal_conditional_implementation(
             else q_sqrt_v[:, None, :, :]
         )
 
-        base_conditional_args_to_map = (
+        base_conditional_args_to_map: Tuple[tf.Tensor, ...] = (
             Kmms,
             Kmns,
             Knns,
@@ -584,27 +584,26 @@ def separate_independent_orthogonal_conditional_implementation(
             fs_v,
             q_sqrts_u,
             q_sqrts_v,
-            Lms
-        )  # type: Tuple[tf.Tensor, ...]
+        )
 
         def single_orthogonal_gp_conditional(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, q_sqrt_u, q_sqrt_v, Lm = t
-            
-            print('---- inside single_orthogonal_gp_conditional ----')
-            print(Kmm) 
-            print(Kmn) 
-            print(Knn) 
-            print(Cmm) 
-            print(Cmn) 
-            print(Cnn) 
-            print(f_u) 
-            print(f_v) 
-            print(q_sqrt_u) 
-            print(q_sqrt_v) 
+
+            print("---- inside single_orthogonal_gp_conditional ----")
+            print(Kmm)
+            print(Kmn)
+            print(Knn)
+            print(Cmm)
+            print(Cmn)
+            print(Cnn)
+            print(f_u)
+            print(f_v)
+            print(q_sqrt_u)
+            print(q_sqrt_v)
             print(Lm)
-            
+
             return base_orthogonal_conditional(
                 Kmn,
                 Kmm,
@@ -618,7 +617,7 @@ def separate_independent_orthogonal_conditional_implementation(
                 q_sqrt_u=q_sqrt_u,
                 q_sqrt_v=q_sqrt_v,
                 white=white,
-                Lm = Lm
+                Lm=Lm,
             )
 
     else:
@@ -641,7 +640,7 @@ def separate_independent_orthogonal_conditional_implementation(
                 q_sqrt_u=q_sqrt_u,
                 q_sqrt_v=q_sqrt_v,
                 white=white,
-                Lm = Lm
+                Lm=Lm,
             )
 
     rmu, rvar = tf.map_fn(

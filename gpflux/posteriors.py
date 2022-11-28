@@ -32,7 +32,7 @@ from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
 from gpflow.mean_functions import MeanFunction
 from gpflow.posteriors import (
     AbstractPosterior,
-    BasePosterior,
+    PrecomputedValue,
     _DeltaDist,
     _DiagNormal,
     _MvNormal,
@@ -151,13 +151,11 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
         else:
             self._q_dist_v = _MvNormal(q_mu_v, q_sqrt_v)
 
-    def _precompute(self):
-
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         """
         #TODO -- needs to be implemented
         """
-
-        pass
+        raise NotImplementedError
 
 
 class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
@@ -204,12 +202,12 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         return Kff
 
-    #TODO -- check_shapes has to be updated
-    #@check_shapes(
+    # TODO -- check_shapes has to be updated
+    # @check_shapes(
     #    "Xnew: [N, D]",
     #    "return: [N, N] if full_cov",
     #    "return: [N] if (not full_cov)",
-    #)
+    # )
     def _get_single_Cff(
         self,
         Xnew: TensorType,
@@ -252,12 +250,12 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         return Cff, L_Kmm
 
-    #TODO -- need to update check_shapes
-    #@check_shapes(
+    # TODO -- need to update check_shapes
+    # @check_shapes(
     #    "Xnew: [N, D]",
     #    "return: [broadcast P, N, N] if full_cov",
     #    "return: [broadcast P, N] if (not full_cov)",
-    #)
+    # )
     def _get_Cff(self, Xnew: TensorType, full_cov: bool) -> tf.Tensor:
 
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
@@ -268,25 +266,27 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
             # if full_cov: [P, N, N] -- this is what we want
             # else: [N, P] instead of [P, N] as we get from the explicit stack below
 
-     
             # TODO -- this could probably be done in a smarter way
-            #NOTE -- at the moment it's incurring a double computation
+            # NOTE -- at the moment it's incurring a double computation
             Cff = tf.stack(
                 [
                     self._get_single_Cff(Xnew, k, ind_var, full_cov)[0]
-                    for k, ind_var in zip(self.kernel.kernels, self.inducing_variable_u.inducing_variable_list)
+                    for k, ind_var in zip(
+                        self.kernel.kernels, self.inducing_variable_u.inducing_variable_list
+                    )
                 ],
-                axis=0
+                axis=0,
             )
 
             L_Kmm = tf.stack(
                 [
                     self._get_single_Cff(Xnew, k, ind_var, full_cov)[1]
-                    for k, ind_var in zip(self.kernel.kernels, self.inducing_variable_u.inducing_variable_list)
+                    for k, ind_var in zip(
+                        self.kernel.kernels, self.inducing_variable_u.inducing_variable_list
+                    )
                 ],
-                axis=0
+                axis=0,
             )
-
 
         elif isinstance(self.kernel, kernels.MultioutputKernel):
             # effectively, SharedIndependent path
@@ -306,13 +306,11 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
         Xnew: TensorType,
         full_cov: bool = False,
         full_output_cov: bool = False,
-    ):
-
+    ) -> MeanAndVariance:
         """
         #TODO -- need to implement this
         """
-
-        pass
+        raise NotImplementedError
 
 
 class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior):
@@ -351,6 +349,7 @@ class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior)
             q_sqrt_v=self.q_sqrt_v,
             white=self.whiten,
         )  # [N, P],  [P, N, N] or [N, P]
+
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
 
@@ -433,7 +432,6 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 q_sqrt_u=self.q_sqrt_u,
                 q_sqrt_v=self.q_sqrt_v,
                 white=self.whiten,
-                Lms=L_Kuus,
             )
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
@@ -442,7 +440,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
 @get_posterior_class.register(kernels.Kernel, InducingVariables, InducingVariables)
 def _get_posterior_base_case(
     kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
-) -> Type[BasePosterior]:
+) -> Type[BaseOrthogonalPosterior]:
     # independent single output
     return IndependentOrthogonalPosteriorSingleOutput
 
@@ -454,6 +452,6 @@ def _get_posterior_base_case(
 )
 def _get_posterior_independent_mo(
     kernel: Kernel, inducing_variable_u: InducingVariables, inducing_variable_v: InducingVariables
-) -> Type[BasePosterior]:
+) -> Type[BaseOrthogonalPosterior]:
     # independent multi-output
     return IndependentOrthogonalPosteriorMultiOutput
