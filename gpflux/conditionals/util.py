@@ -94,6 +94,8 @@ def base_orthogonal_conditional_with_lm(
     num_func = tf.shape(f_u)[-1]  # R
     N = tf.shape(Kmn)[-1]
     M = tf.shape(f_u)[-2]
+    V = tf.shape(f_v)[-2]
+
 
     # get the leading dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
@@ -162,7 +164,7 @@ def base_orthogonal_conditional_with_lm(
         Kmn=Cmn,
         Knn=Cnn,
         num_func=num_func,
-        M=tf.shape(f_v)[-2],
+        M=V,
         N=N,
         f=f_v,
         q_sqrt=q_sqrt_v,

@@ -89,7 +89,7 @@ def Cvv_fallback_shared(
                 kernel.kernel,
                 L_Kuu=l_kuu,
             )
-            for k, l_kuu in zip(kernel.kernels, L_Kuu)
+            for k, l_kuu in zip(kernel.kernels, tf.unstack(L_Kuu, axis = 0))
         ],
         axis=0,
     )
@@ -123,7 +123,7 @@ def Kuu_fallback_separate_shared(
             for ind_var_u, ind_var_v, l_kuu in zip(
                 inducing_variable_u.inducing_variable_list,
                 inducing_variable_v.inducing_variable_list,
-                L_Kuu,
+                tf.unstack(L_Kuu, axis = 0)
             )
         ],
         axis=0,
@@ -162,12 +162,11 @@ def Kuu_fallback_separate(
         n_iv_v == n_k
     ), f"Must have same number of inducing variables and kernels. Found {n_iv_v} and {n_k}."
 
-
     lista = []
     for ind_var_u, ind_var_v, l_kuu, k in zip(
                 inducing_variable_u.inducing_variable_list,
                 inducing_variable_v.inducing_variable_list,
-                L_Kuu,
+                tf.unstack(L_Kuu, axis = 0),
                 kernel.kernels,
         ):
 

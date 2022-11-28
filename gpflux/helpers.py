@@ -146,7 +146,7 @@ def construct_basic_inducing_variables(
                 assert len(z_init[i]) == num_ind_var
                 z_init_i = z_init[i]
             else:
-                z_init_i = np.random.uniform(-0.5, 0.5, (num_inducing, input_dim)).astype(
+                z_init_i = np.random.uniform(-0.5, 0.5, (num_ind_var, input_dim)).astype(
                     dtype=default_float()
                 )
             assert z_init_i.shape == (num_ind_var, input_dim)

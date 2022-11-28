@@ -80,7 +80,7 @@ def Cvf_shared_shared(
         inducing_variable_v.inducing_variable,
         kernel.kernel,
         Xnew,
-        L_Kuu=L_Kuu,
+        L_Kuu=tf.unstack(L_Kuu, axis= 0),
     )  # [M_v, N]
 
 
@@ -117,7 +117,7 @@ def Cvf_separate_shared(
             for ind_var_u, ind_var_v, l_kuu in zip(
                 inducing_variable_u.inducing_variable_list,
                 inducing_variable_v.inducing_variable_list,
-                L_Kuu,
+                tf.unstack(L_Kuu, axis = 0),
             )
         ],
         axis=0,
@@ -154,7 +154,7 @@ def Cvf_shared_separate(
                 Xnew,
                 L_Kuu=l_kuu,
             )
-            for k, l_kuu in zip(kernel.kernels, L_Kuu)
+            for k, l_kuu in zip(kernel.kernels, tf.unstack(L_Kuu, axis=0))
         ],
         axis=0,
     )
@@ -204,7 +204,7 @@ def Cvf_separate_separate(
                 kernel.kernels,
                 inducing_variable_u.inducing_variable_list,
                 inducing_variable_v.inducing_variable_list,
-                L_Kuu,
+                tf.unstack(L_Kuu, axis = 0)
             )
         ],
         axis=0,
