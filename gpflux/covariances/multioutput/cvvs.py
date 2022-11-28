@@ -180,8 +180,21 @@ def Kuu_fallback_separate(
         n_iv_v == n_k
     ), f"Must have same number of inducing variables and kernels. Found {n_iv_v} and {n_k}."
 
-    _Cvv = tf.stack(
-        [
+    lista = []
+    for ind_var_u, ind_var_v, l_kuu, k in zip(
+                inducing_variable_u.inducing_variable_list,
+                inducing_variable_v.inducing_variable_list,
+                L_Kuu,
+                kernel.kernels,
+        ):
+
+        lista.append(
+            Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu)
+        )
+
+    """
+    lista =  [
+>>>>>>> 53dae0f597e5aa12eea4bc13839a3c94807acd36
             Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu)
             for ind_var_u, ind_var_v, l_kuu, k in zip(
                 inducing_variable_u.inducing_variable_list,
@@ -189,10 +202,14 @@ def Kuu_fallback_separate(
                 L_Kuu,
                 kernel.kernels,
             )
-        ],
+        ]
+    """
+
+    _Cvv = tf.stack(
+        lista,
         axis=0,
     )
 
-    jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=Cvv.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(inducing_variable_v.num_inducing, dtype=_Cvv.dtype)[None, :, :] * jitter
 
     return _Cvv + jittermat

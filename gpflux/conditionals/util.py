@@ -539,6 +539,7 @@ def separate_independent_orthogonal_conditional_implementation(
     q_sqrt_u: Optional[tf.Tensor] = None,
     q_sqrt_v: Optional[tf.Tensor] = None,
     white: bool = False,
+    Lms: Optional[tf.Tensor] = None,
 ) -> MeanAndVariance:
     """
     Multi-output GP with independent GP priors.
@@ -586,7 +587,21 @@ def separate_independent_orthogonal_conditional_implementation(
         def single_orthogonal_gp_conditional(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
-            Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, q_sqrt_u, q_sqrt_v = t
+            Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, q_sqrt_u, q_sqrt_v, Lm = t
+            
+            print('---- inside single_orthogonal_gp_conditional ----')
+            print(Kmm) 
+            print(Kmn) 
+            print(Knn) 
+            print(Cmm) 
+            print(Cmn) 
+            print(Cnn) 
+            print(f_u) 
+            print(f_v) 
+            print(q_sqrt_u) 
+            print(q_sqrt_v) 
+            print(Lm)
+            
             return base_orthogonal_conditional(
                 Kmn,
                 Kmm,
@@ -600,15 +615,16 @@ def separate_independent_orthogonal_conditional_implementation(
                 q_sqrt_u=q_sqrt_u,
                 q_sqrt_v=q_sqrt_v,
                 white=white,
+                Lm = Lm
             )
 
     else:
-        base_conditional_args_to_map = (Kmms, Kmns, Knns, Cmms, Cmns, Cnns, fs_u, fs_v)
+        base_conditional_args_to_map = (Kmms, Kmns, Knns, Cmms, Cmns, Cnns, fs_u, fs_v, Lms)
 
         def single_orthogonal_gp_conditional(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
-            Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v = t
+            Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, Lm = t
             return base_orthogonal_conditional(
                 Kmn,
                 Kmm,
@@ -622,6 +638,7 @@ def separate_independent_orthogonal_conditional_implementation(
                 q_sqrt_u=q_sqrt_u,
                 q_sqrt_v=q_sqrt_v,
                 white=white,
+                Lm = Lm
             )
 
     rmu, rvar = tf.map_fn(

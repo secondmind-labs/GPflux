@@ -202,11 +202,12 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         return Kff
 
-    @check_shapes(
-        "Xnew: [N, D]",
-        "return: [broadcast P, N, N] if full_cov",
-        "return: [broadcast P, N] if (not full_cov)",
-    )
+    #TODO -- check_shapes has to be updated
+    #@check_shapes(
+    #    "Xnew: [N, D]",
+    #    "return: [N, N] if full_cov",
+    #    "return: [N] if (not full_cov)",
+    #)
     def _get_single_Cff(
         self,
         Xnew: TensorType,
@@ -223,10 +224,10 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
         # if full_cov: [P, N, N] instead of [N, N]
         # else: [N, P] instead of [N]
 
-        Kmm = Kuu(inducing_variable_u, self.kernel, jitter=default_jitter())
+        Kmm = Kuu(inducing_variable_u, kernel, jitter=default_jitter())
         L_Kmm = tf.linalg.cholesky(Kmm)
 
-        Kmf = Kuf(inducing_variable_u, self.kernel, Xnew)
+        Kmf = Kuf(inducing_variable_u, kernel, Xnew)
         L_Kmm_inv_Kmf = tf.linalg.triangular_solve(L_Kmm, Kmf)
 
         # compute the covariance due to the conditioning
@@ -249,11 +250,12 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         return Cff, L_Kmm
 
-    @check_shapes(
-        "Xnew: [N, D]",
-        "return: [broadcast P, N, N] if full_cov",
-        "return: [broadcast P, N] if (not full_cov)",
-    )
+    #TODO -- need to update check_shapes
+    #@check_shapes(
+    #    "Xnew: [N, D]",
+    #    "return: [broadcast P, N, N] if full_cov",
+    #    "return: [broadcast P, N] if (not full_cov)",
+    #)
     def _get_Cff(self, Xnew: TensorType, full_cov: bool) -> tf.Tensor:
 
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
@@ -263,21 +265,26 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
             # return
             # if full_cov: [P, N, N] -- this is what we want
             # else: [N, P] instead of [P, N] as we get from the explicit stack below
+
+     
             # TODO -- this could probably be done in a smarter way
+            #NOTE -- at the moment it's incurring a double computation
             Cff = tf.stack(
                 [
-                    self._get_single_Cff(Xnew, k, self.inducing_variable_u, full_cov)[0]
-                    for k in self.kernel.kernels
+                    self._get_single_Cff(Xnew, k, ind_var, full_cov)[0]
+                    for k, ind_var in zip(self.kernel.kernels, self.inducing_variable_u.inducing_variable_list)
                 ],
-                axis=0,
+                axis=0
             )
+
             L_Kmm = tf.stack(
                 [
-                    self._get_single_Cff(Xnew, k, self.inducing_variable_u, full_cov)[1]
-                    for k in self.kernel.kernels
+                    self._get_single_Cff(Xnew, k, ind_var, full_cov)[1]
+                    for k, ind_var in zip(self.kernel.kernels, self.inducing_variable_u.inducing_variable_list)
                 ],
-                axis=0,
+                axis=0
             )
+
 
         elif isinstance(self.kernel, kernels.MultioutputKernel):
             # effectively, SharedIndependent path
