@@ -1,9 +1,8 @@
 from typing import Optional, Union
 
 import tensorflow as tf
-from check_shapes import check_shapes
 
-from gpflow.base import TensorLike
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,

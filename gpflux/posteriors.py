@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 The GPflux Contributors.
+# Copyright (c) 2022 The GPflux Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ from gpflow.posteriors import (
     get_posterior_class,
 )
 
-from gpflux.conditionals.util import (
+from gpflux.conditionals.util import (  # expand_independent_outputs,  duplicate of gpflow?
     base_orthogonal_conditional,
     separate_independent_orthogonal_conditional_implementation,
 )

@@ -1,10 +1,9 @@
-from typing import Any, Optional, Union
+from typing import Optional
 
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 from gpflow.base import TensorLike, TensorType
-from gpflow.config import default_float, default_jitter
+from gpflow.config import default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
 

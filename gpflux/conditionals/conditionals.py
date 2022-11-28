@@ -15,7 +15,6 @@
 from typing import Optional
 
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 from gpflow.base import MeanAndVariance
 from gpflow.inducing_variables import InducingVariables

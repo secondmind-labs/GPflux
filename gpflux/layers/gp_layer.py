@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 The GPflux Contributors.
+# Copyright (c) 2022 The GPflux Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -518,7 +518,7 @@ class OrthGPLayer(GPLayer):
         num_inducing_v = self.inducing_variable_v.num_inducing
 
         ########################################################
-        ###### Introduce variational parameters for q(U) #######
+        #      Introduce variational parameters for q(U)       #
         ########################################################
 
         self.q_mu_u = Parameter(
@@ -537,7 +537,7 @@ class OrthGPLayer(GPLayer):
         )  # [num_latent_gps, num_inducing, num_inducing]
 
         ########################################################
-        ###### Introduce variational parameters for q(V) #######
+        #      Introduce variational parameters for q(V)       #
         ########################################################
 
         self.q_mu_v = Parameter(

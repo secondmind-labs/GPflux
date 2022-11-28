@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 The GPflux Contributors.
+# Copyright (c) 2022 The GPflux Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 r"""
-This module contains helper functions for constructing :class:`~gpflow.kernels.MultioutputKernel`,
+This module contains helper functions for constructing :class:`~MultioutputKernel`,
 :class:`~gpflow.inducing_variables.MultioutputInducingVariables`,
 :class:`~gpflow.mean_functions.MeanFunction`, and :class:`~gpflux.layers.GPLayer` objects.
 """
@@ -47,15 +47,15 @@ from gpflux.layers.gp_layer import GPLayer
 
 
 def construct_basic_kernel(
-    kernels: Union[gpflow.kernels.Kernel, List[gpflow.kernels.Kernel]],
+    kernels: Union[Kernel, List[Kernel]],
     output_dim: Optional[int] = None,
     share_hyperparams: bool = False,
-) -> gpflow.kernels.MultioutputKernel:
+) -> MultioutputKernel:
     r"""
-    Construct a :class:`~gpflow.kernels.MultioutputKernel` to use
+    Construct a :class:`~MultioutputKernel` to use
     in :class:`GPLayer`\ s.
 
-    :param kernels: A single kernel or list of :class:`~gpflow.kernels.Kernel`\ s.
+    :param kernels: A single kernel or list of :class:`~Kernel`\ s.
         - When a single kernel is passed, the same kernel is used for all
         outputs. Depending on ``share_hyperparams``, the hyperparameters will be
         shared across outputs. You must also specify ``output_dim``.
@@ -86,7 +86,7 @@ def construct_basic_inducing_variables(
     output_dim: Optional[int] = None,
     share_variables: bool = False,
     z_init: Optional[np.ndarray] = None,
-) -> gpflow.inducing_variables.MultioutputInducingVariables:
+) -> MultioutputInducingVariables:
     r"""
     Construct a compatible :class:`~gpflow.inducing_variables.MultioutputInducingVariables`
     to use in :class:`GPLayer`\ s.
@@ -226,7 +226,7 @@ def construct_gp_layer(
     num_inducing: int,
     input_dim: int,
     output_dim: int,
-    kernel_class: Type[gpflow.kernels.Stationary] = gpflow.kernels.SquaredExponential,
+    kernel_class: Type[Stationary] = gpflow.kernels.SquaredExponential,
     z_init: Optional[np.ndarray] = None,
     name: Optional[str] = None,
 ) -> GPLayer:

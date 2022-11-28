@@ -126,7 +126,7 @@ def build_constant_input_dim_orth_deep_gp(X: np.ndarray, num_layers: int, config
     centroids, _ = kmeans2(X, k=config.num_inducing_u + config.num_inducing_v, minit="points")
 
     centroids_u = centroids[: config.num_inducing_u, ...]
-    centroids_v = centroids[config.num_inducing_u :, ...]
+    centroids_v = centroids[config.num_inducing_u :, ...]  # noqa: E203
 
     for i_layer in range(num_layers):
         is_last_layer = i_layer == num_layers - 1

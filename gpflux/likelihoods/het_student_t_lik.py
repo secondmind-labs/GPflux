@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Optional, Type
+from typing import Any, Optional, Type
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import TensorType
 from gpflow.likelihoods import MultiLatentTFPConditional
-from gpflow.likelihoods.base import QuadratureLikelihood
 from gpflow.utilities import positive
 
 
@@ -45,7 +44,8 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             as first and second argument, respectively.
         :param scale_transform: callable/bijector applied to the latent
             function modelling the scale to ensure its positivity.
-            Typically, `tf.exp` or `tf.softplus`, but can be any function f: R -> R^+. Defaults to exp if not explicitly specified.
+            Typically, `tf.exp` or `tf.softplus`, but can be any function f: R -> R^+.
+            Defaults to exp if not explicitly specified.
         """
         if scale_transform is None:
             scale_transform = positive(base="exp")

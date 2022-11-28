@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 The GPflux Contributors.
+# Copyright (c) 2022 The GPflux Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,8 +27,7 @@ import tensorflow as tf
 from scipy.cluster.vq import kmeans2
 
 import gpflow
-from gpflow.kernels import Kernel, Matern52, SquaredExponential
-from gpflow.likelihoods import Gaussian
+from gpflow.kernels import Kernel
 
 from gpflux.helpers import (
     construct_basic_inducing_variables,
@@ -78,9 +77,7 @@ class Config:
     """
 
     likelihood: str
-    """
-    Either "Gaussian" or "StudentT" 
-    """
+    """Either 'Gaussian' or 'StudentT'"""
 
     whiten: bool = True
     """
@@ -142,7 +139,7 @@ def build_constant_input_dim_het_orth_deep_gp(
     centroids, _ = kmeans2(X, k=config.num_inducing_u + config.num_inducing_v, minit="points")
 
     centroids_u = centroids[: config.num_inducing_u, ...]
-    centroids_v = centroids[config.num_inducing_u :, ...]
+    centroids_v = centroids[config.num_inducing_u :, ...]  # noqa: E203
 
     for i_layer in range(num_layers):
         is_last_layer = i_layer == num_layers - 1
@@ -204,7 +201,5 @@ def build_constant_input_dim_het_orth_deep_gp(
     elif config.likelihood == "StudentT":
         likelihood = HeteroskedasticTFPConditional()
     else:
-        raise WarningMessage(
-            f"Current likelihood invoked {config.likelihood} is not supported in the heteroskedastic case"
-        )
+        raise WarningMessage(f"{config.likelihood} is not supported in the heteroskedastic case")
     return OrthDeepGP(gp_layers, LikelihoodLayer(likelihood))

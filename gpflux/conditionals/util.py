@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Tuple
+from typing import Optional, Tuple
 
 import tensorflow as tf
 
@@ -364,7 +364,7 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
     return tf.concat([fmean_u, fmean_v], axis=-1), tf.concat([fvar_u, fvar_v], axis=-1)
 
 
-def conditional_GP_maths(
+def conditional_GP_maths(  # noqa: C901
     leading_dims,
     Lm,
     Kmn,
