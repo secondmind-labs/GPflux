@@ -96,7 +96,9 @@ def _construct_kernel(input_dim: int, is_last_layer: bool) -> SquaredExponential
     return SquaredExponential(lengthscales=lengthscales, variance=variance)
 
 
-def build_constant_input_dim_orth_deep_gp(X: np.ndarray, num_layers: int, config: Config) -> OrthDeepGP:
+def build_constant_input_dim_orth_deep_gp(
+    X: np.ndarray, num_layers: int, config: Config
+) -> OrthDeepGP:
     r"""
     Build a Deep GP consisting of ``num_layers`` :class:`GPLayer`\ s.
     All the hidden layers have the same input dimension as the data, that is, ``X.shape[1]``.

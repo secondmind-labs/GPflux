@@ -23,6 +23,7 @@ from typing import Type, cast
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from scipy.cluster.vq import kmeans2
 
 import gpflow
@@ -35,7 +36,6 @@ from gpflux.helpers import (
 )
 from gpflux.layers.gp_layer import OrthGPLayer
 from gpflux.layers.likelihood_layer import LikelihoodLayer
-from gpflux.likelihoods import HeteroskedasticTFPConditional
 from gpflux.models import OrthDeepGP
 
 
@@ -201,13 +201,16 @@ def build_constant_input_dim_het_orth_deep_gp(
         layer.q_sqrt_v.assign(layer.q_sqrt_v * q_sqrt_scaling)
         gp_layers.append(layer)
 
-    # TODO -- need to add support for Student-T likelihood
-    if config.likelihood == "Gaussian":
-        likelihood = gpflow.likelihoods.HeteroskedasticTFPConditional()
-    elif config.likelihood == "StudentT":
-        likelihood = HeteroskedasticTFPConditional()
-    else:
+    try:
+        likelihood = {
+            "Gaussian": gpflow.likelihoods.HeteroskedasticTFPConditional(),
+            "StudentT": gpflow.likelihoods.HeteroskedasticTFPConditional(
+                distribution_class=tfp.distributions.StudentT
+            ),
+        }[config.likelihood]
+    except KeyError:
         raise UnsupportedLikelihood(
             f"{config.likelihood} is not supported in the heteroskedastic case"
         )
+
     return OrthDeepGP(gp_layers, LikelihoodLayer(likelihood))
