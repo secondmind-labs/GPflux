@@ -314,7 +314,7 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
         "representation of Kmn. See the docs for the actual expected "
         "shape.]",
     )
-
+    
     leading_dims = tf.shape(Kmn)[:-2]
 
     ###################################################################################
@@ -584,25 +584,13 @@ def separate_independent_orthogonal_conditional_implementation(
             fs_v,
             q_sqrts_u,
             q_sqrts_v,
+            Lms,
         )
 
         def single_orthogonal_gp_conditional(
             t: Tuple[tf.Tensor, ...]
         ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, Cmm, Cmn, Cnn, f_u, f_v, q_sqrt_u, q_sqrt_v, Lm = t
-
-            print("---- inside single_orthogonal_gp_conditional ----")
-            print(Kmm)
-            print(Kmn)
-            print(Knn)
-            print(Cmm)
-            print(Cmn)
-            print(Cnn)
-            print(f_u)
-            print(f_v)
-            print(q_sqrt_u)
-            print(q_sqrt_v)
-            print(Lm)
 
             return base_orthogonal_conditional(
                 Kmn,

@@ -324,8 +324,8 @@ class IndependentOrthogonalPosteriorSingleOutput(IndependentOrthogonalPosterior)
         # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following
         # line:
 
-        Knn = self._get_Kff(Xnew, full_cov=full_output_cov)
-        Cnn = self._get_Cff(Xnew, full_cov=full_output_cov)
+        Knn = self._get_Kff(Xnew, full_cov=full_cov)
+        Cnn = self._get_Cff(Xnew, full_cov=full_cov)
 
         Kmm = Kuu(self.inducing_variable_u, self.kernel, jitter=default_jitter())  # [M_u, M_u]
         Kmn = Kuf(self.inducing_variable_u, self.kernel, Xnew)  # [M_U, N]
@@ -365,8 +365,8 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
         ):
             # same as IndependentPosteriorSingleOutput except for following line
 
-            Knn = self._get_Kff(Xnew, full_cov=full_output_cov)
-            Cnn, L_Kuu = self._get_Cff(Xnew, full_cov=full_output_cov)
+            Knn = self._get_Kff(Xnew, full_cov=full_cov)
+            Cnn, L_Kuu = self._get_Cff(Xnew, full_cov=full_cov)
 
             Kmm = Kuu(self.inducing_variable_u, self.kernel, jitter=default_jitter())  # [M_u, M_u]
             Kmn = Kuf(self.inducing_variable_u, self.kernel, Xnew)  # [M_U, N]
@@ -399,14 +399,13 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
             )  # [N, P],  [P, N, N] or [N, P]
 
         else:
-            # TODO -- this needs to be implemented
 
             # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
             Kmms = Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [P, M, M]
             Kmns = Kuf(self.X_data, self.kernel, Xnew)  # [P, M, N]
-            Knns = self._get_Kff(Xnew, full_cov=full_output_cov)  # [P, N](x N)
+            Knns = self._get_Kff(Xnew, full_cov=full_cov)  # [P, N](x N)
 
-            Cnns, L_Kuus = self._get_Cff(Xnew, full_cov=full_output_cov)  # [P, N](x N)
+            Cnns, L_Kuus = self._get_Cff(Xnew, full_cov=full_cov)  # [P, N](x N)
             Cmms = Cvv(
                 self.inducing_variable_u,
                 self.inducing_variable_v,
@@ -418,7 +417,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 self.inducing_variable_u, self.inducing_variable_v, self.kernel, Xnew, L_Kuu=L_Kuus
             )  # [P, M_v, N]
 
-            # TODO -- this needs to be implemented
+            # TODO -- this fails in tests
             fmean, fvar = separate_independent_orthogonal_conditional_implementation(
                 Kmns,
                 Kmms,
@@ -432,6 +431,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 q_sqrt_u=self.q_sqrt_u,
                 q_sqrt_v=self.q_sqrt_v,
                 white=self.whiten,
+                Lms= L_Kuus
             )
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
