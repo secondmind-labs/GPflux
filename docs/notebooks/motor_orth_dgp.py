@@ -40,24 +40,13 @@ from gpflow.base import TensorType
 
 tf.keras.backend.set_floatx("float64")
 
-
-from functools import wraps
-from typing import Callable, Optional, Tuple
-
-from sklearn.linear_model import LinearRegression
 from tensorflow import keras
-from tensorflow_probability.python.util.deferred_tensor import TensorMetaClass
-
-import gpflow
-from gpflow.ci_utils import ci_niter
-from gpflow.kernels import SquaredExponential
 
 import gpflux
-from gpflux.architectures import build_constant_input_dim_het_orth_deep_gp
-from gpflux.architectures.constant_input_dim_het_orthogonal_deep_gp import Config
+from gpflux.architectures import build_constant_input_dim_orth_deep_gp
+from gpflux.architectures.constant_input_dim_orthogonal_deep_gp import Config
 from gpflux.models import *
 
-from .misc import LikelihoodOutputs, batch_predict
 from .plotting_functions import get_regression_detailed_plot, plot_to_image
 
 
@@ -78,7 +67,7 @@ def produce_regression_plots(model, num_epoch, start_point, end_point, dataset_n
         f_mean_overall[current_layer] = []
         f_var_overall[current_layer] = []
 
-    for nvm in range(100):
+    for nvm in range(10):
 
         preds = model._evaluate_layer_wise_deep_gp(input_space)  
 
@@ -128,7 +117,7 @@ if __name__ == '__main__':
     def motorcycle_data():
         """ Return inputs and outputs for the motorcycle dataset. We normalise the outputs. """
         import pandas as pd
-        df = pd.read_csv("/home/sebastian.popescu/Desktop/my_code/GP_package/docs/notebooks/data/motor.csv", index_col=0)
+        df = pd.read_csv("./data/motor.csv", index_col=0)
         X, Y = df["times"].values.reshape(-1, 1), df["accel"].values.reshape(-1, 1)
         Y = (Y - Y.mean()) / Y.std()
         X /= X.max()
@@ -136,7 +125,6 @@ if __name__ == '__main__':
 
     X_data, Y_data = motorcycle_data()
     num_data, d_xim = X_data.shape
-
 
     np.random.seed(7)
     lista = np.arange(X_data.shape[0])
@@ -148,16 +136,9 @@ if __name__ == '__main__':
     x_values_training_np = X_data[index_training,...]
     y_values_training_np = Y_data[index_training,...]
     
-    print('----- size of training dataset -------')
-    print(x_values_training_np.shape)
-    print(y_values_training_np.shape)
     x_values_testing_np = X_data[index_testing,...]
     y_values_testing_np = Y_data[index_testing,...]
     
-    print('------- size of testing dataset ---------')
-    print(x_values_testing_np.shape)
-    print(y_values_testing_np.shape)
-
     x_training = x_values_training_np.reshape((-1, d_xim)).astype(np.float64)
     x_testing = x_values_testing_np.reshape((-1, d_xim)).astype(np.float64)
 
@@ -167,15 +148,6 @@ if __name__ == '__main__':
     ###############################################################
     ########### Create model and train it #########################
     ###############################################################
-
-    #train_dataset = tf.data.Dataset.from_tensor_slices((x_training, y_training)).shuffle(buffer_size=900 + 1).batch(32)
-
-    """
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    ax.scatter(x, y, s=2, label="data")
-    xx = np.linspace(-1, 2, 101)[:, np.newaxis]
-    # ax.plot(xx,  _f(xx), c='k')
-    """
 
     NUM_INDUCING = 10
     HIDDEN_DIMS = 1
@@ -189,52 +161,31 @@ if __name__ == '__main__':
 
     ### TRAIN MODEL ###
 
-
     config = Config(
-        num_inducing_u=NUM_INDUCING, num_inducing_v=NUM_INDUCING, inner_layer_qsqrt_factor=INNER_LAYER_QSQRT_FACTOR, likelihood_noise_variance=1e-2, whiten=True, underlying_kernel=SquaredExponential, likelihood = "Gaussian"
+        num_inducing_u=NUM_INDUCING, num_inducing_v=NUM_INDUCING, inner_layer_qsqrt_factor=INNER_LAYER_QSQRT_FACTOR, likelihood_noise_variance=1e-2, whiten=True
     )
 
-    deep_gp: OrthDeepGP = build_constant_input_dim_het_orth_deep_gp(x_training, num_layers = NUM_LAYERS, config = config)
-
-    print('printing model details...')
-    print(deep_gp)
+    deep_gp: DeepGP = build_constant_input_dim_orth_deep_gp(x_training, num_layers = NUM_LAYERS, config = config)
 
     data = (x_training, y_training)
 
     optimizer = tf.optimizers.Adam()
-    #training_loss = deep_gp.training_loss_closure(
-    #    data
-    #    )  # We save the compiled closure in a variable so as not to re-compile it each step
-    #optimizer.minimize(training_loss, deep_gp.trainable_variables)  # Note that this does a single step
+
     NUM_BATCHES_PER_EPOCH = int(x_training.shape[0] / BATCH_SIZE)
 
     if x_training.shape[0] % BATCH_SIZE !=0:
         NUM_BATCHES_PER_EPOCH+=1
 
-    """
-    batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(BATCH_SIZE)
-
-    simple_training_loop(model= deep_gp, 
-        num_batches_per_epoch = NUM_BATCHES_PER_EPOCH,
-        train_dataset = batched_dataset,
-        optimizer = optimizer,
-        epochs = NUM_EPOCHS, 
-        logging_epoch_freq = 10, 
-        plotting_epoch_freq = 10
-    )
-
-    """
-
     LOGGING_EPOCH_FREQ = 100
-    PLOTTING_EPOCH_FREQ = 50
-    EPOCH_MULTIPLIER = 500
+    PLOTTING_EPOCH_FREQ = 10
+    EPOCH_MULTIPLIER = 50
 
     model = deep_gp.as_training_model()
     model.compile(tf.optimizers.Adam(1e-2))
 
-    filename = f"OrthDGP(layers:{len(deep_gp.f_layers)},units:{deep_gp.f_layers[0].num_latent_gps},lik.:HetGaussian)"
+    filename = f"OrthDGP(layers:{len(deep_gp.f_layers)},units:{deep_gp.f_layers[0].num_latent_gps},lik.:Gaussian)"
 
-    SAVE_LOGS = './my_logs/'+DATASET_NAME+'/'+filename
+    SAVE_LOGS = './logs/'+DATASET_NAME+'/'+filename
     cmd=f'mkdir -p {SAVE_LOGS}'
     os.system(cmd)
 
@@ -243,7 +194,7 @@ if __name__ == '__main__':
     cmd=f'mkdir -p {SAVE_CKPTS}'
     os.system(cmd)
 
-    # Custom callback -- #TODO -- need to see how to add histogram plots for tf.Tensors
+    # Custom callback
     tb_callback = tf.keras.callbacks.TensorBoard(SAVE_LOGS, histogram_freq = 1, update_freq="epoch")
 
     # Default GPflux callback
@@ -290,19 +241,6 @@ if __name__ == '__main__':
             verbose=1)
         epoch_id+= EPOCH_MULTIPLIER
 
-        """
-        if epoch_id % LOGGING_EPOCH_FREQ == 0:
-            
-            _elbo = deep_gp.elbo(data, training = False)
-            #tf.print(f"Epoch {epoch_id}: ELBO (train) {_elbo[0]}- Exp. ll. (train) {_elbo[1]}- KLs (train) {_elbo[2]}")
-            tf.print(f"Epoch {epoch_id}: ELBO (train) {_elbo}")
-        """
-        ########### Get results on testing set and produce plots #########################
-        #model_testing = deep_gp.as_prediction_model()
-
-        #if epoch_id % PLOTTING_EPOCH_FREQ == 0:
-        #    produce_regression_plots(deep_gp, epoch_id, x_training.min() - X_MARGIN, x_training.max() + X_MARGIN, DATASET_NAME, filename)
-
-
-
+        if epoch_id % PLOTTING_EPOCH_FREQ == 0:
+            produce_regression_plots(deep_gp, epoch_id, x_training.min() - X_MARGIN, x_training.max() + X_MARGIN, DATASET_NAME, filename)
 

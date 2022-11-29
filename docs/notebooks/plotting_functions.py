@@ -61,7 +61,7 @@ def get_classification_detailed_plot(
             label="Class 1",
         )
 
-        # TODO -- don't need this
+        # NOTE -- don't need this
         # axis.scatter(Z_np[current_layer][:,0], Z_np[current_layer][:,1],
         #        s=750, marker="*", alpha=0.95, c = 'cyan',
         #        linewidth=1, label = 'Inducing Points')
