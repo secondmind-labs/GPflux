@@ -12,7 +12,9 @@ Because GitHub's [graph of contributors](http://github.com/secondmind-labs/GPflu
 [Felix Leibfried](https://github.com/fleibfried), 
 [John A. McLeod](https://github.com/johnamcleod), 
 [Hugh Salimbeni](https://github.com/hughsalimbeni), 
-[Marcin B. Tomczak](https://github.com/marctom)
+[Marcin B. Tomczak](https://github.com/marctom),
+[Sebastian Popescu](https://github.com/SebastianPopescu),
+[Alessandro Vullo](https://github.com/avullo),
 
 
 Feel free to add yourself when you first contribute to GPflux's code, tests, or documentation!
