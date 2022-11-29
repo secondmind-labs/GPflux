@@ -12,11 +12,9 @@
 #     name: python3
 # ---
 
-# # Deep Gaussian processes with Latent Variables
+# # Sparse Orthogonal Variational Inference for Deep Gaussian Processes
 #
-# In this notebook, we explore the use of Deep Gaussian processes <cite data-cite="damianou2013deep"/> and Latent Variables to model a dataset with heteroscedastic noise. The model can be seen as a deep GP version of <cite data-cite="dutordoir2018cde"/> or as doing variational inference in models from <cite data-cite="salimbeni2019iwvi"/>. We start by fitting a single layer GP model to show that it doesn't result in a satisfactory fit for the noise.
-#
-# This notebook is inspired by [prof. Neil Lawrence's Deep Gaussian process talk](https://inverseprobability.com/talks/notes/deep-gps.html), which we highly recommend watching.
+# In this notebook, we explore the use of a new interpretation of sparse variational approximations for Gaussian processes using inducing points, which can lead to more scalable algorithms than previous methods. It is based on decomposing a Gaussian process as a sum of two independent processes: one spanned by a finite basis of inducing points and the other capturing the remaining variation <cite data-cite="shi2020sparseorthogonal"/>.
 
 # +
 import tensorflow as tf
@@ -28,6 +26,7 @@ from tqdm import tqdm
 
 import tensorflow_probability as tfp
 from sklearn.neighbors import KernelDensity
+
 
 # -
 
@@ -58,65 +57,7 @@ ax.set_ylim(Y.min() - Y_MARGIN, Y.max() + Y_MARGIN)
 ax.set_xlim(X.min() - X_MARGIN, X.max() + X_MARGIN)
 # -
 
-# ## Standard single layer Sparse Variational GP
-#
-# We first show that a single layer SVGP performs quite poorly on this dataset. In the following code block we define the kernel, inducing variable, GP layer and likelihood of the shallow GP:
-
-# +
-NUM_INDUCING = 20
-
-kernel = gpflow.kernels.SquaredExponential()
-inducing_variable = gpflow.inducing_variables.InducingPoints(
-    np.linspace(X.min(), X.max(), NUM_INDUCING).reshape(-1, 1)
-)
-gp_layer = gpflux.layers.GPLayer(kernel, inducing_variable, num_data=num_data, num_latent_gps=1)
-likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))
-
-
-# -
-
-# We can now encapsulate `gp_layer` in a GPflux DeepGP model:
-
-# +
-
-single_layer_dgp = gpflux.models.DeepGP([gp_layer], likelihood_layer)
-model = single_layer_dgp.as_training_model()
-model.compile(tf.optimizers.Adam(0.01))
-
-history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
-fig, ax = plt.subplots()
-ax.plot(history.history["loss"])
-ax.set_xlabel("Epoch")
-ax.set_ylabel("Loss")
-
-# +
-fig, ax = plt.subplots()
-num_data_test = 200
-X_test = np.linspace(X.min() - X_MARGIN, X.max() + X_MARGIN, num_data_test).reshape(-1, 1)
-model = single_layer_dgp.as_prediction_model()
-out = model(X_test)
-
-mu = out.y_mean.numpy().squeeze()
-var = out.y_var.numpy().squeeze()
-X_test = X_test.squeeze()
-
-for i in [1, 2]:
-    lower = mu - i * np.sqrt(var)
-    upper = mu + i * np.sqrt(var)
-    ax.fill_between(X_test, lower, upper, color="C1", alpha=0.3)
-
-ax.set_ylim(Y.min() - Y_MARGIN, Y.max() + Y_MARGIN)
-ax.set_xlim(X.min() - X_MARGIN, X.max() + X_MARGIN)
-ax.plot(X, Y, "kx", alpha=0.5)
-ax.plot(X_test, mu, "C1")
-ax.set_xlabel("time")
-ax.set_ylabel("acc")
-
-# -
-
-# The errorbars of the single layer model are not good: we observe an overestimation of the error bars on the left and right.
-
-# ## Deep Gaussian process with latent variables
+# ## Orthogonal Deep Gaussian process
 #
 # To tackle the problem we suggest a Deep Gaussian process with a latent variable in the first layer. The latent variable will be able to capture the
 # heteroscedasticity, while the two-layered deep GP is able to model the sharp transitions.

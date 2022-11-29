@@ -105,7 +105,7 @@ def Cvv_fallback_shared(
                 kernel.kernel,
                 L_Kuu=l_kuu,
             )
-            for k, l_kuu in zip(kernel.kernels, tf.unstack(L_Kuu, axis = 0))
+            for k, l_kuu in zip(kernel.kernels, tf.unstack(L_Kuu, axis=0))
         ],
         axis=0,
     )
@@ -140,7 +140,7 @@ def Kuu_fallback_separate_shared(
             for ind_var_u, ind_var_v, l_kuu in zip(
                 inducing_variable_u.inducing_variable_list,
                 inducing_variable_v.inducing_variable_list,
-                tf.unstack(L_Kuu, axis = 0)
+                tf.unstack(L_Kuu, axis=0),
             )
         ],
         axis=0,
@@ -182,11 +182,11 @@ def Kuu_fallback_separate(
 
     lista = []
     for ind_var_u, ind_var_v, l_kuu, k in zip(
-                inducing_variable_u.inducing_variable_list,
-                inducing_variable_v.inducing_variable_list,
-                tf.unstack(L_Kuu, axis = 0),
-                kernel.kernels,
-        ):
+        inducing_variable_u.inducing_variable_list,
+        inducing_variable_v.inducing_variable_list,
+        tf.unstack(L_Kuu, axis=0),
+        kernel.kernels,
+    ):
 
         lista.append(Cvv(ind_var_u, ind_var_v, k, L_Kuu=l_kuu))
 
