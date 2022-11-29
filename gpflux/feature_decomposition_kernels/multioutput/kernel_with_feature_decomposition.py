@@ -38,9 +38,11 @@ from gpflow.kernels import SquaredExponential
 
 NoneType = type(None)
 
-
+#TODO -- this needs to be a subclass of ApproximateKernel and maybe MultiOutputKernel as well
+#NOTE -- I think the MultiOutputKernel needs to be here for the dispatcher in the covariances
 class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
     r"""
+    #TODO -- update documentation to suit multioutput case
     This class approximates a kernel by the finite feature decomposition:
 
     .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
@@ -134,7 +136,7 @@ class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedI
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True,  # NOTE -- otherwise will throw errors
+        full_cov: bool = True,  # NOTE -- otherwise will throw errors, isn't this problematic though?
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -213,12 +215,14 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
             ``feature_functions(X)`` returns a tensor with the shape ``[P, N, L]``.
         :param feature_coefficients: A tensor with the shape ``[P, L, 1]`` with coefficients
             associated with the features, :math:`\lambda_i`.
+        #TODO -- add output_dim
         """
 
         if kernel is None:
             # NOTE -- this is a subclass of gpflow.kernels.SharedIndependent
             # (needed to be used with dispatchers from gpflow.covariances)
-            # so it needs to be initialized somehow. Not sure if efficient
+            # so it needs to be initialized somehow. 
+            # TODO -- Not sure if most efficient way
             _dummy_kernel = SquaredExponential()
             super().__init__(_dummy_kernel, output_dim)
             self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)
@@ -267,6 +271,7 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
         return self._kernel.K_diag(X, full_output_cov)
 
 
+#NOTE -- this is the same as the Shared case above
 class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SeparateIndependent):
 
     """
@@ -282,7 +287,7 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True,  # NOTE -- otherwise will throw errors
+        full_cov: bool = True,  # NOTE -- otherwise will throw errors, again this might be problematic here
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -297,6 +302,7 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         return self.K(X, X2, full_output_cov=full_output_cov)
 
 
+#NOTE -- this is the same as the Shared case above
 class SeparateMultiOutputKernelWithFeatureDecomposition(
     SeparateMultiOutputKernelWithFeatureDecompositionBase
 ):
@@ -367,6 +373,7 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(
             # NOTE -- this is a subclass of gpflow.kernels.SeparateIndependent
             # (needed to be used with dispatchers from gpflow.covariances)
             # so it needs to be initialized somehow. Not sure if efficient
+            #TODO -- this is dodgy, needs smarter solution
             _dummy_kernels = [SquaredExponential() for _ in range(output_dim)]
             super().__init__(_dummy_kernels)
             self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)
