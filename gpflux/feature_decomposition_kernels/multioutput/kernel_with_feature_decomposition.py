@@ -38,12 +38,14 @@ from gpflow.kernels import SquaredExponential
 
 NoneType = type(None)
 
+
 # TODO -- this needs to be a subclass of ApproximateKernel and maybe MultioutputKernel as well
 # NOTE -- I think the MultiOutputKernel needs to be here for the dispatcher in the covariances
 class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
     r"""
     #TODO -- update documentation to suit multioutput case
-    TODO: unless # [P, N, L] etc. are used in static analysis, we can probably unify this with _ApproximateKernel
+    TODO: unless # [P, N, L] etc. are used in static analysis, we can probably unify this with
+    _ApproximateKernel
     This class approximates a kernel by the finite feature decomposition:
 
     .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
@@ -148,7 +150,7 @@ class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedI
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True,  # NOTE -- otherwise will throw errors, isn't this problematic though?
+        full_cov: bool = True,  # NOTE -- otherwise will throw errors (possibly posterior related)
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:
@@ -299,7 +301,7 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         X: TensorType,
         X2: Optional[TensorType] = None,
         *,
-        full_cov: bool = True,  # NOTE -- otherwise will throw errors, again this might be problematic here
+        full_cov: bool = True,  # NOTE -- otherwise will throw errors, might be problematic here
         full_output_cov: bool = True,
         presliced: bool = False,
     ) -> tf.Tensor:

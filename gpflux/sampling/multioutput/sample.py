@@ -72,7 +72,8 @@ def _efficient_multi_output_sample_matheron_rule(
     """
 
     # TODO -- this makes sense just in the case of SeparateMultiOutputKernelWithFeatureDecomposition
-    # NOTE -- in the case of SharedMdultiOutputKernelWithFeatureDecomposition we can just rely on gpflux.sampliung.sample._efficient_sample_matheron_rule
+    # NOTE -- in the case of SharedMdultiOutputKernelWithFeatureDecomposition we can just rely on
+    # gpflux.sampliung.sample._efficient_sample_matheron_rule
 
     # Reshape kernel.feature_coefficients
     _feature_coefficients = tf.transpose(kernel.feature_coefficients[..., 0])  # [L,P]

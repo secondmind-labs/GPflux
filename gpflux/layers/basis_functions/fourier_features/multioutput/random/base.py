@@ -44,6 +44,7 @@ RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.Matern52,
 )
 
+
 # TODO -- import this from the univariate folder
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
