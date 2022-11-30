@@ -38,7 +38,7 @@ from gpflow.kernels import SquaredExponential
 
 NoneType = type(None)
 
-#TODO -- this needs to be a subclass of ApproximateKernel and maybe MultiOutputKernel as well
+#TODO -- this needs to be a subclass of ApproximateKernel and maybe MultioutputKernel as well
 #NOTE -- I think the MultiOutputKernel needs to be here for the dispatcher in the covariances
 class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
     r"""
@@ -49,6 +49,10 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
 
     where :math:`\lambda_i` and :math:`\phi_i(\cdot)` are the coefficients
     and features, respectively.
+    
+    This class deals with the case of multiple kernels producing multiple outputs.
+    They are computed together here for improved efficiency dervied from vectorizing the whole
+    lot together before putting it through tensorflow (improve this comment)
 
     """
 
@@ -67,11 +71,13 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
         self._feature_functions = feature_functions  # [P, N, L]
         self._feature_coefficients = feature_coefficients  # [P, L, 1]
 
+    # Concretises ABC methods from MultioutputKernel
     @property
     def num_latent_gps(self) -> int:
         # In this case number of latent GPs (L) == output_dim (P)
         return tf.shape(self._feature_coefficients)[0]
 
+    # Concretises ABC methods from MultioutputKernel
     @property
     def latent_kernels(self) -> Any:
         """In this scenario we do not have access to the underlying kernels,
@@ -121,6 +127,11 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
         return r
 
 
+# The difference between shared and separate case is the *kernel*.
+# Shared: kernel is SharedIndependent
+# Separate: kernel is SeparateIndependent.
+# Use static typing (?)
+# TODO: DRY
 class SharedMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SharedIndependent):
 
     """
