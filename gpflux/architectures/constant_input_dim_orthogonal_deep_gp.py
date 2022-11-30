@@ -184,4 +184,4 @@ def build_constant_input_dim_orth_deep_gp(
 
     likelihood = Gaussian(config.likelihood_noise_variance)
 
-    return DeepGP(gp_layers, LikelihoodLayer(likelihood))
+    return OrthDeepGP(gp_layers, LikelihoodLayer(likelihood))
