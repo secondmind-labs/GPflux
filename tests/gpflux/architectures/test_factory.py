@@ -14,17 +14,12 @@
 # limitations under the License.
 #
 from typing import Any, Type
-import pytest
 
 import numpy as np
+import pytest
 import tensorflow_probability as tfp
-from gpflow.kernels import (
-    Matern12,
-    Matern32,
-    Matern52,
-    SquaredExponential,
-    Stationary,
-)
+
+from gpflow.kernels import Matern12, Matern32, Matern52, SquaredExponential, Stationary
 
 from gpflux.architectures.config import (
     GaussianLikelihoodConfig,
@@ -44,7 +39,7 @@ from gpflux.architectures.factory import build_constant_input_dim_architecture, 
         Matern12,
         Matern32,
         Matern52,
-    ]
+    ],
 )
 def _kernel_type(request: Any) -> Type[Stationary]:
     return request.param
@@ -98,7 +93,7 @@ MODEL_CONFIGS = [
             whiten=True,
             num_inducing=7,
         ),
-        marks=pytest.mark.xfail
+        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ModelHyperParametersConfig(
@@ -111,7 +106,7 @@ MODEL_CONFIGS = [
             whiten=True,
             num_inducing=7,
         ),
-        marks=pytest.mark.xfail
+        marks=pytest.mark.xfail,
     ),
     OrthogonalModelHyperparametersConfig(
         num_layers=3,
@@ -141,7 +136,7 @@ MODEL_CONFIGS = [
             num_inducing_u=7,
             num_inducing_v=7,
         ),
-        marks=pytest.mark.xfail
+        marks=pytest.mark.xfail,
     ),
     pytest.param(
         OrthogonalModelHyperparametersConfig(
@@ -155,8 +150,8 @@ MODEL_CONFIGS = [
             num_inducing_u=7,
             num_inducing_v=7,
         ),
-        marks=pytest.mark.xfail
-    )
+        marks=pytest.mark.xfail,
+    ),
 ]
 
 
@@ -173,7 +168,7 @@ def test_build_constant_input_dim_architecture__raises_on_incorrect_dtype(
 
 @pytest.mark.parametrize("model_config", MODEL_CONFIGS)
 def test_build_constant_input_dim_architecture__does_not_smoke(
-    model_config: HyperParametersConfig
+    model_config: HyperParametersConfig,
 ) -> None:
     X = np.random.randn(13, 2)
     Y = np.random.randn(13, 1)

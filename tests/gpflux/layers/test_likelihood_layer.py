@@ -18,7 +18,14 @@ import pytest
 import tensorflow as tf
 
 from gpflow.kernels import Matern52
-from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson, StudentT, HeteroskedasticTFPConditional
+from gpflow.likelihoods import (
+    Bernoulli,
+    Beta,
+    Gaussian,
+    HeteroskedasticTFPConditional,
+    Poisson,
+    StudentT,
+)
 from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel

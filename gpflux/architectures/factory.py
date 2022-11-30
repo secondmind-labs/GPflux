@@ -50,7 +50,7 @@ def build_kernel(input_dim: int, is_last_layer: bool, kernel: Type[Stationary]) 
     :param is_last_layer: Whether the kernel is part of the last layer in the Deep GP.
     :param kernel: the :class:`~gpflow.kernels.Stationary` type of the kernel
     """
-    assert input_dim > 0, 'Cannot have non positive input dimension'
+    assert input_dim > 0, "Cannot have non positive input dimension"
 
     variance = 1e-6 if not is_last_layer else 1.0
     lengthscales = [1.0] * input_dim
