@@ -27,8 +27,6 @@ from gpflow.utilities import Dispatcher, to_default_float
 prior_kl = Dispatcher("prior_kl")
 
 
-# TODO -- need to add a separate dispatch here where we treat the un-whitened case for V,
-#  since we actually need the covariance dispatch for Cvv
 @prior_kl.register(InducingVariables, Kernel, object, object)
 def _(
     inducing_variable: InducingVariables,
