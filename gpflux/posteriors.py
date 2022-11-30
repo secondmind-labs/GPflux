@@ -290,7 +290,9 @@ class IndependentOrthogonalPosterior(BaseOrthogonalPosterior):
 
         elif isinstance(self.kernel, kernels.MultioutputKernel):
             # effectively, SharedIndependent path
-            Cff, L_Kmm = self._get_single_Cff(Xnew, self.kernel.kernel, self.inducing_variable_u.inducing_variable, full_cov)
+            Cff, L_Kmm = self._get_single_Cff(
+                Xnew, self.kernel.kernel, self.inducing_variable_u.inducing_variable, full_cov
+            )
 
         else:
             # standard ("single-output") kernels
@@ -431,7 +433,7 @@ class IndependentOrthogonalPosteriorMultiOutput(IndependentOrthogonalPosterior):
                 q_sqrt_u=self.q_sqrt_u,
                 q_sqrt_v=self.q_sqrt_v,
                 white=self.whiten,
-                Lms= L_Kuus
+                Lms=L_Kuus,
             )
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)

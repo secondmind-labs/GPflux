@@ -3,10 +3,10 @@ from __future__ import division, print_function
 
 from distutils.command.build import build
 
-#from subprocess import HIGH_PRIORITY_CLASS
+# from subprocess import HIGH_PRIORITY_CLASS
 import matplotlib as mpl
 
-mpl.use('Agg')
+mpl.use("Agg")
 import argparse
 import os
 import random
@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-DTYPE=tf.float32
+DTYPE = tf.float32
 import itertools
 
 import pandas as pd
@@ -55,11 +55,11 @@ from .plotting_functions import get_regression_detailed_plot, plot_to_image
 
 def produce_regression_plots(model, num_epoch, start_point, end_point, dataset_name, file_name):
 
-    cmd = 'mkdir -p ./docs/figures/'+dataset_name+'/'
-    where_to_save = f'./docs/figures/'+dataset_name+'/'
+    cmd = "mkdir -p ./docs/figures/" + dataset_name + "/"
+    where_to_save = f"./docs/figures/" + dataset_name + "/"
     os.system(cmd)
 
-    input_space = np.linspace(start_point, end_point, 500).reshape((-1,1))
+    input_space = np.linspace(start_point, end_point, 500).reshape((-1, 1))
     input_space = input_space.astype(np.float64)
 
     # Get predictive mean and variance (both parametric/non-parametric)at hidden layers
@@ -72,54 +72,52 @@ def produce_regression_plots(model, num_epoch, start_point, end_point, dataset_n
 
     for nvm in range(100):
 
-        preds = model._evaluate_layer_wise_deep_gp(input_space)  
+        preds = model._evaluate_layer_wise_deep_gp(input_space)
 
         for current_layer in range(NUM_LAYERS):
             current_preds = preds[current_layer]
 
             f_mean = current_preds[0]
             f_var = current_preds[1]
-            
+
             f_mean_overall[current_layer].append(f_mean)
             f_var_overall[current_layer].append(f_var)
 
     for current_layer in range(NUM_LAYERS):
 
-        f_mean_overall[current_layer] = tf.concat(f_mean_overall[current_layer], axis = 1)
-        f_var_overall[current_layer] = tf.concat(f_var_overall[current_layer], axis = 1)
+        f_mean_overall[current_layer] = tf.concat(f_mean_overall[current_layer], axis=1)
+        f_var_overall[current_layer] = tf.concat(f_var_overall[current_layer], axis=1)
 
-        f_mean_overall[current_layer] = tf.reduce_mean(f_mean_overall[current_layer], axis = 1)
-        f_var_overall[current_layer] = tf.reduce_mean(f_var_overall[current_layer], axis = 1)
+        f_mean_overall[current_layer] = tf.reduce_mean(f_mean_overall[current_layer], axis=1)
+        f_var_overall[current_layer] = tf.reduce_mean(f_var_overall[current_layer], axis=1)
 
         f_mean_overall[current_layer] = f_mean_overall[current_layer].numpy()
         f_var_overall[current_layer] = f_var_overall[current_layer].numpy()
 
-    
     get_regression_detailed_plot(
-        num_layers = NUM_LAYERS,
-        X_training = x_training,
-        Y_training = y_training,
-        where_to_save = where_to_save,
-        mean = f_mean_overall,
-        var = f_var_overall, 
-        name_file =  file_name+f'_{num_epoch}.png',
-        x_margin = X_MARGIN,
-        y_margin = Y_MARGIN,
-        X_test = input_space
-        )
+        num_layers=NUM_LAYERS,
+        X_training=x_training,
+        Y_training=y_training,
+        where_to_save=where_to_save,
+        mean=f_mean_overall,
+        var=f_var_overall,
+        name_file=file_name + f"_{num_epoch}.png",
+        x_margin=X_MARGIN,
+        y_margin=Y_MARGIN,
+        X_test=input_space,
+    )
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     #####################################################
     ########### Get Motor data ##########################
     #####################################################
 
-
     def motorcycle_data():
         """ Return inputs and outputs for the motorcycle dataset. We normalise the outputs. """
         import pandas as pd
+
         df = pd.read_csv("./data/motor.csv", index_col=0)
         X, Y = df["times"].values.reshape(-1, 1), df["accel"].values.reshape(-1, 1)
         Y = (Y - Y.mean()) / Y.std()
@@ -129,7 +127,6 @@ if __name__ == '__main__':
     X_data, Y_data = motorcycle_data()
     num_data, d_xim = X_data.shape
 
-
     np.random.seed(7)
     lista = np.arange(X_data.shape[0])
     np.random.shuffle(lista)
@@ -137,12 +134,12 @@ if __name__ == '__main__':
     index_training = lista[:cutoff]
     index_testing = lista[cutoff:]
 
-    x_values_training_np = X_data[index_training,...]
-    y_values_training_np = Y_data[index_training,...]
-    
-    x_values_testing_np = X_data[index_testing,...]
-    y_values_testing_np = Y_data[index_testing,...]
-    
+    x_values_training_np = X_data[index_training, ...]
+    y_values_training_np = Y_data[index_training, ...]
+
+    x_values_testing_np = X_data[index_testing, ...]
+    y_values_testing_np = Y_data[index_testing, ...]
+
     x_training = x_values_training_np.reshape((-1, d_xim)).astype(np.float64)
     x_testing = x_values_testing_np.reshape((-1, d_xim)).astype(np.float64)
 
@@ -160,17 +157,24 @@ if __name__ == '__main__':
     Y_MARGIN = 0.1
     BATCH_SIZE = 32
     NUM_EPOCHS = 5000
-    DATASET_NAME = 'motor'
+    DATASET_NAME = "motor"
     INNER_LAYER_QSQRT_FACTOR = 1e-5
 
     ### TRAIN MODEL ###
 
-
     config = Config(
-        num_inducing_u=NUM_INDUCING, num_inducing_v=NUM_INDUCING, inner_layer_qsqrt_factor=INNER_LAYER_QSQRT_FACTOR, likelihood_noise_variance=1e-2, whiten=True, underlying_kernel=SquaredExponential, likelihood = "Gaussian"
+        num_inducing_u=NUM_INDUCING,
+        num_inducing_v=NUM_INDUCING,
+        inner_layer_qsqrt_factor=INNER_LAYER_QSQRT_FACTOR,
+        likelihood_noise_variance=1e-2,
+        whiten=True,
+        underlying_kernel=SquaredExponential,
+        likelihood="Gaussian",
     )
 
-    deep_gp: OrthDeepGP = build_constant_input_dim_het_orth_deep_gp(x_training, num_layers = NUM_LAYERS, config = config)
+    deep_gp: OrthDeepGP = build_constant_input_dim_het_orth_deep_gp(
+        x_training, num_layers=NUM_LAYERS, config=config
+    )
 
     data = (x_training, y_training)
 
@@ -178,8 +182,8 @@ if __name__ == '__main__':
 
     NUM_BATCHES_PER_EPOCH = int(x_training.shape[0] / BATCH_SIZE)
 
-    if x_training.shape[0] % BATCH_SIZE !=0:
-        NUM_BATCHES_PER_EPOCH+=1
+    if x_training.shape[0] % BATCH_SIZE != 0:
+        NUM_BATCHES_PER_EPOCH += 1
 
     LOGGING_EPOCH_FREQ = 100
     PLOTTING_EPOCH_FREQ = 50
@@ -190,66 +194,79 @@ if __name__ == '__main__':
 
     filename = f"OrthDGP(layers:{len(deep_gp.f_layers)},units:{deep_gp.f_layers[0].num_latent_gps},lik.:HetGaussian)"
 
-    SAVE_LOGS = './logs/'+DATASET_NAME+'/'+filename
-    cmd=f'mkdir -p {SAVE_LOGS}'
+    SAVE_LOGS = "./logs/" + DATASET_NAME + "/" + filename
+    cmd = f"mkdir -p {SAVE_LOGS}"
     os.system(cmd)
 
-    SAVE_CKPTS = './ckpts/'+DATASET_NAME+'/'+filename
+    SAVE_CKPTS = "./ckpts/" + DATASET_NAME + "/" + filename
     os.system(cmd)
-    cmd=f'mkdir -p {SAVE_CKPTS}'
+    cmd = f"mkdir -p {SAVE_CKPTS}"
     os.system(cmd)
 
     # Custom callback
-    tb_callback = tf.keras.callbacks.TensorBoard(SAVE_LOGS, histogram_freq = 1, update_freq="epoch")
+    tb_callback = tf.keras.callbacks.TensorBoard(SAVE_LOGS, histogram_freq=1, update_freq="epoch")
 
     # Default GPflux callback
-    gpflux_tensorboard_callback = gpflux.callbacks.TensorBoard(log_dir = SAVE_LOGS, keywords_to_monitor="*")
+    gpflux_tensorboard_callback = gpflux.callbacks.TensorBoard(
+        log_dir=SAVE_LOGS, keywords_to_monitor="*"
+    )
 
     # Image callback # Define the per-epoch callback.
     def get_the_image_callback(epoch, logs):
 
         # Log the confusion matrix as an image summary.
-        figure = produce_regression_plots(deep_gp, 
-            epoch, x_training.min() - X_MARGIN, x_training.max() + X_MARGIN, DATASET_NAME, filename)
+        figure = produce_regression_plots(
+            deep_gp,
+            epoch,
+            x_training.min() - X_MARGIN,
+            x_training.max() + X_MARGIN,
+            DATASET_NAME,
+            filename,
+        )
         cm_image = plot_to_image(figure)
 
         # Log the confusion matrix as an image summary.
         with file_writer_cm.as_default():
             tf.summary.image("Detailed Predictive Plots", cm_image, step=epoch)
 
-
     img_callback = keras.callbacks.LambdaCallback(on_epoch_end=get_the_image_callback)
-    file_writer_cm = tf.summary.create_file_writer(SAVE_LOGS + '/cm')
+    file_writer_cm = tf.summary.create_file_writer(SAVE_LOGS + "/cm")
 
     callbacks = [
         # Create callback that reduces the learning rate every time the ELBO plateaus
-        tf.keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0),
-        
+        tf.keras.callbacks.ReduceLROnPlateau(
+            "loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0
+        ),
         # Create a callback that writes logs (e.g., hyperparameters, KLs, etc.) to TensorBoard
-        #gpflux_tensorboard_callback,
-        
+        # gpflux_tensorboard_callback,
         # Create a callback that saves the model's weights
-        tf.keras.callbacks.ModelCheckpoint(filepath='./ckpts/'+DATASET_NAME+'/'+filename, save_weights_only=True, verbose=0),
-        
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath="./ckpts/" + DATASET_NAME + "/" + filename, save_weights_only=True, verbose=0
+        ),
         # This is my own custom callback
         tb_callback,
-        img_callback
+        img_callback,
     ]
 
     epoch_id = 0
     for epoch_iterator in range(1):
 
-        history = model.fit({"inputs": x_training, "targets": y_training}, 
-            batch_size = BATCH_SIZE, 
-            epochs=int(EPOCH_MULTIPLIER), 
-            callbacks= callbacks,
-            verbose=1)
-        epoch_id+= EPOCH_MULTIPLIER
+        history = model.fit(
+            {"inputs": x_training, "targets": y_training},
+            batch_size=BATCH_SIZE,
+            epochs=int(EPOCH_MULTIPLIER),
+            callbacks=callbacks,
+            verbose=1,
+        )
+        epoch_id += EPOCH_MULTIPLIER
 
         ########### Get results on testing set and produce plots #########################
         if epoch_id % PLOTTING_EPOCH_FREQ == 0:
-            produce_regression_plots(deep_gp, epoch_id, x_training.min() - X_MARGIN, x_training.max() + X_MARGIN, DATASET_NAME, filename)
-
-
-
-
+            produce_regression_plots(
+                deep_gp,
+                epoch_id,
+                x_training.min() - X_MARGIN,
+                x_training.max() + X_MARGIN,
+                DATASET_NAME,
+                filename,
+            )

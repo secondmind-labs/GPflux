@@ -96,7 +96,6 @@ def base_orthogonal_conditional_with_lm(
     M = tf.shape(f_u)[-2]
     V = tf.shape(f_v)[-2]
 
-
     # get the leading dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
     K = tf.rank(Kmn)
@@ -314,7 +313,7 @@ def base_heteroskedastic_orthogonal_conditional_with_lm(
         "representation of Kmn. See the docs for the actual expected "
         "shape.]",
     )
-    
+
     leading_dims = tf.shape(Kmn)[:-2]
 
     ###################################################################################
