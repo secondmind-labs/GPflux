@@ -38,8 +38,8 @@ from gpflow.kernels import SquaredExponential
 
 NoneType = type(None)
 
-#TODO -- this needs to be a subclass of ApproximateKernel and maybe MultioutputKernel as well
-#NOTE -- I think the MultiOutputKernel needs to be here for the dispatcher in the covariances
+# TODO -- this needs to be a subclass of ApproximateKernel and maybe MultioutputKernel as well
+# NOTE -- I think the MultiOutputKernel needs to be here for the dispatcher in the covariances
 class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
     r"""
     #TODO -- update documentation to suit multioutput case
@@ -50,7 +50,7 @@ class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
 
     where :math:`\lambda_i` and :math:`\phi_i(\cdot)` are the coefficients
     and features, respectively.
-    
+
     This class deals with the case of multiple kernels producing multiple outputs.
     They are computed together here for improved efficiency dervied from vectorizing the whole
     lot together before putting it through tensorflow (improve this comment)
@@ -233,7 +233,7 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
         if kernel is None:
             # NOTE -- this is a subclass of gpflow.kernels.SharedIndependent
             # (needed to be used with dispatchers from gpflow.covariances)
-            # so it needs to be initialized somehow. 
+            # so it needs to be initialized somehow.
             # TODO -- Not sure if most efficient way
             _dummy_kernel = SquaredExponential()
             super().__init__(_dummy_kernel, output_dim)
@@ -283,7 +283,7 @@ class SharedMultiOutputKernelWithFeatureDecomposition(
         return self._kernel.K_diag(X, full_output_cov)
 
 
-#NOTE -- this is the same as the Shared case above
+# NOTE -- this is the same as the Shared case above
 class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.SeparateIndependent):
 
     """
@@ -314,7 +314,7 @@ class SeparateMultiOutputKernelWithFeatureDecompositionBase(gpflow.kernels.Separ
         return self.K(X, X2, full_output_cov=full_output_cov)
 
 
-#NOTE -- this is the same as the Shared case above
+# NOTE -- this is the same as the Shared case above
 class SeparateMultiOutputKernelWithFeatureDecomposition(
     SeparateMultiOutputKernelWithFeatureDecompositionBase
 ):
@@ -385,7 +385,7 @@ class SeparateMultiOutputKernelWithFeatureDecomposition(
             # NOTE -- this is a subclass of gpflow.kernels.SeparateIndependent
             # (needed to be used with dispatchers from gpflow.covariances)
             # so it needs to be initialized somehow. Not sure if efficient
-            #TODO -- this is dodgy, needs smarter solution
+            # TODO -- this is dodgy, needs smarter solution
             _dummy_kernels = [SquaredExponential() for _ in range(output_dim)]
             super().__init__(_dummy_kernels)
             self._kernel = _MultiOutputApproximateKernel(feature_functions, feature_coefficients)

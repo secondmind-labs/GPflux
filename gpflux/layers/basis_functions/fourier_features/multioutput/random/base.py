@@ -44,7 +44,7 @@ RFF_SUPPORTED_KERNELS: Tuple[Type[gpflow.kernels.Stationary], ...] = (
     gpflow.kernels.Matern52,
 )
 
-#TODO -- import this from the univariate folder
+# TODO -- import this from the univariate folder
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
     Draw samples from a (central) Student's t-distribution using the following:
@@ -88,7 +88,7 @@ class MultiOutputRandomFourierFeaturesBase(MultiOutputFourierFeaturesBase):
             raise ValueError("kernel specified is not supported.")
         super(MultiOutputRandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     def build(self, input_shape: ShapeType) -> None:
         """
         Creates the variables of the layer.
@@ -137,7 +137,7 @@ class MultiOutputRandomFourierFeaturesBase(MultiOutputFourierFeaturesBase):
         else:
             raise ValueError("kernel is not supported.")
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     @staticmethod
     def rff_constant(variance: TensorType, output_dim: int) -> tf.Tensor:
         """
@@ -181,7 +181,7 @@ class MultiOutputRandomFourierFeatures(MultiOutputRandomFourierFeaturesBase):
     from phase-shifted cosines :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
     """
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
         return 2 * self.n_components
 
@@ -267,15 +267,15 @@ class MultiOutputRandomFourierFeaturesCosine(MultiOutputRandomFourierFeaturesBas
             initializer=self._bias_init,
         )
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
-    
-    #NOTE -- same as univariate case
+
+    # NOTE -- same as univariate case
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
         return self.n_components
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         """
         Compute basis functions.

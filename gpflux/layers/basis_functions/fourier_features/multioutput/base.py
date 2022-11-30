@@ -36,7 +36,7 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
             quadrature nodes, etc.) used to numerically approximate the kernel.
         """
         super(MultiOutputFourierFeaturesBase, self).__init__(**kwargs)
-        #NOTE -- same as univariate case from here till the end of __init__
+        # NOTE -- same as univariate case from here till the end of __init__
         self.kernel = kernel
         self.n_components = n_components
         if kwargs.get("input_dim", None):
@@ -108,7 +108,7 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         output_dim = self._compute_output_dim(input_shape)
         return tensor_shape[:-1].concatenate(output_dim)
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     def get_config(self) -> Mapping:
         """
         Returns the config of the layer.
@@ -126,12 +126,12 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         return config
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     @abstractmethod
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
         pass
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     @abstractmethod
     def _compute_constant(self) -> tf.Tensor:
         """
@@ -139,7 +139,7 @@ class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         pass
 
-    #NOTE -- same as univariate case
+    # NOTE -- same as univariate case
     @abstractmethod
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         """
