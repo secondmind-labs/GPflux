@@ -18,10 +18,13 @@ from typing import Any
 import pytest
 import tensorflow_probability as tfp
 
+from gpflow.kernels import SquaredExponential
+
 from gpflux.architectures.config import (
     GaussianLikelihoodConfig,
     HeteroSkedasticLikelihoodConfig,
     LikelihoodConfig,
+    ModelHyperParametersConfig,
     StudenttLikelihoodConfig,
 )
 
@@ -44,3 +47,25 @@ def test_likelihood_create(likelihood_config: LikelihoodConfig) -> None:
         likelihood_config.create()
     except:
         pytest.fail(f"Could not create likelihood with config: {type(likelihood_config)}")
+
+
+def test_hyperparameters_model_config__raises_with_invalid_parameters() -> None:
+    with pytest.raises(AssertionError):
+        _ = ModelHyperParametersConfig(
+            num_layers=0,
+            kernel=SquaredExponential,
+            likelihood=GaussianLikelihoodConfig(noise_variance=1e-2),
+            inner_layer_qsqrt_factor=1e-3,
+            whiten=True,
+            num_inducing=7,
+        )
+
+    with pytest.raises(AssertionError):
+        _ = ModelHyperParametersConfig(
+            num_layers=3,
+            kernel=SquaredExponential,
+            likelihood=GaussianLikelihoodConfig(noise_variance=1e-2),
+            inner_layer_qsqrt_factor=1e-3,
+            whiten=False,
+            num_inducing=7,
+        )

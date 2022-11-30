@@ -72,7 +72,7 @@ class HeteroSkedasticLikelihoodConfig(LikelihoodConfig):
 
 
 @dataclass
-class HyperParametersConfig:
+class HyperParametersConfig(ABC):
     """Configuration of the hyperparameters of a model"""
 
     num_layers: int
@@ -97,6 +97,10 @@ class HyperParametersConfig:
     If `True`, :math:``p(u) = N(0, I)``, otherwise :math:``p(u) = N(0, K_{uu})``.
     .. seealso:: :attr:`gpflux.layers.GPLayer.whiten`
     """
+
+    def __post_init__(self):
+        assert self.num_layers > 0, "Cannot have non-positive number of layers"
+        assert self.whiten, "Non-whitened case not yet supported"
 
 
 @dataclass
