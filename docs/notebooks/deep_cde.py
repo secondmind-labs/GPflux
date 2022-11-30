@@ -37,7 +37,7 @@ from sklearn.neighbors import KernelDensity
 
 
 def motorcycle_data():
-    """ Return inputs and outputs for the motorcycle dataset. We normalise the outputs. """
+    """Return inputs and outputs for the motorcycle dataset. We normalise the outputs."""
     import pandas as pd
 
     df = pd.read_csv("./data/motor.csv", index_col=0)
@@ -193,7 +193,11 @@ gpflow.utilities.print_summary(dgp, fmt="notebook")
 model = dgp.as_training_model()
 model.compile(tf.optimizers.Adam(0.005))
 history = model.fit(
-    {"inputs": X, "targets": Y}, epochs=int(20e3), verbose=0, batch_size=num_data, shuffle=False
+    {"inputs": X, "targets": Y},
+    epochs=int(20e3),
+    verbose=0,
+    batch_size=num_data,
+    shuffle=False,
 )
 
 gpflow.utilities.print_summary(dgp, fmt="notebook")

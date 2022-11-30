@@ -112,7 +112,7 @@ if __name__ == "__main__":
     #####################################################
 
     def motorcycle_data():
-        """ Return inputs and outputs for the motorcycle dataset. We normalise the outputs. """
+        """Return inputs and outputs for the motorcycle dataset. We normalise the outputs."""
         import pandas as pd
 
         df = pd.read_csv("./data/motor.csv", index_col=0)
