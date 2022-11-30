@@ -43,6 +43,7 @@ NoneType = type(None)
 class _MultiOutputApproximateKernel(gpflow.kernels.MultioutputKernel):
     r"""
     #TODO -- update documentation to suit multioutput case
+    TODO: unless # [P, N, L] etc. are used in static analysis, we can probably unify this with _ApproximateKernel
     This class approximates a kernel by the finite feature decomposition:
 
     .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
