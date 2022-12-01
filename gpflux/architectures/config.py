@@ -24,7 +24,6 @@ import gpflow.likelihoods
 from gpflow.kernels import Stationary
 
 
-@dataclass
 class LikelihoodConfig(ABC):
     """Config for the model likelihood"""
 
@@ -98,7 +97,7 @@ class HyperParametersConfig(ABC):
     .. seealso:: :attr:`gpflux.layers.GPLayer.whiten`
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         assert self.num_layers > 0, "Cannot have non-positive number of layers"
         assert self.whiten, "Non-whitened case not yet supported"
 

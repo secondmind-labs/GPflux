@@ -62,7 +62,7 @@ def build_kernel(input_dim: int, is_last_layer: bool, kernel: Type[Stationary]) 
 def build_constant_input_dim_architecture(
     model_config: HyperParametersConfig, X: np.ndarray
 ) -> DeepGP:
-    """
+    r"""
     Build a Deep GP consisting of a number of :class:`GPLayer`\ s.
     All the hidden layers have the same input dimension as the data, that is, ``X.shape[1]``.
 
