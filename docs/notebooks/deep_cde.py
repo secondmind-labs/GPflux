@@ -35,9 +35,11 @@ from sklearn.neighbors import KernelDensity
 #
 # The data comes from a motorcycle accident simulation [1] and shows some interesting behaviour. In particular the heteroscedastic nature of the noise.
 
+
 def motorcycle_data():
-    """ Return inputs and outputs for the motorcycle dataset. We normalise the outputs. """
+    """Return inputs and outputs for the motorcycle dataset. We normalise the outputs."""
     import pandas as pd
+
     df = pd.read_csv("./data/motor.csv", index_col=0)
     X, Y = df["times"].values.reshape(-1, 1), df["accel"].values.reshape(-1, 1)
     Y = (Y - Y.mean()) / Y.std()
@@ -51,9 +53,9 @@ num_data, d_xim = X.shape
 
 X_MARGIN, Y_MARGIN = 0.1, 0.5
 fig, ax = plt.subplots()
-ax.scatter(X, Y, marker='x', color='k');
-ax.set_ylim(Y.min() - Y_MARGIN, Y.max() + Y_MARGIN);
-ax.set_xlim(X.min() - X_MARGIN, X.max() + X_MARGIN);
+ax.scatter(X, Y, marker="x", color="k")
+ax.set_ylim(Y.min() - Y_MARGIN, Y.max() + Y_MARGIN)
+ax.set_xlim(X.min() - X_MARGIN, X.max() + X_MARGIN)
 # -
 
 # ## Standard single layer Sparse Variational GP
@@ -67,9 +69,7 @@ kernel = gpflow.kernels.SquaredExponential()
 inducing_variable = gpflow.inducing_variables.InducingPoints(
     np.linspace(X.min(), X.max(), NUM_INDUCING).reshape(-1, 1)
 )
-gp_layer = gpflux.layers.GPLayer(
-    kernel, inducing_variable, num_data=num_data, num_latent_gps=1
-)
+gp_layer = gpflux.layers.GPLayer(kernel, inducing_variable, num_data=num_data, num_latent_gps=1)
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))
 
 
@@ -86,8 +86,8 @@ model.compile(tf.optimizers.Adam(0.01))
 history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
 fig, ax = plt.subplots()
 ax.plot(history.history["loss"])
-ax.set_xlabel('Epoch')
-ax.set_ylabel('Loss')
+ax.set_xlabel("Epoch")
+ax.set_ylabel("Loss")
 
 # +
 fig, ax = plt.subplots()
@@ -109,19 +109,19 @@ ax.set_ylim(Y.min() - Y_MARGIN, Y.max() + Y_MARGIN)
 ax.set_xlim(X.min() - X_MARGIN, X.max() + X_MARGIN)
 ax.plot(X, Y, "kx", alpha=0.5)
 ax.plot(X_test, mu, "C1")
-ax.set_xlabel('time')
-ax.set_ylabel('acc')
+ax.set_xlabel("time")
+ax.set_ylabel("acc")
 
 # -
 
-# The errorbars of the single layer model are not good: we observe an overestimation of the error bars on the left and right. 
+# The errorbars of the single layer model are not good: we observe an overestimation of the error bars on the left and right.
 
 # ## Deep Gaussian process with latent variables
 #
-# To tackle the problem we suggest a Deep Gaussian process with a latent variable in the first layer. The latent variable will be able to capture the 
-# heteroscedasticity, while the two-layered deep GP is able to model the sharp transitions. 
+# To tackle the problem we suggest a Deep Gaussian process with a latent variable in the first layer. The latent variable will be able to capture the
+# heteroscedasticity, while the two-layered deep GP is able to model the sharp transitions.
 #
-# Note that a GPflux Deep Gaussian process by itself (i.e. without the latent variable layer) is not able to capture the heteroscedasticity of this dataset. This is a consequence of the noise-less hidden layers and the doubly-stochastic variational inference training procedure, as forumated in <cite data-cite="salimbeni2017doubly">. On the contrary, the original deep GP suggested by Damianou and Lawrence <cite data-cite="damianou2013deep">, using a different variational approximation for training, can model this dataset without a latent variable, as shown in [this blogpost](https://inverseprobability.com/talks/notes/deep-gps.html). 
+# Note that a GPflux Deep Gaussian process by itself (i.e. without the latent variable layer) is not able to capture the heteroscedasticity of this dataset. This is a consequence of the noise-less hidden layers and the doubly-stochastic variational inference training procedure, as forumated in <cite data-cite="salimbeni2017doubly">. On the contrary, the original deep GP suggested by Damianou and Lawrence <cite data-cite="damianou2013deep">, using a different variational approximation for training, can model this dataset without a latent variable, as shown in [this blogpost](https://inverseprobability.com/talks/notes/deep-gps.html).
 
 # ### Latent Variable Layer
 #
@@ -140,14 +140,14 @@ lv = gpflux.layers.LatentVariableLayer(prior, encoder)
 
 # +
 
-kernel = gpflow.kernels.SquaredExponential(lengthscales=[.05, .2], variance=1.)
+kernel = gpflow.kernels.SquaredExponential(lengthscales=[0.05, 0.2], variance=1.0)
 inducing_variable = gpflow.inducing_variables.InducingPoints(
     np.concatenate(
         [
             np.linspace(X.min(), X.max(), NUM_INDUCING).reshape(-1, 1),
             np.random.randn(NUM_INDUCING, 1),
         ],
-        axis=1
+        axis=1,
     )
 )
 gp_layer = gpflux.layers.GPLayer(
@@ -176,7 +176,7 @@ gp_layer2 = gpflux.layers.GPLayer(
     num_latent_gps=1,
     mean_function=gpflow.mean_functions.Identity(),
 )
-gp_layer2.q_sqrt.assign(gp_layer.q_sqrt * 1e-5);
+gp_layer2.q_sqrt.assign(gp_layer.q_sqrt * 1e-5)
 
 # +
 
@@ -192,7 +192,9 @@ gpflow.utilities.print_summary(dgp, fmt="notebook")
 
 model = dgp.as_training_model()
 model.compile(tf.optimizers.Adam(0.005))
-history = model.fit({"inputs": X, "targets": Y}, epochs=int(20e3), verbose=0, batch_size=num_data, shuffle=False)
+history = model.fit(
+    {"inputs": X, "targets": Y}, epochs=int(20e3), verbose=0, batch_size=num_data, shuffle=False
+)
 
 gpflow.utilities.print_summary(dgp, fmt="notebook")
 
@@ -201,11 +203,14 @@ gpflow.utilities.print_summary(dgp, fmt="notebook")
 # +
 Xs = np.linspace(X.min() - X_MARGIN, X.max() + X_MARGIN, num_data_test).reshape(-1, 1)
 
+
 def predict_y_samples(prediction_model, Xs, num_samples=25):
     samples = []
     for i in tqdm(range(num_samples)):
         out = prediction_model(Xs)
-        s = out.y_mean + out.y_var ** .5 * tf.random.normal(tf.shape(out.y_mean), dtype=out.y_mean.dtype)
+        s = out.y_mean + out.y_var ** 0.5 * tf.random.normal(
+            tf.shape(out.y_mean), dtype=out.y_mean.dtype
+        )
         samples.append(s)
     return tf.concat(samples, axis=1)
 
@@ -213,10 +218,10 @@ def predict_y_samples(prediction_model, Xs, num_samples=25):
 def plot_samples(ax, N_samples=25):
     samples = predict_y_samples(dgp.as_prediction_model(), Xs, N_samples).numpy().T
     Xs_tiled = np.tile(Xs, [N_samples, 1])
-    ax.scatter(Xs_tiled.flatten(), samples.flatten(), marker='.', alpha=0.2, color='C0')
+    ax.scatter(Xs_tiled.flatten(), samples.flatten(), marker=".", alpha=0.2, color="C0")
     ax.set_ylim(-2.5, 2.5)
     ax.set_xlim(min(Xs), max(Xs))
-    ax.scatter(X, Y, marker='.', color='C1')
+    ax.scatter(X, Y, marker=".", color="C1")
 
 
 def plot_latent_variables(ax):
@@ -224,9 +229,8 @@ def plot_latent_variables(ax):
         if isinstance(l, gpflux.layers.LatentVariableLayer):
             m = l.encoder.means.numpy()
             s = l.encoder.stds.numpy()
-            ax.errorbar(X.flatten(), m.flatten(), yerr=s.flatten(), fmt='o')
+            ax.errorbar(X.flatten(), m.flatten(), yerr=s.flatten(), fmt="o")
             return
-
 
 
 # -
@@ -239,6 +243,7 @@ plot_latent_variables(ax2)
 
 
 # Left we show the dataset and posterior samples of $y$. On the right we plot the mean and std. deviation of the latent variables corresponding to the datapoints.
+
 
 def plot_mean_and_var(ax, samples=None, N_samples=5_000):
     if samples is None:
@@ -259,9 +264,8 @@ def plot_mean_and_var(ax, samples=None, N_samples=5_000):
     return samples
 
 
-
 fig, ax = plt.subplots()
-plot_mean_and_var(ax);
+plot_mean_and_var(ax)
 
 # The deep GP model can handle the heteroscedastic noise in the dataset as well as the sharp-ish transition at $0.3$.
 
