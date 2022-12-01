@@ -49,23 +49,16 @@ def test_likelihood_create(likelihood_config: LikelihoodConfig) -> None:
         pytest.fail(f"Could not create likelihood with config: {type(likelihood_config)}")
 
 
-def test_hyperparameters_model_config__raises_with_invalid_parameters() -> None:
+@pytest.mark.parametrize("num_layers, whiten", [(0, True), (-1, True), (2, False), (-1, False)])
+def test_hyperparameters_model_config__raises_with_invalid_parameters(
+    num_layers: int, whiten: bool
+) -> None:
     with pytest.raises(AssertionError):
         _ = ModelHyperParametersConfig(
-            num_layers=0,
+            num_layers=num_layers,
             kernel=SquaredExponential,
             likelihood=GaussianLikelihoodConfig(noise_variance=1e-2),
             inner_layer_qsqrt_factor=1e-3,
-            whiten=True,
-            num_inducing=7,
-        )
-
-    with pytest.raises(AssertionError):
-        _ = ModelHyperParametersConfig(
-            num_layers=3,
-            kernel=SquaredExponential,
-            likelihood=GaussianLikelihoodConfig(noise_variance=1e-2),
-            inner_layer_qsqrt_factor=1e-3,
-            whiten=False,
+            whiten=whiten,
             num_inducing=7,
         )
