@@ -171,9 +171,7 @@ We can store the weights and reload them afterwards.
 prediction_model.save_weights("weights")
 
 # %%
-prediction_model_new = build_constant_input_dim_architecture(
-    config, X
-).as_prediction_model()
+prediction_model_new = build_constant_input_dim_architecture(config, X).as_prediction_model()
 prediction_model_new.load_weights("weights")
 
 # %%
