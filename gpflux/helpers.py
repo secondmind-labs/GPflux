@@ -197,8 +197,6 @@ def construct_mean_function(X: np.ndarray, D_out: int) -> gpflow.mean_functions.
     :param X: A data array with the shape ``[N, D_in]`` used to determine the principal
         components to use to create a :class:`~gpflow.mean_functions.Linear` mean function
         when ``D_in != D_out``.
-    :param D_in: The dimensionality of the input data (or features) ``X``.
-        Typically, this corresponds to ``X.shape[-1]``.
     :param D_out: The dimensionality of the outputs (or targets) ``Y``.
         Typically, this corresponds to ``Y.shape[-1]`` or the number of latent GPs in the layer.
     """
