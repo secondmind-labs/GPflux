@@ -4,8 +4,7 @@ import tensorflow as tf
 
 from gpflow.base import MeanAndVariance
 from gpflow.conditionals.util import rollaxis_left
-from gpflow.config import default_float, default_jitter
-from gpflow.utilities.ops import leading_transpose
+from gpflow.config import default_float
 
 
 def base_orthogonal_conditional(
@@ -443,87 +442,6 @@ def conditional_GP_maths(  # noqa: C901
     ####################################################################
 
     return fmean, fvar
-
-
-# TODO -- this is probably a duplicate
-def sample_mvn(
-    mean: tf.Tensor, cov: tf.Tensor, full_cov: bool, num_samples: Optional[int] = None
-) -> tf.Tensor:
-    """
-    Returns a sample from a D-dimensional Multivariate Normal distribution
-    :param mean: [..., N, D]
-    :param cov: [..., N, D] or [..., N, D, D]
-    :param full_cov: if `True` return a "full" covariance matrix, otherwise a "diag":
-    - "full": cov holds the full covariance matrix (without jitter)
-    - "diag": cov holds the diagonal elements of the covariance matrix
-    :return: sample from the MVN of shape [..., (S), N, D], S = num_samples
-    """
-    shape_constraints = [
-        (mean, [..., "N", "D"]),
-        (cov, [..., "N", "D", "D"] if full_cov else [..., "N", "D"]),
-    ]
-    tf.debugging.assert_shapes(shape_constraints, message="sample_mvn() arguments")
-
-    mean_shape = tf.shape(mean)
-    S = num_samples if num_samples is not None else 1
-    D = mean_shape[-1]
-    leading_dims = mean_shape[:-2]
-
-    if not full_cov:
-        # mean: [..., N, D] and cov [..., N, D]
-        eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
-        eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., S, N, D]
-        samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
-
-    else:
-        # mean: [..., N, D] and cov [..., N, D, D]
-        jittermat = (
-            tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
-        )  # [..., N, D, D]
-        eps_shape = tf.concat([mean_shape, [S]], 0)
-        eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., N, D, S]
-        chol = tf.linalg.cholesky(cov + jittermat)  # [..., N, D, D]
-        samples = mean[..., None] + tf.linalg.matmul(chol, eps)  # [..., N, D, S]
-        samples = leading_transpose(samples, [..., -1, -3, -2])  # [..., S, N, D]
-
-    shape_constraints = [
-        (mean, [..., "N", "D"]),
-        (samples, [..., "S", "N", "D"]),
-    ]
-    tf.debugging.assert_shapes(shape_constraints, message="sample_mvn() return values")
-
-    if num_samples is None:
-        return tf.squeeze(samples, axis=-3)  # [..., N, D]
-    return samples  # [..., S, N, D]
-
-
-# TODO -- this is probably a duplicate
-def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov: bool) -> tf.Tensor:
-    """
-    Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
-
-    :param fvar: has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).
-    :return:
-    1. full_cov: True and full_output_cov: True
-       fvar [N, P, N, P]
-    2. full_cov: True and full_output_cov: False
-       fvar [P, N, N]
-    3. full_cov: False and full_output_cov: True
-       fvar [N, P, P]
-    4. full_cov: False and full_output_cov: False
-       fvar [N, P]
-    """
-    if full_cov and full_output_cov:
-        fvar = tf.linalg.diag(tf.transpose(fvar))  # [N, N, P, P]
-        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # [N, P, N, P]
-    if not full_cov and full_output_cov:
-        fvar = tf.linalg.diag(fvar)  # [N, P, P]
-    if full_cov and not full_output_cov:
-        pass  # [P, N, N]
-    if not full_cov and not full_output_cov:
-        pass  # [N, P]
-
-    return fvar
 
 
 def separate_independent_orthogonal_conditional_implementation(
