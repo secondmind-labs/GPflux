@@ -132,7 +132,7 @@ def test_feature_map_decomposition(kernel_cls, variance, lengthscale, n_dims, n_
     )
     K_quadrature = tf.squeeze(K_quadrature, axis=-1)
 
-    np.testing.assert_allclose(K_decomp, K_quadrature, atol=1e-15)
+    np.testing.assert_allclose(K_decomp, K_quadrature, atol=1e-12)
 
 
 def test_fourier_features_shapes(n_components, n_dims, batch_size):
