@@ -13,12 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-r"""
-This module contains helper functions for constructing :class:`~MultioutputKernel`,
+"""
+This module contains helper functions for constructing :class:`~gpflow.kernels.MultioutputKernel`,
 :class:`~gpflow.inducing_variables.MultioutputInducingVariables`,
 :class:`~gpflow.mean_functions.MeanFunction`, and :class:`~gpflux.layers.GPLayer` objects.
 """
-
 import inspect
 import warnings
 from dataclasses import fields
@@ -30,32 +29,26 @@ import gpflow
 from gpflow import default_float
 from gpflow.inducing_variables import (
     InducingPoints,
-    MultioutputInducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from gpflow.kernels import (
-    Kernel,
-    MultioutputKernel,
-    SeparateIndependent,
-    SharedIndependent,
-    Stationary,
-)
+from gpflow.kernels import SeparateIndependent, SharedIndependent, SquaredExponential, Stationary
+from gpflow.mean_functions import Identity, Linear, MeanFunction, Zero
 from gpflow.utilities import deepcopy
 
 from gpflux.layers.gp_layer import GPLayer
 
 
 def construct_basic_kernel(
-    kernels: Union[Kernel, List[Kernel]],
+    kernels: Union[gpflow.kernels.Kernel, List[gpflow.kernels.Kernel]],
     output_dim: Optional[int] = None,
     share_hyperparams: bool = False,
-) -> MultioutputKernel:
+) -> gpflow.kernels.MultioutputKernel:
     r"""
-    Construct a :class:`~MultioutputKernel` to use
+    Construct a :class:`~gpflow.kernels.MultioutputKernel` to use
     in :class:`GPLayer`\ s.
 
-    :param kernels: A single kernel or list of :class:`~Kernel`\ s.
+    :param kernels: A single kernel or list of :class:`~gpflow.kernels.Kernel`\ s.
         - When a single kernel is passed, the same kernel is used for all
         outputs. Depending on ``share_hyperparams``, the hyperparameters will be
         shared across outputs. You must also specify ``output_dim``.
@@ -71,8 +64,10 @@ def construct_basic_kernel(
         the different outputs, but the kernel can have different hyperparameter values for each.
     """
     if isinstance(kernels, list):
-        mo_kern = SeparateIndependent(kernels)
-    elif not share_hyperparams:
+        return SeparateIndependent(kernels)
+
+    assert output_dim, "With single kernel, you must specify the number of outputs"
+    if not share_hyperparams:
         copies = [deepcopy(kernels) for _ in range(output_dim)]
         mo_kern = SeparateIndependent(copies)
     else:
@@ -86,7 +81,7 @@ def construct_basic_inducing_variables(
     output_dim: Optional[int] = None,
     share_variables: bool = False,
     z_init: Optional[np.ndarray] = None,
-) -> MultioutputInducingVariables:
+) -> gpflow.inducing_variables.MultioutputInducingVariables:
     r"""
     Construct a compatible :class:`~gpflow.inducing_variables.MultioutputInducingVariables`
     to use in :class:`GPLayer`\ s.
@@ -132,7 +127,7 @@ def construct_basic_inducing_variables(
 
     z_init_is_given = z_init is not None
 
-    if isinstance(num_inducing, list):
+    if isinstance(num_inducing, List):
         if output_dim is not None:
             # TODO: the following assert may clash with MixedMultiOutputFeatures
             # where the number of independent GPs can differ from the output
@@ -143,20 +138,24 @@ def construct_basic_inducing_variables(
         inducing_variables = []
         for i, num_ind_var in enumerate(num_inducing):
             if z_init_is_given:
+                assert z_init
                 assert len(z_init[i]) == num_ind_var
                 z_init_i = z_init[i]
             else:
-                z_init_i = np.random.uniform(-0.5, 0.5, (num_ind_var, input_dim)).astype(
-                    dtype=default_float()
-                )
+                z_init_i = np.random.uniform(
+                    low=-0.5, high=0.5, size=(num_ind_var, input_dim)
+                ).astype(dtype=default_float())
             assert z_init_i.shape == (num_ind_var, input_dim)
             inducing_variables.append(InducingPoints(z_init_i))
+
         return SeparateIndependentInducingVariables(inducing_variables)
 
-    elif not share_variables:
+    assert output_dim, "When num_inducing is a number, the number of outputs must be given"
+    if not share_variables:
         inducing_variables = []
         for o in range(output_dim):
             if z_init_is_given:
+                assert z_init
                 if z_init.shape != (output_dim, num_inducing, input_dim):
                     raise ValueError(
                         "When not sharing variables, z_init must have shape"
@@ -168,26 +167,24 @@ def construct_basic_inducing_variables(
                     dtype=default_float()
                 )
             inducing_variables.append(InducingPoints(z_init_o))
+
         return SeparateIndependentInducingVariables(inducing_variables)
 
-    else:
-        # TODO: should we assert output_dim is None ?
+    # Share the same inducing variables across the outputs
+    z_init = (
+        z_init
+        if z_init_is_given
+        else np.random.uniform(-0.5, 0.5, (num_inducing, input_dim)).astype(dtype=default_float())
+    )
+    shared_ip = InducingPoints(z_init)
 
-        z_init = (
-            z_init
-            if z_init_is_given
-            else np.random.uniform(-0.5, 0.5, (num_inducing, input_dim)).astype(
-                dtype=default_float()
-            )
-        )
-        shared_ip = InducingPoints(z_init)
-        return SharedIndependentInducingVariables(shared_ip)
+    return SharedIndependentInducingVariables(shared_ip)
 
 
-def construct_mean_function(X: np.ndarray, D_out: int) -> gpflow.mean_functions.MeanFunction:
+def construct_mean_function(X: np.ndarray, D_out: int) -> MeanFunction:
     """
     Return :class:`gpflow.mean_functions.Identity` when ``D_in`` and ``D_out`` are
-    equal. Otherwise, use the principal components of the inputs matrix ``X`` to build a
+    equal. Otherwise, use the principal components of the input matrix ``X`` to build a
     :class:`~gpflow.mean_functions.Linear` mean function.
 
     .. note::
@@ -199,12 +196,13 @@ def construct_mean_function(X: np.ndarray, D_out: int) -> gpflow.mean_functions.
         when ``D_in != D_out``.
     :param D_out: The dimensionality of the outputs (or targets) ``Y``.
         Typically, this corresponds to ``Y.shape[-1]`` or the number of latent GPs in the layer.
+    :return: a GPflow mean function
     """
 
     D_in = X.shape[-1]
     assert X.shape[-1] == D_in
     if D_in == D_out:
-        mean_function = gpflow.mean_functions.Identity()
+        mean_function = Identity()
     else:
         if D_in > D_out:
             _, _, V = np.linalg.svd(X, full_matrices=False)
@@ -213,7 +211,7 @@ def construct_mean_function(X: np.ndarray, D_out: int) -> gpflow.mean_functions.
             W = np.concatenate([np.eye(D_in), np.zeros((D_in, D_out - D_in))], axis=1)
 
         assert W.shape == (D_in, D_out)
-        mean_function = gpflow.mean_functions.Linear(W)
+        mean_function = Linear(W)
         gpflow.set_trainable(mean_function, False)
 
     return mean_function
@@ -224,7 +222,7 @@ def construct_gp_layer(
     num_inducing: int,
     input_dim: int,
     output_dim: int,
-    kernel_class: Type[Stationary] = gpflow.kernels.SquaredExponential,
+    kernel_class: Type[Stationary] = SquaredExponential,
     z_init: Optional[np.ndarray] = None,
     name: Optional[str] = None,
 ) -> GPLayer:
@@ -263,7 +261,7 @@ def construct_gp_layer(
         kernel=kernel,
         inducing_variable=inducing_variable,
         num_data=num_data,
-        mean_function=gpflow.mean_functions.Zero(),
+        mean_function=Zero(),
         name=name,
     )
     return gp_layer

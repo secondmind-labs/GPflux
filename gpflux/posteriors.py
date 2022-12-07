@@ -135,7 +135,7 @@ class BaseOrthogonalPosterior(AbstractOrthogonalPosterior):
 
     def _set_qdist(
         self, q_mu_u: TensorType, q_sqrt_u: TensorType, q_mu_v: TensorType, q_sqrt_v: TensorType
-    ) -> tf.Tensor:
+    ) -> None:
 
         if q_sqrt_u is None:
             self._q_dist_u = _DeltaDist(q_mu_u)
