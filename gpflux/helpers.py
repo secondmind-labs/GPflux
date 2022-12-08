@@ -138,7 +138,7 @@ def construct_basic_inducing_variables(
         inducing_variables = []
         for i, num_ind_var in enumerate(num_inducing):
             if z_init_is_given:
-                assert z_init
+                assert z_init is not None
                 assert len(z_init[i]) == num_ind_var
                 z_init_i = z_init[i]
             else:
@@ -156,7 +156,7 @@ def construct_basic_inducing_variables(
         inducing_variables = []
         for o in range(output_dim):
             if z_init_is_given:
-                assert z_init
+                assert z_init is not None
                 if z_init.shape != (output_dim, num_inducing, input_dim):
                     raise ValueError(
                         "When not sharing variables, z_init must have shape"
