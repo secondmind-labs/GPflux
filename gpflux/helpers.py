@@ -150,8 +150,9 @@ def construct_basic_inducing_variables(
 
         return SeparateIndependentInducingVariables(inducing_variables)
 
-    assert output_dim, "When num_inducing is a number, the number of outputs must be given"
     if not share_variables:
+        assert output_dim, "When num_inducing is a number, the number of outputs must be given"
+
         inducing_variables = []
         for o in range(output_dim):
             if z_init_is_given:

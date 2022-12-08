@@ -23,7 +23,7 @@ from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
-from gpflux.layers import LikelihoodLayer, OrthGPLayer
+from gpflux.layers import OrthGPLayer
 from gpflux.models import OrthDeepGP
 
 MAXITER = int(80e3)
