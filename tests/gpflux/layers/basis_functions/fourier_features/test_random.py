@@ -83,6 +83,35 @@ def test_throw_for_unsupported_kernel(basis_func_cls):
     assert "Unsupported Kernel" in str(excinfo.value)
 
 
+def test_random_fourier_features_has_default_dtype_float64(
+    random_basis_func_cls,
+):
+    kernel = gpflow.kernels.SquaredExponential(variance=0.5, lengthscales=0.5)
+    fourier_features = random_basis_func_cls(kernel, 40)
+
+    x = tf.random.uniform((20, 2), dtype=gpflow.default_float())
+    features = fourier_features(x)
+
+    # asserting with gpflow.default_float() is not working correctly so using tf.float64
+    assert fourier_features.dtype == tf.float64
+    for w in fourier_features.weights:
+        assert w.dtype == tf.float64
+    assert features.dtype == tf.float64
+
+
+def test_random_fourier_features_raises_for_incorrect_input_dtype(
+    random_basis_func_cls,
+):
+    kernel = gpflow.kernels.SquaredExponential(variance=0.5, lengthscales=0.5)
+    fourier_features = random_basis_func_cls(kernel, 40)
+
+    x = tf.random.uniform((20, 2), dtype=tf.float32)
+    features = fourier_features(x)
+
+    with pytest.raises(ValueError):
+        fourier_features(x)
+
+
 def test_random_fourier_features_can_approximate_kernel_multidim(
     random_basis_func_cls, kernel_cls, variance, lengthscale, n_dims
 ):
@@ -94,7 +123,7 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
     kernel = kernel_cls(variance=variance, lengthscales=lengthscales)
-    fourier_features = random_basis_func_cls(kernel, n_components, dtype=tf.float64)
+    fourier_features = random_basis_func_cls(kernel, n_components)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -117,7 +146,7 @@ def test_orthogonal_random_features_can_approximate_kernel_multidim(variance, le
     lengthscales = np.random.rand((n_dims)) * lengthscale
 
     kernel = gpflow.kernels.SquaredExponential(variance=variance, lengthscales=lengthscales)
-    fourier_features = OrthogonalRandomFeatures(kernel, n_components, dtype=tf.float64)
+    fourier_features = OrthogonalRandomFeatures(kernel, n_components)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -142,7 +171,7 @@ def test_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
     n_components = 10000
 
     kernel = gpflow.kernels.SquaredExponential()
-    fourier_features = basis_func_cls(kernel, n_components, dtype=tf.float64)
+    fourier_features = basis_func_cls(kernel, n_components)
 
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
@@ -157,7 +186,7 @@ def test_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
 def test_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_size):
     input_shape = (batch_size, n_dims)
     kernel = gpflow.kernels.SquaredExponential()
-    feature_functions = basis_func_cls(kernel, n_components, dtype=tf.float64)
+    feature_functions = basis_func_cls(kernel, n_components)
     output_shape = feature_functions.compute_output_shape(input_shape)
     features = feature_functions(tf.ones(shape=input_shape))
     np.testing.assert_equal(features.shape, output_shape)
@@ -174,7 +203,6 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
             "kernel": kernel,
             "n_components": n_components,
             "input_dim": 1,
-            "dtype": "float64",
             "dynamic": True,
         },
         input_shape=(batch_size, 1),
@@ -193,7 +221,6 @@ def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, 
             "kernel": kernel,
             "n_components": n_components,
             "input_dim": n_dims,
-            "dtype": "float64",
             "dynamic": True,
         },
         input_shape=(batch_size, n_dims),
