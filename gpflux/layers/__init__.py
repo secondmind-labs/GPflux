@@ -18,7 +18,8 @@ Layers
 """
 from gpflux.layers import basis_functions
 from gpflux.layers.bayesian_dense_layer import BayesianDenseLayer
-from gpflux.layers.gp_layer import GPLayer, OrthGPLayer
+from gpflux.layers.gp_layer import GPLayer
 from gpflux.layers.latent_variable_layer import LatentVariableLayer, LayerWithObservations
 from gpflux.layers.likelihood_layer import LikelihoodLayer
+from gpflux.layers.orth_gp_layer import OrthGPLayer
 from gpflux.layers.trackable_layer import TrackableLayer

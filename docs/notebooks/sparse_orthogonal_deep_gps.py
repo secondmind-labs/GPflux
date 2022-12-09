@@ -67,7 +67,7 @@ from gpflux.helpers import (
     construct_basic_kernel,
     construct_mean_function,
 )
-from gpflux.layers.gp_layer import OrthGPLayer
+from gpflux.layers import OrthGPLayer
 from gpflux.layers.likelihood_layer import LikelihoodLayer
 from gpflux.models import OrthDeepGP
 
