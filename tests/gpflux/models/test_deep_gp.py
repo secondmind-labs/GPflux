@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from typing import Tuple
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -23,14 +25,32 @@ from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
-from gpflux.layers import GPLayer, LikelihoodLayer
-from gpflux.models import DeepGP
+from gpflux.layers import GPLayer, OrthGPLayer
+from gpflux.models import DeepGP, OrthDeepGP
 
 MAXITER = int(80e3)
 PLOTTER_INTERVAL = 60
 
+Dataset = Tuple[np.ndarray, np.ndarray]
 
-def build_deep_gp(input_dim, num_data):
+
+@pytest.fixture(name="dataset", scope="module")
+def _dataset() -> Dataset:
+    input_dim = 2
+    num_data = 1000
+
+    lim = [0, 100]
+    kernel = RBF(lengthscales=20)
+    sigma = 0.01
+    X = np.random.random(size=(num_data, input_dim)) * lim[1]
+    cov = kernel.K(X) + np.eye(num_data) * sigma ** 2
+    Y = np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
+    Y = np.clip(Y, -0.5, 0.5)
+
+    return X, Y
+
+
+def build_deep_gp(input_dim, num_data) -> DeepGP:
     layers = [input_dim, 2, 2, 1]
     # Below are different ways to build layers
 
@@ -62,7 +82,54 @@ def build_deep_gp(input_dim, num_data):
     return DeepGP(gp_layers, Gaussian(0.1))
 
 
-def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
+def build_orth_deep_gp(input_dim, num_data) -> OrthDeepGP:
+    layers = [input_dim, 2, 2, 1]
+    # Below are different ways to build layers
+
+    # 1. Pass in Lists:
+    kernel_list = [RBF(), Matern12()]
+    num_inducing_u = [25, 25]
+    num_inducing_v = [10, 10]
+    l1_kernel = construct_basic_kernel(kernels=kernel_list)
+    l1_inducing_u = construct_basic_inducing_variables(
+        num_inducing=num_inducing_u, input_dim=layers[0]
+    )
+    l1_inducing_v = construct_basic_inducing_variables(
+        num_inducing=num_inducing_v, input_dim=layers[0]
+    )
+
+    # 2. Pass in kernels, specify output dims (shared hyperparams/variables)
+    l2_kernel = construct_basic_kernel(kernels=RBF(), output_dim=layers[2], share_hyperparams=True)
+    l2_inducing_u = construct_basic_inducing_variables(
+        num_inducing=25, input_dim=layers[1], share_variables=True
+    )
+
+    l2_inducing_v = construct_basic_inducing_variables(
+        num_inducing=10, input_dim=layers[1], share_variables=True
+    )
+
+    # 3. Pass in kernels, specify output dims (independent hyperparams/vars)
+    # By default and the constructor will make indep. copies
+    l3_kernel = construct_basic_kernel(kernels=RBF(), output_dim=layers[3])
+    l3_inducing_u = construct_basic_inducing_variables(
+        num_inducing=25, input_dim=layers[2], output_dim=layers[3]
+    )
+    l3_inducing_v = construct_basic_inducing_variables(
+        num_inducing=10, input_dim=layers[2], output_dim=layers[3]
+    )
+
+    # Assemble at the end
+    gp_layers = [
+        OrthGPLayer(l1_kernel, l1_inducing_u, l1_inducing_v, num_data),
+        OrthGPLayer(l2_kernel, l2_inducing_u, l2_inducing_v, num_data),
+        OrthGPLayer(l3_kernel, l3_inducing_u, l3_inducing_v, num_data, mean_function=Zero()),
+    ]
+    return OrthDeepGP(gp_layers, Gaussian(0.1))
+
+
+def train_deep_gp(
+    deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL
+) -> None:
     optimizer = tf.optimizers.Adam()
 
     @tf.function(autograph=False)
@@ -80,17 +147,6 @@ def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval
             tq.set_postfix_str(f"objective: {objective_closure()}")
             if callable(plotter):
                 plotter()
-
-
-def setup_dataset(input_dim: int, num_data: int, dtype: np.dtype = np.float64):
-    lim = [0, 100]
-    kernel = RBF(lengthscales=20)
-    sigma = 0.01
-    X = np.random.random(size=(num_data, input_dim)) * lim[1]
-    cov = kernel.K(X) + np.eye(num_data) * sigma ** 2
-    Y = np.random.multivariate_normal(np.zeros(num_data), cov)[:, None]
-    Y = np.clip(Y, -0.5, 0.5)
-    return X.astype(dtype), Y.astype(dtype)
 
 
 def get_live_plotter(train_data, model):
@@ -133,11 +189,9 @@ def get_live_plotter(train_data, model):
     return fig, plotter
 
 
-def run_demo(maxiter=int(80e3), plotter_interval=60):
-    input_dim = 2
-    num_data = 1000
-    data = setup_dataset(input_dim, num_data)
-    deep_gp = build_deep_gp(input_dim, num_data)
+def run_demo(
+    deep_gp: DeepGP, data: Dataset, maxiter: int = int(80e3), plotter_interval: int = 60
+) -> None:
     fig, plotter = get_live_plotter(data, deep_gp)
     train_deep_gp(
         deep_gp,
@@ -148,19 +202,20 @@ def run_demo(maxiter=int(80e3), plotter_interval=60):
     )
 
 
-def test_smoke():
+@pytest.mark.parametrize("model", [build_deep_gp(2, 1000), build_orth_deep_gp(2, 1000)])
+def test_smoke(dataset: Dataset, model: DeepGP) -> None:
     import matplotlib
 
     matplotlib.use("PS")  # Agg does not support 3D
-    run_demo(maxiter=2, plotter_interval=1)
+    run_demo(deep_gp=model, data=dataset, maxiter=2, plotter_interval=1)
 
 
+@pytest.mark.parametrize("model", [build_deep_gp(2, 1000), build_orth_deep_gp(2, 1000)])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.int32])
-def test_deep_gp_raises_on_incorrect_dtype(dtype):
-    input_dim = 2
-    num_data = 1000
-    X, Y = setup_dataset(input_dim, num_data, dtype)
-    model = build_deep_gp(input_dim, num_data)
+def test_deep_gp_raises_on_incorrect_dtype(
+    dataset: Dataset, model: DeepGP, dtype: np.dtype
+) -> None:
+    X, Y = dataset[0].astype(dtype), dataset[1].astype(dtype)
 
     with pytest.raises(ValueError):
         model.predict_f(X)
