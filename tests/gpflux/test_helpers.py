@@ -19,7 +19,6 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow import mean_functions
 from gpflow.inducing_variables import (
     InducingPoints,
     MultioutputInducingVariables,
