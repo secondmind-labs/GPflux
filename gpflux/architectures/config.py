@@ -119,12 +119,12 @@ class OrthogonalModelHyperparametersConfig(HyperParametersConfig):
 
     num_inducing_u: int
     """
-    The number of inducing variables, *M*. The Deep GP uses the same number
+    The number of inducing variables for the `main` process. The Deep GP uses the same number
     of inducing variables in each layer.
     """
 
     num_inducing_v: int
     """
-    The number of inducing variables, *M*. The Deep GP uses the same number
-    of inducing variables in each layer.
+    The number of inducing variables for the process capturing the remaining variation.
+    The Deep GP uses the same number of inducing variables in each layer.
     """
