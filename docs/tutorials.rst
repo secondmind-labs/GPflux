@@ -8,6 +8,7 @@ Tutorials
    notebooks/intro
    notebooks/gpflux_features
    notebooks/deep_cde
+   notebooks/sparse_orthogonal_deep_gps
 
 .. toctree::
    :caption: Advanced

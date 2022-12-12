@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 The GPflux Contributors.
+# Copyright (c) 2022 The GPflux Contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import tensorflow_probability as tfp
 
 from gpflow import Parameter, default_float
 from gpflow.base import TensorType
-from gpflow.conditionals import conditional
 from gpflow.inducing_variables import MultioutputInducingVariables
 from gpflow.kernels import MultioutputKernel
 from gpflow.kullback_leiblers import prior_kl
 from gpflow.mean_functions import Identity, MeanFunction
 from gpflow.utilities.bijectors import triangular
 
+from gpflux.conditionals import conditional
 from gpflux.exceptions import GPLayerIncompatibilityException
 from gpflux.math import _cholesky_with_jitter
 from gpflux.runtime_checks import verify_compatibility

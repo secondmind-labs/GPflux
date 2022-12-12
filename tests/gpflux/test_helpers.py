@@ -19,7 +19,6 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow import mean_functions
 from gpflow.inducing_variables import (
     InducingPoints,
     MultioutputInducingVariables,
@@ -142,14 +141,14 @@ def test_construct_inducing_shared_independent_duplicates(z_init):
 def test_construct_mean_function_Identity():
     num_data, input_dim, output_dim = 11, 5, 5
     X = np.random.randn(num_data, input_dim)
-    mean_functions = construct_mean_function(X, input_dim, output_dim)
+    mean_functions = construct_mean_function(X, output_dim)
     assert isinstance(mean_functions, gpflow.mean_functions.Identity)
 
 
 def test_construct_mean_function_Linear():
     num_data, input_dim, output_dim = 11, 5, 7
     X = np.random.randn(num_data, input_dim)
-    mean_functions = construct_mean_function(X, input_dim, output_dim)
+    mean_functions = construct_mean_function(X, output_dim)
     assert isinstance(mean_functions, gpflow.mean_functions.Linear)
 
 

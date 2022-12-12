@@ -61,15 +61,22 @@ To keep this notebook focussed we are going to use a predefined deep GP architec
 """
 
 # %%
-import gpflux
+from gpflow.kernels import SquaredExponential
 
-from gpflux.architectures import Config, build_constant_input_dim_deep_gp
+import gpflux
+from gpflux.architectures.config import GaussianLikelihoodConfig, ModelHyperParametersConfig
+from gpflux.architectures.factory import build_constant_input_dim_architecture
 from gpflux.models import DeepGP
 
-config = Config(
-    num_inducing=25, inner_layer_qsqrt_factor=1e-5, likelihood_noise_variance=1e-2, whiten=True
+config = ModelHyperParametersConfig(
+    num_layers=2,
+    kernel=SquaredExponential,
+    likelihood=GaussianLikelihoodConfig(noise_variance=1e-2),
+    inner_layer_qsqrt_factor=1e-5,
+    whiten=True,
+    num_inducing=25,
 )
-deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, num_layers=2, config=config)
+deep_gp: DeepGP = build_constant_input_dim_architecture(config, X)
 
 # %% [markdown]
 """
@@ -164,9 +171,7 @@ We can store the weights and reload them afterwards.
 prediction_model.save_weights("weights")
 
 # %%
-prediction_model_new = build_constant_input_dim_deep_gp(
-    X, num_layers=2, config=config
-).as_prediction_model()
+prediction_model_new = build_constant_input_dim_architecture(config, X).as_prediction_model()
 prediction_model_new.load_weights("weights")
 
 # %%

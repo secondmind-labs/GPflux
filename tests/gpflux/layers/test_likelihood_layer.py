@@ -18,7 +18,14 @@ import pytest
 import tensorflow as tf
 
 from gpflow.kernels import Matern52
-from gpflow.likelihoods import Bernoulli, Beta, Gaussian, Poisson
+from gpflow.likelihoods import (
+    Bernoulli,
+    Beta,
+    Gaussian,
+    HeteroskedasticTFPConditional,
+    Poisson,
+    StudentT,
+)
 from gpflow.mean_functions import Zero
 
 from gpflux.helpers import construct_basic_inducing_variables, construct_basic_kernel
@@ -26,7 +33,14 @@ from gpflux.layers import GPLayer, LikelihoodLayer
 from gpflux.layers.likelihood_layer import LikelihoodOutputs
 from gpflux.losses import LikelihoodLoss
 
-TEST_GPFLOW_LIKELIHOODS = [Bernoulli, Beta, Gaussian, Poisson]
+TEST_GPFLOW_LIKELIHOODS = [
+    Bernoulli,
+    Beta,
+    Gaussian,
+    Poisson,
+    StudentT,
+    pytest.param(HeteroskedasticTFPConditional, marks=pytest.mark.xfail),
+]
 
 
 def setup_gp_layer_and_data(num_inducing: int, **gp_layer_kwargs):

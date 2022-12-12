@@ -16,4 +16,4 @@
 """
 Base model classes implemented in GPflux
 """
-from gpflux.models.deep_gp import DeepGP
+from gpflux.models.deep_gp import DeepGP, OrthDeepGP
