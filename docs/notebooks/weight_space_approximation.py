@@ -62,7 +62,7 @@ from gpflow.likelihoods import Gaussian
 from gpflow.inducing_variables import InducingPoints
 
 from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
+from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition
 
 # %% [markdown]
 """

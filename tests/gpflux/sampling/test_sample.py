@@ -20,8 +20,10 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import default_float, default_jitter
 
+from gpflux.feature_decomposition_kernels.kernel_with_feature_decomposition import (
+    KernelWithFeatureDecomposition,
+)
 from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 from gpflux.sampling.sample import Sample, efficient_sample
 
 

@@ -13,27 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-A kernel's features for efficient sampling, used by
-:class:`gpflux.sampling.KernelWithFeatureDecomposition`
-"""
+""" A kernel's features and coefficients using Random Fourier Features (RFF). """
 
-from gpflux.layers.basis_functions.fourier_features.multioutput.random import (
+from gpflux.layers.basis_functions.fourier_features.multioutput.random.base import (
     MultiOutputRandomFourierFeatures,
     MultiOutputRandomFourierFeaturesCosine,
 )
-from gpflux.layers.basis_functions.fourier_features.quadrature import QuadratureFourierFeatures
-from gpflux.layers.basis_functions.fourier_features.random import (
-    OrthogonalRandomFeatures,
-    RandomFourierFeatures,
-    RandomFourierFeaturesCosine,
+from gpflux.layers.basis_functions.fourier_features.multioutput.random.orthogonal import (
+    MultiOutputOrthogonalRandomFeatures,
 )
 
 __all__ = [
-    "QuadratureFourierFeatures",
-    "OrthogonalRandomFeatures",
-    "RandomFourierFeatures",
-    "RandomFourierFeaturesCosine",
     "MultiOutputRandomFourierFeatures",
     "MultiOutputRandomFourierFeaturesCosine",
+    "MultiOutputOrthogonalRandomFeatures",
 ]

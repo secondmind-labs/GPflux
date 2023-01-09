@@ -40,8 +40,8 @@ def _bases_cosine(X: TensorType, W: TensorType, b: TensorType) -> TensorType:
     by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
     See also :cite:p:`sutherland2015error` for additional details.
     """
-    proj = tf.matmul(X, W, transpose_b=True) + b  # [N, M]
-    return tf.cos(proj)  # [N, M]
+    proj = tf.matmul(X, W, transpose_b=True) + b  # [N, M] or [P, N, M]
+    return tf.cos(proj)  # [N, M] or [P, N, M]
 
 
 def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
@@ -50,5 +50,5 @@ def _bases_concat(X: TensorType, W: TensorType) -> TensorType:
     by Rahimi & Recht, 2007 :cite:p:`rahimi2007random`.
     See also :cite:p:`sutherland2015error` for additional details.
     """
-    proj = tf.matmul(X, W, transpose_b=True)  # [N, M]
-    return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M]
+    proj = tf.matmul(X, W, transpose_b=True)  # [N, M] or [P, N, M]
+    return tf.concat([tf.sin(proj), tf.cos(proj)], axis=-1)  # [N, 2M] or [P, N, 2M]

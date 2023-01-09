@@ -25,14 +25,18 @@ from gpflow.base import TensorType
 from gpflux.types import ShapeType
 
 
-class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+class MultiOutputFourierFeaturesBase(ABC, tf.keras.layers.Layer):
+    def __init__(
+        self, kernel: gpflow.kernels.MultioutputKernel, n_components: int, **kwargs: Mapping
+    ):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
+        Expects a Multioutput Kernel
         :param n_components: number of components (e.g. Monte Carlo samples,
             quadrature nodes, etc.) used to numerically approximate the kernel.
         """
-        super(FourierFeaturesBase, self).__init__(**kwargs)
+        super(MultiOutputFourierFeaturesBase, self).__init__(**kwargs)
+        # NOTE -- same as univariate case from here till the end of __init__
         self.kernel = kernel
         self.n_components = n_components
         if kwargs.get("input_dim", None):
@@ -46,14 +50,49 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         Evaluate the basis functions at ``inputs``.
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
-
-        :return: A tensor with the shape ``[N, M]``.
+        :return: A tensor with the shape ``[P, N, M]``.mypy
         """
-        X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
-        const = self._compute_constant()
-        bases = self._compute_bases(X)
-        output = const * bases
-        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
+        P = self.kernel.num_latent_gps
+        D = tf.shape(inputs)[-1]
+
+        if isinstance(self.kernel, gpflow.kernels.SeparateIndependent):
+
+            for kernel in self.kernel.kernels:
+                print(kernel.lengthscales.unconstrained_variable.value())
+
+            _lengthscales = tf.concat(
+                [
+                    kernel.lengthscales[None, None, ...]
+                    if tf.rank(kernel.lengthscales.unconstrained_variable.value()) == 1
+                    else kernel.lengthscales[None, None, None, ...]
+                    for kernel in self.kernel.kernels
+                ],
+                axis=0,
+            )  # [P, 1, D]
+            tf.debugging.assert_equal(tf.shape(_lengthscales), [P, 1, D])
+
+        elif isinstance(self.kernel, gpflow.kernels.SharedIndependent):
+            # NOTE -- each kernel.kernel.lengthscales has to be of the shape [D,]
+            _lengthscales = tf.tile(
+                self.kernel.kernel.lengthscales[None, None, ...]
+                if tf.rank(self.kernel.kernel.lengthscales.unconstrained_variable.value()) == 1
+                else self.kernel.kernel.lengthscales[None, None, None, ...],
+                [P, 1, 1],
+            )  # [P, 1, D]
+            tf.debugging.assert_equal(tf.shape(_lengthscales), [P, 1, D])
+        else:
+            raise ValueError("kernel is not supported.")
+
+        X = tf.divide(
+            inputs,  # [N, D] or [P, M, D]
+            _lengthscales,  # [P, 1, D]
+        )  # [P, N, D] or [P, M, D]
+
+        const = self._compute_constant()[..., None, None]  # [P,1,1]
+        bases = self._compute_bases(X)  # [P, N, L] for X*, or [P,M,L] in the case of Z
+        output = const * bases  # [P, N, L] for X*, or [P,M,L] in the case of Z
+
+        tf.ensure_shape(output, self.compute_output_shape(X.shape))
         return output
 
     def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
@@ -64,27 +103,35 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
-        tensor_shape = tf.TensorShape(input_shape).with_rank(2)
+
+        tensor_shape = tf.TensorShape(input_shape).with_rank(3)
         output_dim = self._compute_output_dim(input_shape)
         return tensor_shape[:-1].concatenate(output_dim)
 
+    # NOTE -- same as univariate case
     def get_config(self) -> Mapping:
         """
         Returns the config of the layer.
         See `tf.keras.layers.Layer.get_config()
         <https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#get_config>`_.
         """
-        config = super(FourierFeaturesBase, self).get_config()
+        config = super(MultiOutputFourierFeaturesBase, self).get_config()
         config.update(
-            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
+            {
+                "kernel": self.kernel,
+                "n_components": self.n_components,
+                "input_dim": self._input_dim,
+            }
         )
 
         return config
 
+    # NOTE -- same as univariate case
     @abstractmethod
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
         pass
 
+    # NOTE -- same as univariate case
     @abstractmethod
     def _compute_constant(self) -> tf.Tensor:
         """
@@ -92,6 +139,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         pass
 
+    # NOTE -- same as univariate case
     @abstractmethod
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         """

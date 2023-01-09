@@ -16,5 +16,12 @@
 """
 This module enables you to sample from (Deep) GPs efficiently and consistently.
 """
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
-from gpflux.sampling.sample import efficient_sample
+
+from . import multioutput, sample
+from .dispatch import efficient_sample
+
+__all__ = [
+    "efficient_sample",
+    "sample",
+    "multioutput",
+]

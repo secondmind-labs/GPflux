@@ -69,11 +69,11 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "tensorflow": (
         "https://www.tensorflow.org/api_docs/python",
-        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tf2_py_objects.inv"
+        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tf2_py_objects.inv",
     ),
     "tensorflow_probability": (
         "https://www.tensorflow.org/probability/api_docs/python",
-        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tfp_py_objects.inv"
+        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tfp_py_objects.inv",
     ),
     "gpflow": ("https://gpflow.readthedocs.io/en/master/", None),
 }
@@ -116,7 +116,9 @@ html_theme_options = {
 }
 
 # If True, show link to rst source on rendered HTML pages
-html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
+html_show_sourcelink = (
+    False  # Remove 'view source code' from top of page (for html, not python)
+)
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

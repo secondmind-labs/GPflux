@@ -36,10 +36,15 @@ import gpflux
 
 from gpflow.config import default_float
 
-from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine
-from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition
+from gpflux.layers.basis_functions.fourier_features import MultiOutputRandomFourierFeaturesCosine
+from gpflux.feature_decomposition_kernels import (
+    KernelWithFeatureDecomposition,
+    SharedMultiOutputKernelWithFeatureDecomposition,
+    SeparateMultiOutputKernelWithFeatureDecomposition,
+)
 from gpflux.models.deep_gp import sample_dgp
 
+tf.keras.backend.set_floatx("float64")
 
 # %% [markdown]
 """
@@ -63,17 +68,31 @@ where $\lambda_i$ and $\phi_i(\cdot)$ are the coefficients (eigenvalues) and fea
 """
 
 # %%
-kernel = gpflow.kernels.Matern52()
-Z = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
+# kernel = gpflow.kernels.Matern52()
+kernel1 = gpflow.kernels.Matern52()
+kernel2 = gpflow.kernels.SquaredExponential()
+# kernel = gpflow.kernels.SeparateIndependent( kernels = [kernel1, kernel2])
+kernel = gpflow.kernels.SharedIndependent(kernel=kernel1, output_dim=2)
 
-inducing_variable = gpflow.inducing_variables.InducingPoints(Z)
+Z_1 = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
+Z_2 = np.linspace(X.min(), X.max(), 10).reshape(-1, 1).astype(np.float64)
+
+inducing_variable_1 = gpflow.inducing_variables.InducingPoints(Z_1)
+inducing_variable_2 = gpflow.inducing_variables.InducingPoints(Z_2)
+# inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(inducing_variable_list= [inducing_variable_1, inducing_variable_2])
+inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
+    inducing_variable=inducing_variable_1
+)
+
 gpflow.utilities.set_trainable(inducing_variable, False)
-
+P = 2
 num_rff = 1000
-eigenfunctions = RandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
-eigenvalues = np.ones((num_rff, 1), dtype=default_float())
-kernel_with_features = KernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
-
+eigenfunctions = MultiOutputRandomFourierFeaturesCosine(kernel, num_rff, dtype=default_float())
+eigenvalues = np.ones((P, num_rff, 1), dtype=default_float())
+# kernel_with_features = SeparateMultiOutputKernelWithFeatureDecomposition(kernel, eigenfunctions, eigenvalues)
+kernel_with_features = SharedMultiOutputKernelWithFeatureDecomposition(
+    kernel, eigenfunctions, eigenvalues
+)
 # %% [markdown]
 """
 ## Building and training the single-layer GP
@@ -87,7 +106,7 @@ layer = gpflux.layers.GPLayer(
     inducing_variable,
     num_data,
     whiten=True,
-    num_latent_gps=1,
+    num_latent_gps=2,
     mean_function=gpflow.mean_functions.Zero(),
 )
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian())  # noqa: E231
@@ -112,7 +131,7 @@ callbacks = [
 ]
 
 history = model.fit(
-    {"inputs": X, "targets": Y},
+    {"inputs": X, "targets": tf.tile(Y, [1, 2])},
     batch_size=num_data,
     epochs=100,
     callbacks=callbacks,
@@ -135,18 +154,24 @@ X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, n_x).reshape(-1, 1)
 f_mean, f_var = dgp.predict_f(X_test)
 f_scale = np.sqrt(f_var)
 
-# Plot samples
-n_sim = 10
-for _ in range(n_sim):
-    # `sample_dgp` returns a callable - which we subsequently evaluate
-    f_sample: Callable[[tf.Tensor], tf.Tensor] = sample_dgp(dgp)
-    plt.plot(X_test, f_sample(X_test).numpy())
 
-# Plot GP mean and uncertainty intervals and data
-plt.plot(X_test, f_mean, "C0")
-plt.plot(X_test, f_mean + f_scale, "C0--")
-plt.plot(X_test, f_mean - f_scale, "C0--")
-plt.plot(X, Y, "kx", alpha=0.2)
-plt.xlim(X.min() - x_margin, X.max() + x_margin)
-plt.ylim(Y.min() - x_margin, Y.max() + x_margin)
+fig, axs = plt.subplots(1, 2)
+
+
+for dim in range(2):
+
+    # Plot samples
+    n_sim = 10
+    for _ in range(n_sim):
+        # `sample_dgp` returns a callable - which we subsequently evaluate
+        f_sample: Callable[[tf.Tensor], tf.Tensor] = sample_dgp(dgp)
+        axs[dim].plot(X_test, f_sample(X_test).numpy()[..., dim])
+
+    # Plot GP mean and uncertainty intervals and data
+    axs[dim].plot(X_test, f_mean[..., dim], "C0")
+    axs[dim].plot(X_test, f_mean[..., dim] + f_scale[..., dim], "C0--")
+    axs[dim].plot(X_test, f_mean[..., dim] - f_scale[..., dim], "C0--")
+    axs[dim].plot(X, Y, "kx", alpha=0.2)
+    axs[dim].set_xlim(X.min() - x_margin, X.max() + x_margin)
+    axs[dim].set_ylim(Y.min() - x_margin, Y.max() + x_margin)
 plt.show()

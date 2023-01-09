@@ -26,13 +26,13 @@ from gpflow.config import default_float, default_jitter
 from gpflow.covariances import Kuf, Kuu
 from gpflow.inducing_variables import InducingVariables
 from gpflow.kernels import Kernel
-from gpflow.utilities import Dispatcher
 
+from gpflux.feature_decomposition_kernels import KernelWithFeatureDecomposition
 from gpflux.math import compute_A_inv_b
-from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition
 from gpflux.sampling.utils import draw_conditional_sample
 
-efficient_sample = Dispatcher("efficient_sample")
+from .dispatch import efficient_sample
+
 """ A function that returns a :class:`Sample` of a GP posterior. """
 
 
@@ -155,11 +155,12 @@ def _efficient_sample_matheron_rule(
     :param q_sqrt: A tensor with the shape ``[P, M, M]``.
     :param whiten: Determines the parameterisation of the inducing variables.
     """
+
     L = tf.shape(kernel.feature_coefficients)[0]  # num eigenfunctions  # noqa: F841
     M, P = tf.shape(q_mu)[0], tf.shape(q_mu)[1]  # num inducing, num output heads
 
     prior_weights = tf.sqrt(kernel.feature_coefficients) * tf.random.normal(
-        (L, P), dtype=default_float()
+        (L, P), dtype=default_float()  # [L, 1], [L,P]
     )  # [L, P]
 
     u_sample_noise = tf.matmul(
@@ -167,6 +168,7 @@ def _efficient_sample_matheron_rule(
         tf.random.normal((P, M, 1), dtype=default_float()),  # [P, M, M]  # [P, M, 1]
     )  # [P, M, 1]
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
+
     tf.debugging.assert_equal(tf.shape(Kmm), [M, M])
     u_sample = q_mu + tf.linalg.matrix_transpose(u_sample_noise[..., 0])  # [M, P]
 
@@ -175,9 +177,12 @@ def _efficient_sample_matheron_rule(
         u_sample = tf.matmul(Luu, u_sample)  # [M, P]
 
     phi_Z = kernel.feature_functions(inducing_variable.Z)  # [M, L]
-    weight_space_prior_Z = phi_Z @ prior_weights  # [M, P]
+
+    weight_space_prior_Z = tf.matmul(phi_Z, prior_weights)  # [M, L]  # [L, P]  # [M, P]
+
     diff = u_sample - weight_space_prior_Z  # [M, P]
     v = compute_A_inv_b(Kmm, diff)  # [M, P]
+
     tf.debugging.assert_equal(tf.shape(v), [M, P])
 
     class WilsonSample(Sample):
@@ -188,9 +193,12 @@ def _efficient_sample_matheron_rule(
             """
             N = tf.shape(X)[0]
             phi_X = kernel.feature_functions(X)  # [N, L]
-            weight_space_prior_X = phi_X @ prior_weights  # [N, P]
+
+            weight_space_prior_X = tf.matmul(phi_X, prior_weights)  # [N, L]  # [L, P]  # [N, P]
+
             Knm = tf.linalg.matrix_transpose(Kuf(inducing_variable, kernel, X))  # [N, M]
-            function_space_update_X = Knm @ v  # [N, P]
+
+            function_space_update_X = tf.matmul(Knm, v)  # [N, M]  # [M, P]  # [N, P]
 
             tf.debugging.assert_equal(tf.shape(weight_space_prior_X), [N, P])
             tf.debugging.assert_equal(tf.shape(function_space_update_X), [N, P])
