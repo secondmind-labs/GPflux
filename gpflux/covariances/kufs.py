@@ -17,24 +17,29 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import TensorType
-from gpflux.inducing_variables import DistributionalInducingPoints
+
 from gpflux.covariances.dispatch import Kuf
+from gpflux.inducing_variables import DistributionalInducingPoints
 from gpflux.kernels import DistributionalKernel
 
 
-@Kuf.register(DistributionalInducingPoints, DistributionalKernel, tfp.distributions.MultivariateNormalDiag)
-def Kuf_kernel_distributionalinducingpoints( 
-    inducing_variable: DistributionalInducingPoints, 
-    kernel: DistributionalKernel, 
+@Kuf.register(
+    DistributionalInducingPoints, DistributionalKernel, tfp.distributions.MultivariateNormalDiag
+)
+def Kuf_kernel_distributionalinducingpoints(
+    inducing_variable: DistributionalInducingPoints,
+    kernel: DistributionalKernel,
     Xnew: TensorType,
     *,
-    seed:int = None) -> tf.Tensor:
+    seed: int = None
+) -> tf.Tensor:
 
     # Create instance of tfp.distributions.MultivariateNormalDiag so that it works with underpinning methods from kernel
 
     assert isinstance(Xnew, tfp.distributions.MultivariateNormalDiag)
 
-    distributional_inducing_points = tfp.distributions.MultivariateNormalDiag(loc = inducing_variable.Z_mean,
-        scale_diag = tf.sqrt(inducing_variable.Z_var))
+    distributional_inducing_points = tfp.distributions.MultivariateNormalDiag(
+        loc=inducing_variable.Z_mean, scale_diag=tf.sqrt(inducing_variable.Z_var)
+    )
 
-    return kernel(distributional_inducing_points, Xnew, seed = seed)
+    return kernel(distributional_inducing_points, Xnew, seed=seed)

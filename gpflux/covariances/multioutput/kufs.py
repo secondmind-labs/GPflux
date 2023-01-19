@@ -16,25 +16,23 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-
+from gpflow.covariances.dispatch import Kuf
+from gpflow.inducing_variables import SharedIndependentInducingVariables
 
 from gpflux.inducing_variables import SharedIndependentDistributionalInducingVariables
+from gpflux.kernels import DistributionalSharedIndependent
 
 
-from gpflow.inducing_variables import (
-    SharedIndependentInducingVariables,
+@Kuf.register(
+    SharedIndependentDistributionalInducingVariables,
+    DistributionalSharedIndependent,
+    tfp.distributions.MultivariateNormalDiag,
 )
-
-
-from gpflux.kernels import DistributionalSharedIndependent 
-from gpflow.covariances.dispatch import Kuf
-
-@Kuf.register(SharedIndependentDistributionalInducingVariables, DistributionalSharedIndependent, tfp.distributions.MultivariateNormalDiag)
 def Kuf_shared_shared_distributional(
     inducing_variable: SharedIndependentInducingVariables,
     kernel: DistributionalSharedIndependent,
     Xnew: tfp.distributions.MultivariateNormalDiag,
     *,
-    seed:int = None
+    seed: int = None
 ) -> tf.Tensor:
-    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew, seed = seed)  # [M, N]
+    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew, seed=seed)  # [M, N]

@@ -15,6 +15,4 @@
 #
 from gpflux.conditionals.multioutput import conditionals
 
-__all__ = [
-    "conditionals"
-]
+__all__ = ["conditionals"]

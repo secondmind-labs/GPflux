@@ -19,23 +19,19 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import MeanAndVariance
+from gpflow.inducing_variables import SharedIndependentInducingVariables
 
-from gpflux.inducing_variables import SharedIndependentDistributionalInducingVariables
-
-from gpflow.inducing_variables import (
-    SharedIndependentInducingVariables,
-)
-
-from gpflux.kernels import DistributionalSharedIndependent
-
-from gpflux.posteriors import (
-    IndependentPosteriorMultiOutput,
-)
 from gpflux.conditionals.dispatch import conditional
+from gpflux.inducing_variables import SharedIndependentDistributionalInducingVariables
+from gpflux.kernels import DistributionalSharedIndependent
+from gpflux.posteriors import IndependentPosteriorMultiOutput
 
 
 @conditional._gpflow_internal_register(
-    tfp.distributions.MultivariateNormalDiag, SharedIndependentDistributionalInducingVariables, DistributionalSharedIndependent, object
+    tfp.distributions.MultivariateNormalDiag,
+    SharedIndependentDistributionalInducingVariables,
+    DistributionalSharedIndependent,
+    object,
 )
 def shared_independent_distributional_conditional(
     Xnew: tf.Tensor,
@@ -83,5 +79,5 @@ def shared_independent_distributional_conditional(
         whiten=white,
         mean_function=None,
     )
-    #TODO -- I think I need also a Xnew_moments here
+    # TODO -- I think I need also a Xnew_moments here
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

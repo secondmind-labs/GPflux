@@ -18,33 +18,37 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflux.inducing_variables.distributional_inducing_variables import DistributionalInducingVariables
-from gpflux.inducing_variables.multioutput.distributional_inducing_variables import SharedIndependentDistributionalInducingVariables
-
+from gpflow import kernels
 from gpflow.base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
 from gpflow.conditionals.util import *
 from gpflow.config import default_float, default_jitter
-from gpflux.covariances.multioutput.kuus import Kuu
-from gpflux.covariances.multioutput.kufs import Kuf
 from gpflow.inducing_variables import (
     InducingPoints,
     InducingVariables,
     SharedIndependentInducingVariables,
 )
+from gpflow.kernels import Kernel
+from gpflow.mean_functions import MeanFunction
+
+from gpflux.covariances.multioutput.kufs import Kuf
+from gpflux.covariances.multioutput.kuus import Kuu
 from gpflux.inducing_variables import (
     DistributionalInducingPoints,
     DistributionalInducingVariables,
     SharedIndependentDistributionalInducingVariables,
 )
+from gpflux.inducing_variables.distributional_inducing_variables import (
+    DistributionalInducingVariables,
+)
+from gpflux.inducing_variables.multioutput.distributional_inducing_variables import (
+    SharedIndependentDistributionalInducingVariables,
+)
 from gpflux.kernels import *
-from gpflow import kernels
 
-from gpflow.kernels import Kernel
-from gpflow.mean_functions import MeanFunction
-import numpy as np
 
 class AbstractPosterior(Module, ABC):
     def __init__(
@@ -75,7 +79,10 @@ class AbstractPosterior(Module, ABC):
             return mean + self.mean_function(Xnew)
 
     def fused_predict_f(
-        self, Xnew: Union[TensorType,tfp.distributions.MultivariateNormalDiag], full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         Computes predictive mean and (co)variance at Xnew, including mean_function
@@ -88,7 +95,10 @@ class AbstractPosterior(Module, ABC):
 
     @abstractmethod
     def _conditional_fused(
-        self, Xnew: Union[TensorType,tfp.distributions.MultivariateNormalDiag], full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
@@ -100,7 +110,7 @@ class BasePosterior(AbstractPosterior):
     def __init__(
         self,
         kernel: Kernel,
-        inducing_variable: Union[InducingVariables,DistributionalInducingVariables],
+        inducing_variable: Union[InducingVariables, DistributionalInducingVariables],
         q_mu: tf.Tensor,
         q_sqrt: tf.Tensor,
         whiten: bool = True,
@@ -111,7 +121,7 @@ class BasePosterior(AbstractPosterior):
         self.whiten = whiten
         self.q_mu = q_mu
         self.q_sqrt = q_sqrt
-        #self._set_qdist(q_mu, q_sqrt)
+        # self._set_qdist(q_mu, q_sqrt)
 
     """
     @property
@@ -129,16 +139,17 @@ class BasePosterior(AbstractPosterior):
             self._q_dist = _MvNormal(q_mu, q_sqrt)
     """
 
-class IndependentPosterior(BasePosterior):
 
+class IndependentPosterior(BasePosterior):
     def _post_process_mean_and_cov(
         self, mean: TensorType, cov: TensorType, full_cov: bool, full_output_cov: bool
     ) -> MeanAndVariance:
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
 
-
-    #NOTE -- we actually don't use this function in the end
-    def _get_Kff(self, Xnew: Union[TensorType,tfp.distributions.MultivariateNormalDiag], full_cov: bool) -> tf.Tensor:
+    # NOTE -- we actually don't use this function in the end
+    def _get_Kff(
+        self, Xnew: Union[TensorType, tfp.distributions.MultivariateNormalDiag], full_cov: bool
+    ) -> tf.Tensor:
 
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
 
@@ -161,12 +172,16 @@ class IndependentPosterior(BasePosterior):
 
         return Kff
 
-#NOTE -- we don't actually make use of this
+
+# NOTE -- we don't actually make use of this
 class IndependentPosteriorSingleOutput(IndependentPosterior):
 
     # could almost be the same as IndependentPosteriorMultiOutput ...
     def _conditional_fused(
-        self, Xnew: Union[TensorType,tfp.distributions.MultivariateNormalDiag], full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following
         # line:
@@ -180,16 +195,20 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
         )  # [N, P],  [P, N, N] or [N, P]
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
+
 class IndependentPosteriorMultiOutput(IndependentPosterior):
     def _conditional_fused(
-        self, Xnew: Union[TensorType,tfp.distributions.MultivariateNormalDiag], full_cov: bool = False, full_output_cov: bool = False
+        self,
+        Xnew: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
 
-
-        #TODO -- could probably be done more neatly with
+        # TODO -- could probably be done more neatly with
 
         if isinstance(self.X_data, SharedIndependentInducingVariables) and isinstance(
-            self.kernel, kernels.SharedIndependent):
+            self.kernel, kernels.SharedIndependent
+        ):
             # same as IndependentPosteriorSingleOutput except for following line
 
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
@@ -201,24 +220,24 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
             fmean, fvar = base_conditional(
                 Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
             )  # [N, P],  [P, N, N] or [N, P]
-        elif isinstance(self.X_data, SharedIndependentDistributionalInducingVariables) and isinstance(
-            self.kernel, DistributionalSharedIndependent):
+        elif isinstance(
+            self.X_data, SharedIndependentDistributionalInducingVariables
+        ) and isinstance(self.kernel, DistributionalSharedIndependent):
             # same as IndependentPosteriorSingleOutput except for following line
 
-            #TODO -- this is expecting a positional argument X_moments
+            # TODO -- this is expecting a positional argument X_moments
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
             # we don't call self.kernel() directly as that would do unnecessary tiling
 
             lcl_seed = np.random.randint(1e5)
             tf.random.set_seed(lcl_seed)
 
-            Kmm = Kuu(self.X_data, self.kernel, jitter=default_jitter(), seed = lcl_seed)  # [M, M]
-            Kmn = Kuf(self.X_data, self.kernel, Xnew, seed  = lcl_seed)  # [M, N]
+            Kmm = Kuu(self.X_data, self.kernel, jitter=default_jitter(), seed=lcl_seed)  # [M, M]
+            Kmn = Kuf(self.X_data, self.kernel, Xnew, seed=lcl_seed)  # [M, N]
 
             fmean, fvar = base_conditional(
                 Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
             )  # [N, P],  [P, N, N] or [N, P]
-
 
         else:
             raise NotImplementedError
@@ -226,16 +245,10 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
 
-
-
-
-
 from gpflow.utilities import Dispatcher
 
-
 get_posterior_class = Dispatcher("get_posterior_class")
-from gpflow.kernels import SharedIndependent, SeparateIndependent
-
+from gpflow.kernels import SeparateIndependent, SharedIndependent
 
 """
 #NOTE -- I don't think we need this here
@@ -247,6 +260,7 @@ def _get_posterior_base_case(
     return IndependentPosteriorSingleOutput
 """
 
+
 @get_posterior_class.register(
     (SharedIndependent, SeparateIndependent),
     SharedIndependentInducingVariables,
@@ -256,7 +270,6 @@ def _get_posterior_independent_mo(
 ) -> Type[BasePosterior]:
     # independent multi-output
     return IndependentPosteriorMultiOutput
-
 
 
 @get_posterior_class.register(

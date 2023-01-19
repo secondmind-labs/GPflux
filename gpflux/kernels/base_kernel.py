@@ -39,24 +39,25 @@ from gpflow.base import AnyNDArray, Module, TensorType
 ActiveDims = Union[slice, Sequence[int]]
 NormalizedActiveDims = Union[slice, AnyNDArray]
 
+
 class DistributionalKernel(Module, metaclass=abc.ABCMeta):
 
     """
     The basic distributional kernel class. Does not handle active dims or any other associated checks for ARD parameters.
     """
 
-    def __init__(
-        self, name: Optional[str] = None
-    ) -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         """
         :param name: optional kernel name.
         """
         super().__init__(name=name)
 
     @abc.abstractmethod
-    def K(self, X: tfp.distributions.MultivariateNormalDiag, 
+    def K(
+        self,
+        X: tfp.distributions.MultivariateNormalDiag,
         X2: Optional[tfp.distributions.MultivariateNormalDiag] = None,
-        ) -> tf.Tensor:
+    ) -> tf.Tensor:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -70,7 +71,8 @@ class DistributionalKernel(Module, metaclass=abc.ABCMeta):
         *,
         full_cov: bool = True,
         presliced: bool = False,
-        seed: int = None) -> tf.Tensor:
+        seed: int = None
+    ) -> tf.Tensor:
 
         if (not full_cov) and (X2 is not None):
             raise ValueError("Ambiguous inputs: `not full_cov` and `X2` are not compatible.")
@@ -82,7 +84,7 @@ class DistributionalKernel(Module, metaclass=abc.ABCMeta):
 
         else:
 
-            return self.K(X, X2, seed = seed)
+            return self.K(X, X2, seed=seed)
 
     def __add__(self, other: "DistributionalKernel") -> "DistributionalKernel":
         return Sum([self, other])
@@ -124,20 +126,16 @@ class DistributionalCombination(DistributionalKernel):
 
 class ReducingCombination(DistributionalCombination):
     def __call__(
-        self,
-        X: TensorType,
-        X2: Optional[TensorType] = None,
-        *,
-        full_cov: bool = True
+        self, X: TensorType, X2: Optional[TensorType] = None, *, full_cov: bool = True
     ) -> tf.Tensor:
 
-        return self._reduce(
-            [k(X,  X2, full_cov=full_cov) for k in self.kernels]
-        )
+        return self._reduce([k(X, X2, full_cov=full_cov) for k in self.kernels])
 
-    def K(self, X: tfp.distributions.MultivariateNormalDiag, 
+    def K(
+        self,
+        X: tfp.distributions.MultivariateNormalDiag,
         X2: Optional[tfp.distributions.MultivariateNormalDiag] = None,
-        ) -> tf.Tensor:
+    ) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])
 
     def K_diag(self, X: TensorType) -> tf.Tensor:

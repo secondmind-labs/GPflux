@@ -20,13 +20,16 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import MeanAndVariance
-from gpflux.posteriors import BasePosterior, get_posterior_class
-from gpflux.conditionals.dispatch import conditional
 
+from gpflux.conditionals.dispatch import conditional
 from gpflux.inducing_variables import DistributionalInducingVariables
 from gpflux.kernels import DistributionalKernel
+from gpflux.posteriors import BasePosterior, get_posterior_class
 
-@conditional._gpflow_internal_register(object, object, DistributionalInducingVariables, DistributionalKernel, object)
+
+@conditional._gpflow_internal_register(
+    object, object, DistributionalInducingVariables, DistributionalKernel, object
+)
 def _sparse_distributional_conditional(
     Xnew: tf.Tensor,
     Xnew_moments: tfp.distributions.MultivariateNormalDiag,
@@ -78,4 +81,6 @@ def _sparse_distributional_conditional(
         mean_function=None,
         precompute_cache=None,
     )
-    return posterior.fused_predict_f(Xnew, Xnew_moments, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(
+        Xnew, Xnew_moments, full_cov=full_cov, full_output_cov=full_output_cov
+    )

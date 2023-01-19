@@ -20,20 +20,16 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-
 from gpflow import Parameter, default_float
+from gpflow.mean_functions import Identity, MeanFunction
+from gpflow.utilities.bijectors import triangular
+
 from gpflux.conditionals.multioutput.conditionals import conditional
 from gpflux.inducing_variables import MultioutputDistributionalInducingVariables
 from gpflux.kernels import DistributionalMultioutputKernel
 from gpflux.kullback_leiblers import prior_kl
-from gpflow.mean_functions import Identity, MeanFunction
-from gpflow.utilities.bijectors import triangular
-
-
 from gpflux.math import _cholesky_with_jitter
 from gpflux.sampling.sample import Sample, efficient_sample
-
-
 
 
 class DistGPLayer(tfp.layers.DistributionLambda):
@@ -42,7 +38,6 @@ class DistGPLayer(tfp.layers.DistributionLambda):
     inducing variables and variational distribution, and mean function.
     """
 
-
     num_data: int
     whiten: bool
     num_samples: Optional[int]
@@ -50,7 +45,6 @@ class DistGPLayer(tfp.layers.DistributionLambda):
     full_output_cov: bool
     q_mu: Parameter
     q_sqrt: Parameter
-
 
     def __init__(
         self,
@@ -110,7 +104,6 @@ class DistGPLayer(tfp.layers.DistributionLambda):
             to show debug information.
         """
 
-
         super().__init__(
             make_distribution_fn=self._make_distribution_fn,
             convert_to_tensor_fn=self._convert_to_tensor_fn,
@@ -118,11 +111,9 @@ class DistGPLayer(tfp.layers.DistributionLambda):
             name=name,
         )
 
-
         self.kernel = kernel
         self.inducing_variable = inducing_variable
         self.num_data = num_data
-
 
         if mean_function is None:
             mean_function = Identity()
@@ -135,7 +126,6 @@ class DistGPLayer(tfp.layers.DistributionLambda):
                 )
         self.mean_function = mean_function
 
-
         self.full_output_cov = full_output_cov
         self.full_cov = full_cov
         self.whiten = whiten
@@ -143,14 +133,14 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         num_inducing = self.inducing_variable.num_inducing
         self.num_latent_gps = num_latent_gps
 
-
         ###### Introduce variational parameters for q(U) #######
         self.q_mu = Parameter(
-            np.random.uniform(-0.5, 0.5, (num_inducing, self.num_latent_gps)), # np.zeros((num_inducing, self.num_latent_gps)),
+            np.random.uniform(
+                -0.5, 0.5, (num_inducing, self.num_latent_gps)
+            ),  # np.zeros((num_inducing, self.num_latent_gps)),
             dtype=default_float(),
             name=f"{self.name}_q_mu" if self.name else "q_mu",
         )  # [num_inducing, num_latent_gps]
-
 
         self.q_sqrt = Parameter(
             np.stack([np.eye(num_inducing) for _ in range(self.num_latent_gps)]),
@@ -159,9 +149,7 @@ class DistGPLayer(tfp.layers.DistributionLambda):
             name=f"{self.name}_q_sqrt" if self.name else "q_sqrt",
         )  # [num_latent_gps, num_inducing, num_inducing]
 
-
         self.num_samples = num_samples
-
 
     def predict(
         self,
@@ -194,9 +182,7 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         :returns: posterior mean (shape [N, Q]) and (co)variance (shape as above) at test points
         """
 
-
-        #NOTE -- this will only work for constant input-dim architectures
-
+        # NOTE -- this will only work for constant input-dim architectures
 
         mean_cond, cov = conditional(
             inputs,
@@ -210,13 +196,14 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         )
         mean_function = self.mean_function(inputs.mean())
 
-
         return mean_cond + mean_function, cov
 
-
-
-
-    def call(self, inputs: tfp.distributions.MultivariateNormalDiag, *args: List[Any], **kwargs: Dict[str, Any]):
+    def call(
+        self,
+        inputs: tfp.distributions.MultivariateNormalDiag,
+        *args: List[Any],
+        **kwargs: Dict[str, Any],
+    ):
         """
         The default behaviour upon calling this layer.
 
@@ -231,25 +218,19 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         this layer and the GP prior (scaled to per-datapoint).
         """
 
-
-        # I think this is getting just the samples from the distribution 
+        # I think this is getting just the samples from the distribution
         outputs = super().call(inputs, *args, **kwargs)
-        #NOTE -- at this point it seems to spit out the (distribution, distribution.sample()) as a tuple
-
+        # NOTE -- at this point it seems to spit out the (distribution, distribution.sample()) as a tuple
 
         if kwargs.get("training"):
             log_prior = tf.add_n([p.log_prior_density() for p in self.kernel.trainable_parameters])
             loss = self.prior_kl() - log_prior
             loss_per_datapoint = loss / self.num_data
 
-
         else:
             # TF quirk: add_loss must always add a tensor to compile
             loss_per_datapoint = tf.constant(0.0, dtype=default_float())
         self.add_loss(loss_per_datapoint)
-
-
-
 
         """
         # Metric names should be unique; otherwise they get overwritten if you
@@ -292,11 +273,9 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         tf.summary.histogram(
             name = "output_variance", data = outputs_var_param
         )  
-        """ 
-
+        """
 
         return outputs
-
 
     def prior_kl(self) -> tf.Tensor:
         r"""
@@ -307,7 +286,6 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         return prior_kl(
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
         )
-
 
     def _make_distribution_fn(
         self, previous_layer_outputs: tfp.distributions.MultivariateNormalDiag
@@ -320,37 +298,40 @@ class DistGPLayer(tfp.layers.DistributionLambda):
             which should be coercible to a `tf.Tensor`
         """
 
-
         mean, cov = self.predict(
             previous_layer_outputs,
             full_cov=self.full_cov,
             full_output_cov=self.full_output_cov,
         )
 
-
         if self.full_cov and not self.full_output_cov:
             # mean: [N, Q], cov: [Q, N, N]
             return tfp.distributions.MultivariateNormalTriL(
-                loc=tf.linalg.adjoint(mean), scale_tril=_cholesky_with_jitter(cov),  name = self.name+'/Mvn'
+                loc=tf.linalg.adjoint(mean),
+                scale_tril=_cholesky_with_jitter(cov),
+                name=self.name + "/Mvn",
             )  # loc: [Q, N], scale: [Q, N, N]
         elif self.full_output_cov and not self.full_cov:
             # mean: [N, Q], cov: [N, Q, Q]
             return tfp.distributions.MultivariateNormalTriL(
-                loc=mean, scale_tril=_cholesky_with_jitter(cov), name = self.name+'/Mvn'
+                loc=mean, scale_tril=_cholesky_with_jitter(cov), name=self.name + "/Mvn"
             )  # loc: [N, Q], scale: [N, Q, Q]
         elif not self.full_cov and not self.full_output_cov:
             # mean: [N, Q], cov: [N, Q]
-            tf.debugging.assert_greater(cov, tf.zeros_like(cov, dtype = default_float()), 
-                message="Unverlying covariance matrix is not positive", 
-                name = "assert_cov_g_zero")
+            tf.debugging.assert_greater(
+                cov,
+                tf.zeros_like(cov, dtype=default_float()),
+                message="Unverlying covariance matrix is not positive",
+                name="assert_cov_g_zero",
+            )
 
-
-            return tfp.distributions.MultivariateNormalDiag(loc=mean, scale_diag=tf.sqrt(cov), name = self.name+'/Mvn')
+            return tfp.distributions.MultivariateNormalDiag(
+                loc=mean, scale_diag=tf.sqrt(cov), name=self.name + "/Mvn"
+            )
         else:
             raise NotImplementedError(
                 "The combination of both `full_cov` and `full_output_cov` is not permitted."
             )
-
 
     def _convert_to_tensor_fn(self, distribution: tfp.distributions.Distribution):
         """
@@ -370,21 +351,14 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         else:
             samples = distribution.sample()  # [Q, N] if full_cov else [N, Q]
 
-
         if self.full_cov:
             samples = tf.linalg.adjoint(samples)  # [S, N, Q] or [N, Q]
 
-
         return samples
-
-
-
 
     def sample(self) -> Sample:
 
-
-        #.. todo:: TODO: Document this.
-
+        # .. todo:: TODO: Document this.
 
         return (
             efficient_sample(

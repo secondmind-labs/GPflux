@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from gpflux.inducing_variables.distributional_inducing_variables import DistributionalInducingPoints, DistributionalInducingVariables
+from gpflux.inducing_variables.distributional_inducing_variables import (
+    DistributionalInducingPoints,
+    DistributionalInducingVariables,
+)
 from gpflux.inducing_variables.multioutput import (
     FallbackSeparateIndependentDistributionalInducingVariables,
     FallbackSharedIndependentDistributionalInducingVariables,
@@ -22,10 +25,7 @@ from gpflux.inducing_variables.multioutput import (
     SharedIndependentDistributionalInducingVariables,
 )
 
-
-
 __all__ = [
-
     "DistributionalInducingPoints",
     "DistributionalInducingVariables",
     "distributional_inducing_variables",

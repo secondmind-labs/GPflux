@@ -33,27 +33,28 @@ from gpflow.inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
+from gpflow.kernels import (
+    Kernel,
+    MultioutputKernel,
+    SeparateIndependent,
+    SharedIndependent,
+    Stationary,
+)
 from gpflow.utilities import deepcopy
-
-from gpflux.layers.gp_layer import GPLayer
 
 from gpflux.inducing_variables import (
     DistributionalInducingPoints,
+    MultioutputDistributionalInducingVariables,
     SeparateIndependentDistributionalInducingVariables,
     SharedIndependentDistributionalInducingVariables,
-    MultioutputDistributionalInducingVariables
 )
-
-from gpflow.kernels import (
-    SeparateIndependent, SharedIndependent, Kernel, MultioutputKernel, Stationary
-)
-
 from gpflux.kernels import (
-    DistributionalSeparateIndependent, DistributionalSharedIndependent, DistributionalKernel
+    DistributionalKernel,
+    DistributionalSeparateIndependent,
+    DistributionalSharedIndependent,
 )
-
-
 from gpflux.layers.dist_gp_layer import DistGPLayer
+from gpflux.layers.gp_layer import GPLayer
 
 
 def construct_basic_kernel(
@@ -333,12 +334,12 @@ def construct_basic_hybrid_kernel(
         the different outputs, but the kernel can have different hyperparameter values for each.
     """
     if isinstance(kernels, list):
-        mo_kern = DistributionalSeparateIndependent(kernels, name = name)
+        mo_kern = DistributionalSeparateIndependent(kernels, name=name)
     elif not share_hyperparams:
         copies = [deepcopy(kernels) for _ in range(output_dim)]
-        mo_kern = DistributionalSeparateIndependent(copies, name = name)
+        mo_kern = DistributionalSeparateIndependent(copies, name=name)
     else:
-        mo_kern = DistributionalSharedIndependent(kernels, output_dim, name = name)
+        mo_kern = DistributionalSharedIndependent(kernels, output_dim, name=name)
     return mo_kern
 
 
@@ -349,7 +350,7 @@ def construct_basic_distributional_inducing_variables(
     share_variables: bool = False,
     z_init_mean: Optional[np.ndarray] = None,
     z_init_var: Optional[np.ndarray] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
 ) -> MultioutputDistributionalInducingVariables:
     r"""
     Construct a compatible :class:`~gpflow.inducing_variables.MultioutputInducingVariables`
@@ -417,23 +418,26 @@ def construct_basic_distributional_inducing_variables(
                 assert len(z_init_mean[i]) == num_ind_var
                 z_init_mean_i = z_init_mean[i]
             else:
-                #z_init_mean_i = np.random.randn(num_ind_var, input_dim).astype(dtype=default_float())
-                z_init_mean_i = np.random.uniform(low=-0.5, high=0.5, size=(num_ind_var, input_dim)).astype(dtype=default_float())
+                # z_init_mean_i = np.random.randn(num_ind_var, input_dim).astype(dtype=default_float())
+                z_init_mean_i = np.random.uniform(
+                    low=-0.5, high=0.5, size=(num_ind_var, input_dim)
+                ).astype(dtype=default_float())
             assert z_init_mean_i.shape == (num_ind_var, input_dim)
 
             if z_init_var_is_given:
                 assert len(z_init_var[i]) == num_ind_var
                 z_init_var_i = z_init_var[i]
             else:
-                #z_init_var_i = np.random.lognormal(size=(num_ind_var, input_dim)).astype(dtype=default_float())
+                # z_init_var_i = np.random.lognormal(size=(num_ind_var, input_dim)).astype(dtype=default_float())
 
                 z_init_var_i = np.ones((num_ind_var, input_dim)) * 0.0067153485
                 z_init_var_i = z_init_var_i.astype(dtype=default_float())
 
             assert z_init_var_i.shape == (num_ind_var, input_dim)
 
-
-            inducing_variables.append(DistributionalInducingPoints(z_init_mean_i, z_init_var_i, name = name))
+            inducing_variables.append(
+                DistributionalInducingPoints(z_init_mean_i, z_init_var_i, name=name)
+            )
         return SeparateIndependentDistributionalInducingVariables(inducing_variables)
 
     elif not share_variables:
@@ -448,8 +452,10 @@ def construct_basic_distributional_inducing_variables(
                     )
                 z_init_mean_o = z_init_mean[o]
             else:
-                #z_init_mean_o = np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
-                z_init_mean_o = np.random.uniform(low=-0.5, high=0.5, size=(num_inducing, input_dim)).astype(dtype=default_float())
+                # z_init_mean_o = np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
+                z_init_mean_o = np.random.uniform(
+                    low=-0.5, high=0.5, size=(num_inducing, input_dim)
+                ).astype(dtype=default_float())
 
             if z_init_var_is_given:
                 if z_init_var.shape != (output_dim, num_inducing, input_dim):
@@ -459,11 +465,13 @@ def construct_basic_distributional_inducing_variables(
                     )
                 z_init_var_o = z_init_var[o]
             else:
-                #z_init_var_o = np.random.lognormal(num_inducing, input_dim).astype(dtype=default_float())
+                # z_init_var_o = np.random.lognormal(num_inducing, input_dim).astype(dtype=default_float())
                 z_init_var_o = np.ones((num_inducing, input_dim)) * 0.0067153485
                 z_init_var_o = z_init_var_o.astype(dtype=default_float())
 
-            inducing_variables.append(DistributionalInducingPoints(z_init_mean_o, z_init_var_o, name = name))
+            inducing_variables.append(
+                DistributionalInducingPoints(z_init_mean_o, z_init_var_o, name=name)
+            )
         return SeparateIndependentDistributionalInducingVariables(inducing_variables)
 
     else:
@@ -472,16 +480,20 @@ def construct_basic_distributional_inducing_variables(
         z_init_mean = (
             z_init_mean
             if z_init_mean_is_given
-            else np.random.uniform(low=-0.5, high=0.5, size=(num_inducing, input_dim)).astype(dtype=default_float()) #np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
+            else np.random.uniform(low=-0.5, high=0.5, size=(num_inducing, input_dim)).astype(
+                dtype=default_float()
+            )  # np.random.randn(num_inducing, input_dim).astype(dtype=default_float())
         )
         z_init_var = (
             z_init_var
             if z_init_var_is_given
-            else 0.0067153485 * np.ones((num_inducing, input_dim)).astype(dtype=default_float())     #np.random.lognormal(size=(num_inducing, input_dim)).astype(dtype=default_float())
+            else 0.0067153485
+            * np.ones((num_inducing, input_dim)).astype(
+                dtype=default_float()
+            )  # np.random.lognormal(size=(num_inducing, input_dim)).astype(dtype=default_float())
         )
-        shared_ip = DistributionalInducingPoints(z_init_mean, z_init_var, name = name)
+        shared_ip = DistributionalInducingPoints(z_init_mean, z_init_var, name=name)
         return SharedIndependentDistributionalInducingVariables(shared_ip)
-
 
 
 def construct_dist_gp_layer(
@@ -516,7 +528,9 @@ def construct_dist_gp_layer(
     """
     lengthscale = float(input_dim) ** 0.5
     base_kernel = kernel_class(lengthscales=np.full(input_dim, lengthscale))
-    kernel = construct_basic_hybrid_kernel(base_kernel, output_dim=output_dim, share_hyperparams=True)
+    kernel = construct_basic_hybrid_kernel(
+        base_kernel, output_dim=output_dim, share_hyperparams=True
+    )
     inducing_variable = construct_basic_distributional_inducing_variables(
         num_inducing,
         input_dim,

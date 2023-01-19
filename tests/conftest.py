@@ -1,11 +1,14 @@
 from functools import partial
+
 import numpy as np
 import pytest
 import tensorflow as tf
 from packaging.version import Version
-from gpflux.architectures import build_dist_deep_gp
-from gpflux.models.dist_deep_gp import DistDeepGP, DistConfig
+
 from gpflow.kernels import SquaredExponential
+
+from gpflux.architectures import build_dist_deep_gp
+from gpflux.models.dist_deep_gp import DistConfig, DistDeepGP
 
 # TODO: It would be great to make serialisation work in general. See:
 # https://github.com/GPflow/GPflow/issues/1658
@@ -42,8 +45,6 @@ def _ddgp_model(linear_dataset_querypoints: tf.Tensor) -> DistDeepGP:
             whiten=True,
         )
 
-        return build_dist_deep_gp(
-            X=linear_dataset_querypoints, num_layers=2, config=config
-        )
+        return build_dist_deep_gp(X=linear_dataset_querypoints, num_layers=2, config=config)
 
     return partial(_buil_dgp)

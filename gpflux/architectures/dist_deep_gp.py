@@ -27,25 +27,20 @@ from scipy.cluster.vq import kmeans2
 
 import gpflow
 from gpflow.kernels import SquaredExponential
-from gpflux.kernels import Hybrid
 from gpflow.likelihoods import Gaussian
+from gpflow.mean_functions import Zero
 
 from gpflux.helpers import (
-    construct_basic_hybrid_kernel,
     construct_basic_distributional_inducing_variables,
+    construct_basic_hybrid_kernel,
     construct_basic_inducing_variables,
     construct_basic_kernel,
     construct_mean_function,
 )
-
-from gpflux.layers import (
-    DistGPLayer,
-    GPLayer,
-    LikelihoodLayer
-)
-
+from gpflux.kernels import Hybrid
+from gpflux.layers import DistGPLayer, GPLayer, LikelihoodLayer
 from gpflux.models import DistDeepGP
-from gpflow.mean_functions import Zero
+
 
 @dataclass
 class DistConfig:
@@ -72,7 +67,7 @@ class DistConfig:
     by the Deep GP.
     """
 
-    hidden_layer_size : int
+    hidden_layer_size: int
     """
     Number of hidden units to be used for each hidden layer in the architecture.
     """
@@ -102,8 +97,8 @@ def _construct_euclidean_kernel(input_dim: int, is_last_layer: bool) -> SquaredE
     otherwise, the kernel variance is set to 1.0.
     :param input_dim: The input dimensionality of the layer.
     :param is_last_layer: Whether the kernel is part of the last layer in the Deep GP.
-    """ 
-    ### Custom values taken from DistDGP paper 
+    """
+    ### Custom values taken from DistDGP paper
     variance = 0.351
 
     # TODO: Looking at this initializing to 2 (assuming N(0, 1) or U[0,1] normalized
@@ -111,6 +106,7 @@ def _construct_euclidean_kernel(input_dim: int, is_last_layer: bool) -> SquaredE
     # something where the value scaled with the number of dimensions before
     lengthscales = [0.351] * input_dim
     return SquaredExponential(lengthscales=lengthscales, variance=variance)
+
 
 def _construct_hybrid_kernel(input_dim: int) -> Hybrid:
     """
@@ -184,7 +180,7 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
         q_sqrt_scaling = 1.0
     else:
         mean_function = construct_mean_function(X_running, D_out)
-        #X_running = mean_function(X_running)
+        # X_running = mean_function(X_running)
         if tf.is_tensor(X_running):
             X_running = X_running.numpy()
 
@@ -213,15 +209,17 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
         # Pass in kernels, specify output dim (shared hyperparams/variables)
 
         inducing_var = construct_basic_distributional_inducing_variables(
-            num_inducing=config.num_inducing, input_dim=D_in, share_variables=True, name = f"dist_gp_{i_layer}"
+            num_inducing=config.num_inducing,
+            input_dim=D_in,
+            share_variables=True,
+            name=f"dist_gp_{i_layer}",
         )
 
-        kernel = construct_basic_hybrid_kernel  (
-            kernels=_construct_hybrid_kernel(D_in) #, is_last_layer, name = f"dist_gp_{i_layer}")
-            ,
+        kernel = construct_basic_hybrid_kernel(
+            kernels=_construct_hybrid_kernel(D_in),  # , is_last_layer, name = f"dist_gp_{i_layer}")
             output_dim=D_out,
             share_hyperparams=True,
-            name = f"dist_gp_{i_layer}"
+            name=f"dist_gp_{i_layer}",
         )
 
         assert config.whiten is True, "non-whitened case not implemented yet"
@@ -232,8 +230,8 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
 
         else:
             mean_function = construct_mean_function(X_running, D_out)
-            #NOTE -- I think this would only work for constant input-dim DGP architectures
-            #X_running = mean_function(X_running)
+            # NOTE -- I think this would only work for constant input-dim DGP architectures
+            # X_running = mean_function(X_running)
             if tf.is_tensor(X_running):
                 X_running = X_running.numpy()
             q_sqrt_scaling = config.inner_layer_qsqrt_factor
@@ -256,4 +254,4 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
     else:
         raise WarningMessage("wrong specification for likelihood")
 
-    return DistDeepGP(gp_layers, LikelihoodLayer(likelihood), num_data = num_data)
+    return DistDeepGP(gp_layers, LikelihoodLayer(likelihood), num_data=num_data)

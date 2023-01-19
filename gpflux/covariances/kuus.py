@@ -16,19 +16,24 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-
+from gpflux.covariances.dispatch import Kuu
 from gpflux.inducing_variables import DistributionalInducingPoints
 from gpflux.kernels import DistributionalKernel
-from gpflux.covariances.dispatch import Kuu
+
 
 @Kuu.register(DistributionalInducingPoints, DistributionalKernel)
 def Kuu_kernel_distributionalinducingpoints(
-    inducing_variable: DistributionalInducingPoints, kernel: DistributionalKernel, *, jitter: float = 0.0, seed: int = None
+    inducing_variable: DistributionalInducingPoints,
+    kernel: DistributionalKernel,
+    *,
+    jitter: float = 0.0,
+    seed: int = None
 ) -> tf.Tensor:
 
     # Create instance of tfp.distributions.MultivariateNormalDiag so that it works with underpinning methods from kernel
-    distributional_inducing_points = tfp.distributions.MultivariateNormalDiag(loc = inducing_variable.Z_mean,
-        scale_diag = tf.sqrt(inducing_variable.Z_var))
-    Kzz = kernel(distributional_inducing_points, seed = seed)    
+    distributional_inducing_points = tfp.distributions.MultivariateNormalDiag(
+        loc=inducing_variable.Z_mean, scale_diag=tf.sqrt(inducing_variable.Z_var)
+    )
+    Kzz = kernel(distributional_inducing_points, seed=seed)
     Kzz += jitter * tf.eye(inducing_variable.num_inducing, dtype=Kzz.dtype)
     return Kzz

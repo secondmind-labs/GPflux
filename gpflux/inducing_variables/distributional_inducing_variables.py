@@ -54,11 +54,15 @@ class DistributionalInducingPointsBase(DistributionalInducingVariables):
         """
         super().__init__(name=name)
         if not isinstance(Z_mean, (tf.Variable, tfp.util.TransformedVariable)):
-            Z_mean = Parameter(Z_mean, name = f"{self.name}_Z_mean" if self.name else "Z_mean")
+            Z_mean = Parameter(Z_mean, name=f"{self.name}_Z_mean" if self.name else "Z_mean")
         self.Z_mean = Z_mean
 
         if not isinstance(Z_var, (tf.Variable, tfp.util.TransformedVariable)):
-            Z_var = Parameter(value=Z_var, transform=positive(), name = f"{self.name}_Z_var" if self.name else "Z_var")
+            Z_var = Parameter(
+                value=Z_var,
+                transform=positive(),
+                name=f"{self.name}_Z_var" if self.name else "Z_var",
+            )
         self.Z_var = Z_var
 
     @property

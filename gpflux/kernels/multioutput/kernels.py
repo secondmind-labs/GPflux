@@ -20,7 +20,9 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import TensorType
+
 from gpflux.kernels.base_kernel import DistributionalCombination, DistributionalKernel
+
 
 class DistributionalMultioutputKernel(DistributionalKernel):
     """
@@ -52,8 +54,10 @@ class DistributionalMultioutputKernel(DistributionalKernel):
 
     @abc.abstractmethod
     def K(
-        self, X: Union[TensorType,tfp.distributions.MultivariateNormalDiag], 
-        X2: Optional[Union[TensorType,tfp.distributions.MultivariateNormalDiag]] = None, full_output_cov: bool = True
+        self,
+        X: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        X2: Optional[Union[TensorType, tfp.distributions.MultivariateNormalDiag]] = None,
+        full_output_cov: bool = True,
     ) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X2), where f(.) can be multi-dimensional.
@@ -80,8 +84,8 @@ class DistributionalMultioutputKernel(DistributionalKernel):
 
     def __call__(
         self,
-        X: Union[TensorType,tfp.distributions.MultivariateNormalDiag],
-        X2: Optional[Union[TensorType,tfp.distributions.MultivariateNormalDiag]] = None,
+        X: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        X2: Optional[Union[TensorType, tfp.distributions.MultivariateNormalDiag]] = None,
         *,
         full_cov: bool = False,
         full_output_cov: bool = True,
@@ -101,6 +105,7 @@ class DistributionalMultioutputKernel(DistributionalKernel):
             return self.K_diag(X, full_output_cov=full_output_cov)
         return self.K(X, X2, full_output_cov=full_output_cov)
 
+
 class DistributionalSharedIndependent(DistributionalMultioutputKernel):
     """
     - Shared: we use the same kernel for each latent GP
@@ -109,8 +114,10 @@ class DistributionalSharedIndependent(DistributionalMultioutputKernel):
     Use `gpflow.kernels` instead for more efficient code.
     """
 
-    def __init__(self, kernel: DistributionalKernel, output_dim: int, *, name: Optional[str] = None) -> None:
-        super().__init__(name = name)
+    def __init__(
+        self, kernel: DistributionalKernel, output_dim: int, *, name: Optional[str] = None
+    ) -> None:
+        super().__init__(name=name)
         self.kernel = kernel
         self.output_dim = output_dim
 
@@ -125,8 +132,10 @@ class DistributionalSharedIndependent(DistributionalMultioutputKernel):
         return (self.kernel,)
 
     def K(
-        self, X: Union[TensorType,tfp.distributions.MultivariateNormalDiag], 
-        X2: Optional[Union[TensorType,tfp.distributions.MultivariateNormalDiag]] = None, full_output_cov: bool = True
+        self,
+        X: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        X2: Optional[Union[TensorType, tfp.distributions.MultivariateNormalDiag]] = None,
+        full_output_cov: bool = True,
     ) -> tf.Tensor:
 
         K = self.kernel.K(X, X2)  # [N, N2]
@@ -140,6 +149,7 @@ class DistributionalSharedIndependent(DistributionalMultioutputKernel):
         K = self.kernel.K_diag(X)  # N
         Ks = tf.tile(K[:, None], [1, self.output_dim])  # [N, P]
         return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
+
 
 class DistributionalSeparateIndependent(DistributionalMultioutputKernel, DistributionalCombination):
     """
@@ -160,8 +170,10 @@ class DistributionalSeparateIndependent(DistributionalMultioutputKernel, Distrib
         return tuple(self.kernels)
 
     def K(
-        self, X: Union[TensorType,tfp.distributions.MultivariateNormalDiag], 
-        X2: Optional[Union[TensorType,tfp.distributions.MultivariateNormalDiag]] = None, full_output_cov: bool = True
+        self,
+        X: Union[TensorType, tfp.distributions.MultivariateNormalDiag],
+        X2: Optional[Union[TensorType, tfp.distributions.MultivariateNormalDiag]] = None,
+        full_output_cov: bool = True,
     ) -> tf.Tensor:
         if full_output_cov:
             Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # [N, N2, P]
@@ -172,4 +184,3 @@ class DistributionalSeparateIndependent(DistributionalMultioutputKernel, Distrib
     def K_diag(self, X: TensorType, full_output_cov: bool = False) -> tf.Tensor:
         stacked = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, P]
         return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
-

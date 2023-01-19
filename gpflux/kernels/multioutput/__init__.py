@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from gpflux.kernels.multioutput.kernels import DistributionalMultioutputKernel, DistributionalSharedIndependent, DistributionalSeparateIndependent
-
-
-
+from gpflux.kernels.multioutput.kernels import (
+    DistributionalMultioutputKernel,
+    DistributionalSeparateIndependent,
+    DistributionalSharedIndependent,
+)
 
 """
 __all__ = [

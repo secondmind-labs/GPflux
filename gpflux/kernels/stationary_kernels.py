@@ -20,8 +20,9 @@ import tensorflow_probability as tfp
 
 from gpflow.base import Parameter, TensorType
 from gpflow.utilities import positive
-from gpflux.utils.ops import square_distance, wasserstein_2_distance
+
 from gpflux.kernels.base_kernel import DistributionalKernel
+from gpflux.utils.ops import square_distance, wasserstein_2_distance
 
 
 class Stationary(DistributionalKernel):
@@ -52,8 +53,16 @@ class Stationary(DistributionalKernel):
                 raise TypeError(f"Unknown keyword argument: {kwarg}")
 
         super().__init__(**kwargs)
-        self.variance = Parameter(variance, transform=positive(), name = f"{self.name}_kernel_variance" if self.name else "kernel_variance")
-        self.lengthscales = Parameter(lengthscales, transform=positive(), name = f"{self.name}_kernel_lengthscales" if self.name else "kernel_lengthscales")
+        self.variance = Parameter(
+            variance,
+            transform=positive(),
+            name=f"{self.name}_kernel_variance" if self.name else "kernel_variance",
+        )
+        self.lengthscales = Parameter(
+            lengthscales,
+            transform=positive(),
+            name=f"{self.name}_kernel_lengthscales" if self.name else "kernel_lengthscales",
+        )
 
     def scale(self, X: TensorType) -> TensorType:
         X_scaled = X / self.lengthscales if X is not None else X
@@ -95,6 +104,7 @@ class IsotropicStationary(Stationary):
         Returns ‖(X - X2ᵀ) / ℓ‖², i.e. the squared L₂-norm.
         """
         return square_distance(self.scale(X), self.scale(X2))
+
 
 class SquaredExponential(IsotropicStationary):
     """
@@ -163,14 +173,12 @@ class Hybrid(IsotropicStationary):
     where:
     r   is the Euclidean distance between the input points, scaled by the lengthscales parameter ℓ.
     σ²  is the variance parameter
-    Functions drawn from a GP with this kernel are infinitely differentiable! 
+    Functions drawn from a GP with this kernel are infinitely differentiable!
     TODO -- this remains to be seen as this also implies a discussion around
-    Wasserstein Gradient Flows 
+    Wasserstein Gradient Flows
     """
 
-    def __init__(
-        self, baseline_kernel, **kwargs: Any
-    ) -> None:
+    def __init__(self, baseline_kernel, **kwargs: Any) -> None:
         """
         :param baseline_kernel: string specifying the underlying kernel to be used withing the Hybrid kernel framework
         :param kwargs: accepts `name` and `active_dims`, which is a list or
@@ -182,13 +190,18 @@ class Hybrid(IsotropicStationary):
         self.baseline_kernel = baseline_kernel
 
     # Overides default K from IsotropicStationary base class
-    def K(self, X: tfp.distributions.MultivariateNormalDiag, X2: Optional[tfp.distributions.MultivariateNormalDiag] = None, *, 
-        seed : Optional[Any] = None) -> tf.Tensor:
+    def K(
+        self,
+        X: tfp.distributions.MultivariateNormalDiag,
+        X2: Optional[tfp.distributions.MultivariateNormalDiag] = None,
+        *,
+        seed: Optional[Any] = None,
+    ) -> tf.Tensor:
 
         w2 = self.scaled_squared_Wasserstein_2_dist(X, X2)
 
         tf.random.set_seed(seed)
-        X_sampled = X.sample(seed = seed)
+        X_sampled = X.sample(seed=seed)
 
         if X2 is not None:
             assert isinstance(X2, tfp.distributions.MultivariateNormalDiag)
@@ -199,41 +212,50 @@ class Hybrid(IsotropicStationary):
 
         r2 = self.scaled_squared_euclid_dist(X_sampled, X2_sampled)
 
-        if self.baseline_kernel == 'squared_exponential':
+        if self.baseline_kernel == "squared_exponential":
 
             return self.K_r2(r2, w2)
 
-        elif self.baseline_kernel == 'matern12':
+        elif self.baseline_kernel == "matern12":
 
             r = tf.sqrt(tf.maximum(r2, 1e-36))
             w = tf.sqrt(tf.maximum(w2, 1e-36))
 
             return self.variance * tf.exp(-r) * tf.exp(-w)
 
-        elif self.baseline_kernel == 'matern32':
+        elif self.baseline_kernel == "matern32":
 
             r = tf.sqrt(tf.maximum(r2, 1e-36))
             w = tf.sqrt(tf.maximum(w2, 1e-36))
 
             sqrt3 = np.sqrt(3.0)
-            return self.variance * (1.0 + sqrt3 * r) * tf.exp(-sqrt3 * r) * (1.0 + sqrt3 * w) * tf.exp(-sqrt3 * w)
+            return (
+                self.variance
+                * (1.0 + sqrt3 * r)
+                * tf.exp(-sqrt3 * r)
+                * (1.0 + sqrt3 * w)
+                * tf.exp(-sqrt3 * w)
+            )
 
-
-        elif self.baseline_kernel == 'matern52':
+        elif self.baseline_kernel == "matern52":
 
             r = tf.sqrt(tf.maximum(r2, 1e-36))
             w = tf.sqrt(tf.maximum(w2, 1e-36))
 
             sqrt5 = np.sqrt(5.0)
-            return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r) * (1.0 + sqrt5 * w + 5.0 / 3.0 * tf.square(w)) * tf.exp(-sqrt5 * w)
+            return (
+                self.variance
+                * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r))
+                * tf.exp(-sqrt5 * r)
+                * (1.0 + sqrt5 * w + 5.0 / 3.0 * tf.square(w))
+                * tf.exp(-sqrt5 * w)
+            )
 
-
-    # Overides default K_diag from Stationary base class 
+    # Overides default K_diag from Stationary base class
     def K_diag(self, X: tfp.distributions.MultivariateNormalDiag) -> tf.Tensor:
 
         X_sampled = X.sample()
         return tf.fill(tf.shape(X_sampled)[:-1], tf.squeeze(self.variance))
-
 
     def K_r2(self, r2: TensorType, w2: TensorType) -> tf.Tensor:
 
@@ -242,8 +264,11 @@ class Hybrid(IsotropicStationary):
 
         return self.variance * tf.exp(-0.5 * r2) * tf.exp(-0.5 * w2)
 
-    def scaled_squared_Wasserstein_2_dist(self, mu1 : tfp.distributions.MultivariateNormalDiag, 
-        mu2 : Optional[tfp.distributions.MultivariateNormalDiag] = None) -> tf.Tensor:
+    def scaled_squared_Wasserstein_2_dist(
+        self,
+        mu1: tfp.distributions.MultivariateNormalDiag,
+        mu2: Optional[tfp.distributions.MultivariateNormalDiag] = None,
+    ) -> tf.Tensor:
         """
         Scales the raw Wasserstein-2 distance which is computed per input dimension
         """

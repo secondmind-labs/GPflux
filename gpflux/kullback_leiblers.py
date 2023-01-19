@@ -18,12 +18,13 @@ from packaging.version import Version
 
 from gpflow.base import TensorType
 from gpflow.config import default_float, default_jitter
-from gpflux.covariances import Kuu
 from gpflow.inducing_variables import InducingVariables
-from gpflux.inducing_variables import DistributionalInducingVariables
 from gpflow.kernels import Kernel
-from gpflux.kernels import DistributionalKernel
 from gpflow.utilities import Dispatcher, to_default_float
+
+from gpflux.covariances import Kuu
+from gpflux.inducing_variables import DistributionalInducingVariables
+from gpflux.kernels import DistributionalKernel
 
 prior_kl = Dispatcher("prior_kl")
 
@@ -52,7 +53,7 @@ def _(
     whiten: bool = False,
 ) -> tf.Tensor:
 
-    #TODO -- check paper to see if there is any difference here
+    # TODO -- check paper to see if there is any difference here
     if whiten:
         return gauss_kl(q_mu, q_sqrt, None)
     else:

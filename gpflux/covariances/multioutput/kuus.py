@@ -15,18 +15,14 @@
 #
 import tensorflow as tf
 
-
-from gpflux.inducing_variables import (
-    FallbackSharedIndependentDistributionalInducingVariables,
-)
-from gpflux.kernels import (
-    DistributionalSharedIndependent
-)
-
 from gpflux.covariances.dispatch import Kuu
+from gpflux.inducing_variables import FallbackSharedIndependentDistributionalInducingVariables
+from gpflux.kernels import DistributionalSharedIndependent
 
 
-@Kuu.register(FallbackSharedIndependentDistributionalInducingVariables, DistributionalSharedIndependent)
+@Kuu.register(
+    FallbackSharedIndependentDistributionalInducingVariables, DistributionalSharedIndependent
+)
 def Kuu_distributional_shared_shared(
     inducing_variable: FallbackSharedIndependentDistributionalInducingVariables,
     kernel: DistributionalSharedIndependent,
@@ -35,6 +31,6 @@ def Kuu_distributional_shared_shared(
     seed: int = None
 ) -> tf.Tensor:
 
-    Kmm = Kuu(inducing_variable.inducing_variable, kernel.kernel, seed = seed)  # [M, M]
+    Kmm = Kuu(inducing_variable.inducing_variable, kernel.kernel, seed=seed)  # [M, M]
     jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype) * jitter
     return Kmm + jittermat

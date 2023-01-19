@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from gpflux.kernels.stationary_kernels import Hybrid
 from gpflux.kernels.base_kernel import DistributionalKernel
-from gpflux.kernels.multioutput import DistributionalMultioutputKernel, DistributionalSharedIndependent, DistributionalSeparateIndependent
-
+from gpflux.kernels.multioutput import (
+    DistributionalMultioutputKernel,
+    DistributionalSeparateIndependent,
+    DistributionalSharedIndependent,
+)
+from gpflux.kernels.stationary_kernels import Hybrid
 
 """
 __all__ =[ 

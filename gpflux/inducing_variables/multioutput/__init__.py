@@ -27,5 +27,5 @@ __all__ = [
     "MultioutputDistributionalInducingVariables",
     "SeparateIndependentDistributionalInducingVariables",
     "SharedIndependentDistributionalInducingVariables",
-    "distributional_inducing_variables"
+    "distributional_inducing_variables",
 ]

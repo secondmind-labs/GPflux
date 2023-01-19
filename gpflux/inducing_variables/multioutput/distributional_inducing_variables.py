@@ -16,7 +16,11 @@
 from typing import Sequence, Tuple
 
 import tensorflow as tf
-from gpflux.inducing_variables.distributional_inducing_variables import DistributionalInducingVariables
+
+from gpflux.inducing_variables.distributional_inducing_variables import (
+    DistributionalInducingVariables,
+)
+
 
 class MultioutputDistributionalInducingVariables(DistributionalInducingVariables):
     """
@@ -34,7 +38,9 @@ class MultioutputDistributionalInducingVariables(DistributionalInducingVariables
         raise NotImplementedError
 
 
-class FallbackSharedIndependentDistributionalInducingVariables(MultioutputDistributionalInducingVariables):
+class FallbackSharedIndependentDistributionalInducingVariables(
+    MultioutputDistributionalInducingVariables
+):
     """
     Shared definition of inducing variables for each independent latent process.
     This class is designated to be used to
@@ -73,7 +79,9 @@ class FallbackSharedIndependentDistributionalInducingVariables(MultioutputDistri
         return (self.inducing_variable,)
 
 
-class FallbackSeparateIndependentDistributionalInducingVariables(MultioutputDistributionalInducingVariables):
+class FallbackSeparateIndependentDistributionalInducingVariables(
+    MultioutputDistributionalInducingVariables
+):
     """
     Separate set of inducing variables for each independent latent process.
     This class is designated to be used to
@@ -113,7 +121,9 @@ class FallbackSeparateIndependentDistributionalInducingVariables(MultioutputDist
         return tuple(self.inducing_variable_list)
 
 
-class SharedIndependentDistributionalInducingVariables(FallbackSharedIndependentDistributionalInducingVariables):
+class SharedIndependentDistributionalInducingVariables(
+    FallbackSharedIndependentDistributionalInducingVariables
+):
     """
     Here, we define the same inducing variables as in the base class. However,
     this class is intended to be used without the constraints on the shapes that
@@ -124,7 +134,9 @@ class SharedIndependentDistributionalInducingVariables(FallbackSharedIndependent
     pass
 
 
-class SeparateIndependentDistributionalInducingVariables(FallbackSeparateIndependentDistributionalInducingVariables):
+class SeparateIndependentDistributionalInducingVariables(
+    FallbackSeparateIndependentDistributionalInducingVariables
+):
     """
     Here, we define the same inducing variables as in the base class. However,
     this class is intended to be used without the constraints on the shapes that

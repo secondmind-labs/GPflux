@@ -17,6 +17,7 @@
 
 from gpflux.models import DeepGP
 
+
 class DistDeepGP(DeepGP):
 
     """
