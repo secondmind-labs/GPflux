@@ -13,13 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""
-Layers
-"""
-from gpflux.layers import basis_functions
-from gpflux.layers.bayesian_dense_layer import BayesianDenseLayer
-from gpflux.layers.gp_layer import GPLayer
-from gpflux.layers.latent_variable_layer import LatentVariableLayer, LayerWithObservations
-from gpflux.layers.likelihood_layer import LikelihoodLayer
-from gpflux.layers.trackable_layer import TrackableLayer
-from gpflux.layers.dist_gp_layer import DistGPLayer
+""" This module provides the base implementation for Distributional DeepGP models. """
+
+from gpflux.models import DeepGP
+
+class DistDeepGP(DeepGP):
+
+    """
+    This class combines a sequential function model ``f(x) = fₙ(⋯ (f₂(f₁(x))))``
+    and a likelihood ``p(y|f)``
+    """
+
+    def __repr__(self):
+        return f'DistDGP(layers:"{len(self.f_layers)}",units:"{self.f_layers[0].num_latent_gps}",lik.:{self.likelihood_layer})'

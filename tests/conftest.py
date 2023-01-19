@@ -1,8 +1,10 @@
+from functools import partial
 import numpy as np
 import pytest
 import tensorflow as tf
 from packaging.version import Version
-
+from gpflux.architectures import build_dist_deep_gp
+from gpflux.models.dist_deep_gp import DistDeepGP, DistConfig
 from gpflow.kernels import SquaredExponential
 
 # TODO: It would be great to make serialisation work in general. See:
@@ -28,3 +30,20 @@ def test_data():
     ).T
     assert y_data.shape == (num_data, y_dim)
     return x_data, y_data
+
+
+@pytest.fixture(name="ddgp_model")
+def _ddgp_model(linear_dataset_querypoints: tf.Tensor) -> DistDeepGP:
+    def _buil_ddgp() -> DistDeepGP:
+        config = DistConfig(
+            num_inducing=len(linear_dataset_querypoints),
+            inner_layer_qsqrt_factor=1e-5,
+            likelihood_noise_variance=1e-2,
+            whiten=True,
+        )
+
+        return build_dist_deep_gp(
+            X=linear_dataset_querypoints, num_layers=2, config=config
+        )
+
+    return partial(_buil_dgp)

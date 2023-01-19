@@ -13,13 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from gpflux.kernels.stationary_kernels import Hybrid
+from gpflux.kernels.base_kernel import DistributionalKernel
+from gpflux.kernels.multioutput import DistributionalMultioutputKernel, DistributionalSharedIndependent, DistributionalSeparateIndependent
+
+
 """
-Layers
+__all__ =[ 
+    "DistributionalKernel", 
+    "DistributionalMultioutputKernel", 
+    "DistributionalSharedIndependent", 
+    "DistributionalSeparateIndependent",
+    "Hybrid",
+]
 """
-from gpflux.layers import basis_functions
-from gpflux.layers.bayesian_dense_layer import BayesianDenseLayer
-from gpflux.layers.gp_layer import GPLayer
-from gpflux.layers.latent_variable_layer import LatentVariableLayer, LayerWithObservations
-from gpflux.layers.likelihood_layer import LikelihoodLayer
-from gpflux.layers.trackable_layer import TrackableLayer
-from gpflux.layers.dist_gp_layer import DistGPLayer
