@@ -133,7 +133,7 @@ class DistGPLayer(tfp.layers.DistributionLambda):
         num_inducing = self.inducing_variable.num_inducing
         self.num_latent_gps = num_latent_gps
 
-        ###### Introduce variational parameters for q(U) #######
+        # Introduce variational parameters for q(U)
         self.q_mu = Parameter(
             np.random.uniform(
                 -0.5, 0.5, (num_inducing, self.num_latent_gps)

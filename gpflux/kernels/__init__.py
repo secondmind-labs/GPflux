@@ -21,12 +21,10 @@ from gpflux.kernels.multioutput import (
 )
 from gpflux.kernels.stationary_kernels import Hybrid
 
-"""
-__all__ =[ 
-    "DistributionalKernel", 
-    "DistributionalMultioutputKernel", 
-    "DistributionalSharedIndependent", 
+__all__ = [
+    "DistributionalKernel",
+    "DistributionalMultioutputKernel",
+    "DistributionalSharedIndependent",
     "DistributionalSeparateIndependent",
     "Hybrid",
 ]
-"""

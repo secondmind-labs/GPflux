@@ -166,8 +166,9 @@ class Matern52(IsotropicStationary):
 
 class Hybrid(IsotropicStationary):
 
-    """
-    The radial basis function (RBF) or squared exponential kernel multiplied by the Wasserstein-2 distance based kernel. The kernel equation is
+    r"""
+    The radial basis function (RBF) or squared exponential kernel multiplied by the Wasserstein-2
+    distance based kernel. The kernel equation is
         k(r) = σ² exp{-½ r²} exp{ -0.5 * W_{2}^{2}\left(\mu_{1}, \mu_{2} \right) }
     should also work with Matern kernels
     where:
@@ -180,7 +181,8 @@ class Hybrid(IsotropicStationary):
 
     def __init__(self, baseline_kernel, **kwargs: Any) -> None:
         """
-        :param baseline_kernel: string specifying the underlying kernel to be used withing the Hybrid kernel framework
+        :param baseline_kernel: string specifying the underlying kernel to be used withing the
+            Hybrid kernel framework
         :param kwargs: accepts `name` and `active_dims`, which is a list or
             slice of indices which controls which columns of X are used (by
             default, all columns are used).

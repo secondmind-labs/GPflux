@@ -128,7 +128,8 @@ def wasserstein_2_distance_original_formula(
     Implementation based on classic Downson & Landau, 1982 formula
     """
 
-    # Warning -- only works with diagonal covariance matrices as the Wasserstein-2 based kernel is valid only for univariate Gaussians
+    # Warning -- only works with diagonal covariance matrices as the Wasserstein-2 based kernel is
+    # valid only for univariate Gaussians
     # Otherwise -- need to have a look at Sliced Wasserstein-2 distances and build kernels on that
     assert isinstance(mu1, tfp.distributions.MultivariateNormalDiag)
     mu1_mean = mu1.loc  # shape - (N,D)
@@ -164,10 +165,12 @@ def wasserstein_2_distance(
 
     """
     Wasserstein-2 distance between multivariate normal distributions with diagonal covariance
-    Implementation based on simpliefied formula given in https://djalil.chafai.net/blog/2010/04/30/wasserstein-distance-between-two-gaussians/
+    Implementation based on simpliefied formula given in
+    https://djalil.chafai.net/blog/2010/04/30/wasserstein-distance-between-two-gaussians/
     """
 
-    # Warning -- only works with diagonal covariance matrices as the Wasserstein-2 based kernel is valid only for univariate Gaussians
+    # Warning -- only works with diagonal covariance matrices as the Wasserstein-2 based kernel is
+    # valid only for univariate Gaussians
     # Otherwise -- need to have a look at Sliced Wasserstein-2 distances and build kernels on that
     assert isinstance(mu1, tfp.distributions.MultivariateNormalDiag)
     mu1_mean = mu1.loc  # shape - (N,D)

@@ -19,10 +19,8 @@ from gpflux.kernels.multioutput.kernels import (
     DistributionalSharedIndependent,
 )
 
-"""
 __all__ = [
     "DistributionalMultioutputKernel",
-    "DistributionalSharedIndependent", 
-    "DistributionalSeparateIndependent"   
+    "DistributionalSharedIndependent",
+    "DistributionalSeparateIndependent",
 ]
-"""

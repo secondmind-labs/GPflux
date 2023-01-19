@@ -98,7 +98,7 @@ def _construct_euclidean_kernel(input_dim: int, is_last_layer: bool) -> SquaredE
     :param input_dim: The input dimensionality of the layer.
     :param is_last_layer: Whether the kernel is part of the last layer in the Deep GP.
     """
-    ### Custom values taken from DistDGP paper
+    # Custom values taken from DistDGP paper
     variance = 0.351
 
     # TODO: Looking at this initializing to 2 (assuming N(0, 1) or U[0,1] normalized
@@ -151,12 +151,9 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
     gp_layers = []
     centroids, _ = kmeans2(X, k=config.num_inducing, minit="points")
 
-    ############################################
-    ############# Euclidean space ##############
-    ############################################
-
+    # Euclidean space
     i_layer = 0
-    ### First layer is standard Euclidean-space SVGP ###
+    # First layer is standard Euclidean-space SVGP
     is_last_layer = i_layer == num_layers - 1
     D_in = input_dim
     D_out = config.dim_output if is_last_layer else config.hidden_layer_size
@@ -197,9 +194,7 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
     layer.q_sqrt.assign(layer.q_sqrt * q_sqrt_scaling)
     gp_layers.append(layer)
 
-    ################################################################
-    ############# Joint Euclidean & Wasserstein-2 space ############
-    ################################################################
+    # Joint Euclidean & Wasserstein-2 space
 
     for i_layer in range(1, num_layers):
         is_last_layer = i_layer == num_layers - 1
@@ -216,7 +211,8 @@ def build_dist_deep_gp(X: np.ndarray, num_layers: int, config: DistConfig) -> Di
         )
 
         kernel = construct_basic_hybrid_kernel(
-            kernels=_construct_hybrid_kernel(D_in),  # , is_last_layer, name = f"dist_gp_{i_layer}")
+            kernels=_construct_hybrid_kernel(D_in),
+            # , is_last_layer, name = f"dist_gp_{i_layer}")
             output_dim=D_out,
             share_hyperparams=True,
             name=f"dist_gp_{i_layer}",

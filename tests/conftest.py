@@ -7,8 +7,8 @@ from packaging.version import Version
 
 from gpflow.kernels import SquaredExponential
 
-from gpflux.architectures import build_dist_deep_gp
-from gpflux.models.dist_deep_gp import DistConfig, DistDeepGP
+from gpflux.architectures import DistConfig, build_dist_deep_gp
+from gpflux.models.dist_deep_gp import DistDeepGP
 
 # TODO: It would be great to make serialisation work in general. See:
 # https://github.com/GPflow/GPflow/issues/1658

@@ -48,11 +48,7 @@ from gpflux.inducing_variables import (
     SeparateIndependentDistributionalInducingVariables,
     SharedIndependentDistributionalInducingVariables,
 )
-from gpflux.kernels import (
-    DistributionalKernel,
-    DistributionalSeparateIndependent,
-    DistributionalSharedIndependent,
-)
+from gpflux.kernels import DistributionalSeparateIndependent, DistributionalSharedIndependent
 from gpflux.layers.dist_gp_layer import DistGPLayer
 from gpflux.layers.gp_layer import GPLayer
 
@@ -543,7 +539,7 @@ def construct_dist_gp_layer(
         kernel=kernel,
         inducing_variable=inducing_variable,
         num_data=num_data,
-        mean_function=Zero(),
+        mean_function=gpflow.mean_functions.Zero(),
         name=name,
     )
     return dist_gp_layer

@@ -13,9 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import enum
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union
 
 import numpy as np
@@ -23,31 +21,23 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow import kernels
-from gpflow.base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
+from gpflow.base import MeanAndVariance, Module, TensorType
 from gpflow.conditionals.util import *
-from gpflow.config import default_float, default_jitter
-from gpflow.inducing_variables import (
-    InducingPoints,
-    InducingVariables,
-    SharedIndependentInducingVariables,
-)
-from gpflow.kernels import Kernel
+from gpflow.config import default_jitter
+from gpflow.inducing_variables import InducingVariables, SharedIndependentInducingVariables
+from gpflow.kernels import Kernel, SeparateIndependent, SharedIndependent
 from gpflow.mean_functions import MeanFunction
+from gpflow.utilities import Dispatcher
 
 from gpflux.covariances.multioutput.kufs import Kuf
 from gpflux.covariances.multioutput.kuus import Kuu
 from gpflux.inducing_variables import (
-    DistributionalInducingPoints,
     DistributionalInducingVariables,
-    SharedIndependentDistributionalInducingVariables,
-)
-from gpflux.inducing_variables.distributional_inducing_variables import (
-    DistributionalInducingVariables,
-)
-from gpflux.inducing_variables.multioutput.distributional_inducing_variables import (
     SharedIndependentDistributionalInducingVariables,
 )
 from gpflux.kernels import *
+
+get_posterior_class = Dispatcher("get_posterior_class")
 
 
 class AbstractPosterior(Module, ABC):
@@ -244,11 +234,6 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
 
         return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
-
-from gpflow.utilities import Dispatcher
-
-get_posterior_class = Dispatcher("get_posterior_class")
-from gpflow.kernels import SeparateIndependent, SharedIndependent
 
 """
 #NOTE -- I don't think we need this here

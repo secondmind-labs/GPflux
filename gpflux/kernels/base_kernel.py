@@ -43,7 +43,8 @@ NormalizedActiveDims = Union[slice, AnyNDArray]
 class DistributionalKernel(Module, metaclass=abc.ABCMeta):
 
     """
-    The basic distributional kernel class. Does not handle active dims or any other associated checks for ARD parameters.
+    The basic distributional kernel class. Does not handle active dims or any other associated
+    checks for ARD parameters.
     """
 
     def __init__(self, name: Optional[str] = None) -> None:

@@ -155,7 +155,8 @@ def gauss_kl(
     if not is_white:
         log_sqdiag_Lp = tf.math.log(tf.square(tf.linalg.diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        # If K is [L, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
+        # If K is [L, M, M], num_latent_gps is no longer implicit
+        # no need to multiply the single kernel logdet
         scale = 1.0 if is_batched else to_default_float(L)
         twoKL += scale * sum_log_sqdiag_Lp
 
