@@ -41,6 +41,10 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
             self.build(tf.TensorShape([self._input_dim]))
         else:
             self._input_dim = None
+        if isinstance(kernel, gpflow.kernels.MultioutputKernel):
+            self.num_latent_gps = kernel.num_latent_gps
+        else:
+            self.num_latent_gps = None
 
     def call(self, inputs: TensorType) -> tf.Tensor:
         """
@@ -48,11 +52,15 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``.
+        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case. TODO: [P, M, N]?
         """
-        X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
-        const = self._compute_constant()
-        bases = self._compute_bases(X)
+        if isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
+            X = [tf.divide(inputs, k.lengthscales) for k in self.kernel.latent_kernels]
+            X = tf.stack(X, 0)  # [P, N, D]
+        else:
+            X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
+        const = self._compute_constant()  # [] or [P, 1, 1]
+        bases = self._compute_bases(X)  # [N, M] or [P, N, M]
         output = const * bases
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
@@ -65,9 +73,14 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
-        tensor_shape = tf.TensorShape(input_shape).with_rank(2)
-        output_dim = self._compute_output_dim(input_shape)
-        return tensor_shape[:-1].concatenate(output_dim)
+        if self.num_latent_gps is not None:
+            tensor_shape = tf.TensorShape(input_shape).with_rank(3)
+            output_dim = self._compute_output_dim(input_shape)
+            return tensor_shape[:-1].concatenate(output_dim)  # [P, N, M]
+        else:
+            tensor_shape = tf.TensorShape(input_shape).with_rank(2)
+            output_dim = self._compute_output_dim(input_shape)
+            return tensor_shape[:-1].concatenate(output_dim)  # [N, M]
 
     def get_config(self) -> Mapping:
         """
