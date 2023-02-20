@@ -62,7 +62,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         const = self._compute_constant()  # [] or [P, 1, 1]
         bases = self._compute_bases(X)  # [N, M] or [P, N, M]
         output = const * bases
-        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
+        # tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
 
     def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
