@@ -74,9 +74,9 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
         if self.num_latent_gps is not None:
-            tensor_shape = tf.TensorShape(input_shape).with_rank(3)
+            tensor_shape = tf.TensorShape(input_shape).with_rank(2)
             output_dim = self._compute_output_dim(input_shape)
-            return tensor_shape[:-1].concatenate(output_dim)  # [P, N, M]
+            return tf.concat([[self.num_latent_gps], tensor_shape[:-1].concatenate(output_dim)], 0)  # [P, N, M]
         else:
             tensor_shape = tf.TensorShape(input_shape).with_rank(2)
             output_dim = self._compute_output_dim(input_shape)
