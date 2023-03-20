@@ -62,7 +62,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         const = self._compute_constant()  # [] or [P, 1, 1]
         bases = self._compute_bases(X)  # [N, M] or [P, N, M]
         output = const * bases
-        # tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
+        tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
 
     def compute_output_shape(self, input_shape: ShapeType) -> tf.TensorShape:
@@ -73,14 +73,13 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
+        tensor_shape = tf.TensorShape(input_shape).with_rank(2)
+        output_dim = self._compute_output_dim(input_shape)
+        trailing_shape = tensor_shape[:-1].concatenate(output_dim)
         if self.num_latent_gps is not None:
-            tensor_shape = tf.TensorShape(input_shape).with_rank(2)
-            output_dim = self._compute_output_dim(input_shape)
-            return tf.concat([[self.num_latent_gps], tensor_shape[:-1].concatenate(output_dim)], 0)  # [P, N, M]
+            return tf.TensorShape([self.num_latent_gps]).concatenate(trailing_shape)  # [P, N, M]
         else:
-            tensor_shape = tf.TensorShape(input_shape).with_rank(2)
-            output_dim = self._compute_output_dim(input_shape)
-            return tensor_shape[:-1].concatenate(output_dim)  # [N, M]
+            return trailing_shape  # [N, M]
 
     def get_config(self) -> Mapping:
         """
