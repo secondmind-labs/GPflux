@@ -132,7 +132,7 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     v = fourier_features(y)
     approx_kernel_matrix = inner_product(u, v)
 
-    actual_kernel_matrix = kernel.K(x, y, full_cov=True, full_output_cov=False)
+    actual_kernel_matrix = kernel.K(x, y)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
@@ -155,7 +155,7 @@ def test_mo_random_fourier_features_can_approximate_kernel_multidim(
     v = fourier_features(y)
     approx_kernel_matrix = inner_product(u, v)
 
-    actual_kernel_matrix = mo_kernel.K(x, y)
+    actual_kernel_matrix = mo_kernel.K(x, y, full_output_cov=False)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
@@ -206,10 +206,40 @@ def test_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
+def test_mo_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
+    random_basis_func_cls, mo_kernel, batch_size
+):
+    """
+    Ensure that the random fourier feature map can be used to approximate the covariance matrix
+    between the inducing point vectors of a sparse GP, with the condition that the number of latent
+    GP models is greater than one. This test replicates the above, but for multioutput kernels.
+    """
+    n_components = 10000
+
+    fourier_features = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
+
+    x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
+
+    u = fourier_features(x_new)
+    approx_kernel_matrix = inner_product(u, u)
+
+    actual_kernel_matrix = mo_kernel.K(x_new, x_new, full_output_cov=False)
+
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
+
+
 def test_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_size):
     input_shape = (batch_size, n_dims)
     kernel = gpflow.kernels.SquaredExponential()
     feature_functions = basis_func_cls(kernel, n_components, dtype=tf.float64)
+    output_shape = feature_functions.compute_output_shape(input_shape)
+    features = feature_functions(tf.ones(shape=input_shape))
+    np.testing.assert_equal(features.shape, output_shape)
+
+
+def test_mo_fourier_features_shapes(random_basis_func_cls, mo_kernel, n_components, n_dims, batch_size):
+    input_shape = (batch_size, n_dims)
+    feature_functions = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
     output_shape = feature_functions.compute_output_shape(input_shape)
     features = feature_functions(tf.ones(shape=input_shape))
     np.testing.assert_equal(features.shape, output_shape)
@@ -251,3 +281,4 @@ def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, 
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )
+

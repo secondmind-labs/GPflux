@@ -36,15 +36,16 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         super(FourierFeaturesBase, self).__init__(**kwargs)
         self.kernel = kernel
         self.n_components = n_components
+        if isinstance(kernel, gpflow.kernels.MultioutputKernel):
+            self.num_latent_gps = kernel.num_latent_gps
+        else:
+            self.num_latent_gps = None
+
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
             self.build(tf.TensorShape([self._input_dim]))
         else:
             self._input_dim = None
-        if isinstance(kernel, gpflow.kernels.MultioutputKernel):
-            self.num_latent_gps = kernel.num_latent_gps
-        else:
-            self.num_latent_gps = None
 
     def call(self, inputs: TensorType) -> tf.Tensor:
         """

@@ -122,10 +122,14 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
 
     def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         if self.num_latent_gps is not None:
-            weights_list = [
-                self._weights_init_individual(k, shape[1:], dtype)
-                for k in self.kernel.latent_kernels
-            ]
+            if isinstance(self.kernel, gpflow.kernels.SharedIndependent):
+                weights_list = [self._weights_init_individual(self.kernel.latent_kernels[0], shape[1:], dtype)
+                                for _ in range(self.num_latent_gps)]
+            else:
+                weights_list = [
+                    self._weights_init_individual(k, shape[1:], dtype)
+                    for k in self.kernel.latent_kernels
+                ]
             return tf.stack(weights_list, 0)  # [P, M, D]
         else:
             return self._weights_init_individual(self.kernel, shape, dtype)  # [M, D]
@@ -276,6 +280,6 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
                 self.rff_constant(k.variance, output_dim=self.n_components)
                 for k in self.kernel.latent_kernels
             ]
-            return tf.stack(constants, 0)[:, None, None]  # [P, 1, 1]
+            return tf.stack(constants, 0)[:, None, None]  # [1, 1, 1] or [P, 1, 1]
         else:
             return self.rff_constant(self.kernel.variance, output_dim=self.n_components)
