@@ -52,11 +52,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case. TODO: [P, M, N]?
+        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
         if isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
             X = [tf.divide(inputs, k.lengthscales) for k in self.kernel.latent_kernels]
-            X = tf.stack(X, 0)  # [P, N, D]
+            X = tf.stack(X, 0)  # [1, N, D] or [P, N, D]
         else:
             X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
         const = self._compute_constant()  # [] or [P, 1, 1]
