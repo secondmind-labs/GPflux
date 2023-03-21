@@ -101,7 +101,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         if self.num_latent_gps is not None:
             shape = (self.num_latent_gps, n_components, input_dim)  # [P, M, D]
         else:
-            shape = (n_components, input_dim)
+            shape = (n_components, input_dim)  # type: ignore
         self.W = self.add_weight(
             name="weights",
             trainable=False,
@@ -242,7 +242,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         if self.num_latent_gps is not None:
             shape = (self.num_latent_gps, 1, n_components)
         else:
-            shape = (1, n_components)
+            shape = (1, n_components)  # type: ignore
         self.b = self.add_weight(
             name="bias",
             trainable=False,
