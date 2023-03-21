@@ -148,11 +148,11 @@ def run_demo(maxiter=int(80e3), plotter_interval=60):
     )
 
 
-# def test_smoke():
-#     import matplotlib
-#
-#     matplotlib.use("PS")  # Agg does not support 3D
-#     run_demo(maxiter=2, plotter_interval=1)
+def test_smoke():
+    import matplotlib
+
+    matplotlib.use("PS")  # Agg does not support 3D
+    run_demo(maxiter=2, plotter_interval=1)
 
 
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.int32])
