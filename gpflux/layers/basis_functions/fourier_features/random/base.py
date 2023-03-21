@@ -123,8 +123,10 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
     def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         if self.num_latent_gps is not None:
             if isinstance(self.kernel, gpflow.kernels.SharedIndependent):
-                weights_list = [self._weights_init_individual(self.kernel.latent_kernels[0], shape[1:], dtype)
-                                for _ in range(self.num_latent_gps)]
+                weights_list = [
+                    self._weights_init_individual(self.kernel.latent_kernels[0], shape[1:], dtype)
+                    for _ in range(self.num_latent_gps)
+                ]
             else:
                 weights_list = [
                     self._weights_init_individual(k, shape[1:], dtype)

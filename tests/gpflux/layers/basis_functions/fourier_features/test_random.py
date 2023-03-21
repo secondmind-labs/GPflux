@@ -237,7 +237,9 @@ def test_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_siz
     np.testing.assert_equal(features.shape, output_shape)
 
 
-def test_mo_fourier_features_shapes(random_basis_func_cls, mo_kernel, n_components, n_dims, batch_size):
+def test_mo_fourier_features_shapes(
+    random_basis_func_cls, mo_kernel, n_components, n_dims, batch_size
+):
     input_shape = (batch_size, n_dims)
     feature_functions = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
     output_shape = feature_functions.compute_output_shape(input_shape)
@@ -281,4 +283,3 @@ def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, 
         input_shape=(batch_size, n_dims),
         input_dtype="float64",
     )
-
