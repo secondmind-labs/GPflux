@@ -61,6 +61,22 @@ def _kernel_cls_fixture(request):
 
 
 @pytest.fixture(
+    name="mo_kernel",
+    params=[
+        gpflow.kernels.SharedIndependent(gpflow.kernels.SquaredExponential(), output_dim=3),
+        gpflow.kernels.SeparateIndependent(
+            kernels=[
+                gpflow.kernels.SquaredExponential(lengthscales=5.0),
+                gpflow.kernels.Matern32(lengthscales=0.1),
+            ]
+        ),
+    ],
+)
+def _mo_kernel_cls_fixture(request):
+    return request.param
+
+
+@pytest.fixture(
     name="random_basis_func_cls",
     params=[RandomFourierFeatures, RandomFourierFeaturesCosine],
 )
@@ -76,8 +92,21 @@ def _basis_func_cls_fixture(request):
     return request.param
 
 
-def test_throw_for_unsupported_kernel(basis_func_cls):
-    kernel = gpflow.kernels.Constant()
+@pytest.mark.parametrize(
+    "kernel",
+    [
+        gpflow.kernels.Constant(),
+        gpflow.kernels.SharedIndependent(gpflow.kernels.Constant(), output_dim=2),
+        gpflow.kernels.SeparateIndependent(
+            kernels=[gpflow.kernels.SquaredExponential(), gpflow.kernels.Constant()]
+        ),
+        gpflow.kernels.LinearCoregionalization(
+            kernels=[gpflow.kernels.SquaredExponential(), gpflow.kernels.SquaredExponential()],
+            W=tf.ones([2, 1]),
+        ),
+    ],
+)
+def test_throw_for_unsupported_kernel(basis_func_cls, kernel):
     with pytest.raises(AssertionError) as excinfo:
         basis_func_cls(kernel, n_components=1)
     assert "Unsupported Kernel" in str(excinfo.value)
@@ -103,7 +132,30 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     v = fourier_features(y)
     approx_kernel_matrix = inner_product(u, v)
 
-    actual_kernel_matrix = kernel.K(x, y)
+    actual_kernel_matrix = kernel.K(x, y, full_cov=True, full_output_cov=False)
+
+    np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
+
+
+def test_mo_random_fourier_features_can_approximate_kernel_multidim(
+    random_basis_func_cls, mo_kernel, n_dims
+):
+    n_components = 40000
+
+    x_rows = 20
+    y_rows = 30
+    # ARD
+
+    fourier_features = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
+
+    x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
+    y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
+
+    u = fourier_features(x)
+    v = fourier_features(y)
+    approx_kernel_matrix = inner_product(u, v)
+
+    actual_kernel_matrix = mo_kernel.K(x, y)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
