@@ -153,7 +153,7 @@ def test_mo_random_fourier_features_can_approximate_kernel_multidim(
 
     u = fourier_features(x)
     v = fourier_features(y)
-    approx_kernel_matrix = inner_product(u, v)
+    approx_kernel_matrix = u @ tf.linalg.matrix_transpose(v)
 
     actual_kernel_matrix = mo_kernel.K(x, y, full_output_cov=False)
 
@@ -221,7 +221,7 @@ def test_mo_random_fourier_feature_layer_compute_covariance_of_inducing_variable
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
     u = fourier_features(x_new)
-    approx_kernel_matrix = inner_product(u, u)
+    approx_kernel_matrix = u @ tf.linalg.matrix_transpose(u)
 
     actual_kernel_matrix = mo_kernel.K(x_new, x_new, full_output_cov=False)
 
