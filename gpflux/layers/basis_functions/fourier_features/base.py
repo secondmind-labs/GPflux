@@ -27,6 +27,11 @@ from gpflux.types import ShapeType
 
 
 class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
+    r"""
+    The base class for all Fourier feature layers, used for both random Fourier feature layers and
+    quadrature layers. We subclass :class:`tf.keras.layers.Layer`, so we must provide
+    :method:`build` and :method:`call` methods.
+    """
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
