@@ -98,7 +98,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         super(RandomFourierFeaturesBase, self).build(input_shape)
 
     def _weights_build(self, input_dim: int, n_components: int) -> None:
-        if self.num_latent_gps is not None:
+        if self.is_multioutput:
             shape = (self.num_latent_gps, n_components, input_dim)  # [P, M, D]
         else:
             shape = (n_components, input_dim)  # type: ignore
@@ -121,7 +121,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
             return _sample_students_t(nu, shape, dtype)
 
     def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        if self.num_latent_gps is not None:
+        if self.is_multioutput:
             if isinstance(self.kernel, gpflow.kernels.SharedIndependent):
                 weights_list = [
                     self._weights_init_individual(self.kernel.latent_kernels[0], shape[1:], dtype)
@@ -195,7 +195,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
-        if self.num_latent_gps is not None:
+        if self.is_multioutput:
             constants = [
                 self.rff_constant(k.variance, output_dim=2 * self.n_components)
                 for k in self.kernel.latent_kernels
@@ -245,7 +245,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         super(RandomFourierFeaturesCosine, self).build(input_shape)
 
     def _bias_build(self, n_components: int) -> None:
-        if self.num_latent_gps is not None:
+        if self.is_multioutput:
             shape = (self.num_latent_gps, 1, n_components)
         else:
             shape = (1, n_components)  # type: ignore
@@ -277,7 +277,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
 
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
-        if self.num_latent_gps is not None:
+        if self.is_multioutput:
             constants = [
                 self.rff_constant(k.variance, output_dim=self.n_components)
                 for k in self.kernel.latent_kernels

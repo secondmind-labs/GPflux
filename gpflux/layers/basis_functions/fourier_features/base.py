@@ -37,9 +37,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         self.kernel = kernel
         self.n_components = n_components
         if isinstance(kernel, gpflow.kernels.MultioutputKernel):
+            self.is_multioutput = True
             self.num_latent_gps = kernel.num_latent_gps
         else:
-            self.num_latent_gps = None
+            self.is_multioutput = False
+            # self.num_latent_gps = None
 
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
@@ -55,7 +57,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
-        if isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
+        if self.is_multioutput:
             X = [tf.divide(inputs, k.lengthscales) for k in self.kernel.latent_kernels]
             X = tf.stack(X, 0)  # [1, N, D] or [P, N, D]
         else:
@@ -77,7 +79,7 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
         output_dim = self._compute_output_dim(input_shape)
         trailing_shape = tensor_shape[:-1].concatenate(output_dim)
-        if self.num_latent_gps is not None:
+        if self.is_multioutput:
             return tf.TensorShape([self.num_latent_gps]).concatenate(trailing_shape)  # [P, N, M]
         else:
             return trailing_shape  # [N, M]
