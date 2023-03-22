@@ -61,7 +61,7 @@ def _kernel_cls_fixture(request):
 
 
 @pytest.fixture(
-    name="mo_kernel",
+    name="multioutput_kernel",
     params=[
         gpflow.kernels.SharedIndependent(gpflow.kernels.SquaredExponential(), output_dim=3),
         gpflow.kernels.SeparateIndependent(
@@ -72,7 +72,7 @@ def _kernel_cls_fixture(request):
         ),
     ],
 )
-def _mo_kernel_cls_fixture(request):
+def _multioutput_kernel_cls_fixture(request):
     return request.param
 
 
@@ -137,15 +137,15 @@ def test_random_fourier_features_can_approximate_kernel_multidim(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_mo_random_fourier_features_can_approximate_kernel_multidim(
-    random_basis_func_cls, mo_kernel, n_dims
+def test_multioutput_random_fourier_features_can_approximate_kernel_multidim(
+    random_basis_func_cls, multioutput_kernel, n_dims
 ):
     n_components = 40000
 
     x_rows = 20
     y_rows = 30
 
-    fourier_features = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
+    fourier_features = random_basis_func_cls(multioutput_kernel, n_components, dtype=tf.float64)
 
     x = tf.random.uniform((x_rows, n_dims), dtype=tf.float64)
     y = tf.random.uniform((y_rows, n_dims), dtype=tf.float64)
@@ -154,7 +154,7 @@ def test_mo_random_fourier_features_can_approximate_kernel_multidim(
     v = fourier_features(y)
     approx_kernel_matrix = u @ tf.linalg.matrix_transpose(v)
 
-    actual_kernel_matrix = mo_kernel.K(x, y, full_output_cov=False)
+    actual_kernel_matrix = multioutput_kernel.K(x, y, full_output_cov=False)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
@@ -205,8 +205,8 @@ def test_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
 
-def test_mo_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
-    random_basis_func_cls, mo_kernel, batch_size
+def test_multioutput_random_fourier_feature_layer_compute_covariance_of_inducing_variables(
+    random_basis_func_cls, multioutput_kernel, batch_size
 ):
     """
     Ensure that the random fourier feature map can be used to approximate the covariance matrix
@@ -215,14 +215,14 @@ def test_mo_random_fourier_feature_layer_compute_covariance_of_inducing_variable
     """
     n_components = 10000
 
-    fourier_features = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
+    fourier_features = random_basis_func_cls(multioutput_kernel, n_components, dtype=tf.float64)
 
     x_new = tf.ones(shape=(2 * batch_size + 1, 1), dtype=tf.float64)
 
     u = fourier_features(x_new)
     approx_kernel_matrix = u @ tf.linalg.matrix_transpose(u)
 
-    actual_kernel_matrix = mo_kernel.K(x_new, x_new, full_output_cov=False)
+    actual_kernel_matrix = multioutput_kernel.K(x_new, x_new, full_output_cov=False)
 
     np.testing.assert_allclose(approx_kernel_matrix, actual_kernel_matrix, atol=5e-2)
 
@@ -236,11 +236,11 @@ def test_fourier_features_shapes(basis_func_cls, n_components, n_dims, batch_siz
     np.testing.assert_equal(features.shape, output_shape)
 
 
-def test_mo_fourier_features_shapes(
-    random_basis_func_cls, mo_kernel, n_components, n_dims, batch_size
+def test_multioutput_fourier_features_shapes(
+    random_basis_func_cls, multioutput_kernel, n_components, n_dims, batch_size
 ):
     input_shape = (batch_size, n_dims)
-    feature_functions = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
+    feature_functions = random_basis_func_cls(multioutput_kernel, n_components, dtype=tf.float64)
     output_shape = feature_functions.compute_output_shape(input_shape)
     features = feature_functions(tf.ones(shape=input_shape))
     np.testing.assert_equal(features.shape, output_shape)
