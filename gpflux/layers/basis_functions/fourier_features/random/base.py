@@ -79,15 +79,17 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(
-            kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS)
-        ), "Unsupported Kernel; only SquaredExponential, Matern12, Matern32, Matern52, or Shared/SeparateIndependent" \
-           "kernels using these are supported"
+        assert isinstance(kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS)), (
+            "Unsupported Kernel; only SquaredExponential, Matern12, Matern32, Matern52, or Shared/SeparateIndependent"
+            "kernels using these are supported"
+        )
         if isinstance(kernel, RFF_SUPPORTED_MULTIOUTPUTS):
             for k in kernel.latent_kernels:
-                assert isinstance(k, RFF_SUPPORTED_KERNELS), "Unsupported Kernel within the multioutput kernel; only" \
-                                                             "SquaredExponential, Matern12, Matern32, and Matern52 " \
-                                                             "kernels are supported"
+                assert isinstance(k, RFF_SUPPORTED_KERNELS), (
+                    "Unsupported Kernel within the multioutput kernel; only"
+                    "SquaredExponential, Matern12, Matern32, and Matern52 "
+                    "kernels are supported"
+                )
         super(RandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
