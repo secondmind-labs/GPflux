@@ -41,7 +41,6 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
             self.num_latent_gps = kernel.num_latent_gps
         else:
             self.is_multioutput = False
-            # self.num_latent_gps = None
 
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
