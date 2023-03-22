@@ -144,7 +144,6 @@ def test_mo_random_fourier_features_can_approximate_kernel_multidim(
 
     x_rows = 20
     y_rows = 30
-    # ARD
 
     fourier_features = random_basis_func_cls(mo_kernel, n_components, dtype=tf.float64)
 
