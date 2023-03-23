@@ -80,9 +80,9 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 class RandomFourierFeaturesBase(FourierFeaturesBase):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         assert isinstance(kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS)), (
-                f"Unsupported Kernel: only the following kernel types are supported: "
-                f"{[k.__name__ for k in RFF_SUPPORTED_MULTIOUTPUTS + RFF_SUPPORTED_KERNELS]}"
-            )
+            f"Unsupported Kernel: only the following kernel types are supported: "
+            f"{[k.__name__ for k in RFF_SUPPORTED_MULTIOUTPUTS + RFF_SUPPORTED_KERNELS]}"
+        )
         if isinstance(kernel, RFF_SUPPORTED_MULTIOUTPUTS):
             for k in kernel.latent_kernels:
                 assert isinstance(k, RFF_SUPPORTED_KERNELS), (
