@@ -32,7 +32,10 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
     quadrature layers. We subclass :class:`tf.keras.layers.Layer`, so we must provide
     :method:`build` and :method:`call` methods.
     """
-    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
+
+    def __init__(
+        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
+    ):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
         :param n_components: number of components (e.g. Monte Carlo samples,
@@ -85,7 +88,9 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         output_dim = self._compute_output_dim(input_shape)
         trailing_shape = tensor_shape[:-1].concatenate(output_dim)
         if self.is_multioutput:
-            return tf.TensorShape([self.num_latent_gps]).concatenate(trailing_shape)  # [P, N, M]
+            return tf.TensorShape([self.num_latent_gps]).concatenate(
+                trailing_shape
+            )  # [P, N, M]
         else:
             return trailing_shape  # [N, M]
 
@@ -97,7 +102,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         config = super(FourierFeaturesBase, self).get_config()
         config.update(
-            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
+            {
+                "kernel": self.kernel,
+                "n_components": self.n_components,
+                "input_dim": self._input_dim,
+            }
         )
 
         return config
