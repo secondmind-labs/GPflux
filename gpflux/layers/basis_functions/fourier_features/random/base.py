@@ -78,9 +78,7 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
-    def __init__(
-        self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping
-    ):
+    def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         if not isinstance(kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS)):
             raise TypeError(
                 f"Unsupported Kernel: only the following kernel types are supported: "
@@ -131,15 +129,11 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
             nu = 2.0 * p + 1.0  # degrees of freedom
             return _sample_students_t(nu, shape, dtype)
 
-    def _weights_init(
-        self, shape: TensorType, dtype: Optional[DType] = None
-    ) -> TensorType:
+    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         if self.is_multioutput:
             if isinstance(self.kernel, gpflow.kernels.SharedIndependent):
                 weights_list = [
-                    self._weights_init_individual(
-                        self.kernel.latent_kernels[0], shape[1:], dtype
-                    )
+                    self._weights_init_individual(self.kernel.latent_kernels[0], shape[1:], dtype)
                     for _ in range(self.num_latent_gps)
                 ]
             else:
@@ -217,9 +211,7 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
             ]
             return tf.stack(constants, 0)[:, None, None]  # [P, 1, 1]
         else:
-            return self.rff_constant(
-                self.kernel.variance, output_dim=2 * self.n_components
-            )
+            return self.rff_constant(self.kernel.variance, output_dim=2 * self.n_components)
 
 
 class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
@@ -274,9 +266,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
             initializer=self._bias_init,
         )
 
-    def _bias_init(
-        self, shape: TensorType, dtype: Optional[DType] = None
-    ) -> TensorType:
+    def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
 
     def _compute_output_dim(self, input_shape: ShapeType) -> int:
