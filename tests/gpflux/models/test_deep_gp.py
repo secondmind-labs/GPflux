@@ -94,6 +94,7 @@ def setup_dataset(input_dim: int, num_data: int, dtype: np.dtype = np.float64):
 
 
 def get_live_plotter(train_data, model):
+    import matplotlib
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
 
@@ -121,7 +122,7 @@ def get_live_plotter(train_data, model):
     contour_line = ax.plot_wireframe(XX, YY, ZZ, linewidth=0.5)
 
     def plotter(*args, **kwargs):
-        assert plt.__version__ == "3.5.2"
+        assert matplotlib.__version__ == "3.5.2"
         nonlocal contour_line
 
         ZZ_mean, ZZ_var = model.predict_f(sample_points)
