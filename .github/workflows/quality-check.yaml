@@ -23,6 +23,7 @@ jobs:
       matrix:
           python-version: ["3.7", "3.8", "3.9", "3.10"]
           tensorflow: ["~=2.5.0", "~=2.6.0", "~=2.7.0", "~=2.8.0", "~=2.9.0", "~=2.10.0"]
+          matplotlib: ["3.5.2"]
           include:
             - tensorflow: "~=2.5.0"
               keras: "~=2.6.0"
@@ -39,7 +40,6 @@ jobs:
             - tensorflow: "~=2.9.0"
               keras: "~=2.9.0"
               tensorflow-probability: "~=0.17.0"
-            - matplotlib: "==3.5.2"
             - tensorflow: "~=2.10.0"
               keras: "~=2.10.0"
               tensorflow-probability: "~=0.18.0"
