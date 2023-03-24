@@ -94,6 +94,7 @@ def setup_dataset(input_dim: int, num_data: int, dtype: np.dtype = np.float64):
 
 
 def get_live_plotter(train_data, model):
+    import matplotlib
     from matplotlib import pyplot as plt
     from mpl_toolkits import mplot3d
 

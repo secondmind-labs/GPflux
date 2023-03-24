@@ -27,6 +27,12 @@ from gpflux.types import ShapeType
 
 
 class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
+    r"""
+    The base class for all Fourier feature layers, used for both random Fourier feature layers and
+    quadrature layers. We subclass :class:`tf.keras.layers.Layer`, so we must provide
+    :method:`build` and :method:`call` methods.
+    """
+
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         """
         :param kernel: kernel to approximate using a set of Fourier bases.
@@ -36,6 +42,13 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         super(FourierFeaturesBase, self).__init__(**kwargs)
         self.kernel = kernel
         self.n_components = n_components
+        if isinstance(kernel, gpflow.kernels.MultioutputKernel):
+            self.is_multioutput = True
+            self.num_latent_gps = kernel.num_latent_gps
+        else:
+            self.is_multioutput = False
+            self.num_latent_gps = 1
+
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
             self.build(tf.TensorShape([self._input_dim]))
@@ -48,11 +61,15 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``.
+        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
-        X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
-        const = self._compute_constant()
-        bases = self._compute_bases(X)
+        if self.is_multioutput:
+            X = [tf.divide(inputs, k.lengthscales) for k in self.kernel.latent_kernels]
+            X = tf.stack(X, 0)  # [1, N, D] or [P, N, D]
+        else:
+            X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
+        const = self._compute_constant()  # [] or [P, 1, 1]
+        bases = self._compute_bases(X)  # [N, M] or [P, N, M]
         output = const * bases
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
@@ -67,7 +84,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         # will call `build` on the layer." -- do we need to do so?
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
         output_dim = self._compute_output_dim(input_shape)
-        return tensor_shape[:-1].concatenate(output_dim)
+        trailing_shape = tensor_shape[:-1].concatenate(output_dim)
+        if self.is_multioutput:
+            return tf.TensorShape([self.num_latent_gps]).concatenate(trailing_shape)  # [P, N, M]
+        else:
+            return trailing_shape  # [N, M]
 
     def get_config(self) -> Mapping:
         """
@@ -77,7 +98,11 @@ class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
         """
         config = super(FourierFeaturesBase, self).get_config()
         config.update(
-            {"kernel": self.kernel, "n_components": self.n_components, "input_dim": self._input_dim}
+            {
+                "kernel": self.kernel,
+                "n_components": self.n_components,
+                "input_dim": self._input_dim,
+            }
         )
 
         return config
