@@ -13,6 +13,9 @@ Because GitHub's [graph of contributors](http://github.com/secondmind-labs/GPflu
 [John A. McLeod](https://github.com/johnamcleod), 
 [Hugh Salimbeni](https://github.com/hughsalimbeni), 
 [Marcin B. Tomczak](https://github.com/marctom)
+[Hrvoje Stojic](https://github.com/hstojic)
+[Uri Granta](https://github.com/uri-granta)
+[Jesper Nielsen](https://github.com/jesnie)
+[Sebastian Ober](https://github.com/sebastianober)
+[Simon Chiu](https://github.com/sc336)
 
-
-Feel free to add yourself when you first contribute to GPflux's code, tests, or documentation!
