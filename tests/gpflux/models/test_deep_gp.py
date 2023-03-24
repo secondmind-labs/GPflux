@@ -122,7 +122,6 @@ def get_live_plotter(train_data, model):
     contour_line = ax.plot_wireframe(XX, YY, ZZ, linewidth=0.5)
 
     def plotter(*args, **kwargs):
-        assert matplotlib.__version__[:3] == "3.5"
         nonlocal contour_line
 
         ZZ_mean, ZZ_var = model.predict_f(sample_points)
