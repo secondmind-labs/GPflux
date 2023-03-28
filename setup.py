@@ -14,7 +14,6 @@ requirements = [
     "tensorflow-macos>=2.5.0,<2.12.0; platform_system=='Darwin' and platform_machine=='arm64'",
     # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
     "tensorflow-probability>=0.13.0,<0.20.0",
-    "protobuf~=3.19.0"
 ]
 
 with open("README.md", "r") as file:
