@@ -56,7 +56,6 @@ jobs:
               tensorflow: "~=2.6.0"
             - python-version: "3.10"
               tensorflow: "~=2.7.0"
-          exclude:
             # These newer versions of TensorFlow no longer support Python 3.7:
             - python-version: "3.7"
               tensorflow: "~=2.12.0"
