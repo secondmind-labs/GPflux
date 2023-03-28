@@ -12,7 +12,7 @@ pytest-mock
 
 # For mypy stubs:
 types-Deprecated
-numpy<1.22.0  # Newer versions of numpy are not compatible with Python 3.7.
+numpy
 
 tqdm
 
