@@ -63,11 +63,11 @@ jobs:
       VERSION_KERAS: ${{ matrix.keras }}
       VERSION_TFP: ${{ matrix.tensorflow-probability }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
         key: ${{ env.pythonLocation }}-${{ hashFiles('setup.py') }}-${{ hashFiles('notebook_requirements.txt') }}-${{ hashFiles('tests_requirements.txt') }}
