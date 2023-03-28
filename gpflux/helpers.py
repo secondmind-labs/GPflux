@@ -22,7 +22,7 @@ This module contains helper functions for constructing :class:`~gpflow.kernels.M
 import inspect
 import warnings
 from dataclasses import fields
-from typing import List, Optional, Type, TypeVar, Union
+from typing import List, Optional, Type, TypeVar, Union, Any
 
 import numpy as np
 
@@ -261,7 +261,10 @@ def construct_gp_layer(
 T = TypeVar("T")
 
 
-def make_dataclass_from_class(dataclass: Type[T], instance: object, **updates: object) -> T:
+# HACK to get mypy to pass, should be (dataclass: Type[T], ...) -> T:
+# mypy said: gpflux/helpers.py:271: error: Argument 1 to "fields" has incompatible type "Type[T]";
+# expected "Union[DataclassInstance, Type[DataclassInstance]]"  [arg-type]
+def make_dataclass_from_class(dataclass: Any, instance: object, **updates: object) -> Any:
     """
     Take a regular object ``instance`` with a superset of fields for a
     :class:`dataclasses.dataclass` (``@dataclass``-decorated class), and return an

@@ -4,7 +4,7 @@ codecov
 click==8.0.4
 flake8==4.0.1
 isort==5.10.1
-mypy==0.921
+mypy
 pytest
 pytest-cov
 pytest-random-order
