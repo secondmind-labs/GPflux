@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-          python-version: ["3.8", "3.9", "3.10"]
+          python-version: ["3.7", "3.8", "3.9", "3.10"]
           tensorflow: ["~=2.5.0", "~=2.6.0", "~=2.7.0", "~=2.8.0", "~=2.9.0", "~=2.10.0", "~=2.11.0", "~=2.12.0"]
           include:
             - tensorflow: "~=2.5.0"
@@ -56,12 +56,16 @@ jobs:
               tensorflow: "~=2.6.0"
             - python-version: "3.10"
               tensorflow: "~=2.7.0"
+            # These newer versions of TensorFlow don't work with Python 3.7:
+            - python-version: "3.7"
+              tensorflow: "~=2.12.0"
 
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }}
     env:
       VERSION_TF: ${{ matrix.tensorflow }}
       VERSION_KERAS: ${{ matrix.keras }}
       VERSION_TFP: ${{ matrix.tensorflow-probability }}
+      VERSION_PYTHON: ${{ matrix.python-version }}
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4

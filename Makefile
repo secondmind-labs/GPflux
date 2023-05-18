@@ -25,6 +25,13 @@ LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
                      $(LIB_NAME)/sampling/__init__.py:F401 \
                      $(LIB_NAME)/utils/__init__.py:F401"
 
+# Python 3.7 uses a separate test requirements file
+ifeq ("$(VERSION_PYTHON)", "3.7")
+  TEST_REQUIREMENTS = "tests_requirements_37.txt"
+else
+  TEST_REQUIREMENTS = "tests_requirements.txt"
+endif
+
 
 help: ## Shows this help message
 	# $(MAKEFILE_LIST) is set by make itself; the following parses the `target:  ## help line` format and adds color highlighting
@@ -35,7 +42,7 @@ install:  ## Install repo for developement
 	@echo "\n=== pip install package with dev requirements =============="
 	pip install --upgrade --upgrade-strategy eager \
 		-r notebook_requirements.txt \
-		-r tests_requirements.txt \
+		-r $(TEST_REQUIREMENTS) \
 		tensorflow${VERSION_TF} \
 		keras${VERSION_KERAS} \
 		tensorflow-probability${VERSION_TFP} \
