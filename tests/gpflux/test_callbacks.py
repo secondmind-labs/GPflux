@@ -136,7 +136,8 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
         "self_tracked_trackables[3].likelihood.variance",
     }
 
-    if Version(tf.__version__) < Version("2.8"):
+    tf_version = Version(tf.__version__)
+    if tf_version < Version("2.8") or tf_version >= Version("2.12"):
         if update_freq == "batch":
             expected_tags |= {
                 "batch_loss",
