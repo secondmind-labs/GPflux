@@ -6,7 +6,7 @@ codecov
 click==8.0.4
 flake8==4.0.1
 isort==5.10.1
-mypy
+mypy<1.4.0  # Some newer versions of mypy cause issues with Python 3.7.
 pytest
 pytest-cov
 pytest-random-order
