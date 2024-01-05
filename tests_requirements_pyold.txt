@@ -1,4 +1,4 @@
-# Test requirements specific to Python 3.7
+# Test requirements specific to Python 3.7, 3.8 and 3.9.
 
 # Code quality tools:
 black==21.7b0
@@ -6,7 +6,7 @@ codecov
 click==8.0.4
 flake8==4.0.1
 isort==5.10.1
-mypy<1.4.0  # Some newer versions of mypy cause issues with Python 3.7.
+mypy<1.4.0  # Newer mypy versions cause issues with older Python ('Self' from 'typing_extensions').
 pytest
 pytest-cov
 pytest-random-order
