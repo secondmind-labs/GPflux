@@ -25,9 +25,9 @@ LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
                      $(LIB_NAME)/sampling/__init__.py:F401 \
                      $(LIB_NAME)/utils/__init__.py:F401"
 
-# Older Python versions use a separate test requirements file
-ifeq ($(filter $(VERSION_PYTHON),3.7 3.8 3.9),$(VERSION_PYTHON))
-  TEST_REQUIREMENTS = "tests_requirements_pyold.txt"
+# Python 3.7 uses a separate test requirements file
+ifeq ("$(VERSION_PYTHON)", "3.7")
+  TEST_REQUIREMENTS = "tests_requirements_37.txt"
 else
   TEST_REQUIREMENTS = "tests_requirements.txt"
 endif
