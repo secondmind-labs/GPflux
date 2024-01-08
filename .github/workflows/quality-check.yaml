@@ -63,6 +63,10 @@ jobs:
             - python-version: "3.7"
               tensorflow: "~=2.12.0"
             - python-version: "3.7"
+              tensorflow: "~=2.13.0"
+            - python-version: "3.7"
+              tensorflow: "~=2.14.0"
+            - python-version: "3.7"
               tensorflow: "~=2.15.0"
             # These newer versions of TensorFlow don't work with Python 3.8:
             - python-version: "3.8"
