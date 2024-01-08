@@ -1,0 +1,43 @@
+:py:mod:`gpflux`
+================
+
+.. py:module:: gpflux
+
+.. autoapi-nested-parse::
+
+   The library root. See :mod:`~gpflux.models.deep_gp.DeepGP` for the core Deep GP model,
+   which is built out of different GP :mod:`~gpflux.layers`.
+
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   architectures/index.rst
+   encoders/index.rst
+   experiment_support/index.rst
+   layers/index.rst
+   models/index.rst
+   optimization/index.rst
+   sampling/index.rst
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   callbacks/index.rst
+   exceptions/index.rst
+   helpers/index.rst
+   losses/index.rst
+   math/index.rst
+   runtime_checks/index.rst
+   types/index.rst
+   version/index.rst
+
+

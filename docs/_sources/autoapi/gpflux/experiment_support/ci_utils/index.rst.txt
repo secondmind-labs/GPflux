@@ -1,0 +1,45 @@
+:py:mod:`gpflux.experiment_support.ci_utils`
+============================================
+
+.. py:module:: gpflux.experiment_support.ci_utils
+
+.. autoapi-nested-parse::
+
+   This module contains a set of utilities used in experiments and notebooks. 
+
+
+
+Module Contents
+---------------
+
+.. py:function:: is_continuous_integration() -> bool
+
+   Return `True` if the code is running on continuous integration (CI) machines,
+   otherwise `False`.
+
+   ..note:: This check is based on the ``CI`` environment variable, which is set to ``True``
+       by GitHub actions, CircleCI, and Jenkins. This function may not work as expected
+       under other CI frameworks.
+
+
+.. py:function:: notebook_niter(n: int, test_n: int = 2) -> int
+
+   Return a typically smaller number of iterations ``test_n`` if
+   code is running on CI machines (see :func:`is_continuous_integration`),
+   otherwise return ``n``.
+
+
+.. py:function:: notebook_range(n: int, test_n: int = 2) -> range
+
+   Return a typically shorter `range` (of the length specified by ``test_n``) if
+   code is running on CI machines (see :func:`is_continuous_integration`),
+   otherwise return a `range` of the length specified by ``n``.
+
+
+.. py:function:: notebook_list(lst: list, test_n: int = 2) -> list
+
+   Return a subset of the length specified by ``test_n`` from a list ``lst`` if the code
+   is running on CI machines (see :func:`is_continuous_integration`),
+   otherwise return the complete list ``lst``.
+
+

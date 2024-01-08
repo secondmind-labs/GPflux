@@ -1,0 +1,20 @@
+:py:mod:`gpflux.layers.basis_functions`
+=======================================
+
+.. py:module:: gpflux.layers.basis_functions
+
+.. autoapi-nested-parse::
+
+   Basis functions.
+
+
+
+Subpackages
+-----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 3
+
+   fourier_features/index.rst
+
+

@@ -1,0 +1,29 @@
+:py:mod:`gpflux.types`
+======================
+
+.. py:module:: gpflux.types
+
+.. autoapi-nested-parse::
+
+   Types used within GPflux (for static type-checking).
+
+
+
+Module Contents
+---------------
+
+.. py:function:: unwrap_dist(dist: tensorflow_probability.distributions.Distribution) -> tensorflow_probability.distributions.Distribution
+
+   Unwrap the given distribution, if it is wrapped in a ``_TensorCoercible``.
+
+
+.. py:data:: ShapeType
+
+   Union of valid types for describing the shape of a `tf.Tensor`\ (-like) object 
+
+
+.. py:data:: ObservationType
+
+   Type for the ``[inputs, targets]`` list used by :class:`~gpflux.layers.LayerWithObservations`
+
+

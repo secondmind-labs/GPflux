@@ -1,0 +1,53 @@
+:py:mod:`gpflux.sampling.utils`
+===============================
+
+.. py:module:: gpflux.sampling.utils
+
+.. autoapi-nested-parse::
+
+   This module contains utilities for sampling from multivariate Gaussian distributions.
+
+
+
+Module Contents
+---------------
+
+.. py:function:: draw_conditional_sample(mean: gpflow.base.TensorType, cov: gpflow.base.TensorType, f_old: gpflow.base.TensorType) -> tensorflow.Tensor
+
+   Draw a sample :math:`\tilde{f}_\text{new}` from the conditional
+   multivariate Gaussian :math:`p(f_\text{new} | f_\text{old})`, where the
+   parameters ``mean`` and ``cov`` are the mean and covariance matrix of the
+   joint multivariate Gaussian over :math:`[f_\text{old}, f_\text{new}]`.
+
+   :param mean: A tensor with the shape ``[..., D, N+M]`` with the mean of
+       ``[f_old, f_new]``. For each ``[..., D]`` this is a stacked vector of the
+       form:
+
+       .. math::
+
+           \begin{pmatrix}
+                \operatorname{mean}(f_\text{old}) \;[N] \\
+                \operatorname{mean}(f_\text{new}) \;[M]
+           \end{pmatrix}
+
+   :param cov: A tensor with the shape ``[..., D, N+M, N+M]`` with the covariance of
+       ``[f_old, f_new]``. For each ``[..., D]``, there is a 2x2 block matrix of the form:
+
+       .. math::
+
+           \begin{pmatrix}
+                \operatorname{cov}(f_\text{old}, f_\text{old}) \;[N, N]
+                  & \operatorname{cov}(f_\text{old}, f_\text{new}) \;[N, M] \\
+                \operatorname{cov}(f_\text{new}, f_\text{old}) \;[M, N]
+                  & \operatorname{cov}(f_\text{new}, f_\text{new}) \;[M, M]
+           \end{pmatrix}
+
+   :param f_old: A tensor of observations with the shape ``[..., D, N]``,
+       drawn from Normal distribution with mean
+       :math:`\operatorname{mean}(f_\text{old}) \;[N]`, and covariance
+       :math:`\operatorname{cov}(f_\text{old}, f_\text{old}) \;[N, N]`
+
+   :return: A sample :math:`\tilde{f}_\text{new}` from the conditional normal
+       :math:`p(f_\text{new} | f_\text{old})` with the shape ``[..., D, M]``.
+
+

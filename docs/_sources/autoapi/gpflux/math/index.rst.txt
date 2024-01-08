@@ -1,0 +1,38 @@
+:py:mod:`gpflux.math`
+=====================
+
+.. py:module:: gpflux.math
+
+.. autoapi-nested-parse::
+
+   Math utilities
+
+
+
+Module Contents
+---------------
+
+.. py:function:: _cholesky_with_jitter(cov: gpflow.base.TensorType) -> tensorflow.Tensor
+
+   Compute the Cholesky of the covariance, adding jitter (determined by
+   :func:`gpflow.default_jitter`) to the diagonal to improve stability.
+
+   :param cov: full covariance with shape ``[..., N, D, D]``.
+
+
+.. py:function:: compute_A_inv_b(A: gpflow.base.TensorType, b: gpflow.base.TensorType) -> tensorflow.Tensor
+
+   Computes :math:`A^{-1} b` using the Cholesky of ``A`` instead of the explicit inverse,
+   as this is often numerically more stable.
+
+   :param A: A positive-definite matrix with shape ``[..., M, M]``.
+       Can contain any leading dimensions (``...``) as long as they correspond
+       to the leading dimensions in ``b``.
+   :param b: Tensor with shape ``[..., M, D]``.
+       Can contain any leading dimensions (``...``) as long as they correspond
+       to the leading dimensions in ``A``.
+
+   :returns: Tensor with shape ``[..., M, D]``.
+       Leading dimensions originate from ``A`` and ``b``.
+
+
