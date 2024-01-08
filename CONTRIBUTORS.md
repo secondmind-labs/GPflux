@@ -18,4 +18,5 @@ Because GitHub's [graph of contributors](http://github.com/secondmind-labs/GPflu
 [Jesper Nielsen](https://github.com/jesnie)
 [Sebastian Ober](https://github.com/sebastianober)
 [Simon Chiu](https://github.com/sc336)
+[Khurram Ghani](https://github.com/khurram-ghani)
 
