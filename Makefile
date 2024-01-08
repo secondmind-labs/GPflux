@@ -28,6 +28,8 @@ LINT_FILE_IGNORES = "$(LIB_NAME)/__init__.py:F401,F403 \
 # Python 3.7 uses a separate test requirements file
 ifeq ("$(VERSION_PYTHON)", "3.7")
   TEST_REQUIREMENTS = "tests_requirements_37.txt"
+else ifeq ("$(VERSION_PYTHON)", "3.8")
+  TEST_REQUIREMENTS = "tests_requirements_38.txt"
 else
   TEST_REQUIREMENTS = "tests_requirements.txt"
 endif
