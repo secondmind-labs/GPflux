@@ -19,7 +19,6 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from tensorflow.python.ops.resource_variable_ops import ResourceVariable
-from tensorflow.python.util import object_identity
 
 import gpflow
 from gpflow.utilities import parameter_dict
@@ -141,11 +140,10 @@ def test_weights_equals_deduplicated_parameter_dict(model):
     # We filter out the parameters of type ResourceVariable.
     # They have been added to the model by the `add_metric` call in the layer.
     parameters = [p for p in parameter_dict(model).values() if not isinstance(p, ResourceVariable)]
-    variables = map(lambda p: p.unconstrained_variable, parameters)
-    deduplicate_variables = object_identity.ObjectIdentitySet(variables)
+    variables = {id(p.unconstrained_variable) for p in parameters}
 
     weights = model.trainable_weights
-    assert len(weights) == len(deduplicate_variables)
+    assert len(weights) == len(variables)
 
-    weights_set = object_identity.ObjectIdentitySet(weights)
-    assert weights_set == deduplicate_variables
+    weights_set = {id(w) for w in weights}
+    assert weights_set == variables
