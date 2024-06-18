@@ -58,7 +58,6 @@ jobs:
               keras: "~=2.15.0"
               tensorflow-probability: "~=0.23.0"
             - tensorflow: "~=2.16.0"
-              keras: "~=2.16.0"
               tensorflow-probability: "~=0.24.0"
           exclude:
             # These older versions of TensorFlow don't work with Python 3.10:

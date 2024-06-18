@@ -16,7 +16,6 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from tensorflow import keras
 
 from gpflow.keras import tf_keras
 from gpflow.kernels import RBF
@@ -66,7 +65,7 @@ def build_keras_functional_deep_gp(layer_sizes, num_data):
     gp_layers = build_gp_layers(layer_sizes, num_data)
     likelihood = Gaussian()
 
-    inputs = keras.Input(shape=(layer_sizes[0]))
+    inputs = tf_keras.Input(shape=(layer_sizes[0]))
     x = inputs
     for gp in gp_layers:
         x = gp(x)
