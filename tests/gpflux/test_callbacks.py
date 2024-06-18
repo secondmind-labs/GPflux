@@ -22,6 +22,7 @@ import tensorflow as tf
 from packaging.version import Version
 
 import gpflow
+from gpflow.keras import tf_keras
 
 import gpflux
 from gpflux.experiment_support.tensorboard import tensorboard_event_iterator
@@ -47,7 +48,7 @@ def data() -> Tuple[np.ndarray, np.ndarray]:
 
 
 @pytest.fixture
-def model_and_loss(data) -> Tuple[tf.keras.models.Model, tf.keras.losses.Loss]:
+def model_and_loss(data) -> Tuple[tf_keras.models.Model, tf_keras.losses.Loss]:
     """
     Builds a two-layer deep GP model.
     """
@@ -66,7 +67,7 @@ def model_and_loss(data) -> Tuple[tf.keras.models.Model, tf.keras.losses.Loss]:
     likelihood = gpflow.likelihoods.Gaussian(CONFIG.likelihood_variance)
     gpflow.set_trainable(likelihood.variance, False)
 
-    X = tf.keras.Input((input_dim,))
+    X = tf_keras.Input((input_dim,))
     f1 = layer1(X)
     f2 = layer2(f1)
 
@@ -76,7 +77,7 @@ def model_and_loss(data) -> Tuple[tf.keras.models.Model, tf.keras.losses.Loss]:
     y = likelihood_container(f2)
 
     loss = gpflux.losses.LikelihoodLoss(likelihood)
-    return tf.keras.Model(inputs=X, outputs=y), loss
+    return tf_keras.Model(inputs=X, outputs=y), loss
 
 
 @pytest.mark.parametrize("update_freq", ["epoch", "batch"])
@@ -85,11 +86,11 @@ def test_tensorboard_callback(tmp_path, model_and_loss, data, update_freq):
 
     tmp_path = str(tmp_path)
     dataset = tf.data.Dataset.from_tensor_slices(data).batch(CONFIG.num_data)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
+    optimizer = tf_keras.optimizers.Adam(learning_rate=1e-2)
     model, loss = model_and_loss
     model.compile(optimizer=optimizer, loss=loss)
     callbacks = [
-        tf.keras.callbacks.ReduceLROnPlateau(
+        tf_keras.callbacks.ReduceLROnPlateau(
             monitor="loss",
             patience=1,
             factor=0.95,

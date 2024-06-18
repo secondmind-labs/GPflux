@@ -22,11 +22,12 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
+from gpflow.keras import tf_keras
 
 from gpflux.types import ShapeType
 
 
-class FourierFeaturesBase(ABC, tf.keras.layers.Layer):
+class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
     r"""
     The base class for all Fourier feature layers, used for both random Fourier feature layers and
     quadrature layers. We subclass :class:`tf.keras.layers.Layer`, so we must provide

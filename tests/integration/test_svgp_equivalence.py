@@ -23,6 +23,7 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import Parameter
+from gpflow.keras import tf_keras
 from gpflow.models.model import RegressionData
 from gpflow.utilities import positive, to_default_float
 
@@ -92,7 +93,7 @@ def create_gpflux_sequential_and_loss(kernel, likelihood, inducing_variable, num
     loss = gpflux.losses.LikelihoodLoss(likelihood)
     likelihood_container = gpflux.layers.TrackableLayer()
     likelihood_container.likelihood = likelihood  # for likelihood to be discovered as trainable
-    model = tf.keras.Sequential([gp_layer, likelihood_container])
+    model = tf_keras.Sequential([gp_layer, likelihood_container])
     return model, loss
 
 

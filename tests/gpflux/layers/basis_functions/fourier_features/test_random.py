@@ -20,6 +20,7 @@ from tensorflow.python.keras.testing_utils import layer_test
 from tensorflow.python.keras.utils.kernelized_utils import inner_product
 
 import gpflow
+from gpflow.keras import tf_keras
 
 from gpflux.layers.basis_functions.fourier_features.random import (
     OrthogonalRandomFeatures,
@@ -250,7 +251,7 @@ def test_multioutput_fourier_features_shapes(
 def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
     kernel = kernel_cls()
 
-    tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
+    tf_keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
         kwargs={
@@ -269,7 +270,7 @@ def test_keras_testing_util_layer_test_1D(kernel_cls, batch_size, n_components):
 def test_keras_testing_util_layer_test_multidim(kernel_cls, batch_size, n_dims, n_components):
     kernel = kernel_cls()
 
-    tf.keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
+    tf_keras.utils.get_custom_objects()["RandomFourierFeatures"] = RandomFourierFeatures
     layer_test(
         RandomFourierFeatures,
         kwargs={

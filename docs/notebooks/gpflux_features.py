@@ -63,6 +63,7 @@ To keep this notebook focussed we are going to use a predefined deep GP architec
 # %%
 import gpflux
 
+from gpflow.keras import tf_keras
 from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 from gpflux.models import DeepGP
 
@@ -80,7 +81,7 @@ When training a model, GPflux takes care of minibatching the dataset and accepts
 
 # %%
 # From the `DeepGP` model we instantiate a training model which is a `tf.keras.Model`
-training_model: tf.keras.Model = deep_gp.as_training_model()
+training_model: tf_keras.Model = deep_gp.as_training_model()
 
 # Following the Keras procedure we need to compile and pass a optimizer,
 # before fitting the model to data
@@ -88,11 +89,11 @@ training_model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.01))
 
 callbacks = [
     # Create callback that reduces the learning rate every time the ELBO plateaus
-    tf.keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0),
+    tf_keras.callbacks.ReduceLROnPlateau("loss", factor=0.95, patience=3, min_lr=1e-6, verbose=0),
     # Create a callback that writes logs (e.g., hyperparameters, KLs, etc.) to TensorBoard
     gpflux.callbacks.TensorBoard(),
     # Create a callback that saves the model's weights
-    tf.keras.callbacks.ModelCheckpoint(filepath="ckpts/", save_weights_only=True, verbose=0),
+    tf_keras.callbacks.ModelCheckpoint(filepath="ckpts/", save_weights_only=True, verbose=0),
 ]
 
 history = training_model.fit(

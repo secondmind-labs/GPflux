@@ -25,6 +25,7 @@ import tensorflow as tf
 import gpflow
 import gpflux
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 
 import matplotlib.pyplot as plt
 
@@ -83,10 +84,10 @@ batch_size = 2
 num_epochs = reduce_in_tests(200)
 
 # %%
-dgp = create_model(tf.keras.Model)
+dgp = create_model(tf_keras.Model)
 
 callbacks = [
-    tf.keras.callbacks.ReduceLROnPlateau(
+    tf_keras.callbacks.ReduceLROnPlateau(
         monitor="loss",
         patience=5,
         factor=0.95,
@@ -106,7 +107,7 @@ history = dgp_train.fit(
 dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
 
 callbacks = [
-    tf.keras.callbacks.ReduceLROnPlateau(
+    tf_keras.callbacks.ReduceLROnPlateau(
         monitor="loss",
         patience=5,
         factor=0.95,

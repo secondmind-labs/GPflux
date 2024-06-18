@@ -24,6 +24,7 @@ from tensorflow.python.util.object_identity import ObjectIdentitySet
 
 import gpflow
 from gpflow import Parameter
+from gpflow.keras import tf_keras
 from gpflow.models.model import MeanAndVariance
 from gpflow.optimizers import NaturalGradient
 
@@ -35,7 +36,7 @@ __all__ = [
 ]
 
 
-class NatGradModel(tf.keras.Model):
+class NatGradModel(tf_keras.Model):
     r"""
     This is a drop-in replacement for `tf.keras.Model` when constructing GPflux
     models using the functional Keras style, to make it work with the
@@ -228,7 +229,7 @@ class NatGradWrapper(NatGradModel):
         This class will probably be removed in the future.
     """
 
-    def __init__(self, base_model: tf.keras.Model, *args: Any, **kwargs: Any):
+    def __init__(self, base_model: tf_keras.Model, *args: Any, **kwargs: Any):
         """
         :param base_model: the class-based Keras model to be wrapped
         """
@@ -236,7 +237,7 @@ class NatGradWrapper(NatGradModel):
         self.base_model = base_model
 
     @property
-    def layers(self) -> List[tf.keras.layers.Layer]:
+    def layers(self) -> List[tf_keras.layers.Layer]:
         if not hasattr(self, "base_model"):
             # required for super().__init__(), in which base_model has not been set yet
             return super().layers

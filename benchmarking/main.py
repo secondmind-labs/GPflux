@@ -23,6 +23,7 @@ import numpy as np
 import tensorflow as tf
 from bayesian_benchmarks import data as uci_datasets
 from bayesian_benchmarks.data import Dataset
+from gpflow.keras import tf_keras
 from sacred import Experiment
 from scipy.stats import norm
 from utils import ExperimentName, git_version
@@ -89,10 +90,10 @@ def build_model(X, num_inducing, num_layers):
 
 
 @EXPERIMENT.capture
-def train_model(model: tf.keras.models.Model, data_train, batch_size, num_epochs):
+def train_model(model: tf_keras.models.Model, data_train, batch_size, num_epochs):
     X_train, Y_train = data_train
     callbacks = [
-        tf.keras.callbacks.ReduceLROnPlateau(
+        tf_keras.callbacks.ReduceLROnPlateau(
             'loss', factor=0.95, patience=3, min_lr=1e-6, verbose=1
         ),
     ]

@@ -23,6 +23,7 @@ import tensorflow_probability as tfp
 
 from gpflow import default_float
 from gpflow.base import TensorType
+from gpflow.keras import tf_keras
 
 from gpflux.layers.trackable_layer import TrackableLayer
 from gpflux.types import ObservationType
@@ -67,14 +68,14 @@ class LatentVariableLayer(LayerWithObservations):
     prior: tfp.distributions.Distribution
     """ The prior distribution for the latent variables. """
 
-    encoder: tf.keras.layers.Layer
+    encoder: tf_keras.layers.Layer
     """
     An encoder that maps from a concatenation of inputs and targets to the
     parameters of the approximate posterior distribution of the corresponding
     latent variables.
     """
 
-    compositor: tf.keras.layers.Layer
+    compositor: tf_keras.layers.Layer
     """
     A layer that takes as input the two-element ``[layer_inputs, latent_variable_samples]`` list
     and combines the elements into a single output tensor.
@@ -83,8 +84,8 @@ class LatentVariableLayer(LayerWithObservations):
     def __init__(
         self,
         prior: tfp.distributions.Distribution,
-        encoder: tf.keras.layers.Layer,
-        compositor: Optional[tf.keras.layers.Layer] = None,
+        encoder: tf_keras.layers.Layer,
+        compositor: Optional[tf_keras.layers.Layer] = None,
         name: Optional[str] = None,
     ):
         """
@@ -108,7 +109,7 @@ class LatentVariableLayer(LayerWithObservations):
         self.compositor = (
             compositor
             if compositor is not None
-            else tf.keras.layers.Concatenate(axis=-1, dtype=default_float())
+            else tf_keras.layers.Concatenate(axis=-1, dtype=default_float())
         )
 
     def call(

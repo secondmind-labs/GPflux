@@ -19,6 +19,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow import default_float
+from gpflow.keras import tf_keras
 from gpflow.likelihoods import Gaussian
 
 from gpflux.layers import LatentVariableLayer, LikelihoodLayer
@@ -30,12 +31,12 @@ PLOTTER_INTERVAL = 60
 
 def build_latent_layer(w_dim, x_dim, y_dim):
     def build_encoder():
-        inputs = tf.keras.Input((x_dim + y_dim,))
-        x1 = tf.keras.layers.Dense(100)(inputs)
-        x2 = tf.keras.layers.Dense(20)(x1)
-        mean = tf.keras.layers.Dense(w_dim, activation="linear", name="output_mean")(x2)
-        std = tf.keras.layers.Dense(w_dim, activation="softplus", name="output_std")(x2)
-        return tf.keras.Model(inputs=[inputs], outputs=[mean, std])
+        inputs = tf_keras.Input((x_dim + y_dim,))
+        x1 = tf_keras.layers.Dense(100)(inputs)
+        x2 = tf_keras.layers.Dense(20)(x1)
+        mean = tf_keras.layers.Dense(w_dim, activation="linear", name="output_mean")(x2)
+        std = tf_keras.layers.Dense(w_dim, activation="softplus", name="output_std")(x2)
+        return tf_keras.Model(inputs=[inputs], outputs=[mean, std])
 
     def build_prior():
         mean = np.zeros(w_dim)

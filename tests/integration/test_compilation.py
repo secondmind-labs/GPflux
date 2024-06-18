@@ -18,6 +18,7 @@ import pytest
 import tensorflow as tf
 from tensorflow import keras
 
+from gpflow.keras import tf_keras
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
@@ -74,7 +75,7 @@ def build_keras_functional_deep_gp(layer_sizes, num_data):
     container.likelihood = likelihood
     outputs = container(x)  # to track likelihood
 
-    model = tf.keras.Model(inputs=[inputs], outputs=outputs, name="deep_gp_fp")
+    model = tf_keras.Model(inputs=[inputs], outputs=outputs, name="deep_gp_fp")
     loss = LikelihoodLoss(likelihood)
     return model, loss
 
@@ -83,7 +84,7 @@ def build_keras_objected_oriented_deep_gp(layer_sizes, num_data):
     gp_layers = build_gp_layers(layer_sizes, num_data)
     likelihood = Gaussian()
 
-    class KerasDeepGP(tf.keras.Model, TrackableLayer):
+    class KerasDeepGP(tf_keras.Model, TrackableLayer):
         def __init__(self, gp_layers, likelihood):
             super().__init__(name="deep_gp_oop")
             self.gp_layers = gp_layers
@@ -138,7 +139,7 @@ def test_model_compilation(deep_gp_model_builder):
 
     train_dataset = tf.data.Dataset.from_tensor_slices(dataset).batch(batch)
 
-    optimizer = tf.keras.optimizers.Adam()
+    optimizer = tf_keras.optimizers.Adam()
 
     deep_gp_model.compile(optimizer=optimizer, loss=loss)
 
@@ -182,7 +183,7 @@ def test_model_eager(deep_gp_model_builder, use_tf_function):
 
     train_dataset = tf.data.Dataset.from_tensor_slices(dataset).repeat().batch(batch)
 
-    optimizer = tf.keras.optimizers.Adam()
+    optimizer = tf_keras.optimizers.Adam()
 
     train_dataset_iter = iter(train_dataset)
     test_mini_batch = next(train_dataset_iter)

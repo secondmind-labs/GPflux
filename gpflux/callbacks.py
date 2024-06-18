@@ -21,15 +21,14 @@ integrate with Keras's `tf.keras.Model`\ 's `fit
 import re
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-import tensorflow as tf
-
 import gpflow
+from gpflow.keras import tf_keras
 from gpflow.utilities import parameter_dict
 
 __all__ = ["TensorBoard"]
 
 
-class TensorBoard(tf.keras.callbacks.TensorBoard):
+class TensorBoard(tf_keras.callbacks.TensorBoard):
     """
     This class is a thin wrapper around a `tf.keras.callbacks.TensorBoard` callback that also
     calls GPflow's `gpflow.monitor.ModelToTensorBoard` monitoring task.
@@ -100,7 +99,7 @@ class TensorBoard(tf.keras.callbacks.TensorBoard):
         self.keywords_to_monitor = keywords_to_monitor
         self.max_size = max_size
 
-    def set_model(self, model: tf.keras.Model) -> None:
+    def set_model(self, model: tf_keras.Model) -> None:
         """
         Set the model (extends the Keras `set_model
         <https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/TensorBoard#set_model>`_

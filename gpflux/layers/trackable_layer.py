@@ -15,8 +15,8 @@
 #
 """Utility layer that tracks variables in :class:`tf.Module`."""
 
-import tensorflow as tf
 from deprecated import deprecated
+from gpflow.keras import tf_keras
 
 
 @deprecated(
@@ -27,7 +27,7 @@ from deprecated import deprecated
         "be removed in GPflux version `1.0.0`."
     )
 )
-class TrackableLayer(tf.keras.layers.Layer):
+class TrackableLayer(tf_keras.layers.Layer):
     """
     With the release of TensorFlow 2.5, our TrackableLayer workaround is no
     longer needed.  See https://github.com/Prowler-io/gpflux/issues/189.

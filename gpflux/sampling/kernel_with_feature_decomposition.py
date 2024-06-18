@@ -34,6 +34,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
+from gpflow.keras import tf_keras
 
 NoneType = type(None)
 
@@ -51,7 +52,7 @@ class _ApproximateKernel(gpflow.kernels.Kernel):
 
     def __init__(
         self,
-        feature_functions: tf.keras.layers.Layer,
+        feature_functions: tf_keras.layers.Layer,
         feature_coefficients: TensorType,
     ):
         r"""
@@ -128,7 +129,7 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
     def __init__(
         self,
         kernel: Union[gpflow.kernels.Kernel, NoneType],
-        feature_functions: tf.keras.layers.Layer,
+        feature_functions: tf_keras.layers.Layer,
         feature_coefficients: TensorType,
     ):
         r"""
@@ -161,7 +162,7 @@ class KernelWithFeatureDecomposition(gpflow.kernels.Kernel):
         tf.ensure_shape(self._feature_coefficients, tf.TensorShape([None, 1]))
 
     @property
-    def feature_functions(self) -> tf.keras.layers.Layer:
+    def feature_functions(self) -> tf_keras.layers.Layer:
         r"""Return the kernel's features :math:`\phi_i(\cdot)`."""
         return self._feature_functions
 
