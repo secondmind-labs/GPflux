@@ -7,7 +7,7 @@ from setuptools import find_namespace_packages, setup
 requirements = [
     "deprecated",
     "gpflow>=2.9.2",
-    "numpy",
+    "numpy<2",
     "scipy",
     "tensorflow>=2.5.0,<=2.16.1; platform_system!='Darwin' or platform_machine!='arm64'",
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
