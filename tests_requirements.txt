@@ -21,5 +21,6 @@ jupytext
 nbformat
 nbconvert
 jupyter_client
+ipython>=8.25.0
 ipykernel
 tornado
