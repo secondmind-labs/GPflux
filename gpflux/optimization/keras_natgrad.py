@@ -94,7 +94,7 @@ class NatGradModel(tf_keras.Model):
         return self._all_optimizers[:-1]
 
     @property
-    def optimizer(self) -> tf.optimizers.Optimizer:
+    def optimizer(self) -> tf_keras.optimizers.Optimizer:
         """
         HACK to cope with Keras's callbacks such as
         :class:`~tf.keras.callbacks.ReduceLROnPlateau`
@@ -109,7 +109,9 @@ class NatGradModel(tf_keras.Model):
         return self._all_optimizers[-1]
 
     @optimizer.setter
-    def optimizer(self, optimizers: List[Union[NaturalGradient, tf.optimizers.Optimizer]]) -> None:
+    def optimizer(
+        self, optimizers: List[Union[NaturalGradient, tf_keras.optimizers.Optimizer]]
+    ) -> None:
         if optimizers is None:
             # tf.keras.Model.__init__() sets self.optimizer = None
             self._all_optimizers = None

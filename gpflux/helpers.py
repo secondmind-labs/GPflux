@@ -22,7 +22,7 @@ This module contains helper functions for constructing :class:`~gpflow.kernels.M
 import inspect
 import warnings
 from dataclasses import fields
-from typing import List, Optional, Type, TypeVar, Union, Any
+from typing import Any, List, Optional, Type, TypeVar, Union
 
 import numpy as np
 

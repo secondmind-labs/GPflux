@@ -100,7 +100,7 @@ model = dgp.as_training_model()
 """
 
 # %%
-model.compile(tf.optimizers.Adam(learning_rate=0.1))
+model.compile(tf_keras.optimizers.Adam(learning_rate=0.1))
 
 callbacks = [
     tf_keras.callbacks.ReduceLROnPlateau(

@@ -23,10 +23,11 @@ import numpy as np
 import tensorflow as tf
 from bayesian_benchmarks import data as uci_datasets
 from bayesian_benchmarks.data import Dataset
-from gpflow.keras import tf_keras
 from sacred import Experiment
 from scipy.stats import norm
 from utils import ExperimentName, git_version
+
+from gpflow.keras import tf_keras
 
 from gpflux.architectures import Config, build_constant_input_dim_deep_gp
 
@@ -124,7 +125,7 @@ def main(_config):
     data = get_data()
     model = build_model(data.X_train)
 
-    model.compile(optimizer=tf.optimizers.Adam(0.01))
+    model.compile(optimizer=tf_keras.optimizers.Adam(0.01))
     train_model(model, (data.X_train, data.Y_train))
 
     metrics = evaluate_model(model, (data.X_test, data.Y_test))

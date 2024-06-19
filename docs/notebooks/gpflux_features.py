@@ -85,7 +85,7 @@ training_model: tf_keras.Model = deep_gp.as_training_model()
 
 # Following the Keras procedure we need to compile and pass a optimizer,
 # before fitting the model to data
-training_model.compile(optimizer=tf.optimizers.Adam(learning_rate=0.01))
+training_model.compile(optimizer=tf_keras.optimizers.Adam(learning_rate=0.01))
 
 callbacks = [
     # Create callback that reduces the learning rate every time the ELBO plateaus

@@ -16,6 +16,7 @@
 """Utility layer that tracks variables in :class:`tf.Module`."""
 
 from deprecated import deprecated
+
 from gpflow.keras import tf_keras
 
 

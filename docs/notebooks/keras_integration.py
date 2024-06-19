@@ -97,7 +97,7 @@ callbacks = [
 ]
 
 dgp_train = dgp.as_training_model()
-dgp_train.compile(tf.optimizers.Adam(learning_rate=0.1))
+dgp_train.compile(tf_keras.optimizers.Adam(learning_rate=0.1))
 
 history = dgp_train.fit(
     {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
@@ -125,7 +125,7 @@ dgp_natgrad_train.compile(
     [
         gpflow.optimizers.NaturalGradient(gamma=0.05),
         gpflow.optimizers.NaturalGradient(gamma=0.05),
-        tf.optimizers.Adam(learning_rate=0.1),
+        tf_keras.optimizers.Adam(learning_rate=0.1),
     ]
 )
 
