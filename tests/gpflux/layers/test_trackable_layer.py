@@ -34,7 +34,7 @@ class CompositeModule(tf.Module):
         super().__init__()
 
 
-class UntrackableCompositeLayer(tf_keras.Layer):
+class UntrackableCompositeLayer(tf_keras.layers.Layer):
     def __init__(self, attributes):
         for i, a in enumerate(attributes):
             setattr(self, f"var_{i}", a)
