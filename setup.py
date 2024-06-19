@@ -9,9 +9,9 @@ requirements = [
     "gpflow>=2.9.2",
     "numpy<2",
     "scipy",
-    "tensorflow>=2.5.0,<=2.16.1; platform_system!='Darwin' or platform_machine!='arm64'",
+    "tensorflow>=2.5.0,<2.17; platform_system!='Darwin' or platform_machine!='arm64'",
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
-    "tensorflow-macos>=2.5.0,<=2.16.1; platform_system=='Darwin' and platform_machine=='arm64'",
+    "tensorflow-macos>=2.5.0,<2.17; platform_system=='Darwin' and platform_machine=='arm64'",
     "tensorflow-probability>=0.13.0,<=0.24",
 ]
 

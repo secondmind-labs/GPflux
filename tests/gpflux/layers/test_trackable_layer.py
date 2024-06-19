@@ -18,9 +18,9 @@ from typing import List
 import pytest
 import tensorflow as tf
 from packaging.version import Version
-from tensorflow.keras.layers import Layer
 
 from gpflow import default_float
+from gpflow.keras import tf_keras
 from gpflow.kernels import RBF, Matern12, Matern52
 
 import gpflux
@@ -34,7 +34,7 @@ class CompositeModule(tf.Module):
         super().__init__()
 
 
-class UntrackableCompositeLayer(Layer):
+class UntrackableCompositeLayer(tf_keras.Layer):
     def __init__(self, attributes):
         for i, a in enumerate(attributes):
             setattr(self, f"var_{i}", a)
