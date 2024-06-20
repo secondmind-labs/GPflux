@@ -23,6 +23,7 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import Parameter
+from gpflow.keras import tf_keras
 from gpflow.models.model import RegressionData
 from gpflow.utilities import positive, to_default_float
 
@@ -92,7 +93,7 @@ def create_gpflux_sequential_and_loss(kernel, likelihood, inducing_variable, num
     loss = gpflux.losses.LikelihoodLoss(likelihood)
     likelihood_container = gpflux.layers.TrackableLayer()
     likelihood_container.likelihood = likelihood  # for likelihood to be discovered as trainable
-    model = tf.keras.Sequential([gp_layer, likelihood_container])
+    model = tf_keras.Sequential([gp_layer, likelihood_container])
     return model, loss
 
 
@@ -149,7 +150,7 @@ def fit_adam(
         """
         return -model.elbo(data) / num_data
 
-    adam = tf.optimizers.Adam(adam_learning_rate)
+    adam = tf_keras.optimizers.Adam(adam_learning_rate)
 
     @tf.function
     def optimization_step():
@@ -160,7 +161,7 @@ def fit_adam(
 
 
 def _keras_fit_adam(model, dataset, maxiter, adam_learning_rate=0.01, loss=None):
-    model.compile(optimizer=tf.optimizers.Adam(adam_learning_rate), loss=loss)
+    model.compile(optimizer=tf_keras.optimizers.Adam(adam_learning_rate), loss=loss)
     model.fit(dataset, epochs=maxiter)
 
 
@@ -182,7 +183,7 @@ def _keras_fit_natgrad(
     model = gpflux.optimization.NatGradWrapper(base_model)
     model.natgrad_layers = True  # Shortcut to apply natural gradients to all layers
     natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
-    adam = tf.optimizers.Adam(adam_learning_rate)
+    adam = tf_keras.optimizers.Adam(adam_learning_rate)
     model.compile(
         optimizer=[natgrad, adam],
         loss=loss,
@@ -234,7 +235,7 @@ def fit_natgrad(model, data, maxiter, adam_learning_rate=0.01, gamma=1.0):
         return -model.elbo(data) / num_data
 
     natgrad = gpflow.optimizers.NaturalGradient(gamma=gamma)
-    adam = tf.optimizers.Adam(adam_learning_rate)
+    adam = tf_keras.optimizers.Adam(adam_learning_rate)
 
     @tf.function
     def optimization_step():

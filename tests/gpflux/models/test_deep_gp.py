@@ -18,6 +18,7 @@ import pytest
 import tensorflow as tf
 import tqdm
 
+from gpflow.keras import tf_keras
 from gpflow.kernels import RBF, Matern12
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
@@ -63,7 +64,7 @@ def build_deep_gp(input_dim, num_data):
 
 
 def train_deep_gp(deep_gp, data, maxiter=MAXITER, plotter=None, plotter_interval=PLOTTER_INTERVAL):
-    optimizer = tf.optimizers.Adam()
+    optimizer = tf_keras.optimizers.Adam()
 
     @tf.function(autograph=False)
     def objective_closure():

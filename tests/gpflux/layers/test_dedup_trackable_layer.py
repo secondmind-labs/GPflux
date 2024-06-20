@@ -21,6 +21,7 @@ import tensorflow as tf
 from tensorflow.python.ops.resource_variable_ops import ResourceVariable
 
 import gpflow
+from gpflow.keras import tf_keras
 from gpflow.utilities import parameter_dict
 
 import gpflux
@@ -36,7 +37,7 @@ class CONFIG:
     num_data = 7
 
 
-def count_params(model: tf.keras.models.Model) -> int:
+def count_params(model: tf_keras.models.Model) -> int:
     """
     Counts the total number of scalar parameters in a Model.
 
@@ -54,7 +55,7 @@ def data() -> Tuple[np.ndarray, np.ndarray]:
 
 
 @pytest.fixture
-def model(data) -> tf.keras.models.Model:
+def model(data) -> tf_keras.models.Model:
     """
     Builds a two-layer deep GP model.
     """
@@ -69,11 +70,11 @@ def model(data) -> tf.keras.models.Model:
 
     likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))
 
-    X = tf.keras.Input((input_dim,))
+    X = tf_keras.Input((input_dim,))
     f1 = layer1(X)
     f2 = layer2(f1)
     y = likelihood_layer(f2)
-    return tf.keras.Model(inputs=X, outputs=y)
+    return tf_keras.Model(inputs=X, outputs=y)
 
 
 def _size_q_sqrt(num_inducing, output_dim):

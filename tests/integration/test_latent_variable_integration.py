@@ -18,9 +18,9 @@ import itertools
 import numpy as np
 import pytest
 import tensorflow as tf
-import tensorflow.keras as keras
 import tensorflow_probability as tfp
 
+from gpflow.keras import tf_keras
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
@@ -56,7 +56,7 @@ def train_model(x_data, y_data, model, use_keras_compile):
     dataset_dict = {"inputs": x_data, "targets": y_data}
     num_data = len(x_data)
 
-    optimizer = tf.keras.optimizers.Adam()
+    optimizer = tf_keras.optimizers.Adam()
 
     epochs = 20
 

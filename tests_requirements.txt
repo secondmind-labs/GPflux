@@ -21,5 +21,6 @@ jupytext
 nbformat
 nbconvert
 jupyter_client
+ipython!=8.23  # this claims to support typing-extensions-4.6 but doesn't
 ipykernel
 tornado

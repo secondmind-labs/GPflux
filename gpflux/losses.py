@@ -25,11 +25,12 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow.base import TensorType
+from gpflow.keras import tf_keras
 
 from gpflux.types import unwrap_dist
 
 
-class LikelihoodLoss(tf.keras.losses.Loss):
+class LikelihoodLoss(tf_keras.losses.Loss):
     r"""
     This class is a `tf.keras.losses.Loss` implementation that wraps a GPflow
     :class:`~gpflow.likelihoods.Likelihood` instance.

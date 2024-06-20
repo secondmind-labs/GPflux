@@ -25,6 +25,7 @@ import tensorflow as tf
 import gpflow
 import gpflux
 from gpflow.ci_utils import reduce_in_tests
+from gpflow.keras import tf_keras
 
 import matplotlib.pyplot as plt
 
@@ -83,10 +84,10 @@ batch_size = 2
 num_epochs = reduce_in_tests(200)
 
 # %%
-dgp = create_model(tf.keras.Model)
+dgp = create_model(tf_keras.Model)
 
 callbacks = [
-    tf.keras.callbacks.ReduceLROnPlateau(
+    tf_keras.callbacks.ReduceLROnPlateau(
         monitor="loss",
         patience=5,
         factor=0.95,
@@ -96,7 +97,7 @@ callbacks = [
 ]
 
 dgp_train = dgp.as_training_model()
-dgp_train.compile(tf.optimizers.Adam(learning_rate=0.1))
+dgp_train.compile(tf_keras.optimizers.Adam(learning_rate=0.1))
 
 history = dgp_train.fit(
     {"inputs": X, "targets": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks
@@ -106,7 +107,7 @@ history = dgp_train.fit(
 dgp_natgrad = create_model(gpflux.optimization.NatGradModel)
 
 callbacks = [
-    tf.keras.callbacks.ReduceLROnPlateau(
+    tf_keras.callbacks.ReduceLROnPlateau(
         monitor="loss",
         patience=5,
         factor=0.95,
@@ -124,7 +125,7 @@ dgp_natgrad_train.compile(
     [
         gpflow.optimizers.NaturalGradient(gamma=0.05),
         gpflow.optimizers.NaturalGradient(gamma=0.05),
-        tf.optimizers.Adam(learning_rate=0.1),
+        tf_keras.optimizers.Adam(learning_rate=0.1),
     ]
 )
 

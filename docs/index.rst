@@ -71,7 +71,7 @@ As a quick teaser, here's a snippet from the `intro notebook <notebooks/intro>` 
 
    # Compile and fit
    model = two_layer_dgp.as_training_model()
-   model.compile(tf.optimizers.Adam(0.01))
+   model.compile(gpflow.keras.tf_keras.optimizers.Adam(0.01))
    history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
 
 The model described above produces the fit shown in Fig 1. For comparison, in Fig. 2 we show the fit on the same dataset by a vanilla single-layer GP model.

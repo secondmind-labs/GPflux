@@ -29,6 +29,7 @@ import gpflow
 import gpflux
 
 from gpflow.config import default_float
+from gpflow.keras import tf_keras
 
 
 # %% [markdown]
@@ -78,11 +79,11 @@ likelihood = gpflow.likelihoods.Gaussian(0.1)
 likelihood_container = gpflux.layers.TrackableLayer()
 likelihood_container.likelihood = likelihood
 
-model = tf.keras.Sequential(
+model = tf_keras.Sequential(
     [
-        tf.keras.layers.Dense(100, activation="relu"),
-        tf.keras.layers.Dense(100, activation="relu"),
-        tf.keras.layers.Dense(1, activation="linear"),
+        tf_keras.layers.Dense(100, activation="relu"),
+        tf_keras.layers.Dense(100, activation="relu"),
+        tf_keras.layers.Dense(1, activation="linear"),
         gp_layer,
         likelihood_container,  # no-op, for discovering trainable likelihood parameters
     ]

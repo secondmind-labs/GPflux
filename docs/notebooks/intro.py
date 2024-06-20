@@ -97,7 +97,7 @@ We now pass our GP layer and likelihood layer into a GPflux `DeepGP` model. The 
 # %%
 single_layer_dgp = gpflux.models.DeepGP([gp_layer], likelihood_layer)
 model = single_layer_dgp.as_training_model()
-model.compile(tf.optimizers.Adam(0.01))
+model.compile(gpflow.keras.tf_keras.optimizers.Adam(0.01))
 
 # %% [markdown]
 """
@@ -168,7 +168,7 @@ gp_layer2 = gpflux.layers.GPLayer(
 likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))
 two_layer_dgp = gpflux.models.DeepGP([gp_layer1, gp_layer2], likelihood_layer)
 model = two_layer_dgp.as_training_model()
-model.compile(tf.optimizers.Adam(0.01))
+model.compile(gpflow.keras.tf_keras.optimizers.Adam(0.01))
 
 # %%
 history = model.fit({"inputs": X, "targets": Y}, epochs=int(1e3), verbose=0)
