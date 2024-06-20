@@ -1,0 +1,26 @@
+gpflux.layers.trackable_layer
+=============================
+
+.. py:module:: gpflux.layers.trackable_layer
+
+.. autoapi-nested-parse::
+
+   Utility layer that tracks variables in :class:`tf.Module`.
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: TrackableLayer
+
+   Bases: :py:obj:`gpflow.keras.tf_keras.layers.Layer`
+
+
+   With the release of TensorFlow 2.5, our TrackableLayer workaround is no
+   longer needed.  See https://github.com/Prowler-io/gpflux/issues/189.
+   Will be removed in GPflux version 1.0.0
+
+

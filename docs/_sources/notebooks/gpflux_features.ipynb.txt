@@ -1,0 +1,282 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "cc6cea6d",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "# Why GPflux is a modern (deep) GP library\n",
+    "\n",
+    "In this notebook we go over some of the features that make GPflux a powerful, deep-learning-style GP library. We demonstrate the out-of-the-box support for monitoring during the course of optimisation, adapting the learning rate, and saving & serving (deep) GP models."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "58147141",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Setting up the dataset and model\n",
+    "\n",
+    "### Motorcycle: a toy one-dimensional dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "99cd8863",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "tf.get_logger().setLevel(\"INFO\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "04e3c267",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def motorcycle_data():\n",
+    "    \"\"\"\n",
+    "    The motorcycle dataset where the targets are normalised to zero mean and unit variance.\n",
+    "    Returns a tuple of input features with shape [N, 1] and corresponding targets with shape [N, 1].\n",
+    "    \"\"\"\n",
+    "    df = pd.read_csv(\"./data/motor.csv\", index_col=0)\n",
+    "    X, Y = df[\"times\"].values.reshape(-1, 1), df[\"accel\"].values.reshape(-1, 1)\n",
+    "    Y = (Y - Y.mean()) / Y.std()\n",
+    "    return X, Y\n",
+    "\n",
+    "\n",
+    "X, Y = motorcycle_data()\n",
+    "plt.plot(X, Y, \"kx\")\n",
+    "plt.xlabel(\"time\")\n",
+    "plt.ylabel(\"Acceleration\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8cf0611a",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "### Two-layer deep GP\n",
+    "\n",
+    "To keep this notebook focussed we are going to use a predefined deep GP architecture `gpflux.architectures.build_constant_input_dim_deep_gp` for creating our simple two-layer model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ed320cf9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import gpflux\n",
+    "\n",
+    "from gpflow.keras import tf_keras\n",
+    "from gpflux.architectures import Config, build_constant_input_dim_deep_gp\n",
+    "from gpflux.models import DeepGP\n",
+    "\n",
+    "config = Config(\n",
+    "    num_inducing=25, inner_layer_qsqrt_factor=1e-5, likelihood_noise_variance=1e-2, whiten=True\n",
+    ")\n",
+    "deep_gp: DeepGP = build_constant_input_dim_deep_gp(X, num_layers=2, config=config)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4515f80f",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Training: mini-batching, callbacks, checkpoints and monitoring\n",
+    "\n",
+    "When training a model, GPflux takes care of minibatching the dataset and accepts a range of callbacks that make it very simple to, for example, modify the learning rate or monitor the optimisation. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "94b2f0ba",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# From the `DeepGP` model we instantiate a training model which is a `tf.keras.Model`\n",
+    "training_model: tf_keras.Model = deep_gp.as_training_model()\n",
+    "\n",
+    "# Following the Keras procedure we need to compile and pass a optimizer,\n",
+    "# before fitting the model to data\n",
+    "training_model.compile(optimizer=tf_keras.optimizers.Adam(learning_rate=0.01))\n",
+    "\n",
+    "callbacks = [\n",
+    "    # Create callback that reduces the learning rate every time the ELBO plateaus\n",
+    "    tf_keras.callbacks.ReduceLROnPlateau(\"loss\", factor=0.95, patience=3, min_lr=1e-6, verbose=0),\n",
+    "    # Create a callback that writes logs (e.g., hyperparameters, KLs, etc.) to TensorBoard\n",
+    "    gpflux.callbacks.TensorBoard(),\n",
+    "    # Create a callback that saves the model's weights\n",
+    "    tf_keras.callbacks.ModelCheckpoint(filepath=\"ckpts/\", save_weights_only=True, verbose=0),\n",
+    "]\n",
+    "\n",
+    "history = training_model.fit(\n",
+    "    {\"inputs\": X, \"targets\": Y},\n",
+    "    batch_size=12,\n",
+    "    epochs=200,\n",
+    "    callbacks=callbacks,\n",
+    "    verbose=0,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eefb6704",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "The call to fit() returns a `history` object that contains information like the loss and the learning rate over the course of optimisation."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2f0a25bc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 3))\n",
+    "ax1.plot(history.history[\"loss\"])\n",
+    "ax1.set_xlabel(\"Iteration\")\n",
+    "ax1.set_ylabel(\"Objective = neg. ELBO\")\n",
+    "\n",
+    "ax2.plot(history.history[\"lr\"])\n",
+    "ax2.set_xlabel(\"Iteration\")\n",
+    "ax2.set_ylabel(\"Learning rate\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "cc88b83a",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "More insightful, however, are the TensorBoard logs. They contain the objective and hyperparameters over the course of optimisation. This can be very handy to find out why things work or don't :D. The logs can be viewed in TensorBoard by running in the command line\n",
+    "```\n",
+    "$ tensorboard --logdir logs\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "87665b6b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def plot(model, X, Y, ax=None):\n",
+    "    if ax is None:\n",
+    "        fig, ax = plt.subplots()\n",
+    "\n",
+    "    x_margin = 1.0\n",
+    "    N_test = 100\n",
+    "    X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, N_test).reshape(-1, 1)\n",
+    "    out = model(X_test)\n",
+    "\n",
+    "    mu = out.f_mean.numpy().squeeze()\n",
+    "    var = out.f_var.numpy().squeeze()\n",
+    "    X_test = X_test.squeeze()\n",
+    "    lower = mu - 2 * np.sqrt(var)\n",
+    "    upper = mu + 2 * np.sqrt(var)\n",
+    "\n",
+    "    ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)\n",
+    "    ax.plot(X, Y, \"kx\", alpha=0.5)\n",
+    "    ax.plot(X_test, mu, \"C1\")\n",
+    "\n",
+    "    ax.fill_between(X_test, lower, upper, color=\"C1\", alpha=0.3)\n",
+    "\n",
+    "\n",
+    "prediction_model = deep_gp.as_prediction_model()\n",
+    "plot(prediction_model, X, Y)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "46f976af",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Post-training: saving, loading, and serving the model\n",
+    "\n",
+    "We can store the weights and reload them afterwards."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "84dd78be",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "prediction_model.save_weights(\"weights\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5de70904",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "prediction_model_new = build_constant_input_dim_deep_gp(\n",
+    "    X, num_layers=2, config=config\n",
+    ").as_prediction_model()\n",
+    "prediction_model_new.load_weights(\"weights\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8eb78ad9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plot(prediction_model_new, X, Y)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b800234d",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "Indeed, this prediction corresponds to the one of the original model."
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "cell_markers": "\"\"\""
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

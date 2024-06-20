@@ -1,0 +1,324 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "73ca5b5e",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "# Introduction to GPflux\n",
+    "\n",
+    "In this notebook we cover the basics of Deep Gaussian processes (DGPs) <cite data-cite=\"damianou2013deep\"/> with GPflux. We assume that the reader is familiar with the concepts of Gaussian processes and Deep GPs (see <cite data-cite=\"rasmussen,gpflow2020\"/> for an in-depth overview)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5b84c54b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "tf.get_logger().setLevel(\"INFO\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eef1975f",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## The motorcycle dataset\n",
+    "\n",
+    "We are going to model a one-dimensional dataset containing observations from a simulated motorcycle accident, used to test crash helmets \\[1\\]. The dataset has many interesting properties that we can use to showcase the power of DGPs as opposed to shallow (that is, single layer) GP models."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "439ca659",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def motorcycle_data():\n",
+    "    \"\"\"Return inputs and outputs for the motorcycle dataset. We normalise the outputs.\"\"\"\n",
+    "    df = pd.read_csv(\"./data/motor.csv\", index_col=0)\n",
+    "    X, Y = df[\"times\"].values.reshape(-1, 1), df[\"accel\"].values.reshape(-1, 1)\n",
+    "    Y = (Y - Y.mean()) / Y.std()\n",
+    "    X /= X.max()\n",
+    "    return X, Y\n",
+    "\n",
+    "\n",
+    "X, Y = motorcycle_data()\n",
+    "plt.plot(X, Y, \"kx\")\n",
+    "plt.xlabel(\"time\")\n",
+    "plt.ylabel(\"Acceleration\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7249eb59",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Single-layer GP\n",
+    "\n",
+    "We start this introduction by building a single-layer GP using GPflux. However, you'll notice that we rely a lot on [GPflow](www.github.com/GPflow/GPflow) objects to build our GPflux model. This is a conscious decision. GPflow contains well-tested and stable implementations of key GP building blocks, such as kernels, likelihoods, inducing variables, mean functions, and so on. By relying on GPflow for these elements, we can keep the GPflux code lean and focused on what is important for building deep GP models.  \n",
+    "\n",
+    "We are going to build a Sparse Variational Gaussian process (SVGP), for which we refer to <cite data-cite=\"gpflow2020\"/> or <cite data-cite=\"leibfried2020tutorial\"/> for an in-depth overview."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c7bdfb98",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We start by importing `gpflow` and `gpflux`, and then create a kernel and inducing variable. Both are GPflow objects. We pass both objects to a `GPLayer` which will represent a single GP layer in our deep GP. We also need to specify the total number of datapoints and the number of outputs."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "64bd987a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import gpflow\n",
+    "import gpflux\n",
+    "\n",
+    "num_data = len(X)\n",
+    "num_inducing = 10\n",
+    "output_dim = Y.shape[1]\n",
+    "\n",
+    "kernel = gpflow.kernels.SquaredExponential()\n",
+    "inducing_variable = gpflow.inducing_variables.InducingPoints(\n",
+    "    np.linspace(X.min(), X.max(), num_inducing).reshape(-1, 1)\n",
+    ")\n",
+    "gp_layer = gpflux.layers.GPLayer(\n",
+    "    kernel, inducing_variable, num_data=num_data, num_latent_gps=output_dim\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "832e94ed",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We now create a `LikelihoodLayer` which encapsulates a `Likelihood` from GPflow. The likelihood layer is responsible for computing the variational expectation in the objective, and for dealing with our likelihood distribution $p(y | f)$. Other typical likelihoods are `Softmax`, `RobustMax`, and `Bernoulli`. Because we are dealing with the simple case of regression in this notebook, we use the `Gaussian` likelihood."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d8c5a292",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ead09a3e",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We now pass our GP layer and likelihood layer into a GPflux `DeepGP` model. The `DeepGP` class is a specialisation of the Keras `Model` where we've added a few helper methods such as `predict_f`, `predict_y`, and `elbo`. By relying on Keras, we hope that  users will have an easy time familiarising themselves with the GPflux API. Our `DeepGP` model has the same public API calls: `fit`, `predict`, `evaluate`, and so on."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "92db491b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "single_layer_dgp = gpflux.models.DeepGP([gp_layer], likelihood_layer)\n",
+    "model = single_layer_dgp.as_training_model()\n",
+    "model.compile(gpflow.keras.tf_keras.optimizers.Adam(0.01))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2d984a06",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We train the model by calling `fit`. Keras handles minibatching the data, and keeps track of our loss during training."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "046eb8f8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "history = model.fit({\"inputs\": X, \"targets\": Y}, epochs=int(1e3), verbose=0)\n",
+    "plt.plot(history.history[\"loss\"])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b75a7a47",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We can now visualise the fit. We clearly see that a single layer GP with a simple stationary kernel has trouble fitting this dataset."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "bcfd542d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def plot(model, X, Y, ax=None):\n",
+    "    if ax is None:\n",
+    "        fig, ax = plt.subplots()\n",
+    "\n",
+    "    a = 1.0\n",
+    "    N_test = 100\n",
+    "    X_test = np.linspace(X.min() - a, X.max() + a, N_test).reshape(-1, 1)\n",
+    "    out = model(X_test)\n",
+    "\n",
+    "    mu = out.f_mean.numpy().squeeze()\n",
+    "    var = out.f_var.numpy().squeeze()\n",
+    "    X_test = X_test.squeeze()\n",
+    "    lower = mu - 2 * np.sqrt(var)\n",
+    "    upper = mu + 2 * np.sqrt(var)\n",
+    "\n",
+    "    ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)\n",
+    "    ax.plot(X, Y, \"kx\", alpha=0.5)\n",
+    "    ax.plot(X_test, mu, \"C1\")\n",
+    "\n",
+    "    ax.fill_between(X_test, lower, upper, color=\"C1\", alpha=0.3)\n",
+    "\n",
+    "\n",
+    "plot(single_layer_dgp.as_prediction_model(), X, Y)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a2e1ba5c",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Two-layer deep Gaussian process\n",
+    "\n",
+    "We repeat the exercise but now we build a two-layer model. The setup is very similar apart from the fact that we create two GP layers, and pass them to our `DeepGP` model as a list.\n",
+    "We refer to <cite data-cite=\"salimbeni2017doubly\"/> for details on the deep GP model and variational stochastic inference method."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7a40f6a1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "Z = np.linspace(X.min(), X.max(), num_inducing).reshape(-1, 1)\n",
+    "kernel1 = gpflow.kernels.SquaredExponential()\n",
+    "inducing_variable1 = gpflow.inducing_variables.InducingPoints(Z.copy())\n",
+    "gp_layer1 = gpflux.layers.GPLayer(\n",
+    "    kernel1, inducing_variable1, num_data=num_data, num_latent_gps=output_dim\n",
+    ")\n",
+    "\n",
+    "kernel2 = gpflow.kernels.SquaredExponential()\n",
+    "inducing_variable2 = gpflow.inducing_variables.InducingPoints(Z.copy())\n",
+    "gp_layer2 = gpflux.layers.GPLayer(\n",
+    "    kernel2,\n",
+    "    inducing_variable2,\n",
+    "    num_data=num_data,\n",
+    "    num_latent_gps=output_dim,\n",
+    "    mean_function=gpflow.mean_functions.Zero(),\n",
+    ")\n",
+    "\n",
+    "likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.1))\n",
+    "two_layer_dgp = gpflux.models.DeepGP([gp_layer1, gp_layer2], likelihood_layer)\n",
+    "model = two_layer_dgp.as_training_model()\n",
+    "model.compile(gpflow.keras.tf_keras.optimizers.Adam(0.01))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "36bbd017",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "history = model.fit({\"inputs\": X, \"targets\": Y}, epochs=int(1e3), verbose=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e25c8832",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plt.plot(history.history[\"loss\"])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b7a5e0bf",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plot(two_layer_dgp.as_prediction_model(), X, Y)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a949e55a",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "From visual inspection we immediately notice that the two-layer model performs much better."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "af7b8716",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## References\n",
+    "\n",
+    "[1] Silverman, B. W. (1985) \"Some aspects of the spline smoothing approach to non-parametric curve fitting\". _Journal of the Royal Statistical Society_ series B 47, 1-52."
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "cell_markers": "\"\"\""
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

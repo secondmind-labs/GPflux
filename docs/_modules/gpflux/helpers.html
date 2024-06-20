@@ -1,0 +1,752 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflux.helpers &#8212; GPflux 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css?v=c27e38e3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/gpflux/helpers';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/logo.png" class="logo__image only-light" alt="GPflux 0.1.0 documentation - Home"/>
+    <script>document.write(`<img src="../../_static/logo.png" class="logo__image only-dark" alt="GPflux 0.1.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../autoapi/gpflux/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../autoapi/gpflux/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">gpflux.helpers</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for gpflux.helpers</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># Copyright (c) 2021 The GPflux Contributors.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains helper functions for constructing :class:`~gpflow.kernels.MultioutputKernel`,</span>
+<span class="sd">:class:`~gpflow.inducing_variables.MultioutputInducingVariables`,</span>
+<span class="sd">:class:`~gpflow.mean_functions.MeanFunction`, and :class:`~gpflux.layers.GPLayer` objects.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">fields</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span> <span class="nn">gpflow.inducing_variables</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InducingPoints</span><span class="p">,</span>
+    <span class="n">SeparateIndependentInducingVariables</span><span class="p">,</span>
+    <span class="n">SharedIndependentInducingVariables</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">gpflow.kernels</span> <span class="kn">import</span> <span class="n">SeparateIndependent</span><span class="p">,</span> <span class="n">SharedIndependent</span>
+<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">from</span> <span class="nn">gpflux.layers.gp_layer</span> <span class="kn">import</span> <span class="n">GPLayer</span>
+
+
+<div class="viewcode-block" id="construct_basic_kernel"><a class="viewcode-back" href="../../autoapi/gpflux/helpers/index.html#gpflux.architectures.constant_input_dim_deep_gp.construct_basic_kernel">[docs]</a><span class="k">def</span> <span class="nf">construct_basic_kernel</span><span class="p">(</span>
+    <span class="n">kernels</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">]],</span>
+    <span class="n">output_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">share_hyperparams</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">MultioutputKernel</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a :class:`~gpflow.kernels.MultioutputKernel` to use</span>
+<span class="sd">    in :class:`GPLayer`\ s.</span>
+
+<span class="sd">    :param kernels: A single kernel or list of :class:`~gpflow.kernels.Kernel`\ s.</span>
+<span class="sd">        - When a single kernel is passed, the same kernel is used for all</span>
+<span class="sd">        outputs. Depending on ``share_hyperparams``, the hyperparameters will be</span>
+<span class="sd">        shared across outputs. You must also specify ``output_dim``.</span>
+<span class="sd">        - When a list of kernels is passed, each kernel in the list is used on a separate</span>
+<span class="sd">        output dimension and a :class:`gpflow.kernels.SeparateIndependent` is returned.</span>
+<span class="sd">    :param output_dim: The number of outputs. This is equal to the number of latent GPs</span>
+<span class="sd">        in the :class:`GPLayer`. When only a single kernel is specified for ``kernels``,</span>
+<span class="sd">        you must also specify ``output_dim``. When a list of kernels is specified for ``kernels``,</span>
+<span class="sd">        we assume that ``len(kernels) == output_dim``, and ``output_dim`` is not required.</span>
+<span class="sd">    :param share_hyperparams: If `True`, use the type of kernel and the same hyperparameters</span>
+<span class="sd">        (variance and lengthscales) for the different outputs. Otherwise, the</span>
+<span class="sd">        same type of kernel (Squared-Exponential, Matern12, and so on) is used for</span>
+<span class="sd">        the different outputs, but the kernel can have different hyperparameter values for each.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kernels</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">mo_kern</span> <span class="o">=</span> <span class="n">SeparateIndependent</span><span class="p">(</span><span class="n">kernels</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">share_hyperparams</span><span class="p">:</span>
+        <span class="n">copies</span> <span class="o">=</span> <span class="p">[</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kernels</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output_dim</span><span class="p">)]</span>
+        <span class="n">mo_kern</span> <span class="o">=</span> <span class="n">SeparateIndependent</span><span class="p">(</span><span class="n">copies</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mo_kern</span> <span class="o">=</span> <span class="n">SharedIndependent</span><span class="p">(</span><span class="n">kernels</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mo_kern</span></div>
+
+
+<div class="viewcode-block" id="construct_basic_inducing_variables"><a class="viewcode-back" href="../../autoapi/gpflux/helpers/index.html#gpflux.architectures.constant_input_dim_deep_gp.construct_basic_inducing_variables">[docs]</a><span class="k">def</span> <span class="nf">construct_basic_inducing_variables</span><span class="p">(</span>
+    <span class="n">num_inducing</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+    <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">output_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">share_variables</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">z_init</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">inducing_variables</span><span class="o">.</span><span class="n">MultioutputInducingVariables</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a compatible :class:`~gpflow.inducing_variables.MultioutputInducingVariables`</span>
+<span class="sd">    to use in :class:`GPLayer`\ s.</span>
+
+<span class="sd">    :param num_inducing: The total number of inducing variables, ``M``.</span>
+<span class="sd">        This parameter can be freely chosen by the user. General advice</span>
+<span class="sd">        is to set it as high as possible, but smaller than the number of datapoints.</span>
+<span class="sd">        The computational complexity of the layer is cubic in ``M``.</span>
+<span class="sd">        If a list is passed, each element in the list specifies the number of inducing</span>
+<span class="sd">        variables to use for each ``output_dim``.</span>
+<span class="sd">    :param input_dim: The dimensionality of the input data (or features) ``X``.</span>
+<span class="sd">        Typically, this corresponds to ``X.shape[-1]``.</span>
+<span class="sd">        For :class:`~gpflow.inducing_variables.InducingPoints`, this specifies the dimensionality</span>
+<span class="sd">        of ``Z``.</span>
+<span class="sd">    :param output_dim: The dimensionality of the outputs (or targets) ``Y``.</span>
+<span class="sd">        Typically, this corresponds to ``Y.shape[-1]`` or the number of latent GPs.</span>
+<span class="sd">        The parameter is used to determine the number of inducing variable sets</span>
+<span class="sd">        to create when a different set is used for each output. The parameter</span>
+<span class="sd">        is redundant when ``num_inducing`` is a list, because the code assumes</span>
+<span class="sd">        that ``len(num_inducing) == output_dim``.</span>
+<span class="sd">    :param share_variables: If `True`, use the same inducing variables for different</span>
+<span class="sd">        outputs. Otherwise, create a different set for each output. Set this parameter to</span>
+<span class="sd">        `False` when ``num_inducing`` is a list, because otherwise the two arguments</span>
+<span class="sd">        contradict each other. If you set this parameter to `True`, you must also specify</span>
+<span class="sd">        ``output_dim``, because that is used to determine the number of inducing variable</span>
+<span class="sd">        sets to create.</span>
+<span class="sd">    :param z_init: Raw values to use to initialise</span>
+<span class="sd">        :class:`gpflow.inducing_variables.InducingPoints`. If `None` (the default), values</span>
+<span class="sd">        will be initialised from ``N(0, 1)``. The shape of ``z_init`` depends on the other</span>
+<span class="sd">        input arguments. If a single set of inducing points is used for all outputs (that</span>
+<span class="sd">        is, if ``share_variables`` is `True`), ``z_init`` should be rank two, with the</span>
+<span class="sd">        dimensions ``[M, input_dim]``. If a different set of inducing points is used for</span>
+<span class="sd">        the outputs (ithat is, if ``num_inducing`` is a list, or if ``share_variables`` is</span>
+<span class="sd">        `False`), ``z_init`` should be a rank three tensor with the dimensions</span>
+<span class="sd">        ``[output_dim, M, input_dim]``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">z_init</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;No `z_init` has been specified in `construct_basic_inducing_variables`. &quot;</span>
+            <span class="s2">&quot;Default initialization using random normal N(0, 1) will be used.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">z_init_is_given</span> <span class="o">=</span> <span class="n">z_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">output_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># TODO: the following assert may clash with MixedMultiOutputFeatures</span>
+            <span class="c1"># where the number of independent GPs can differ from the output</span>
+            <span class="c1"># dimension</span>
+            <span class="k">assert</span> <span class="n">output_dim</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">)</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">assert</span> <span class="n">share_variables</span> <span class="ow">is</span> <span class="kc">False</span>
+
+        <span class="n">inducing_variables</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">num_ind_var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">z_init_is_given</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">z_init</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="n">num_ind_var</span>
+                <span class="n">z_init_i</span> <span class="o">=</span> <span class="n">z_init</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">z_init_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_ind_var</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+            <span class="k">assert</span> <span class="n">z_init_i</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_ind_var</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">)</span>
+            <span class="n">inducing_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">InducingPoints</span><span class="p">(</span><span class="n">z_init_i</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">(</span><span class="n">inducing_variables</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">share_variables</span><span class="p">:</span>
+        <span class="n">inducing_variables</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">output_dim</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">z_init_is_given</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">z_init</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="n">output_dim</span><span class="p">,</span> <span class="n">num_inducing</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;When not sharing variables, z_init must have shape&quot;</span>
+                        <span class="s2">&quot;[output_dim, num_inducing, input_dim]&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">z_init_o</span> <span class="o">=</span> <span class="n">z_init</span><span class="p">[</span><span class="n">o</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">z_init_o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+            <span class="n">inducing_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">InducingPoints</span><span class="p">(</span><span class="n">z_init_o</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">SeparateIndependentInducingVariables</span><span class="p">(</span><span class="n">inducing_variables</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: should we assert output_dim is None ?</span>
+
+        <span class="n">z_init</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">z_init</span>
+            <span class="k">if</span> <span class="n">z_init_is_given</span>
+            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+        <span class="p">)</span>
+        <span class="n">shared_ip</span> <span class="o">=</span> <span class="n">InducingPoints</span><span class="p">(</span><span class="n">z_init</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SharedIndependentInducingVariables</span><span class="p">(</span><span class="n">shared_ip</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="construct_mean_function"><a class="viewcode-back" href="../../autoapi/gpflux/helpers/index.html#gpflux.architectures.constant_input_dim_deep_gp.construct_mean_function">[docs]</a><span class="k">def</span> <span class="nf">construct_mean_function</span><span class="p">(</span>
+    <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">D_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">D_out</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">MeanFunction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return :class:`gpflow.mean_functions.Identity` when ``D_in`` and ``D_out`` are</span>
+<span class="sd">    equal. Otherwise, use the principal components of the inputs matrix ``X`` to build a</span>
+<span class="sd">    :class:`~gpflow.mean_functions.Linear` mean function.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        The returned mean function is set to be untrainable.</span>
+<span class="sd">        To change this, use :meth:`gpflow.set_trainable`.</span>
+
+<span class="sd">    :param X: A data array with the shape ``[N, D_in]`` used to determine the principal</span>
+<span class="sd">        components to use to create a :class:`~gpflow.mean_functions.Linear` mean function</span>
+<span class="sd">        when ``D_in != D_out``.</span>
+<span class="sd">    :param D_in: The dimensionality of the input data (or features) ``X``.</span>
+<span class="sd">        Typically, this corresponds to ``X.shape[-1]``.</span>
+<span class="sd">    :param D_out: The dimensionality of the outputs (or targets) ``Y``.</span>
+<span class="sd">        Typically, this corresponds to ``Y.shape[-1]`` or the number of latent GPs in the layer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">D_in</span>
+    <span class="k">if</span> <span class="n">D_in</span> <span class="o">==</span> <span class="n">D_out</span><span class="p">:</span>
+        <span class="n">mean_function</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">D_in</span> <span class="o">&gt;</span> <span class="n">D_out</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:</span><span class="n">D_out</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">D_in</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">D_in</span><span class="p">,</span> <span class="n">D_out</span> <span class="o">-</span> <span class="n">D_in</span><span class="p">))],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">W</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">D_in</span><span class="p">,</span> <span class="n">D_out</span><span class="p">)</span>
+        <span class="n">mean_function</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">W</span><span class="p">)</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">mean_function</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">mean_function</span></div>
+
+
+<div class="viewcode-block" id="construct_gp_layer"><a class="viewcode-back" href="../../autoapi/gpflux/helpers/index.html#gpflux.architectures.constant_input_dim_deep_gp.construct_gp_layer">[docs]</a><span class="k">def</span> <span class="nf">construct_gp_layer</span><span class="p">(</span>
+    <span class="n">num_data</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">num_inducing</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">kernel_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Stationary</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">,</span>
+    <span class="n">z_init</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GPLayer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a vanilla GP layer with a single kernel shared among all outputs,</span>
+<span class="sd">        shared inducing point variables and zero mean function.</span>
+
+<span class="sd">    :param num_data: total number of datapoints in the dataset, *N*.</span>
+<span class="sd">        Typically corresponds to ``X.shape[0] == len(X)``.</span>
+<span class="sd">    :param num_inducing: total number of inducing variables, *M*.</span>
+<span class="sd">        This parameter can be freely chosen by the user. General advice</span>
+<span class="sd">        is to pick it as high as possible, but smaller than *N*.</span>
+<span class="sd">        The computational complexity of the layer is cubic in *M*.</span>
+<span class="sd">    :param input_dim: dimensionality of the input data (or features) X.</span>
+<span class="sd">        Typically, this corresponds to ``X.shape[-1]``.</span>
+<span class="sd">    :param output_dim: The dimensionality of the outputs (or targets) ``Y``.</span>
+<span class="sd">        Typically, this corresponds to ``Y.shape[-1]``.</span>
+<span class="sd">    :param kernel_class: The kernel class used by the layer.</span>
+<span class="sd">        This can be as simple as :class:`gpflow.kernels.SquaredExponential`, or more complex,</span>
+<span class="sd">        for example, ``lambda **_: gpflow.kernels.Linear() + gpflow.kernels.Periodic()``.</span>
+<span class="sd">        It will be passed a ``lengthscales`` keyword argument.</span>
+<span class="sd">    :param z_init: The initial value for the inducing variable inputs.</span>
+<span class="sd">    :param name: The name for the GP layer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lengthscale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">input_dim</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="n">base_kernel</span> <span class="o">=</span> <span class="n">kernel_class</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">lengthscale</span><span class="p">))</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">construct_basic_kernel</span><span class="p">(</span><span class="n">base_kernel</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="n">output_dim</span><span class="p">,</span> <span class="n">share_hyperparams</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">construct_basic_inducing_variables</span><span class="p">(</span>
+        <span class="n">num_inducing</span><span class="p">,</span>
+        <span class="n">input_dim</span><span class="p">,</span>
+        <span class="n">output_dim</span><span class="o">=</span><span class="n">output_dim</span><span class="p">,</span>
+        <span class="n">share_variables</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">z_init</span><span class="o">=</span><span class="n">z_init</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">gp_layer</span> <span class="o">=</span> <span class="n">GPLayer</span><span class="p">(</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span>
+        <span class="n">inducing_variable</span><span class="o">=</span><span class="n">inducing_variable</span><span class="p">,</span>
+        <span class="n">num_data</span><span class="o">=</span><span class="n">num_data</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">mean_functions</span><span class="o">.</span><span class="n">Zero</span><span class="p">(),</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">gp_layer</span></div>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># HACK to get mypy to pass, should be (dataclass: Type[T], ...) -&gt; T:</span>
+<span class="c1"># mypy said: gpflux/helpers.py:271: error: Argument 1 to &quot;fields&quot; has incompatible type &quot;Type[T]&quot;;</span>
+<span class="c1"># expected &quot;Union[DataclassInstance, Type[DataclassInstance]]&quot;  [arg-type]</span>
+<div class="viewcode-block" id="make_dataclass_from_class"><a class="viewcode-back" href="../../autoapi/gpflux/helpers/index.html#gpflux.architectures.constant_input_dim_deep_gp.make_dataclass_from_class">[docs]</a><span class="k">def</span> <span class="nf">make_dataclass_from_class</span><span class="p">(</span><span class="n">dataclass</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">instance</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="o">**</span><span class="n">updates</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take a regular object ``instance`` with a superset of fields for a</span>
+<span class="sd">    :class:`dataclasses.dataclass` (``@dataclass``-decorated class), and return an</span>
+<span class="sd">    instance of the dataclass. The ``instance`` has all of the dataclass&#39;s fields</span>
+<span class="sd">    but might also have more. ``key=value`` keyword arguments supersede the fields in ``instance``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dataclass_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">dataclass</span><span class="p">)]</span>
+    <span class="n">field_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">dataclass_keys</span><span class="p">}</span>
+    <span class="n">field_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">updates</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dataclass</span><span class="p">(</span><span class="o">**</span><span class="n">field_dict</span><span class="p">)</span>  <span class="c1"># type: ignore</span></div>
+
+
+<div class="viewcode-block" id="xavier_initialization_numpy"><a class="viewcode-back" href="../../autoapi/gpflux/layers/bayesian_dense_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.xavier_initialization_numpy">[docs]</a><span class="k">def</span> <span class="nf">xavier_initialization_numpy</span><span class="p">(</span><span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate initial weights for a neural network layer with the given input and output</span>
+<span class="sd">    dimensionality using the Xavier Glorot normal initialiser. From:</span>
+
+<span class="sd">    Glorot, Xavier, and Yoshua Bengio. &quot;Understanding the difficulty of training deep</span>
+<span class="sd">    feedforward neural networks.&quot; Proceedings of the thirteenth international</span>
+<span class="sd">    conference on artificial intelligence and statistics. JMLR Workshop and Conference</span>
+<span class="sd">    Proceedings, 2010.</span>
+
+<span class="sd">    Draw samples from a normal distribution centred on :math:`0` with standard deviation</span>
+<span class="sd">    :math:`\sqrt(2 / (\text{input_dim} + \text{output_dim}))`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">input_dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">input_dim</span> <span class="o">+</span> <span class="n">output_dim</span><span class="p">))</span> <span class="o">**</span> <span class="mf">0.5</span></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,239 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "051c4ae3",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "# Keras integration\n",
+    "\n",
+    "TODO: Some explanation..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "56e310e9",
+   "metadata": {
+    "lines_to_next_cell": 2
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "import gpflow\n",
+    "import gpflux\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "from gpflow.keras import tf_keras\n",
+    "\n",
+    "import matplotlib.pyplot as plt"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6a804043",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%matplotlib inline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8c856583",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "d = np.load(\"../../tests/snelson1d.npz\")\n",
+    "X, Y = d[\"X\"], d[\"Y\"]\n",
+    "num_data, input_dim = X.shape\n",
+    "_, output_dim = Y.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0de34673",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plt.figure()\n",
+    "plt.plot(X, Y, \".\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f44b0552",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def create_layers():\n",
+    "    num_inducing = 13\n",
+    "    hidden_dim = 1\n",
+    "    Z = np.linspace(X.min() - 0.1, X.max() + 0.1, num_inducing).reshape(-1, 1)\n",
+    "\n",
+    "    layer1 = gpflux.helpers.construct_gp_layer(\n",
+    "        num_data, num_inducing, input_dim, hidden_dim, z_init=Z.copy()\n",
+    "    )\n",
+    "    layer1.mean_function = gpflow.mean_functions.Identity()  # TODO: pass layer_type instead\n",
+    "    layer1.q_sqrt.assign(layer1.q_sqrt * 0.01)\n",
+    "\n",
+    "    layer2 = gpflux.helpers.construct_gp_layer(\n",
+    "        num_data, num_inducing, hidden_dim, output_dim, z_init=Z.copy()\n",
+    "    )\n",
+    "\n",
+    "    likelihood_layer = gpflux.layers.LikelihoodLayer(gpflow.likelihoods.Gaussian(0.01))\n",
+    "\n",
+    "    return layer1, layer2, likelihood_layer"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3f34f1df",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def create_model(model_class):\n",
+    "    \"\"\"\n",
+    "    We pass in `model_class` to make it easy to use\n",
+    "    `gpflux.optimization.NatGradModel`, which is required for combining\n",
+    "    GPflow's `NaturalGradient` optimizer with Keras. `model_class` needs to be\n",
+    "    a constructor that has the same semantics as `tf.keras.Model.__init__`.\n",
+    "    \"\"\"\n",
+    "    layer1, layer2, likelihood_layer = create_layers()\n",
+    "    dgp = gpflux.models.DeepGP([layer1, layer2], likelihood_layer, default_model_class=model_class)\n",
+    "    return dgp"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "09284e77",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "batch_size = 2\n",
+    "num_epochs = reduce_in_tests(200)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "637f1457",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dgp = create_model(tf_keras.Model)\n",
+    "\n",
+    "callbacks = [\n",
+    "    tf_keras.callbacks.ReduceLROnPlateau(\n",
+    "        monitor=\"loss\",\n",
+    "        patience=5,\n",
+    "        factor=0.95,\n",
+    "        verbose=1,\n",
+    "        min_lr=1e-6,\n",
+    "    )\n",
+    "]\n",
+    "\n",
+    "dgp_train = dgp.as_training_model()\n",
+    "dgp_train.compile(tf_keras.optimizers.Adam(learning_rate=0.1))\n",
+    "\n",
+    "history = dgp_train.fit(\n",
+    "    {\"inputs\": X, \"targets\": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c6d590d5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dgp_natgrad = create_model(gpflux.optimization.NatGradModel)\n",
+    "\n",
+    "callbacks = [\n",
+    "    tf_keras.callbacks.ReduceLROnPlateau(\n",
+    "        monitor=\"loss\",\n",
+    "        patience=5,\n",
+    "        factor=0.95,\n",
+    "        verbose=1,\n",
+    "        min_lr=1e-6,\n",
+    "    )\n",
+    "]\n",
+    "\n",
+    "dgp_natgrad_train = dgp_natgrad.as_training_model()\n",
+    "dgp_natgrad_train.natgrad_layers = (\n",
+    "    True  # we want all (here two) GPLayer instances trained by NaturalGradient\n",
+    ")\n",
+    "# alternatively, we could set `natgrad_layers` explicitly to the GPLayer instances inside the model\n",
+    "dgp_natgrad_train.compile(\n",
+    "    [\n",
+    "        gpflow.optimizers.NaturalGradient(gamma=0.05),\n",
+    "        gpflow.optimizers.NaturalGradient(gamma=0.05),\n",
+    "        tf_keras.optimizers.Adam(learning_rate=0.1),\n",
+    "    ]\n",
+    ")\n",
+    "\n",
+    "history_natgrad = dgp_natgrad_train.fit(\n",
+    "    {\"inputs\": X, \"targets\": Y}, batch_size=batch_size, epochs=num_epochs, callbacks=callbacks\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "426c3a6f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dgp_test = dgp.as_prediction_model()\n",
+    "res = dgp_test(X)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "03b712e2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plt.plot(X, Y, \"x\")\n",
+    "plt.errorbar(X.squeeze(), np.squeeze(res.y_mean), np.sqrt(np.squeeze(res.y_var)), ls=\"\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "63b27ead",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "plt.plot(history.history[\"loss\"], label=\"Adam\")\n",
+    "plt.plot(history_natgrad.history[\"loss\"], label=\"NatGrad\")\n",
+    "plt.show()"
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

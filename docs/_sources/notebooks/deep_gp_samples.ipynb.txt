@@ -1,0 +1,201 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "ba574a7c",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "# Deep GP samples\n",
+    "\n",
+    "To help develop a more intuitive understanding of deep Gaussian processes, in this notebook we show how to generate a sample from the full deep GP, by propagating a sample through the layers."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2f09f92a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "import gpflow\n",
+    "from gpflux.helpers import construct_basic_kernel, construct_basic_inducing_variables\n",
+    "from gpflux.layers import GPLayer\n",
+    "from gpflux.experiment_support.plotting import plot_layer\n",
+    "\n",
+    "tf.random.set_seed(42)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ecfcc42e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_data = 200\n",
+    "D = 1\n",
+    "a, b = 0, 1\n",
+    "X = np.linspace(a, b, num_data).reshape(-1, 1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9052c6cf",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Constructing the layers\n",
+    "\n",
+    "Note that we give the `full_cov=True` argument to `GPLayer` so that we obtain correlated samples.\n",
+    "We give the last layer a `gpflow.mean_functions.Zero` mean function (the GPflux default is an Identity mean function)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0b8238b6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_samples = 5"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c41963aa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "Z = X.copy()\n",
+    "M = Z.shape[0]\n",
+    "\n",
+    "# Layer 1\n",
+    "inducing_var1 = construct_basic_inducing_variables(M, D, D, share_variables=True, z_init=Z.copy())\n",
+    "kernel1 = construct_basic_kernel(\n",
+    "    gpflow.kernels.SquaredExponential(lengthscales=0.15),\n",
+    "    output_dim=D,\n",
+    "    share_hyperparams=True,\n",
+    ")\n",
+    "layer1 = GPLayer(kernel1, inducing_var1, num_data, full_cov=True, num_samples=num_samples)\n",
+    "\n",
+    "# Layer 2\n",
+    "inducing_var2 = construct_basic_inducing_variables(M, D, D, share_variables=True, z_init=Z.copy())\n",
+    "kernel2 = construct_basic_kernel(\n",
+    "    gpflow.kernels.SquaredExponential(lengthscales=0.8, variance=0.1),\n",
+    "    output_dim=D,\n",
+    "    share_hyperparams=True,\n",
+    ")\n",
+    "layer2 = GPLayer(kernel2, inducing_var2, num_data, full_cov=True, num_samples=num_samples)\n",
+    "\n",
+    "# Layer 3\n",
+    "inducing_var3 = construct_basic_inducing_variables(M, D, D, share_variables=True, z_init=Z.copy())\n",
+    "kernel3 = construct_basic_kernel(\n",
+    "    gpflow.kernels.SquaredExponential(lengthscales=0.3, variance=0.1),\n",
+    "    output_dim=D,\n",
+    "    share_hyperparams=True,\n",
+    ")\n",
+    "layer3 = GPLayer(\n",
+    "    kernel3,\n",
+    "    inducing_var3,\n",
+    "    num_data,\n",
+    "    full_cov=True,\n",
+    "    num_samples=num_samples,\n",
+    "    mean_function=gpflow.mean_functions.Zero(),\n",
+    ")\n",
+    "\n",
+    "gp_layers = [layer1, layer2, layer3]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "87041bcc",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Propagating samples through the layers"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "019db5ad",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "layer_input = X"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b481cff5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "means, covs, samples = [], [], []\n",
+    "\n",
+    "for layer in gp_layers:\n",
+    "    layer_output = layer(layer_input)\n",
+    "\n",
+    "    mean = layer_output.mean()\n",
+    "    cov = layer_output.covariance()\n",
+    "    sample = tf.convert_to_tensor(layer_output)  # generates num_samples samples...\n",
+    "\n",
+    "    layer_input = sample[0]  # for the next layer\n",
+    "\n",
+    "    means.append(mean.numpy().T)  # transpose to go from [1, N] to [N, 1]\n",
+    "    covs.append(cov.numpy())\n",
+    "    samples.append(sample.numpy())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bcc73562",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Visualising samples\n",
+    "\n",
+    "From top to bottom we plot the input to a layer, the covariance of outputs of that layer, and samples from the layer's output."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0ac0b5e3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_layers = len(gp_layers)\n",
+    "fig, axes = plt.subplots(3, num_layers, figsize=(num_layers * 3.33, 10))\n",
+    "\n",
+    "for i in range(num_layers):\n",
+    "    layer_input = X if i == 0 else samples[i - 1][0]\n",
+    "    plot_layer(X, layer_input, means[i], covs[i], samples[i], i, axes[:, i])"
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

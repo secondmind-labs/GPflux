@@ -1,0 +1,796 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>gpflux.layers.basis_functions.fourier_features &#8212; GPflux 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/pydata-custom.css?v=c27e38e3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/gpflux/layers/basis_functions/fourier_features/index';</script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+    <link rel="next" title="gpflux.layers.basis_functions.fourier_features.quadrature" href="quadrature/index.html" />
+    <link rel="prev" title="gpflux.layers.basis_functions" href="../index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../../_static/logo.png" class="logo__image only-light" alt="GPflux 0.1.0 documentation - Home"/>
+    <script>document.write(`<img src="../../../../../_static/logo.png" class="logo__image only-dark" alt="GPflux 0.1.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../architectures/index.html">gpflux.architectures</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../architectures/constant_input_dim_deep_gp/index.html">gpflux.architectures.constant_input_dim_deep_gp</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../encoders/index.html">gpflux.encoders</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../encoders/directly_parameterized_encoder/index.html">gpflux.encoders.directly_parameterized_encoder</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../experiment_support/index.html">gpflux.experiment_support</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../experiment_support/ci_utils/index.html">gpflux.experiment_support.ci_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../experiment_support/tensorboard/index.html">gpflux.experiment_support.tensorboard</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../../index.html">gpflux.layers</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 current active has-children"><a class="reference internal" href="../index.html">gpflux.layers.basis_functions</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l3 current active has-children"><a class="current reference internal" href="#">gpflux.layers.basis_functions.fourier_features</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="quadrature/index.html">gpflux.layers.basis_functions.fourier_features.quadrature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="random/index.html">gpflux.layers.basis_functions.fourier_features.random</a></li>
+<li class="toctree-l4"><a class="reference internal" href="base/index.html">gpflux.layers.basis_functions.fourier_features.base</a></li>
+<li class="toctree-l4"><a class="reference internal" href="utils/index.html">gpflux.layers.basis_functions.fourier_features.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../bayesian_dense_layer/index.html">gpflux.layers.bayesian_dense_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../gp_layer/index.html">gpflux.layers.gp_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../latent_variable_layer/index.html">gpflux.layers.latent_variable_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../likelihood_layer/index.html">gpflux.layers.likelihood_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../trackable_layer/index.html">gpflux.layers.trackable_layer</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../models/index.html">gpflux.models</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../models/deep_gp/index.html">gpflux.models.deep_gp</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../optimization/index.html">gpflux.optimization</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../optimization/keras_natgrad/index.html">gpflux.optimization.keras_natgrad</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../sampling/index.html">gpflux.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../sampling/kernel_with_feature_decomposition/index.html">gpflux.sampling.kernel_with_feature_decomposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../sampling/sample/index.html">gpflux.sampling.sample</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../sampling/utils/index.html">gpflux.sampling.utils</a></li>
+</ul>
+</li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../callbacks/index.html">gpflux.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exceptions/index.html">gpflux.exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../helpers/index.html">gpflux.helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../losses/index.html">gpflux.losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../math/index.html">gpflux.math</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../runtime_checks/index.html">gpflux.runtime_checks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../types/index.html">gpflux.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../version/index.html">gpflux.version</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../../index.html" class="nav-link">gpflux</a></li>
+    
+    
+    <li class="breadcrumb-item"><i class="fa-solid fa-ellipsis"></i></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">gpflux.layers.basis_functions</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">gpflux.layer...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-gpflux.layers.basis_functions.fourier_features">
+<span id="gpflux-layers-basis-functions-fourier-features"></span><h1>gpflux.layers.basis_functions.fourier_features<a class="headerlink" href="#module-gpflux.layers.basis_functions.fourier_features" title="Permalink to this heading">#</a></h1>
+<p>A kernel’s features for efficient sampling, used by
+<a class="reference internal" href="../../../sampling/index.html#gpflux.sampling.KernelWithFeatureDecomposition" title="gpflux.sampling.KernelWithFeatureDecomposition"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflux.sampling.KernelWithFeatureDecomposition</span></code></a></p>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quadrature/index.html">gpflux.layers.basis_functions.fourier_features.quadrature</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random/index.html">gpflux.layers.basis_functions.fourier_features.random</a></li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="base/index.html">gpflux.layers.basis_functions.fourier_features.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/index.html">gpflux.layers.basis_functions.fourier_features.utils</a></li>
+</ul>
+</div>
+</section>
+<section id="package-contents">
+<h2>Package Contents<a class="headerlink" href="#package-contents" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QuadratureFourierFeatures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.kernels.Kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/quadrature/gaussian.html#QuadratureFourierFeatures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="base/index.html#gpflux.layers.basis_functions.fourier_features.base.FourierFeaturesBase" title="gpflux.layers.basis_functions.fourier_features.base.FourierFeaturesBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflux.layers.basis_functions.fourier_features.base.FourierFeaturesBase</span></code></a></p>
+<p>The base class for all Fourier feature layers, used for both random Fourier feature layers and
+quadrature layers. We subclass <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer" title="(in TensorFlow v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tf.keras.layers.Layer</span></code></a>, so we must provide
+<a href="#id1"><span class="problematic" id="id2">:method:`build`</span></a> and <a href="#id3"><span class="problematic" id="id4">:method:`call`</span></a> methods.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> – kernel to approximate using a set of Fourier bases.</p></li>
+<li><p><strong>n_components</strong> – number of components (e.g. Monte Carlo samples,
+quadrature nodes, etc.) used to numerically approximate the kernel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflux.types.ShapeType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/quadrature/gaussian.html#QuadratureFourierFeatures.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures.build" title="Permalink to this definition">#</a></dt>
+<dd><p>Creates the variables of the layer.
+See <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build">tf.keras.layers.Layer.build()</a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures._compute_bases">
+<span class="sig-name descname"><span class="pre">_compute_bases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/quadrature/gaussian.html#QuadratureFourierFeatures._compute_bases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures._compute_bases" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tensor with the shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">2M^D]</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures._compute_constant">
+<span class="sig-name descname"><span class="pre">_compute_constant</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/quadrature/gaussian.html#QuadratureFourierFeatures._compute_constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures._compute_constant" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute normalizing constant for basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tensor with the shape <code class="docutils literal notranslate"><span class="pre">[2M^D,]</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.OrthogonalRandomFeatures">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OrthogonalRandomFeatures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.kernels.Kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/orthogonal.html#OrthogonalRandomFeatures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.OrthogonalRandomFeatures" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflux.layers.basis_functions.fourier_features.random.base.RandomFourierFeatures</span></code></p>
+<p>Orthogonal random Fourier features (ORF) <span id="id5">[<a class="reference internal" href="../../../../../index.html#id15" title="Felix Xinnan X Yu, Ananda Theertha Suresh, Krzysztof M Choromanski, Daniel N Holtmann-Rice, and Sanjiv Kumar. Orthogonal random features. Advances in Neural Information Processing Systems, 29:1975–1983, 2016.">YSC+16</a>]</span> for more
+efficient and accurate kernel approximations than <a class="reference internal" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures" title="gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomFourierFeatures</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> – kernel to approximate using a set of Fourier bases.</p></li>
+<li><p><strong>n_components</strong> – number of components (e.g. Monte Carlo samples,
+quadrature nodes, etc.) used to numerically approximate the kernel.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomFourierFeatures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.kernels.Kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeatures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomFourierFeaturesBase</span></code></p>
+<p>Random Fourier features (RFF) is a method for approximating kernels. The essential
+element of the RFF approach <span id="id6">[<a class="reference internal" href="../../../../../index.html#id12" title="Ali Rahimi and Benjamin Recht. Random features for large-scale kernel machines. In Advances in Neural Information Processing Systems. 2007.">RR07</a>]</span> is the realization that Bochner’s theorem
+for stationary kernels can be approximated by a Monte Carlo sum.</p>
+<p>We will approximate the kernel <span class="math notranslate nohighlight">\(k(\mathbf{x}, \mathbf{x}')\)</span>
+by <span class="math notranslate nohighlight">\(\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')\)</span>
+where <span class="math notranslate nohighlight">\(\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}\)</span> is a finite-dimensional feature map.</p>
+<p>The feature map is defined as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
+  \begin{bmatrix}
+    \cos(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
+    \sin(\boldsymbol{\theta}_1^\top \mathbf{x}) \\
+    \vdots \\
+    \cos(\boldsymbol{\theta}_{\frac{M}{2}}^\top \mathbf{x}) \\
+    \sin(\boldsymbol{\theta}_{\frac{M}{2}}^\top \mathbf{x})
+  \end{bmatrix}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the kernel variance.
+The features are parameterised by random weights:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\boldsymbol{\theta} \sim p(\boldsymbol{\theta})\)</span>
+where <span class="math notranslate nohighlight">\(p(\boldsymbol{\theta})\)</span> is the spectral density of the kernel.</p></li>
+</ul>
+<p>At least for the squared exponential kernel, this variant of the feature
+mapping has more desirable theoretical properties than its counterpart form
+from phase-shifted cosines <a class="reference internal" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine" title="gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomFourierFeaturesCosine</span></code></a> <span id="id7">[<a class="reference internal" href="../../../../../index.html#id14" title="Dougal J Sutherland and Jeff Schneider. On the error of random Fourier features. In Proceedings of the Thirty-First Conference on Uncertainty in Artificial Intelligence, 862–871. 2015.">SS15</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> – kernel to approximate using a set of Fourier bases.</p></li>
+<li><p><strong>n_components</strong> – number of components (e.g. Monte Carlo samples,
+quadrature nodes, etc.) used to numerically approximate the kernel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures._compute_bases">
+<span class="sig-name descname"><span class="pre">_compute_bases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeatures._compute_bases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures._compute_bases" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tensor with the shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">2M]</span></code> or <code class="docutils literal notranslate"><span class="pre">[P,</span> <span class="pre">N,</span> <span class="pre">2M]</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures._compute_constant">
+<span class="sig-name descname"><span class="pre">_compute_constant</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeatures._compute_constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures._compute_constant" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute normalizing constant for basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tensor with the shape <code class="docutils literal notranslate"><span class="pre">[]</span></code> (i.e. a scalar).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomFourierFeaturesCosine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.kernels.Kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeaturesCosine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">RandomFourierFeaturesBase</span></code></p>
+<p>Random Fourier Features (RFF) is a method for approximating kernels. The essential
+element of the RFF approach <span id="id8">[<a class="reference internal" href="../../../../../index.html#id12" title="Ali Rahimi and Benjamin Recht. Random features for large-scale kernel machines. In Advances in Neural Information Processing Systems. 2007.">RR07</a>]</span> is the realization that Bochner’s theorem
+for stationary kernels can be approximated by a Monte Carlo sum.</p>
+<p>We will approximate the kernel <span class="math notranslate nohighlight">\(k(\mathbf{x}, \mathbf{x}')\)</span>
+by <span class="math notranslate nohighlight">\(\Phi(\mathbf{x})^\top \Phi(\mathbf{x}')\)</span> where
+<span class="math notranslate nohighlight">\(\Phi: \mathbb{R}^{D} \to \mathbb{R}^{M}\)</span> is a finite-dimensional feature map.</p>
+<p>The feature map is defined as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Phi(\mathbf{x}) = \sqrt{\frac{2 \sigma^2}{\ell}}
+  \begin{bmatrix}
+    \cos(\boldsymbol{\theta}_1^\top \mathbf{x} + \tau) \\
+    \vdots \\
+    \cos(\boldsymbol{\theta}_M^\top \mathbf{x} + \tau)
+  \end{bmatrix}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is the kernel variance.
+The features are parameterised by random weights:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\boldsymbol{\theta} \sim p(\boldsymbol{\theta})\)</span>
+where <span class="math notranslate nohighlight">\(p(\boldsymbol{\theta})\)</span> is the spectral density of the kernel</p></li>
+<li><p><span class="math notranslate nohighlight">\(\tau \sim \mathcal{U}(0, 2\pi)\)</span></p></li>
+</ul>
+<p>Equivalent to <a class="reference internal" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures" title="gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomFourierFeatures</span></code></a> by elementary trigonometric identities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kernel</strong> – kernel to approximate using a set of Fourier bases.</p></li>
+<li><p><strong>n_components</strong> – number of components (e.g. Monte Carlo samples,
+quadrature nodes, etc.) used to numerically approximate the kernel.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflux.types.ShapeType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeaturesCosine.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine.build" title="Permalink to this definition">#</a></dt>
+<dd><p>Creates the variables of the layer.
+See <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer#build">tf.keras.layers.Layer.build()</a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine._compute_bases">
+<span class="sig-name descname"><span class="pre">_compute_bases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeaturesCosine._compute_bases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine._compute_bases" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tensor with the shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">M]</span></code> or <code class="docutils literal notranslate"><span class="pre">[P,</span> <span class="pre">N,</span> <span class="pre">M]</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine._compute_constant">
+<span class="sig-name descname"><span class="pre">_compute_constant</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../../_modules/gpflux/layers/basis_functions/fourier_features/random/base.html#RandomFourierFeaturesCosine._compute_constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine._compute_constant" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute normalizing constant for basis functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tensor with the shape <code class="docutils literal notranslate"><span class="pre">[]</span></code> (i.e. a scalar).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subpackages">Subpackages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#package-contents">Package Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures"><code class="docutils literal notranslate"><span class="pre">QuadratureFourierFeatures</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures.build"><code class="docutils literal notranslate"><span class="pre">QuadratureFourierFeatures.build()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures._compute_bases"><code class="docutils literal notranslate"><span class="pre">QuadratureFourierFeatures._compute_bases()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.QuadratureFourierFeatures._compute_constant"><code class="docutils literal notranslate"><span class="pre">QuadratureFourierFeatures._compute_constant()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.OrthogonalRandomFeatures"><code class="docutils literal notranslate"><span class="pre">OrthogonalRandomFeatures</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeatures</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures._compute_bases"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeatures._compute_bases()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeatures._compute_constant"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeatures._compute_constant()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeaturesCosine</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine.build"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeaturesCosine.build()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine._compute_bases"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeaturesCosine._compute_bases()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.basis_functions.fourier_features.RandomFourierFeaturesCosine._compute_constant"><code class="docutils literal notranslate"><span class="pre">RandomFourierFeaturesCosine._compute_constant()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

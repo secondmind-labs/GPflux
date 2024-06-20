@@ -1,0 +1,177 @@
+gpflux.layers.latent_variable_layer
+===================================
+
+.. py:module:: gpflux.layers.latent_variable_layer
+
+.. autoapi-nested-parse::
+
+   This module implements a latent variable layer for deep GPs. 
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: TrackableLayer
+
+   Bases: :py:obj:`gpflow.keras.tf_keras.layers.Layer`
+
+
+   With the release of TensorFlow 2.5, our TrackableLayer workaround is no
+   longer needed.  See https://github.com/Prowler-io/gpflux/issues/189.
+   Will be removed in GPflux version 1.0.0
+
+
+.. py:data:: ObservationType
+
+   Type for the ``[inputs, targets]`` list used by :class:`~gpflux.layers.LayerWithObservations`
+
+
+.. py:class:: LayerWithObservations
+
+   Bases: :py:obj:`gpflux.layers.trackable_layer.TrackableLayer`
+
+
+   By inheriting from this class, Layers indicate that their :meth:`call`
+   method takes a second *observations* argument after the customary
+   *layer_inputs* argument.
+
+   This is used to distinguish which layers (unlike most standard Keras
+   layers) require the original inputs and/or targets during training.
+   For example, it is used by the amortized variational inference in the
+   :class:`LatentVariableLayer`.
+
+
+   .. py:method:: call(layer_inputs: gpflow.base.TensorType, observations: Optional[gpflux.types.ObservationType] = None, training: Optional[bool] = None) -> tensorflow.Tensor
+      :abstractmethod:
+
+
+      The :meth:`call` method of `LayerWithObservations` subclasses should
+      accept a second argument, *observations*. In training mode, this will
+      be the ``[inputs, targets]`` of the training points; otherwise, it is `None`.
+
+
+
+.. py:class:: LatentVariableLayer(prior: tensorflow_probability.distributions.Distribution, encoder: gpflow.keras.tf_keras.layers.Layer, compositor: Optional[gpflow.keras.tf_keras.layers.Layer] = None, name: Optional[str] = None)
+
+   Bases: :py:obj:`LayerWithObservations`
+
+
+   A latent variable layer, with amortized mean-field variational inference.
+
+   The latent variable is distribution-agnostic, but assumes a variational posterior
+   that is fully factorised and is of the same distribution family as the prior.
+
+   This class is used by models as described in :cite:p:`dutordoir2018cde, salimbeni2019iwvi`.
+
+   :param prior: A distribution that represents the :attr:`prior` over the latent variable.
+   :param encoder: A layer which is passed the concatenated observation inputs
+       and targets, and returns the appropriate parameters for the approximate
+       posterior distribution; see :attr:`encoder`.
+   :param compositor: A layer that combines layer inputs and latent variable
+       samples into a single tensor; see :attr:`compositor`. If you do not specify a value for
+       this parameter, the default is
+       ``tf.keras.layers.Concatenate(axis=-1, dtype=default_float())``. Note that you should
+       set ``dtype`` of the layer to GPflow's default dtype as in
+       :meth:`~gpflow.default_float()`.
+   :param name: The name of this layer (passed through to `tf.keras.layers.Layer`).
+
+
+   .. py:attribute:: prior
+      :type:  tensorflow_probability.distributions.Distribution
+
+      The prior distribution for the latent variables. 
+
+
+
+   .. py:attribute:: encoder
+      :type:  gpflow.keras.tf_keras.layers.Layer
+
+      An encoder that maps from a concatenation of inputs and targets to the
+      parameters of the approximate posterior distribution of the corresponding
+      latent variables.
+
+
+
+   .. py:attribute:: compositor
+      :type:  gpflow.keras.tf_keras.layers.Layer
+
+      A layer that takes as input the two-element ``[layer_inputs, latent_variable_samples]`` list
+      and combines the elements into a single output tensor.
+
+
+
+   .. py:method:: call(layer_inputs: gpflow.base.TensorType, observations: Optional[gpflux.types.ObservationType] = None, training: Optional[bool] = None, seed: Optional[int] = None) -> tensorflow.Tensor
+
+      Sample the latent variables and compose them with the layer input.
+
+      When training, draw a sample of the latent variable from the posterior,
+      whose distribution is parameterised by the encoder mapping from the data.
+      Also add a KL divergence [posterior∥prior] to the losses.
+
+      When not training, draw a sample of the latent variable from the prior.
+
+      :param layer_inputs: The output of the previous layer.
+      :param observations: The ``[inputs, targets]``, with the shapes ``[batch size, Din]``
+          and ``[batch size, Dout]`` respectively. This parameter should be passed only when in
+          training mode.
+      :param training: The training mode indicator.
+      :param seed: A random seed for the sampling operation.
+      :returns: Samples of the latent variable composed with the layer inputs through the
+          :attr:`compositor`
+
+
+
+   .. py:method:: _inference_posteriors(observations: gpflux.types.ObservationType, training: Optional[bool] = None) -> tensorflow_probability.distributions.Distribution
+
+      Return the posterior distributions parametrised by the :attr:`encoder`, which gets called
+      with the concatenation of the inputs and targets in the *observations* argument.
+
+      .. todo:: We might want to change encoders to have a
+          `tfp.layers.DistributionLambda` final layer that directly returns the
+          appropriately parameterised distributions object.
+
+      :param observations: The ``[inputs, targets]``, with the shapes ``[batch size, Din]``
+          and ``[batch size, Dout]`` respectively.
+      :param training: The training mode indicator (passed through to the :attr:`encoder`'s call).
+      :returns: The posterior distributions object.
+
+
+
+   .. py:method:: _inference_latent_samples_and_loss(layer_inputs: gpflow.base.TensorType, observations: gpflux.types.ObservationType, seed: Optional[int] = None) -> Tuple[tensorflow.Tensor, tensorflow.Tensor]
+
+      Sample latent variables during the *training* forward pass, hence requiring
+      the observations. Also return the KL loss per datapoint.
+
+      :param layer_inputs: The output of the previous layer _(unused)_.
+      :param observations: The ``[inputs, targets]``, with the shapes ``[batch size, Din]``
+          and ``[batch size, Dout]`` respectively.
+      :param seed: A random seed for the sampling operation.
+      :returns: The samples and the loss-per-datapoint.
+
+
+
+   .. py:method:: _prediction_latent_samples(layer_inputs: gpflow.base.TensorType, seed: Optional[int] = None) -> tensorflow.Tensor
+
+      Sample latent variables during the *prediction* forward pass, only
+      depending on the shape of this layer's inputs.
+
+      :param layer_inputs: The output of the previous layer (for determining batch shape).
+      :param seed: A random seed for the sampling operation.
+      :returns: The samples.
+
+
+
+   .. py:method:: _local_kls(posteriors: tensorflow_probability.distributions.Distribution) -> tensorflow.Tensor
+
+      Compute the KL divergences [posteriors∥prior].
+
+      :param posteriors: A distribution that represents the approximate posteriors.
+      :returns: The KL divergences from the prior for each of the posteriors.
+
+
+

@@ -1,0 +1,216 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "ee78f0af",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "# Hybrid Deep GP models: combining GP and Neural Network layers\n",
+    "\n",
+    "In this notebook we show how to combine `gpflux.layers.GPLayer` layers with plain Keras neural network layers. This allows one to build hybrid deep GP models. Compared to the other tutorials, we are also going to use Keras's `Sequential` model to build our hierarchical model and use a `gpflux.losses.LikelihoodLoss` instead of a `gpflux.layers.LikelihoodLayer`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1e18d7e0",
+   "metadata": {
+    "lines_to_next_cell": 2
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "import gpflow\n",
+    "import gpflux\n",
+    "\n",
+    "from gpflow.config import default_float\n",
+    "from gpflow.keras import tf_keras"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4878935f",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Load Snelson dataset\n",
+    "\n",
+    "We use a simple one-dimensional dataset to allow for easy plotting. To help training we normalize the input features."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f6d9fd00",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "d = np.load(\"../../tests/snelson1d.npz\")\n",
+    "X, Y = data = d[\"X\"], d[\"Y\"]\n",
+    "X = (X - X.mean()) / X.std()\n",
+    "num_data, input_dim = X.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "fc9e0f03",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Initialize the GP Layer\n",
+    "\n",
+    "As per usual we create a one-dimensional `gpflux.layers.GPLayer` with a simple `SquaredExponential` kernel and `InducingPoints` inducing variable:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "20b37bd8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_data = len(X)\n",
+    "num_inducing = 10\n",
+    "output_dim = Y.shape[1]\n",
+    "\n",
+    "kernel = gpflow.kernels.SquaredExponential()\n",
+    "inducing_variable = gpflow.inducing_variables.InducingPoints(\n",
+    "    np.linspace(X.min(), X.max(), num_inducing).reshape(-1, 1)\n",
+    ")\n",
+    "gp_layer = gpflux.layers.GPLayer(\n",
+    "    kernel, inducing_variable, num_data=num_data, num_latent_gps=output_dim\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "30423458",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "## Sequential Keras model with GP and Neural net layers\n",
+    "\n",
+    "We construct a model that consists of three `tf.keras.layers.Dense` layers and a GP. The first two Dense layers are configured to have 100 units and use a ReLU non-linearity. The last neural network layers reduces the dimension to one and does not utilise a non-linearity. We can interpret these three neural network layers as performing non-linear feature warping. The final layer in the model is the GP we defined above."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c1790b12",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "likelihood = gpflow.likelihoods.Gaussian(0.1)\n",
+    "\n",
+    "# So that Keras can track the likelihood variance, we need to provide the likelihood as part of a \"dummy\" layer:\n",
+    "likelihood_container = gpflux.layers.TrackableLayer()\n",
+    "likelihood_container.likelihood = likelihood\n",
+    "\n",
+    "model = tf_keras.Sequential(\n",
+    "    [\n",
+    "        tf_keras.layers.Dense(100, activation=\"relu\"),\n",
+    "        tf_keras.layers.Dense(100, activation=\"relu\"),\n",
+    "        tf_keras.layers.Dense(1, activation=\"linear\"),\n",
+    "        gp_layer,\n",
+    "        likelihood_container,  # no-op, for discovering trainable likelihood parameters\n",
+    "    ]\n",
+    ")\n",
+    "loss = gpflux.losses.LikelihoodLoss(likelihood)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8537fe7f",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We compile our model by specifying the loss and the optimizer to use. After this is done, we fit the data and plot the trajectory of the loss:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "cb0b0915",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "model.compile(loss=loss, optimizer=\"adam\")\n",
+    "hist = model.fit(X, Y, epochs=500, verbose=0)\n",
+    "plt.plot(hist.history[\"loss\"])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "84b77b62",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "We can now inspect the final model by plotting its predictions. Note that `model(X_test)` now returns the output of the final `GPLayer` and *not* a `LikelihoodLayer`. The output of a `GPLayer` is a TFP distribution with a `mean()` and `variance()`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7667239e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def plot(model, X, Y, ax=None):\n",
+    "    if ax is None:\n",
+    "        fig, ax = plt.subplots()\n",
+    "\n",
+    "    x_margin = 2.0\n",
+    "    N_test = 100\n",
+    "    X_test = np.linspace(X.min() - x_margin, X.max() + x_margin, N_test).reshape(-1, 1)\n",
+    "    f_distribution = model(X_test)\n",
+    "\n",
+    "    mean = f_distribution.mean().numpy().squeeze()\n",
+    "    var = f_distribution.variance().numpy().squeeze() + model.layers[-1].likelihood.variance.numpy()\n",
+    "    X_test = X_test.squeeze()\n",
+    "    lower = mean - 2 * np.sqrt(var)\n",
+    "    upper = mean + 2 * np.sqrt(var)\n",
+    "\n",
+    "    ax.set_ylim(Y.min() - 0.5, Y.max() + 0.5)\n",
+    "    ax.plot(X, Y, \"kx\", alpha=0.5)\n",
+    "    ax.plot(X_test, mean, \"C1\")\n",
+    "\n",
+    "    ax.fill_between(X_test, lower, upper, color=\"C1\", alpha=0.3)\n",
+    "\n",
+    "\n",
+    "plot(model, X, Y)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e55136c1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "gpflow.utilities.print_summary(model, fmt=\"notebook\")"
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "cell_markers": "\"\"\""
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

@@ -1,0 +1,671 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>gpflux.layers.bayesian_dense_layer &#8212; GPflux 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css?v=c27e38e3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/gpflux/layers/bayesian_dense_layer/index';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="gpflux.layers.gp_layer" href="../gp_layer/index.html" />
+    <link rel="prev" title="gpflux.layers.basis_functions.fourier_features.utils" href="../basis_functions/fourier_features/utils/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/logo.png" class="logo__image only-light" alt="GPflux 0.1.0 documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/logo.png" class="logo__image only-dark" alt="GPflux 0.1.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../architectures/index.html">gpflux.architectures</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../architectures/constant_input_dim_deep_gp/index.html">gpflux.architectures.constant_input_dim_deep_gp</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../encoders/index.html">gpflux.encoders</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../encoders/directly_parameterized_encoder/index.html">gpflux.encoders.directly_parameterized_encoder</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../experiment_support/index.html">gpflux.experiment_support</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../experiment_support/ci_utils/index.html">gpflux.experiment_support.ci_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../experiment_support/tensorboard/index.html">gpflux.experiment_support.tensorboard</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">gpflux.layers</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 has-children"><a class="reference internal" href="../basis_functions/index.html">gpflux.layers.basis_functions</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../basis_functions/fourier_features/index.html">gpflux.layers.basis_functions.fourier_features</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../basis_functions/fourier_features/quadrature/index.html">gpflux.layers.basis_functions.fourier_features.quadrature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../basis_functions/fourier_features/random/index.html">gpflux.layers.basis_functions.fourier_features.random</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../basis_functions/fourier_features/base/index.html">gpflux.layers.basis_functions.fourier_features.base</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../basis_functions/fourier_features/utils/index.html">gpflux.layers.basis_functions.fourier_features.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">gpflux.layers.bayesian_dense_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gp_layer/index.html">gpflux.layers.gp_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../latent_variable_layer/index.html">gpflux.layers.latent_variable_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../likelihood_layer/index.html">gpflux.layers.likelihood_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../trackable_layer/index.html">gpflux.layers.trackable_layer</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../models/index.html">gpflux.models</a><input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../models/deep_gp/index.html">gpflux.models.deep_gp</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../optimization/index.html">gpflux.optimization</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../optimization/keras_natgrad/index.html">gpflux.optimization.keras_natgrad</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../sampling/index.html">gpflux.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sampling/kernel_with_feature_decomposition/index.html">gpflux.sampling.kernel_with_feature_decomposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sampling/sample/index.html">gpflux.sampling.sample</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sampling/utils/index.html">gpflux.sampling.utils</a></li>
+</ul>
+</li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../callbacks/index.html">gpflux.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions/index.html">gpflux.exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../helpers/index.html">gpflux.helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../losses/index.html">gpflux.losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../math/index.html">gpflux.math</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../runtime_checks/index.html">gpflux.runtime_checks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../types/index.html">gpflux.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../version/index.html">gpflux.version</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">gpflux</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">gpflux.layers</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">gpflux.layer...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-gpflux.layers.bayesian_dense_layer">
+<span id="gpflux-layers-bayesian-dense-layer"></span><h1>gpflux.layers.bayesian_dense_layer<a class="headerlink" href="#module-gpflux.layers.bayesian_dense_layer" title="Permalink to this heading">#</a></h1>
+<p>This module provides <a class="reference internal" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer" title="gpflux.layers.bayesian_dense_layer.BayesianDenseLayer"><code class="xref py py-class docutils literal notranslate"><span class="pre">BayesianDenseLayer</span></code></a>, which implements a
+variational Bayesian dense (fully-connected) neural network layer as a Keras
+<a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/layers/Layer" title="(in TensorFlow v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Layer</span></code></a>.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.xavier_initialization_numpy">
+<span class="sig-name descname"><span class="pre">xavier_initialization_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.0)"><span class="pre">numpy.ndarray</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/helpers.html#xavier_initialization_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.xavier_initialization_numpy" title="Permalink to this definition">#</a></dt>
+<dd><p>Generate initial weights for a neural network layer with the given input and output
+dimensionality using the Xavier Glorot normal initialiser. From:</p>
+<p>Glorot, Xavier, and Yoshua Bengio. “Understanding the difficulty of training deep
+feedforward neural networks.” Proceedings of the thirteenth international
+conference on artificial intelligence and statistics. JMLR Workshop and Conference
+Proceedings, 2010.</p>
+<p>Draw samples from a normal distribution centred on <span class="math notranslate nohighlight">\(0\)</span> with standard deviation
+<span class="math notranslate nohighlight">\(\sqrt(2 / (\text{input_dim} + \text{output_dim}))\)</span>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.TrackableLayer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TrackableLayer</span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/trackable_layer.html#TrackableLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.TrackableLayer" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflow.keras.tf_keras.layers.Layer</span></code></p>
+<p>With the release of TensorFlow 2.5, our TrackableLayer workaround is no
+longer needed.  See <a class="github reference external" href="https://github.com/Prowler-io/gpflux/issues/189">Prowler-io/gpflux#189</a>.
+Will be removed in GPflux version 1.0.0</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.ShapeType">
+<span class="sig-name descname"><span class="pre">ShapeType</span></span><a class="reference internal" href="../../../../_modules/gpflux/types.html#ShapeType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.ShapeType" title="Permalink to this definition">#</a></dt>
+<dd><p>Union of valid types for describing the shape of a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.Tensor</span></code></a>(-like) object</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.BayesianDenseLayer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BayesianDenseLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_mu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.0)"><span class="pre">numpy.ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_sqrt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.0)"><span class="pre">numpy.ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_mean_field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temperature</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflux/layers/bayesian_dense_layer.html#BayesianDenseLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../trackable_layer/index.html#gpflux.layers.trackable_layer.TrackableLayer" title="gpflux.layers.trackable_layer.TrackableLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflux.layers.trackable_layer.TrackableLayer</span></code></a></p>
+<p>A dense (fully-connected) layer for variational Bayesian neural networks.</p>
+<p>This layer holds the mean and square-root of the variance of the
+distribution over the weights. This layer also has a temperature for
+cooling (or heating) the posterior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dim</strong> – The input dimension (excluding bias) of this layer.</p></li>
+<li><p><strong>output_dim</strong> – The output dimension of this layer.</p></li>
+<li><p><strong>num_data</strong> – The number of points in the training dataset (used for
+scaling the KL regulariser).</p></li>
+<li><p><strong>w_mu</strong> – Initial value of the variational mean for weights + bias.
+If not specified, this defaults to <a class="reference internal" href="#gpflux.layers.bayesian_dense_layer.xavier_initialization_numpy" title="gpflux.layers.bayesian_dense_layer.xavier_initialization_numpy"><code class="xref any py py-func docutils literal notranslate"><span class="pre">xavier_initialization_numpy</span></code></a>
+for the weights and zero for the bias.</p></li>
+<li><p><strong>w_sqrt</strong> – Initial value of the variational Cholesky of the
+(co)variance for weights + bias. If not specified, this defaults to
+1e-5 * Identity.</p></li>
+<li><p><strong>activation</strong> – The activation function. If not specified, this defaults to the identity.</p></li>
+<li><p><strong>is_mean_field</strong> – Determines whether the approximation to the
+weight posterior is mean field. Must be consistent with the shape
+of <code class="docutils literal notranslate"><span class="pre">w_sqrt</span></code>, if specified.</p></li>
+<li><p><strong>temperature</strong> – The KL loss will be scaled by this factor.
+Can be used for cooling (&lt; 1.0) or heating (&gt; 1.0) the posterior.
+As suggested in <a class="reference external" href="http://proceedings.mlr.press/v119/wenzel20a">“How Good is the Bayes Posterior in Deep Neural
+Networks Really?” by Wenzel et al. (2020)</a> the default value
+is a cold <code class="docutils literal notranslate"><span class="pre">1e-4</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflux.types.ShapeType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/bayesian_dense_layer.html#BayesianDenseLayer.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.build" title="Permalink to this definition">#</a></dt>
+<dd><p>Build the variables necessary on first call</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.predict_samples">
+<span class="sig-name descname"><span class="pre">predict_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/bayesian_dense_layer.html#BayesianDenseLayer.predict_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.predict_samples" title="Permalink to this definition">#</a></dt>
+<dd><p>Samples from the approximate posterior at N test inputs, with input_dim = D, output_dim = Q.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputs</strong> – The inputs to predict at; shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">D]</span></code>.</p></li>
+<li><p><strong>num_samples</strong> – The number of samples S, to draw.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Samples, shape <code class="docutils literal notranslate"><span class="pre">[S,</span> <span class="pre">N,</span> <span class="pre">Q]</span></code> if S is not None else <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">Q]</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">gpflow.models.model.MeanAndVariance</span></span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/bayesian_dense_layer.html#BayesianDenseLayer.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.call" title="Permalink to this definition">#</a></dt>
+<dd><p>The default behaviour upon calling this layer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.prior_kl">
+<span class="sig-name descname"><span class="pre">prior_kl</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/bayesian_dense_layer.html#BayesianDenseLayer.prior_kl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.prior_kl" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the KL divergence <code class="docutils literal notranslate"><span class="pre">KL[q(u)∥p(u)]</span></code> from the prior <code class="docutils literal notranslate"><span class="pre">p(u)</span> <span class="pre">=</span> <span class="pre">N(0,</span> <span class="pre">I)</span></code> to
+the variational distribution <code class="docutils literal notranslate"><span class="pre">q(u)</span> <span class="pre">=</span> <span class="pre">N(w_mu,</span> <span class="pre">w_sqrt²)</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.xavier_initialization_numpy"><code class="docutils literal notranslate"><span class="pre">xavier_initialization_numpy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.TrackableLayer"><code class="docutils literal notranslate"><span class="pre">TrackableLayer</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.ShapeType"><code class="docutils literal notranslate"><span class="pre">ShapeType</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer"><code class="docutils literal notranslate"><span class="pre">BayesianDenseLayer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.build"><code class="docutils literal notranslate"><span class="pre">BayesianDenseLayer.build()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.predict_samples"><code class="docutils literal notranslate"><span class="pre">BayesianDenseLayer.predict_samples()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.call"><code class="docutils literal notranslate"><span class="pre">BayesianDenseLayer.call()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.layers.bayesian_dense_layer.BayesianDenseLayer.prior_kl"><code class="docutils literal notranslate"><span class="pre">BayesianDenseLayer.prior_kl()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

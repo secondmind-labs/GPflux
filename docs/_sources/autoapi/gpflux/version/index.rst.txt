@@ -1,0 +1,11 @@
+gpflux.version
+==============
+
+.. py:module:: gpflux.version
+
+.. autoapi-nested-parse::
+
+   Adds __version__
+
+
+

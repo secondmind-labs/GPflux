@@ -1,0 +1,20 @@
+gpflux.layers.basis_functions
+=============================
+
+.. py:module:: gpflux.layers.basis_functions
+
+.. autoapi-nested-parse::
+
+   Basis functions.
+
+
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/gpflux/layers/basis_functions/fourier_features/index
+
+

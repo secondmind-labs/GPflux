@@ -1,0 +1,616 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "6e2f2db6",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "# Efficient Posterior Gaussian Process Sampling"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a87568ee",
+   "metadata": {
+    "cell_marker": "r\"\"\""
+   },
+   "source": [
+    "The aim of this notebook is to demonstrate how to efficiently draw samples from a posterior Gaussian process (GP) following Figure 3 from  Wilson et al. <cite data-cite=\"wilson2020efficiently\"/>. The problem of sampling naively from any GP is that it requires the generation of samples from a multivariate Gaussian as a consequence of evaluating the GP at a certain number $N^\\star$ of evaluation points. However, sampling from a multivariate Gaussian with dimension $N^\\star$ scales cubically with $N^\\star$ because it requires a Cholesky decomposition of the $N^\\star \\times N^\\star$ covariance matrix. More formally, drawing a sample $\\textbf{f}$ from a multivariate Gaussian $\\mathcal{N}(\\boldsymbol{\\mu}, \\boldsymbol{\\Sigma})$ with mean $\\boldsymbol{\\mu}$ and covariance $\\boldsymbol{\\Sigma}$ can be accomplished via\n",
+    "\n",
+    "$$ \\textbf{f} = \\boldsymbol{\\mu} + \\text{chol} (\\boldsymbol{\\Sigma}) \\textbf{z}  \\; \\text{ where }  \\; \\textbf{z} \\sim \\mathcal{N}(\\textbf{0}, \\textbf{I}),$$\n",
+    "\n",
+    "with $\\text{chol}$ referring to Cholesky decomposition.\n",
+    "\n",
+    "Under certain assumptions, inference problems can have a posterior GP, for example, in a simple regression problem with real-valued labels, i.i.d. training data $\\{(X_n, y_n)\\}_{n=1,...,N}$ and a univariate Gaussian observation model of the form $p(y_n| f(X_n), \\sigma_\\epsilon^2)$ (with mean $f(X_n)$ and variance $\\sigma_\\epsilon^2$, and where $f(X_n)$ refers to evaluating a random GP function $f(\\cdot)$ at $X_n$). Drawing a sample $\\textbf{f}^\\star$ from the posterior GP at $N^\\star$ evaluation points $\\{X^\\star_{n^\\star}\\}_{n^\\star=1,...,N^\\star}$ can then be accomplished through\n",
+    "\n",
+    "$$ \\textbf{f}^\\star = \\textbf{K}_{\\textbf{f}^\\star \\textbf{f}} (\\textbf{K}_{\\textbf{f} \\textbf{f}} + \\sigma_\\epsilon^2 \\textbf{I})^{-1} \\textbf{y} + \\text{chol} (\\textbf{K}_{\\textbf{f}^\\star \\textbf{f}^\\star} - \\textbf{K}_{\\textbf{f}^\\star \\textbf{f}} (\\textbf{K}_{\\textbf{f} \\textbf{f}} + \\sigma_\\epsilon^2 \\textbf{I})^{-1} \\textbf{K}_{\\textbf{f} \\textbf{f}^\\star}) \\textbf{z}  \\; \\text{ where }  \\; \\textbf{z} \\sim \\mathcal{N}(\\textbf{0}, \\textbf{I}), $$\n",
+    "\n",
+    "when making use of the closed form expressions for the posterior mean and covariance (under the assumption of a zero mean prior GP for notational convenience). The terms $\\textbf{K}_{\\textbf{f} \\textbf{f}}$, $\\textbf{K}_{\\textbf{f}^\\star \\textbf{f}}$ and $\\textbf{K}_{\\textbf{f} \\textbf{f}^\\star}$ refer to (cross-)covariance matrices when evaluating the kernel $k(\\cdot, \\cdot^\\prime)$ at training points $\\{X_n\\}_{n=1,...,N}$ and test points $\\{X^\\star_{n^\\star}\\}_{n^\\star=1,...,N^\\star}$, and $\\textbf{y}$ denotes all training targets $\\{y_n\\}_{n=1,...,N}$ in vectorised form.\n",
+    "\n",
+    "An alternative way of drawing samples from a posterior GP is by following Matheron's rule:\n",
+    "\n",
+    "$$ \\textbf{f}^\\star = \\textbf{f}^\\star_{\\text{prior}} + \\textbf{K}_{\\textbf{f}^\\star \\textbf{f}} (\\textbf{K}_{\\textbf{f} \\textbf{f}} + \\sigma_\\epsilon^2 \\textbf{I})^{-1} (\\textbf{y} - \\textbf{f}_{\\text{prior}}) \\; \\text{ where } \\; \\begin{pmatrix}\n",
+    "           \\textbf{f}^\\star_{\\text{prior}} \\\\\n",
+    "           \\textbf{f}_{\\text{prior}}\n",
+    "         \\end{pmatrix} \\; \\sim \\mathcal{N}\\left(\\begin{pmatrix}\n",
+    "           \\textbf{0} \\\\\n",
+    "           \\textbf{0}\n",
+    "         \\end{pmatrix},  \\begin{pmatrix}\n",
+    "           \\textbf{K}_{\\textbf{f}^\\star_{\\text{prior}} \\textbf{f}^\\star_{\\text{prior}}} & \\textbf{K}_{\\textbf{f}^\\star_{\\text{prior}} \\textbf{f}_{\\text{prior}}} \\\\\n",
+    "           \\textbf{K}_{\\textbf{f}_{\\text{prior}} \\textbf{f}^\\star_{\\text{prior}}} & \\textbf{K}_{\\textbf{f}_{\\text{prior}} \\textbf{f}_{\\text{prior}}}\n",
+    "         \\end{pmatrix}\\right), $$\n",
+    "\n",
+    "with $\\textbf{f}_{\\text{prior}}$ and $\\textbf{f}^\\star_{\\text{prior}}$ referring to random samples obtained when jointly evaluating the prior GP at both training points $\\{X_n\\}_{n=1,...,N}$ and evaluation points $\\{X^\\star_{n^\\star}\\}_{n^\\star=1,...,N^\\star}$. Note that this way of obtaining samples from the posterior GP does not alleviate the computational complexity problem in any way, because sampling $\\textbf{f}_{\\text{prior}}$ and $\\textbf{f}^\\star_{\\text{prior}}$ from the prior GP has cubic complexity $\\mathcal{O}((N + N^\\star)^3)$.\n",
+    "\n",
+    "However, you can approximate a kernel $k(\\cdot,\\cdot^\\prime)$ with a finite number of real-valued feature functions $\\phi_d(\\cdot)$ indexed with $d=1,...,D$ (e.g. through Mercer's or Bochner's theorem) as:\n",
+    "\n",
+    "$$k(X,X^\\prime) \\approx \\sum_{d=1}^D \\phi_d(X) \\phi_d({X^\\prime}).$$\n",
+    "\n",
+    "This enables you to approximate Matheron's rule with help of the weight space view:\n",
+    "\n",
+    "$$\\textbf{f}^\\star \\approx \\boldsymbol{\\Phi}^\\star \\textbf{w} + \\boldsymbol{\\Phi}^\\star \\boldsymbol{\\Phi}^\\intercal(\\boldsymbol{\\Phi} \\boldsymbol{\\Phi}^\\intercal + \\sigma_\\epsilon^2 \\textbf{I})^{-1}(\\textbf{y} - \\boldsymbol{\\Phi} \\textbf{w}) \\; \\text{ where } \\; \\textbf{w} \\sim \\mathcal{N}(\\textbf{0}, \\textbf{I}),$$\n",
+    "\n",
+    "with $\\boldsymbol{\\Phi}$ referring to the $N \\times D$ feature matrix evaluated at the training points $\\{X_n\\}_{n=1,...,N}$ and $\\boldsymbol{\\Phi}^\\star$ to the $N^\\star \\times D$ feature matrix evaluated at the test points $\\{X^\\star_{n^\\star}\\}_{n^\\star=1,...,N^\\star}$. The quantities $\\boldsymbol{\\Phi}^\\star \\boldsymbol{\\Phi}^\\intercal$ and $\\boldsymbol{\\Phi} \\boldsymbol{\\Phi}^\\intercal$ are weight space approximations of the exact kernel matrices $\\textbf{K}_{\\textbf{f}^\\star \\textbf{f}}$ and $\\textbf{K}_{\\textbf{f} \\textbf{f}}$ respectively. The weight space Matheron representation enables you to sample more efficiently with a complexity of $\\mathcal{O}(D)$ that scales only linearly with the number of feature functions $D$ (because the standard normal weight prior's diagonal covariance matrix can be linearly Cholesky decomposed). The problem is that many feature functions are required in order to approximate the exact posterior reasonably well in areas most relevant for extrapolation (i.e. close but not within the training data), as shown by Wilson et al. and as reproduced in another `gpflux` notebook.\n",
+    "\n",
+    "To provide a remedy, Wilson et al. propose a \"hybrid\" sampling scheme that enables the approximation of samples from a GP posterior in a computationally efficient fashion but with better accuracy compared to the vanilla weight space Matheron rule:\n",
+    "\n",
+    "$$\\textbf{f}^\\star \\approx \\boldsymbol{\\Phi}^\\star \\textbf{w} + \\textbf{K}_{\\textbf{f}^\\star \\textbf{f}} (\\textbf{K}_{\\textbf{f} \\textbf{f}} + \\sigma_\\epsilon^2 \\textbf{I})^{-1}(\\textbf{y} - \\boldsymbol{\\Phi} \\textbf{w}) \\; \\text{ where } \\; \\textbf{w} \\sim \\mathcal{N}(\\textbf{0}, \\textbf{I}),$$\n",
+    "\n",
+    "that combines both feature approximations and exact kernel evaluations from the Matheron function and weight space approximation formulas above.\n",
+    "\n",
+    "The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in `gpflux` are `RandomFourierFeaturesCosine`, to approximate a stationary kernel with finitely many random Fourier features $\\phi_d(\\cdot)$ according to Bochner's theorem and following Rahimi and Recht \"Random features for large-scale kernel machines\" (NeurIPS, 2007), and `KernelWithFeatureDecomposition`, to approximate a kernel with a specified set of feature functions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3ba43ed9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "plt.rcParams[\"figure.figsize\"] = (20, 3)\n",
+    "plt.rc(\"text\")\n",
+    "plt.rcParams.update({\"font.size\": 16})\n",
+    "\n",
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "\n",
+    "from gpflow.config import default_float\n",
+    "from gpflow.kernels import RBF, Matern52\n",
+    "from gpflow.models import GPR\n",
+    "\n",
+    "from gpflux.layers.basis_functions.fourier_features import RandomFourierFeaturesCosine\n",
+    "from gpflux.sampling.kernel_with_feature_decomposition import KernelWithFeatureDecomposition"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eed08493",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "The first set of parameters specifies settings that remain constant across different experiments. The second set of parameters refers to settings that change across individual experiments. Eventually, there are going to be three plots that compare the weight space approximated to the hybrid Matheron rule -- each plot refers to a different input domain, and the number of input dimensions increases across plots (from left to right). In each plot, the x-axis refers to the number of training examples and the y-axis refers to the $log_{10}$ Wasserstein distance to the exact posterior GP when evaluated at the test point locations. Within each plot, the weight space approximated Matheron results are indicated in orange and the hybrid Matheron results in blue. For each approximation type, three curves are shown with a differing number of Fourier features to approximate the exact kernel."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5be3adbc",
+   "metadata": {
+    "lines_to_next_cell": 2
+   },
+   "outputs": [],
+   "source": [
+    "# settings that are fixed across experiments\n",
+    "kernel_class = RBF  # choose alternatively kernel_class = Matern52\n",
+    "noise_variance = 1e-3  # variance of the observation model\n",
+    "num_test_samples = 64  # number of test samples for evaluation (1024 in the paper)\n",
+    "num_experiment_runs = 4  # number of experiment repetitions (64 in the paper)\n",
+    "\n",
+    "# settings that vary across experiments\n",
+    "num_input_dimensions = [2, 4, 8]  # number of input dimensions\n",
+    "train_sample_exponents = [2, 4, 6, 8, 10]  # num_train_samples = 2 ** train_sample_exponents\n",
+    "num_train_samples = [2 ** train_sample_exponent for train_sample_exponent in train_sample_exponents]\n",
+    "num_features = [\n",
+    "    1024,\n",
+    "    4096,\n",
+    "    16384,\n",
+    "]  # the actual number of features is num_features += num_train_samples"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f4608296",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "The method below computes the mean and the covariance matrix of an exact GP posterior when evaluated at test point locations. Note that you can also use this method to analytically compute predictions of the Matheron weight space approximated posterior GP when passing a `KernelWithFeatureDecomposition` object that approximates a kernel with feature functions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "5f9c4a0e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def compute_analytic_GP_predictions(X, y, kernel, noise_variance, X_star):\n",
+    "    \"\"\"\n",
+    "    Identify the mean and covariance of an analytic GPR posterior for test point locations.\n",
+    "\n",
+    "    :param X: The train point locations, with a shape of [N x D].\n",
+    "    :param y: The train targets, with a shape of [N x 1].\n",
+    "    :param kernel: The kernel object.\n",
+    "    :param noise_variance: The variance of the observation model.\n",
+    "    :param X_star: The test point locations, with a shape of [N* x D].\n",
+    "\n",
+    "    :return: The mean and covariance of the noise-free predictions,\n",
+    "        with a shape of [N*] and [N* x N*] respectively.\n",
+    "    \"\"\"\n",
+    "    gpr_model = GPR(data=(X, y), kernel=kernel, noise_variance=noise_variance)\n",
+    "\n",
+    "    f_mean, f_var = gpr_model.predict_f(X_star, full_cov=True)\n",
+    "    f_mean, f_var = f_mean[..., 0], f_var[0]\n",
+    "    assert f_mean.shape == (X_star.shape[0],)\n",
+    "    assert f_var.shape == (X_star.shape[0], X_star.shape[0])\n",
+    "\n",
+    "    return f_mean, f_var"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5d675d3f",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "The method below analytically computes the mean and the covariance matrix of an approximated posterior GP evaluated at test point locations when using the hybrid Matheron rule explained above."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ad07e068",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def compute_hybrid_rule_predictions(X, y, exact_kernel, approximate_kernel, noise_variance, X_star):\n",
+    "    \"\"\"\n",
+    "    Identify the mean and covariance using the hybrid Matheron approximation of the exact posterior.\n",
+    "\n",
+    "    :param X: The train point locations, with a shape of [N x D].\n",
+    "    :param y: The train targets, with a shape of [N x 1].\n",
+    "    :param exact_kernel: The exact kernel object.\n",
+    "    :param approximate_kernel: The approximate kernel object based on feature functions.\n",
+    "    :param noise_variance: The variance of the observation model.\n",
+    "    :param X_star: The test point locations, with a shape of [N* x D].\n",
+    "\n",
+    "    :return: The mean and covariance of the noise-free predictions,\n",
+    "        with a shape of [N*] and [N* x N*] respectively.\n",
+    "    \"\"\"\n",
+    "    phi_star = approximate_kernel._feature_functions(X_star)\n",
+    "    assert phi_star.shape[0] == X_star.shape[0]\n",
+    "\n",
+    "    phi = approximate_kernel._feature_functions(X)\n",
+    "    assert phi.shape[0] == X.shape[0]\n",
+    "\n",
+    "    kXstarX = exact_kernel.K(X_star, X)\n",
+    "    assert kXstarX.shape == (X_star.shape[0], X.shape[0])\n",
+    "\n",
+    "    KXX = exact_kernel.K(X)\n",
+    "    kXX_plus_noise_var = tf.linalg.set_diag(KXX, tf.linalg.diag_part(KXX) + noise_variance)\n",
+    "    assert kXX_plus_noise_var.shape == (X.shape[0], X.shape[0])\n",
+    "\n",
+    "    kXX_inv_mul_phi = tf.linalg.solve(kXX_plus_noise_var, phi)\n",
+    "    assert kXX_inv_mul_phi.shape[0] == X.shape[0]\n",
+    "\n",
+    "    kXX_inv_mul_y = tf.linalg.solve(kXX_plus_noise_var, y)\n",
+    "    assert kXX_inv_mul_y.shape[0] == X.shape[0]\n",
+    "\n",
+    "    f_mean = kXstarX @ kXX_inv_mul_y\n",
+    "    f_mean = f_mean[..., 0]\n",
+    "    assert f_mean.shape[0] == X_star.shape[0]\n",
+    "\n",
+    "    f_var_sqrt = phi_star - kXstarX @ kXX_inv_mul_phi\n",
+    "    assert f_var_sqrt.shape[0] == X_star.shape[0]\n",
+    "\n",
+    "    f_var = f_var_sqrt @ tf.transpose(f_var_sqrt)\n",
+    "    assert f_var.shape == (X_star.shape[0], X_star.shape[0])\n",
+    "\n",
+    "    return f_mean, f_var"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5a66354a",
+   "metadata": {
+    "cell_marker": "r\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "Our main evaluation metric is the decadic logarithm of the Wasserstein distance between an approximated GP (either with the weight space or the hybrid Matheron rule) and the exact posterior GP when evaluated at test points. For two multivariate Gaussian distributions $\\mathcal{N}(\\boldsymbol{\\mu}_1, \\boldsymbol{\\Sigma}_1)$ and $\\mathcal{N}(\\boldsymbol{\\mu}_2, \\boldsymbol{\\Sigma}_2)$, the Wasserstein distance $d_{\\text{WS}} (\\boldsymbol{\\mu}_1, \\boldsymbol{\\Sigma}_1, \\boldsymbol{\\mu}_2, \\boldsymbol{\\Sigma}_2)$ has an analytic expression:\n",
+    "\n",
+    "$$ d_{\\text{WS}} (\\boldsymbol{\\mu}_1, \\boldsymbol{\\Sigma}_1, \\boldsymbol{\\mu}_2, \\boldsymbol{\\Sigma}_2) = \\sqrt{|| \\boldsymbol{\\mu}_1 - \\boldsymbol{\\mu}_2 ||_2^2 + \\text{trace} \\left(\\boldsymbol{\\Sigma}_1 + \\boldsymbol{\\Sigma}_2 - 2 (\\boldsymbol{\\Sigma}_1^{1/2} \\boldsymbol{\\Sigma}_2 \\boldsymbol{\\Sigma}_1^{1/2})^{1/2}\\right)}, $$\n",
+    "\n",
+    "where $||\\cdot||_2$ refers to the $L_2$ norm, $\\text{trace}$ to the matrix trace operator and a power of $1/2$ to the matrix square root operation (i.e. for a square matrix $\\textbf{M}$ it holds that $\\textbf{M} = \\textbf{M}^{1/2}\\textbf{M}^{1/2}$)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d13bce4e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def log10_Wasserstein_distance(\n",
+    "    mean, covariance, approximate_mean, approximate_covariance, jitter=1e-12\n",
+    "):\n",
+    "    \"\"\"\n",
+    "    Identify the decadic logarithm of the Wasserstein distance based on the means and covariance matrices.\n",
+    "\n",
+    "    :param mean:The analytic mean, with a shape of [N*].\n",
+    "    :param covariance: The analytic covariance, with a shape of [N* x N*].\n",
+    "    :param approximate_mean: The approximate mean, with a shape of [N*].\n",
+    "    :param approximate_covariance: The approximate covariance, with a shape of [N* x N*].\n",
+    "    :param jitter: The jitter value for numerical robustness.\n",
+    "\n",
+    "    :return: A scalar log distance value.\n",
+    "    \"\"\"\n",
+    "    squared_mean_distance = tf.norm(mean - approximate_mean) ** 2\n",
+    "    square_root_covariance = tf.linalg.sqrtm(\n",
+    "        covariance + tf.eye(tf.shape(covariance)[0], dtype=covariance.dtype) * jitter\n",
+    "    )\n",
+    "    matrix_product = square_root_covariance @ approximate_covariance @ square_root_covariance\n",
+    "    square_root_matrix_product = tf.linalg.sqrtm(\n",
+    "        matrix_product + tf.eye(tf.shape(matrix_product)[0], dtype=matrix_product.dtype) * jitter\n",
+    "    )\n",
+    "    term = covariance + approximate_covariance - 2 * square_root_matrix_product\n",
+    "    trace = tf.linalg.trace(term)\n",
+    "    ws_distance = (squared_mean_distance + trace) ** 0.5\n",
+    "    log10_ws_distance = tf.math.log(ws_distance) / tf.math.log(\n",
+    "        tf.constant(10.0, dtype=default_float())\n",
+    "    )\n",
+    "    return log10_ws_distance"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "14ef075c",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "The core method of the notebook conducts an individual experiment for a specified number of input dimensions, a specified number of training points (that are automatically generated) and features (to approximate the exact kernel). Subsequently, both the weight space and the hybrid Matheron rule predictions are compared to predictions of an exact posterior GP at test points (that are also automatically generated) in terms of the logarithm of the Wasserstein distance."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "991e7f0b",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def conduct_experiment(num_input_dimensions, num_train_samples, num_features):\n",
+    "    \"\"\"\n",
+    "    Compute the log10 Wassertein distance between the weight space approximated GP and the exact GP,\n",
+    "    and between the hybrid-rule approximated GP and the exact GP.\n",
+    "\n",
+    "    :param num_input_dimensions: The number of input dimensions.\n",
+    "    :param num_train_samples: The number of training samples.\n",
+    "    :param num_features: The number of feature functions.\n",
+    "\n",
+    "    :return: The log10 Wasserstein distances for both approximations.\n",
+    "    \"\"\"\n",
+    "    lengthscale = (\n",
+    "        num_input_dimensions / 100.0\n",
+    "    ) ** 0.5  # adjust kernel lengthscale to the number of input dims\n",
+    "    num_features = num_train_samples + num_features\n",
+    "\n",
+    "    # exact kernel\n",
+    "    exact_kernel = kernel_class(lengthscales=lengthscale)\n",
+    "\n",
+    "    # weight space approximated kernel\n",
+    "    feature_functions = RandomFourierFeaturesCosine(\n",
+    "        kernel=kernel_class(lengthscales=lengthscale),\n",
+    "        n_components=num_features,\n",
+    "        dtype=default_float(),\n",
+    "    )\n",
+    "    feature_coefficients = np.ones((num_features, 1), dtype=default_float())\n",
+    "    approximate_kernel = KernelWithFeatureDecomposition(\n",
+    "        kernel=None, feature_functions=feature_functions, feature_coefficients=feature_coefficients\n",
+    "    )\n",
+    "\n",
+    "    # create training data set and test points for evaluation\n",
+    "    X = []\n",
+    "    for i in range(num_input_dimensions):\n",
+    "        random_samples = np.random.uniform(low=0.15, high=0.85, size=(num_train_samples,))\n",
+    "        X.append(random_samples)\n",
+    "    X = np.array(X).transpose()\n",
+    "\n",
+    "    kXX = exact_kernel.K(X)\n",
+    "    kXX_plus_noise_var = tf.linalg.set_diag(kXX, tf.linalg.diag_part(kXX) + noise_variance)\n",
+    "    lXX = tf.linalg.cholesky(kXX_plus_noise_var)\n",
+    "    y = tf.matmul(lXX, tf.random.normal([num_train_samples, 1], dtype=X.dtype))\n",
+    "\n",
+    "    X_star = (\n",
+    "        []\n",
+    "    )  # test data is created to lie within two intervals that partially overlap with the train data\n",
+    "    for i in range(num_input_dimensions):\n",
+    "        random_samples = np.random.uniform(low=0.0, high=0.3, size=(num_test_samples,))\n",
+    "        indices = np.random.uniform(size=(num_test_samples,)) < 0.5\n",
+    "        random_samples[indices] = np.random.uniform(low=0.7, high=1.0, size=(num_test_samples,))[\n",
+    "            indices\n",
+    "        ]\n",
+    "        X_star.append(random_samples)\n",
+    "    X_star = np.array(X_star).transpose()\n",
+    "\n",
+    "    # identify mean and covariance of the analytic GPR posterior\n",
+    "    f_mean_exact, f_var_exact = compute_analytic_GP_predictions(\n",
+    "        X=X, y=y, kernel=exact_kernel, noise_variance=noise_variance, X_star=X_star\n",
+    "    )\n",
+    "\n",
+    "    # identify mean and covariance of the analytic GPR posterior when using the weight space approximated kernel\n",
+    "    f_mean_weight, f_var_weight = compute_analytic_GP_predictions(\n",
+    "        X=X, y=y, kernel=approximate_kernel, noise_variance=noise_variance, X_star=X_star\n",
+    "    )\n",
+    "\n",
+    "    # identify mean and covariance using the hybrid approximation\n",
+    "    f_mean_hybrid, f_var_hybrid = compute_hybrid_rule_predictions(\n",
+    "        X=X,\n",
+    "        y=y,\n",
+    "        exact_kernel=exact_kernel,\n",
+    "        approximate_kernel=approximate_kernel,\n",
+    "        noise_variance=noise_variance,\n",
+    "        X_star=X_star,\n",
+    "    )\n",
+    "\n",
+    "    # compute log10 Wasserstein distance between the exact solution and the weight space approximation\n",
+    "    log10_ws_dist_weight = log10_Wasserstein_distance(\n",
+    "        f_mean_exact, f_var_exact, f_mean_weight, f_var_weight\n",
+    "    )\n",
+    "\n",
+    "    # compute log10 Wassertein distance between the exact solution and the hybrid approximation\n",
+    "    log10_ws_dist_hybrid = log10_Wasserstein_distance(\n",
+    "        f_mean_exact, f_var_exact, f_mean_hybrid, f_var_hybrid\n",
+    "    )\n",
+    "\n",
+    "    # return the log Wasserstein distances for both approximations\n",
+    "    return log10_ws_dist_weight, log10_ws_dist_hybrid"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b97ec61f",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "This helper function repeats an individual experiment several times and returns the quartiles of the log Wasserstein distances between both approximations and the exact GP."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "25ead0d8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def conduct_experiment_for_multiple_runs(num_input_dimensions, num_train_samples, num_features):\n",
+    "    \"\"\"\n",
+    "    Conduct the experiment as specified above `num_experiment_runs` times and identify the quartiles for\n",
+    "    the log10 Wassertein distance between the weight space approximated GP and the exact GP,\n",
+    "    and between the hybrid-rule approximated GP and the exact GP.\n",
+    "\n",
+    "    :param num_input_dimensions: The number of input dimensions.\n",
+    "    :param num_train_samples: The number of training samples.\n",
+    "    :param num_features: The number of feature functions.\n",
+    "\n",
+    "    :return: The quartiles of the log10 Wasserstein distance for both approximations.\n",
+    "    \"\"\"\n",
+    "    list_of_log10_ws_dist_weight = (\n",
+    "        []\n",
+    "    )  # for the analytic solution using the weight space approximated kernel\n",
+    "    list_of_log10_ws_dist_hybrid = []  # for the hybrid-rule approximation\n",
+    "    for _ in range(num_experiment_runs):\n",
+    "        log10_ws_dist_weight, log10_ws_dist_hybrid = conduct_experiment(\n",
+    "            num_input_dimensions=num_input_dimensions,\n",
+    "            num_train_samples=num_train_samples,\n",
+    "            num_features=num_features,\n",
+    "        )\n",
+    "        list_of_log10_ws_dist_weight.append(log10_ws_dist_weight)\n",
+    "        list_of_log10_ws_dist_hybrid.append(log10_ws_dist_hybrid)\n",
+    "\n",
+    "    log10_ws_dist_weight_quarts = np.quantile(list_of_log10_ws_dist_weight, q=(0.25, 0.5, 0.75))\n",
+    "    log10_ws_dist_hybrid_quarts = np.quantile(list_of_log10_ws_dist_hybrid, q=(0.25, 0.5, 0.75))\n",
+    "    return log10_ws_dist_weight_quarts, log10_ws_dist_hybrid_quarts"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "bf5e0ddf",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "Since we conduct different experiments with different training data sizes, we need another helper method..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f939a3f5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def conduct_experiment_for_different_train_data_sizes(num_input_dimensions, num_features):\n",
+    "    \"\"\"\n",
+    "    Conduct the experiment as specified above for different training dataset sizes and store the results in lists.\n",
+    "\n",
+    "    :param num_input_dimensions: The number of input dimensions.\n",
+    "    :param num_features: The number of feature functions.\n",
+    "\n",
+    "    :return: The quartiles of the log10 Wasserstein distance for both approximations\n",
+    "    \"\"\"\n",
+    "    list_log10_ws_dist_weight_quarts = (\n",
+    "        []\n",
+    "    )  # for the analytic solution using the weight space approximated kernel\n",
+    "    list_log10_ws_dist_hybrid_quarts = []  # for the hybrid-rule approximation\n",
+    "    for nts in num_train_samples:\n",
+    "        (\n",
+    "            log10_ws_dist_weight_quarts,\n",
+    "            log10_ws_dist_hybrid_quarts,\n",
+    "        ) = conduct_experiment_for_multiple_runs(\n",
+    "            num_input_dimensions=num_input_dimensions,\n",
+    "            num_train_samples=nts,\n",
+    "            num_features=num_features,\n",
+    "        )\n",
+    "        print(\n",
+    "            \"Completed for num input dims = \"\n",
+    "            + str(num_input_dimensions)\n",
+    "            + \" and feature param = \"\n",
+    "            + str(num_features)\n",
+    "            + \" and num train samples = \"\n",
+    "            + str(nts)\n",
+    "        )\n",
+    "        list_log10_ws_dist_weight_quarts.append(log10_ws_dist_weight_quarts)\n",
+    "        list_log10_ws_dist_hybrid_quarts.append(log10_ws_dist_hybrid_quarts)\n",
+    "\n",
+    "    list_log10_ws_dist_weight_quarts = np.array(list_log10_ws_dist_weight_quarts).transpose()\n",
+    "    list_log10_ws_dist_hybrid_quarts = np.array(list_log10_ws_dist_hybrid_quarts).transpose()\n",
+    "    return list_log10_ws_dist_weight_quarts, list_log10_ws_dist_hybrid_quarts"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "26ebe140",
+   "metadata": {
+    "cell_marker": "\"\"\"",
+    "lines_to_next_cell": 1
+   },
+   "source": [
+    "...and another helper method because we repeat each setting with a different number of Fourier features."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "318779e1",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def conduct_experiment_for_different_num_features(num_input_dimensions):\n",
+    "    \"\"\"\n",
+    "    Conduct the experiment as specified above for a different number of feature functions, and store\n",
+    "    the results in lists of lists.\n",
+    "\n",
+    "    :param num_input_dimensions: The number of input dimensions.\n",
+    "\n",
+    "    :return: Lists of lists of quartiles of the log10 Wasserstein distance for both approximations.\n",
+    "    \"\"\"\n",
+    "    list_of_weight_results = (\n",
+    "        []\n",
+    "    )  # for the analytic solution using the weight space approximated kernel\n",
+    "    list_of_hybrid_results = []  # for the hybrid-rule approximation\n",
+    "    for nf in num_features:\n",
+    "        weight_results, hybrid_results = conduct_experiment_for_different_train_data_sizes(\n",
+    "            num_input_dimensions=num_input_dimensions, num_features=nf\n",
+    "        )\n",
+    "        print()\n",
+    "        list_of_weight_results.append(weight_results)\n",
+    "        list_of_hybrid_results.append(hybrid_results)\n",
+    "    return list_of_weight_results, list_of_hybrid_results"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "68419aed",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "Finally, we arrive at the actual plotting script that loops over settings with a different number of input dimensions."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "507cf78a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# create plots\n",
+    "fig, axs = plt.subplots(1, len(num_input_dimensions))\n",
+    "for i in range(len(num_input_dimensions)):\n",
+    "    axs[i].set_title(f\"Number of input dimensions ${num_input_dimensions[i]}$\")\n",
+    "    axs[i].set_xlabel(\"Number of training data points $N$\")\n",
+    "    axs[i].set_xscale(\"log\")\n",
+    "axs[0].set_ylabel(r\"$\\log_{10}$ Wasserstein distance\")\n",
+    "\n",
+    "# conduct experiments and plot results\n",
+    "for i in range(\n",
+    "    len(num_input_dimensions)\n",
+    "):  # iterate through the different number of input dimensions\n",
+    "    weight_results, hybrid_results = conduct_experiment_for_different_num_features(\n",
+    "        num_input_dimensions=num_input_dimensions[i]\n",
+    "    )\n",
+    "\n",
+    "    # plot the results for the analytic solution using the weight space approximated kernel\n",
+    "    colors = [\"bisque\", \"orange\", \"peru\"]\n",
+    "    assert len(colors) == len(num_features), \"Number of colors must equal the number of features!\"\n",
+    "    for j in range(len(weight_results)):\n",
+    "        weight_result = weight_results[j]\n",
+    "        axs[i].fill_between(\n",
+    "            num_train_samples, weight_result[0], weight_result[2], color=colors[j], alpha=0.1\n",
+    "        )\n",
+    "        axs[i].plot(num_train_samples, weight_result[1], \"o\", color=colors[j])\n",
+    "        axs[i].plot(num_train_samples, weight_result[1], color=colors[j], linewidth=0.5)\n",
+    "\n",
+    "    # plot the results for the hybrid-rule approximation\n",
+    "    colors = [\"lightblue\", \"blue\", \"darkblue\"]\n",
+    "    assert len(colors) == len(num_features), \"Number of colors must equal the number of features!\"\n",
+    "    for j in range(len(hybrid_results)):\n",
+    "        hybrid_result = hybrid_results[j]\n",
+    "        axs[i].fill_between(\n",
+    "            num_train_samples, hybrid_result[0], hybrid_result[2], color=colors[j], alpha=0.1\n",
+    "        )\n",
+    "        axs[i].plot(num_train_samples, hybrid_result[1], \"o\", color=colors[j])\n",
+    "        axs[i].plot(num_train_samples, hybrid_result[1], color=colors[j], linewidth=0.5)\n",
+    "\n",
+    "# show plots\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "14d573f8",
+   "metadata": {
+    "cell_marker": "\"\"\""
+   },
+   "source": [
+    "There are three plots with the number of input dimensions increasing from the left to the right. In each plot, the x-axis refers to the number of training points $N$ and the y-axis to the $\\log_{10}$ Wasserstein distance between the exact GP posterior and the approximated posterior GP. Each plot has two different sets of curves: orange curves refer to experiments with a weight space approximated posterior GP and blue curves to exeriments with a hybrid-rule approximated posterior GP. Each set of curves contains different repetitions for a different number of random Fourier feature functions used for approximating the exact kernel (many features are indicated with dark colours and fewer features with lighter colours).\n",
+    "\n",
+    "We see that the weight space approximated GP decreases in prediction quality as the training data increases -- this effect is more severe for higher-dimensional input domains compared to lower-dimensional input domains. On the other hand, the hybrid-rule approximated GP maintains good prediction quality as the input dimension and training data increases in our experiments. As expected, more features lead to better results resulting in a lower value for the log Wasserstein distance."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

@@ -1,0 +1,45 @@
+gpflux.runtime_checks
+=====================
+
+.. py:module:: gpflux.runtime_checks
+
+.. autoapi-nested-parse::
+
+   Runtime checks 
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:exception:: GPLayerIncompatibilityException
+
+   Bases: :py:obj:`Exception`
+
+
+   This exception is raised when :class:`~gpflux.layers.GPLayer` is
+   misconfigured. This can be caused by multiple reasons, but common misconfigurations are:
+
+   - Incompatible or wrong type of :class:`~gpflow.kernels.Kernel`,
+     :class:`~gpflow.inducing_variables.InducingVariables` and/or
+     :class:`~gpflow.mean_functions.MeanFunction`.
+   - Incompatible number of latent GPs specified.
+
+   Initialize self.  See help(type(self)) for accurate signature.
+
+
+.. py:function:: verify_compatibility(kernel: gpflow.kernels.MultioutputKernel, mean_function: gpflow.mean_functions.MeanFunction, inducing_variable: gpflow.inducing_variables.MultioutputInducingVariables) -> Tuple[int, int]
+
+   Checks that the arguments are all compatible with each other for use in a `GPLayer`.
+
+   :param kernel: The multioutput kernel for the layer.
+   :param inducing_variable: The inducing features for the layer.
+   :param mean_function: The mean function applied to the inputs.
+   :raises GPLayerIncompatibilityException: If an incompatibility is detected.
+   :returns: number of inducing variables and number of latent GPs
+
+

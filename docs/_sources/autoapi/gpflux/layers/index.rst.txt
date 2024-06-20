@@ -1,0 +1,487 @@
+gpflux.layers
+=============
+
+.. py:module:: gpflux.layers
+
+.. autoapi-nested-parse::
+
+   Layers
+
+
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/gpflux/layers/basis_functions/index
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/gpflux/layers/bayesian_dense_layer/index
+   /autoapi/gpflux/layers/gp_layer/index
+   /autoapi/gpflux/layers/latent_variable_layer/index
+   /autoapi/gpflux/layers/likelihood_layer/index
+   /autoapi/gpflux/layers/trackable_layer/index
+
+
+
+
+Package Contents
+----------------
+
+.. py:class:: BayesianDenseLayer(input_dim: int, output_dim: int, num_data: int, w_mu: Optional[numpy.ndarray] = None, w_sqrt: Optional[numpy.ndarray] = None, activation: Optional[Callable] = None, is_mean_field: bool = True, temperature: float = 0.0001)
+
+   Bases: :py:obj:`gpflux.layers.trackable_layer.TrackableLayer`
+
+
+   A dense (fully-connected) layer for variational Bayesian neural networks.
+
+   This layer holds the mean and square-root of the variance of the
+   distribution over the weights. This layer also has a temperature for
+   cooling (or heating) the posterior.
+
+   :param input_dim: The input dimension (excluding bias) of this layer.
+   :param output_dim: The output dimension of this layer.
+   :param num_data: The number of points in the training dataset (used for
+       scaling the KL regulariser).
+   :param w_mu: Initial value of the variational mean for weights + bias.
+       If not specified, this defaults to `xavier_initialization_numpy`
+       for the weights and zero for the bias.
+   :param w_sqrt: Initial value of the variational Cholesky of the
+       (co)variance for weights + bias. If not specified, this defaults to
+       1e-5 * Identity.
+   :param activation: The activation function. If not specified, this defaults to the identity.
+   :param is_mean_field: Determines whether the approximation to the
+       weight posterior is mean field. Must be consistent with the shape
+       of ``w_sqrt``, if specified.
+   :param temperature: The KL loss will be scaled by this factor.
+       Can be used for cooling (< 1.0) or heating (> 1.0) the posterior.
+       As suggested in `"How Good is the Bayes Posterior in Deep Neural
+       Networks Really?" by Wenzel et al. (2020)
+       <http://proceedings.mlr.press/v119/wenzel20a>`_ the default value
+       is a cold ``1e-4``.
+
+
+   .. py:method:: build(input_shape: gpflux.types.ShapeType) -> None
+
+      Build the variables necessary on first call
+
+
+
+   .. py:method:: predict_samples(inputs: gpflow.base.TensorType, *, num_samples: Optional[int] = None) -> tensorflow.Tensor
+
+      Samples from the approximate posterior at N test inputs, with input_dim = D, output_dim = Q.
+
+      :param inputs: The inputs to predict at; shape ``[N, D]``.
+      :param num_samples: The number of samples S, to draw.
+      :returns: Samples, shape ``[S, N, Q]`` if S is not None else ``[N, Q]``.
+
+
+
+   .. py:method:: call(inputs: gpflow.base.TensorType, training: Optional[bool] = False) -> Union[tensorflow.Tensor, gpflow.models.model.MeanAndVariance]
+
+      The default behaviour upon calling this layer.
+
+
+
+   .. py:method:: prior_kl() -> tensorflow.Tensor
+
+      Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u) = N(0, I)`` to
+      the variational distribution ``q(u) = N(w_mu, w_sqrt²)``.
+
+
+
+.. py:class:: GPLayer(kernel: gpflow.kernels.MultioutputKernel, inducing_variable: gpflow.inducing_variables.MultioutputInducingVariables, num_data: int, mean_function: Optional[gpflow.mean_functions.MeanFunction] = None, *, num_samples: Optional[int] = None, full_cov: bool = False, full_output_cov: bool = False, num_latent_gps: int = None, whiten: bool = True, name: Optional[str] = None, verbose: bool = True)
+
+   Bases: :py:obj:`tensorflow_probability.layers.DistributionLambda`
+
+
+   A sparse variational multioutput GP layer. This layer holds the kernel,
+   inducing variables and variational distribution, and mean function.
+
+   :param kernel: The multioutput kernel for this layer.
+   :param inducing_variable: The inducing features for this layer.
+   :param num_data: The number of points in the training dataset (see :attr:`num_data`).
+   :param mean_function: The mean function that will be applied to the
+       inputs. Default: :class:`~gpflow.mean_functions.Identity`.
+
+       .. note:: The Identity mean function requires the input and output
+           dimensionality of this layer to be the same. If you want to
+           change the dimensionality in a layer, you may want to provide a
+           :class:`~gpflow.mean_functions.Linear` mean function instead.
+
+   :param num_samples: The number of samples to draw when converting the
+       :class:`~tfp.layers.DistributionLambda` into a `tf.Tensor`, see
+       :meth:`_convert_to_tensor_fn`. Will be stored in the
+       :attr:`num_samples` attribute.  If `None` (the default), draw a
+       single sample without prefixing the sample shape (see
+       :class:`tfp.distributions.Distribution`'s `sample()
+       <https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution#sample>`_
+       method).
+   :param full_cov: Sets default behaviour of calling this layer
+       (:attr:`full_cov` attribute):
+       If `False` (the default), only predict marginals (diagonal
+       of covariance) with respect to inputs.
+       If `True`, predict full covariance over inputs.
+   :param full_output_cov: Sets default behaviour of calling this layer
+       (:attr:`full_output_cov` attribute):
+       If `False` (the default), only predict marginals (diagonal
+       of covariance) with respect to outputs.
+       If `True`, predict full covariance over outputs.
+   :param num_latent_gps: The number of (latent) GPs in the layer
+       (which can be different from the number of outputs, e.g. with a
+       :class:`~gpflow.kernels.LinearCoregionalization` kernel).
+       This is used to determine the size of the
+       variational parameters :attr:`q_mu` and :attr:`q_sqrt`.
+       If possible, it is inferred from the *kernel* and *inducing_variable*.
+   :param whiten: If `True` (the default), uses the whitened parameterisation
+       of the inducing variables; see :attr:`whiten`.
+   :param name: The name of this layer.
+   :param verbose: The verbosity mode. Set this parameter to `True`
+       to show debug information.
+
+
+   .. py:attribute:: num_data
+      :type:  int
+
+      The number of points in the training dataset. This information is used to
+      obtain the correct scaling between the data-fit and the KL term in the
+      evidence lower bound (ELBO).
+
+
+
+   .. py:attribute:: whiten
+      :type:  bool
+
+      This parameter determines the parameterisation of the inducing variables.
+
+      If `True`, this layer uses the whitened (or non-centred) representation, in
+      which (at the example of inducing point inducing variables) ``u = f(Z) =
+      cholesky(Kuu) v``, and we parameterise an approximate posterior on ``v`` as
+      ``q(v) = N(q_mu, q_sqrt q_sqrtᵀ)``. The prior on ``v`` is ``p(v) = N(0, I)``.
+
+      If `False`, this layer uses the non-whitened (or centred) representation,
+      in which we directly parameterise ``q(u) = N(q_mu, q_sqrt q_sqrtᵀ)``. The
+      prior on ``u`` is ``p(u) = N(0, Kuu)``.
+
+
+
+   .. py:attribute:: num_samples
+      :type:  Optional[int]
+
+      The number of samples drawn when coercing the output distribution of
+      this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)
+
+
+
+   .. py:attribute:: full_cov
+      :type:  bool
+
+      This parameter determines the behaviour of calling this layer. If `False`, only
+      predict or sample marginals (diagonal of covariance) with respect to inputs.
+      If `True`, predict or sample with the full covariance over the inputs.
+
+
+
+   .. py:attribute:: full_output_cov
+      :type:  bool
+
+      This parameter determines the behaviour of calling this layer. If `False`, only
+      predict or sample marginals (diagonal of covariance) with respect to outputs.
+      If `True`, predict or sample with the full covariance over the outputs.
+
+
+
+   .. py:attribute:: q_mu
+      :type:  gpflow.Parameter
+
+      The mean of ``q(v)`` or ``q(u)`` (depending on whether :attr:`whiten`\ ed
+      parametrisation is used).
+
+
+
+   .. py:attribute:: q_sqrt
+      :type:  gpflow.Parameter
+
+      The lower-triangular Cholesky factor of the covariance of ``q(v)`` or ``q(u)``
+      (depending on whether :attr:`whiten`\ ed parametrisation is used).
+
+
+
+   .. py:method:: predict(inputs: gpflow.base.TensorType, *, full_cov: bool = False, full_output_cov: bool = False) -> Tuple[tensorflow.Tensor, tensorflow.Tensor]
+
+      Make a prediction at N test inputs for the Q outputs of this layer,
+      including the mean function contribution.
+
+      The covariance and its shape is determined by *full_cov* and *full_output_cov* as follows:
+
+      +--------------------+---------------------------+--------------------------+
+      | (co)variance shape | ``full_output_cov=False`` | ``full_output_cov=True`` |
+      +--------------------+---------------------------+--------------------------+
+      | ``full_cov=False`` | [N, Q]                    | [N, Q, Q]                |
+      +--------------------+---------------------------+--------------------------+
+      | ``full_cov=True``  | [Q, N, N]                 | [N, Q, N, Q]             |
+      +--------------------+---------------------------+--------------------------+
+
+      :param inputs: The inputs to predict at, with a shape of [N, D], where D is
+          the input dimensionality of this layer.
+      :param full_cov: Whether to return full covariance (if `True`) or
+          marginal variance (if `False`, the default) w.r.t. inputs.
+      :param full_output_cov: Whether to return full covariance (if `True`)
+          or marginal variance (if `False`, the default) w.r.t. outputs.
+
+      :returns: posterior mean (shape [N, Q]) and (co)variance (shape as above) at test points
+
+
+
+   .. py:method:: call(inputs: gpflow.base.TensorType, *args: List[Any], **kwargs: Dict[str, Any]) -> tensorflow.Tensor
+
+      The default behaviour upon calling this layer.
+
+      This method calls the `tfp.layers.DistributionLambda` super-class
+      `call` method, which constructs a `tfp.distributions.Distribution`
+      for the predictive distributions at the input points
+      (see :meth:`_make_distribution_fn`).
+      You can pass this distribution to `tf.convert_to_tensor`, which will return
+      samples from the distribution (see :meth:`_convert_to_tensor_fn`).
+
+      This method also adds a layer-specific loss function, given by the KL divergence between
+      this layer and the GP prior (scaled to per-datapoint).
+
+
+
+   .. py:method:: prior_kl() -> tensorflow.Tensor
+
+      Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u)`` to
+      the variational distribution ``q(u)``.  If this layer uses the
+      :attr:`whiten`\ ed representation, returns ``KL[q(v)∥p(v)]``.
+
+
+
+   .. py:method:: _make_distribution_fn(previous_layer_outputs: gpflow.base.TensorType) -> tensorflow_probability.distributions.Distribution
+
+      Construct the posterior distributions at the output points of the previous layer,
+      depending on :attr:`full_cov` and :attr:`full_output_cov`.
+
+      :param previous_layer_outputs: The output from the previous layer,
+          which should be coercible to a `tf.Tensor`
+
+
+
+   .. py:method:: _convert_to_tensor_fn(distribution: tensorflow_probability.distributions.Distribution) -> tensorflow.Tensor
+
+      Convert the predictive distributions at the input points (see
+      :meth:`_make_distribution_fn`) to a tensor of :attr:`num_samples`
+      samples from that distribution.
+      Whether the samples are correlated or marginal (uncorrelated) depends
+      on :attr:`full_cov` and :attr:`full_output_cov`.
+
+
+
+   .. py:method:: sample() -> gpflux.sampling.sample.Sample
+
+      .. todo:: TODO: Document this.
+
+
+
+.. py:class:: LatentVariableLayer(prior: tensorflow_probability.distributions.Distribution, encoder: gpflow.keras.tf_keras.layers.Layer, compositor: Optional[gpflow.keras.tf_keras.layers.Layer] = None, name: Optional[str] = None)
+
+   Bases: :py:obj:`LayerWithObservations`
+
+
+   A latent variable layer, with amortized mean-field variational inference.
+
+   The latent variable is distribution-agnostic, but assumes a variational posterior
+   that is fully factorised and is of the same distribution family as the prior.
+
+   This class is used by models as described in :cite:p:`dutordoir2018cde, salimbeni2019iwvi`.
+
+   :param prior: A distribution that represents the :attr:`prior` over the latent variable.
+   :param encoder: A layer which is passed the concatenated observation inputs
+       and targets, and returns the appropriate parameters for the approximate
+       posterior distribution; see :attr:`encoder`.
+   :param compositor: A layer that combines layer inputs and latent variable
+       samples into a single tensor; see :attr:`compositor`. If you do not specify a value for
+       this parameter, the default is
+       ``tf.keras.layers.Concatenate(axis=-1, dtype=default_float())``. Note that you should
+       set ``dtype`` of the layer to GPflow's default dtype as in
+       :meth:`~gpflow.default_float()`.
+   :param name: The name of this layer (passed through to `tf.keras.layers.Layer`).
+
+
+   .. py:attribute:: prior
+      :type:  tensorflow_probability.distributions.Distribution
+
+      The prior distribution for the latent variables. 
+
+
+
+   .. py:attribute:: encoder
+      :type:  gpflow.keras.tf_keras.layers.Layer
+
+      An encoder that maps from a concatenation of inputs and targets to the
+      parameters of the approximate posterior distribution of the corresponding
+      latent variables.
+
+
+
+   .. py:attribute:: compositor
+      :type:  gpflow.keras.tf_keras.layers.Layer
+
+      A layer that takes as input the two-element ``[layer_inputs, latent_variable_samples]`` list
+      and combines the elements into a single output tensor.
+
+
+
+   .. py:method:: call(layer_inputs: gpflow.base.TensorType, observations: Optional[gpflux.types.ObservationType] = None, training: Optional[bool] = None, seed: Optional[int] = None) -> tensorflow.Tensor
+
+      Sample the latent variables and compose them with the layer input.
+
+      When training, draw a sample of the latent variable from the posterior,
+      whose distribution is parameterised by the encoder mapping from the data.
+      Also add a KL divergence [posterior∥prior] to the losses.
+
+      When not training, draw a sample of the latent variable from the prior.
+
+      :param layer_inputs: The output of the previous layer.
+      :param observations: The ``[inputs, targets]``, with the shapes ``[batch size, Din]``
+          and ``[batch size, Dout]`` respectively. This parameter should be passed only when in
+          training mode.
+      :param training: The training mode indicator.
+      :param seed: A random seed for the sampling operation.
+      :returns: Samples of the latent variable composed with the layer inputs through the
+          :attr:`compositor`
+
+
+
+   .. py:method:: _inference_posteriors(observations: gpflux.types.ObservationType, training: Optional[bool] = None) -> tensorflow_probability.distributions.Distribution
+
+      Return the posterior distributions parametrised by the :attr:`encoder`, which gets called
+      with the concatenation of the inputs and targets in the *observations* argument.
+
+      .. todo:: We might want to change encoders to have a
+          `tfp.layers.DistributionLambda` final layer that directly returns the
+          appropriately parameterised distributions object.
+
+      :param observations: The ``[inputs, targets]``, with the shapes ``[batch size, Din]``
+          and ``[batch size, Dout]`` respectively.
+      :param training: The training mode indicator (passed through to the :attr:`encoder`'s call).
+      :returns: The posterior distributions object.
+
+
+
+   .. py:method:: _inference_latent_samples_and_loss(layer_inputs: gpflow.base.TensorType, observations: gpflux.types.ObservationType, seed: Optional[int] = None) -> Tuple[tensorflow.Tensor, tensorflow.Tensor]
+
+      Sample latent variables during the *training* forward pass, hence requiring
+      the observations. Also return the KL loss per datapoint.
+
+      :param layer_inputs: The output of the previous layer _(unused)_.
+      :param observations: The ``[inputs, targets]``, with the shapes ``[batch size, Din]``
+          and ``[batch size, Dout]`` respectively.
+      :param seed: A random seed for the sampling operation.
+      :returns: The samples and the loss-per-datapoint.
+
+
+
+   .. py:method:: _prediction_latent_samples(layer_inputs: gpflow.base.TensorType, seed: Optional[int] = None) -> tensorflow.Tensor
+
+      Sample latent variables during the *prediction* forward pass, only
+      depending on the shape of this layer's inputs.
+
+      :param layer_inputs: The output of the previous layer (for determining batch shape).
+      :param seed: A random seed for the sampling operation.
+      :returns: The samples.
+
+
+
+   .. py:method:: _local_kls(posteriors: tensorflow_probability.distributions.Distribution) -> tensorflow.Tensor
+
+      Compute the KL divergences [posteriors∥prior].
+
+      :param posteriors: A distribution that represents the approximate posteriors.
+      :returns: The KL divergences from the prior for each of the posteriors.
+
+
+
+.. py:class:: LayerWithObservations
+
+   Bases: :py:obj:`gpflux.layers.trackable_layer.TrackableLayer`
+
+
+   By inheriting from this class, Layers indicate that their :meth:`call`
+   method takes a second *observations* argument after the customary
+   *layer_inputs* argument.
+
+   This is used to distinguish which layers (unlike most standard Keras
+   layers) require the original inputs and/or targets during training.
+   For example, it is used by the amortized variational inference in the
+   :class:`LatentVariableLayer`.
+
+
+   .. py:method:: call(layer_inputs: gpflow.base.TensorType, observations: Optional[gpflux.types.ObservationType] = None, training: Optional[bool] = None) -> tensorflow.Tensor
+      :abstractmethod:
+
+
+      The :meth:`call` method of `LayerWithObservations` subclasses should
+      accept a second argument, *observations*. In training mode, this will
+      be the ``[inputs, targets]`` of the training points; otherwise, it is `None`.
+
+
+
+.. py:class:: LikelihoodLayer(likelihood: gpflow.likelihoods.Likelihood)
+
+   Bases: :py:obj:`gpflux.layers.trackable_layer.TrackableLayer`
+
+
+   A Keras layer that wraps a GPflow :class:`~gpflow.likelihoods.Likelihood`. This layer expects a
+   `tfp.distributions.MultivariateNormalDiag` as its input, describing ``q(f)``.
+   When training, calling this class computes the negative variational expectation
+   :math:`-\mathbb{E}_{q(f)}[\log p(y|f)]` and adds it as a layer loss.
+   When not training, it computes the mean and variance of ``y`` under ``q(f)``
+   using :meth:`~gpflow.likelihoods.Likelihood.predict_mean_and_var`.
+
+   .. note::
+
+       Use **either** this `LikelihoodLayer` (together with
+       `gpflux.models.DeepGP`) **or** `LikelihoodLoss` (e.g. together with a
+       `tf.keras.Sequential` model). Do **not** use both at once because
+       this would add the loss twice.
+
+
+   .. py:method:: call(inputs: tensorflow_probability.distributions.MultivariateNormalDiag, targets: Optional[gpflow.base.TensorType] = None, training: bool = None) -> LikelihoodOutputs
+
+      When training (``training=True``), this method computes variational expectations
+      (data-fit loss) and adds this information as a layer loss.
+      When testing (the default), it computes the posterior mean and variance of ``y``.
+
+      :param inputs: The output distribution of the previous layer. This is currently
+          expected to be a :class:`~tfp.distributions.MultivariateNormalDiag`;
+          that is, the preceding :class:`~gpflux.layers.GPLayer` should have
+          ``full_cov=full_output_cov=False``.
+      :returns: a `LikelihoodOutputs` tuple with the mean and variance of ``f`` and,
+          if not training, the mean and variance of ``y``.
+
+      .. todo:: Turn this layer into a
+          :class:`~tfp.layers.DistributionLambda` as well and return the
+          correct :class:`~tfp.distributions.Distribution` instead of a tuple
+          containing mean and variance only.
+
+
+
+.. py:class:: TrackableLayer
+
+   Bases: :py:obj:`gpflow.keras.tf_keras.layers.Layer`
+
+
+   With the release of TensorFlow 2.5, our TrackableLayer workaround is no
+   longer needed.  See https://github.com/Prowler-io/gpflux/issues/189.
+   Will be removed in GPflux version 1.0.0
+
+

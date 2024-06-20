@@ -1,0 +1,843 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflux.layers.gp_layer &#8212; GPflux 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css?v=c27e38e3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/gpflux/layers/gp_layer';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo.png" class="logo__image only-light" alt="GPflux 0.1.0 documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo.png" class="logo__image only-dark" alt="GPflux 0.1.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../autoapi/gpflux/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../autoapi/gpflux/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">gpflux.layer...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for gpflux.layers.gp_layer</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># Copyright (c) 2021 The GPflux Contributors.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides :class:`GPLayer`, which implements a Sparse Variational</span>
+<span class="sd">Multioutput Gaussian Process as a Keras :class:`~tf.keras.layers.Layer`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+
+<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">default_float</span>
+<span class="kn">from</span> <span class="nn">gpflow.base</span> <span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">gpflow.conditionals</span> <span class="kn">import</span> <span class="n">conditional</span>
+<span class="kn">from</span> <span class="nn">gpflow.inducing_variables</span> <span class="kn">import</span> <span class="n">MultioutputInducingVariables</span>
+<span class="kn">from</span> <span class="nn">gpflow.kernels</span> <span class="kn">import</span> <span class="n">MultioutputKernel</span>
+<span class="kn">from</span> <span class="nn">gpflow.kullback_leiblers</span> <span class="kn">import</span> <span class="n">prior_kl</span>
+<span class="kn">from</span> <span class="nn">gpflow.mean_functions</span> <span class="kn">import</span> <span class="n">Identity</span><span class="p">,</span> <span class="n">MeanFunction</span>
+<span class="kn">from</span> <span class="nn">gpflow.utilities.bijectors</span> <span class="kn">import</span> <span class="n">triangular</span>
+
+<span class="kn">from</span> <span class="nn">gpflux.exceptions</span> <span class="kn">import</span> <span class="n">GPLayerIncompatibilityException</span>
+<span class="kn">from</span> <span class="nn">gpflux.math</span> <span class="kn">import</span> <span class="n">_cholesky_with_jitter</span>
+<span class="kn">from</span> <span class="nn">gpflux.runtime_checks</span> <span class="kn">import</span> <span class="n">verify_compatibility</span>
+<span class="kn">from</span> <span class="nn">gpflux.sampling.sample</span> <span class="kn">import</span> <span class="n">Sample</span><span class="p">,</span> <span class="n">efficient_sample</span>
+
+
+<div class="viewcode-block" id="GPLayer"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer">[docs]</a><span class="k">class</span> <span class="nc">GPLayer</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">DistributionLambda</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A sparse variational multioutput GP layer. This layer holds the kernel,</span>
+<span class="sd">    inducing variables and variational distribution, and mean function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.num_data"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.num_data">[docs]</a>    <span class="n">num_data</span><span class="p">:</span> <span class="nb">int</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The number of points in the training dataset. This information is used to</span>
+<span class="sd">    obtain the correct scaling between the data-fit and the KL term in the</span>
+<span class="sd">    evidence lower bound (ELBO).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.whiten"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.whiten">[docs]</a>    <span class="n">whiten</span><span class="p">:</span> <span class="nb">bool</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This parameter determines the parameterisation of the inducing variables.</span>
+
+<span class="sd">    If `True`, this layer uses the whitened (or non-centred) representation, in</span>
+<span class="sd">    which (at the example of inducing point inducing variables) ``u = f(Z) =</span>
+<span class="sd">    cholesky(Kuu) v``, and we parameterise an approximate posterior on ``v`` as</span>
+<span class="sd">    ``q(v) = N(q_mu, q_sqrt q_sqrtᵀ)``. The prior on ``v`` is ``p(v) = N(0, I)``.</span>
+
+<span class="sd">    If `False`, this layer uses the non-whitened (or centred) representation,</span>
+<span class="sd">    in which we directly parameterise ``q(u) = N(q_mu, q_sqrt q_sqrtᵀ)``. The</span>
+<span class="sd">    prior on ``u`` is ``p(u) = N(0, Kuu)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.num_samples"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.num_samples">[docs]</a>    <span class="n">num_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The number of samples drawn when coercing the output distribution of</span>
+<span class="sd">    this layer to a `tf.Tensor`. (See :meth:`_convert_to_tensor_fn`.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.full_cov"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.full_cov">[docs]</a>    <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This parameter determines the behaviour of calling this layer. If `False`, only</span>
+<span class="sd">    predict or sample marginals (diagonal of covariance) with respect to inputs.</span>
+<span class="sd">    If `True`, predict or sample with the full covariance over the inputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.full_output_cov"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.full_output_cov">[docs]</a>    <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This parameter determines the behaviour of calling this layer. If `False`, only</span>
+<span class="sd">    predict or sample marginals (diagonal of covariance) with respect to outputs.</span>
+<span class="sd">    If `True`, predict or sample with the full covariance over the outputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.q_mu"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.q_mu">[docs]</a>    <span class="n">q_mu</span><span class="p">:</span> <span class="n">Parameter</span></div>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The mean of ``q(v)`` or ``q(u)`` (depending on whether :attr:`whiten`\ ed</span>
+<span class="sd">    parametrisation is used).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GPLayer.q_sqrt"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/gp_layer/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.q_sqrt">[docs]</a>    <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Parameter</span></div>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The lower-triangular Cholesky factor of the covariance of ``q(v)`` or ``q(u)``</span>
+<span class="sd">    (depending on whether :attr:`whiten`\ ed parametrisation is used).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">kernel</span><span class="p">:</span> <span class="n">MultioutputKernel</span><span class="p">,</span>
+        <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">MultioutputInducingVariables</span><span class="p">,</span>
+        <span class="n">num_data</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">mean_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeanFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">num_latent_gps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">whiten</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param kernel: The multioutput kernel for this layer.</span>
+<span class="sd">        :param inducing_variable: The inducing features for this layer.</span>
+<span class="sd">        :param num_data: The number of points in the training dataset (see :attr:`num_data`).</span>
+<span class="sd">        :param mean_function: The mean function that will be applied to the</span>
+<span class="sd">            inputs. Default: :class:`~gpflow.mean_functions.Identity`.</span>
+
+<span class="sd">            .. note:: The Identity mean function requires the input and output</span>
+<span class="sd">                dimensionality of this layer to be the same. If you want to</span>
+<span class="sd">                change the dimensionality in a layer, you may want to provide a</span>
+<span class="sd">                :class:`~gpflow.mean_functions.Linear` mean function instead.</span>
+
+<span class="sd">        :param num_samples: The number of samples to draw when converting the</span>
+<span class="sd">            :class:`~tfp.layers.DistributionLambda` into a `tf.Tensor`, see</span>
+<span class="sd">            :meth:`_convert_to_tensor_fn`. Will be stored in the</span>
+<span class="sd">            :attr:`num_samples` attribute.  If `None` (the default), draw a</span>
+<span class="sd">            single sample without prefixing the sample shape (see</span>
+<span class="sd">            :class:`tfp.distributions.Distribution`&#39;s `sample()</span>
+<span class="sd">            &lt;https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution#sample&gt;`_</span>
+<span class="sd">            method).</span>
+<span class="sd">        :param full_cov: Sets default behaviour of calling this layer</span>
+<span class="sd">            (:attr:`full_cov` attribute):</span>
+<span class="sd">            If `False` (the default), only predict marginals (diagonal</span>
+<span class="sd">            of covariance) with respect to inputs.</span>
+<span class="sd">            If `True`, predict full covariance over inputs.</span>
+<span class="sd">        :param full_output_cov: Sets default behaviour of calling this layer</span>
+<span class="sd">            (:attr:`full_output_cov` attribute):</span>
+<span class="sd">            If `False` (the default), only predict marginals (diagonal</span>
+<span class="sd">            of covariance) with respect to outputs.</span>
+<span class="sd">            If `True`, predict full covariance over outputs.</span>
+<span class="sd">        :param num_latent_gps: The number of (latent) GPs in the layer</span>
+<span class="sd">            (which can be different from the number of outputs, e.g. with a</span>
+<span class="sd">            :class:`~gpflow.kernels.LinearCoregionalization` kernel).</span>
+<span class="sd">            This is used to determine the size of the</span>
+<span class="sd">            variational parameters :attr:`q_mu` and :attr:`q_sqrt`.</span>
+<span class="sd">            If possible, it is inferred from the *kernel* and *inducing_variable*.</span>
+<span class="sd">        :param whiten: If `True` (the default), uses the whitened parameterisation</span>
+<span class="sd">            of the inducing variables; see :attr:`whiten`.</span>
+<span class="sd">        :param name: The name of this layer.</span>
+<span class="sd">        :param verbose: The verbosity mode. Set this parameter to `True`</span>
+<span class="sd">            to show debug information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">make_distribution_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_make_distribution_fn</span><span class="p">,</span>
+            <span class="n">convert_to_tensor_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_tensor_fn</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">(),</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">inducing_variable</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span> <span class="o">=</span> <span class="n">num_data</span>
+
+        <span class="k">if</span> <span class="n">mean_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mean_function</span> <span class="o">=</span> <span class="n">Identity</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Beware, no mean function was specified in the construction of the `GPLayer` &quot;</span>
+                    <span class="s2">&quot;so the default `gpflow.mean_functions.Identity` is being used. &quot;</span>
+                    <span class="s2">&quot;This mean function will only work if the input dimensionality &quot;</span>
+                    <span class="s2">&quot;matches the number of latent Gaussian processes in the layer.&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span> <span class="o">=</span> <span class="n">mean_function</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_output_cov</span> <span class="o">=</span> <span class="n">full_output_cov</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_cov</span> <span class="o">=</span> <span class="n">full_cov</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whiten</span> <span class="o">=</span> <span class="n">whiten</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">num_inducing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span> <span class="o">=</span> <span class="n">verify_compatibility</span><span class="p">(</span>
+                <span class="n">kernel</span><span class="p">,</span> <span class="n">mean_function</span><span class="p">,</span> <span class="n">inducing_variable</span>
+            <span class="p">)</span>
+            <span class="c1"># TODO: if num_latent_gps is not None, verify it is equal to self.num_latent_gps</span>
+        <span class="k">except</span> <span class="n">GPLayerIncompatibilityException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_latent_gps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Could not verify the compatibility of the `kernel`, `inducing_variable` &quot;</span>
+                    <span class="s2">&quot;and `mean_function`. We advise using `gpflux.helpers.construct_*` to create &quot;</span>
+                    <span class="s2">&quot;compatible kernels and inducing variables. As &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;`num_latent_gps=</span><span class="si">{</span><span class="n">num_latent_gps</span><span class="si">}</span><span class="s2">` has been specified explicitly, this will &quot;</span>
+                    <span class="s2">&quot;be used to create the `q_mu` and `q_sqrt` parameters.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">num_inducing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">inducing_variable</span><span class="o">.</span><span class="n">num_inducing</span><span class="p">,</span>
+                <span class="n">num_latent_gps</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num_inducing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">)),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">(),</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_q_mu&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="s2">&quot;q_mu&quot;</span><span class="p">,</span>
+        <span class="p">)</span>  <span class="c1"># [num_inducing, num_latent_gps]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">num_inducing</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">)]),</span>
+            <span class="n">transform</span><span class="o">=</span><span class="n">triangular</span><span class="p">(),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">(),</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_q_sqrt&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="s2">&quot;q_sqrt&quot;</span><span class="p">,</span>
+        <span class="p">)</span>  <span class="c1"># [num_latent_gps, num_inducing, num_inducing]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="n">num_samples</span>
+
+<div class="viewcode-block" id="GPLayer.predict"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Make a prediction at N test inputs for the Q outputs of this layer,</span>
+<span class="sd">        including the mean function contribution.</span>
+
+<span class="sd">        The covariance and its shape is determined by *full_cov* and *full_output_cov* as follows:</span>
+
+<span class="sd">        +--------------------+---------------------------+--------------------------+</span>
+<span class="sd">        | (co)variance shape | ``full_output_cov=False`` | ``full_output_cov=True`` |</span>
+<span class="sd">        +--------------------+---------------------------+--------------------------+</span>
+<span class="sd">        | ``full_cov=False`` | [N, Q]                    | [N, Q, Q]                |</span>
+<span class="sd">        +--------------------+---------------------------+--------------------------+</span>
+<span class="sd">        | ``full_cov=True``  | [Q, N, N]                 | [N, Q, N, Q]             |</span>
+<span class="sd">        +--------------------+---------------------------+--------------------------+</span>
+
+<span class="sd">        :param inputs: The inputs to predict at, with a shape of [N, D], where D is</span>
+<span class="sd">            the input dimensionality of this layer.</span>
+<span class="sd">        :param full_cov: Whether to return full covariance (if `True`) or</span>
+<span class="sd">            marginal variance (if `False`, the default) w.r.t. inputs.</span>
+<span class="sd">        :param full_output_cov: Whether to return full covariance (if `True`)</span>
+<span class="sd">            or marginal variance (if `False`, the default) w.r.t. outputs.</span>
+
+<span class="sd">        :returns: posterior mean (shape [N, Q]) and (co)variance (shape as above) at test points</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mean_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+        <span class="n">mean_cond</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">conditional</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+            <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+            <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span>
+            <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">,</span>
+            <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mean_cond</span> <span class="o">+</span> <span class="n">mean_function</span><span class="p">,</span> <span class="n">cov</span></div>
+
+<div class="viewcode-block" id="GPLayer.call"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The default behaviour upon calling this layer.</span>
+
+<span class="sd">        This method calls the `tfp.layers.DistributionLambda` super-class</span>
+<span class="sd">        `call` method, which constructs a `tfp.distributions.Distribution`</span>
+<span class="sd">        for the predictive distributions at the input points</span>
+<span class="sd">        (see :meth:`_make_distribution_fn`).</span>
+<span class="sd">        You can pass this distribution to `tf.convert_to_tensor`, which will return</span>
+<span class="sd">        samples from the distribution (see :meth:`_convert_to_tensor_fn`).</span>
+
+<span class="sd">        This method also adds a layer-specific loss function, given by the KL divergence between</span>
+<span class="sd">        this layer and the GP prior (scaled to per-datapoint).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outputs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;training&quot;</span><span class="p">):</span>
+            <span class="n">log_prior</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">add_n</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">log_prior_density</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">])</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_kl</span><span class="p">()</span> <span class="o">-</span> <span class="n">log_prior</span>
+            <span class="n">loss_per_datapoint</span> <span class="o">=</span> <span class="n">loss</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># TF quirk: add_loss must always add a tensor to compile</span>
+            <span class="n">loss_per_datapoint</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_loss</span><span class="p">(</span><span class="n">loss_per_datapoint</span><span class="p">)</span>
+
+        <span class="c1"># Metric names should be unique; otherwise they get overwritten if you</span>
+        <span class="c1"># have multiple with the same name</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_prior_kl&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="s2">&quot;prior_kl&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_metric</span><span class="p">(</span><span class="n">loss_per_datapoint</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">aggregation</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">outputs</span></div>
+
+<div class="viewcode-block" id="GPLayer.prior_kl"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.prior_kl">[docs]</a>    <span class="k">def</span> <span class="nf">prior_kl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the KL divergence ``KL[q(u)∥p(u)]`` from the prior ``p(u)`` to</span>
+<span class="sd">        the variational distribution ``q(u)``.  If this layer uses the</span>
+<span class="sd">        :attr:`whiten`\ ed representation, returns ``KL[q(v)∥p(v)]``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">prior_kl</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="n">whiten</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GPLayer._make_distribution_fn"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer._make_distribution_fn">[docs]</a>    <span class="k">def</span> <span class="nf">_make_distribution_fn</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">previous_layer_outputs</span><span class="p">:</span> <span class="n">TensorType</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct the posterior distributions at the output points of the previous layer,</span>
+<span class="sd">        depending on :attr:`full_cov` and :attr:`full_output_cov`.</span>
+
+<span class="sd">        :param previous_layer_outputs: The output from the previous layer,</span>
+<span class="sd">            which should be coercible to a `tf.Tensor`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+            <span class="n">previous_layer_outputs</span><span class="p">,</span>
+            <span class="n">full_cov</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">full_cov</span><span class="p">,</span>
+            <span class="n">full_output_cov</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">full_output_cov</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_cov</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="c1"># mean: [N, Q], cov: [Q, N, N]</span>
+            <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">MultivariateNormalTriL</span><span class="p">(</span>
+                <span class="n">loc</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">mean</span><span class="p">),</span> <span class="n">scale_tril</span><span class="o">=</span><span class="n">_cholesky_with_jitter</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+            <span class="p">)</span>  <span class="c1"># loc: [Q, N], scale: [Q, N, N]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_output_cov</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_cov</span><span class="p">:</span>
+            <span class="c1"># mean: [N, Q], cov: [N, Q, Q]</span>
+            <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">MultivariateNormalTriL</span><span class="p">(</span>
+                <span class="n">loc</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">scale_tril</span><span class="o">=</span><span class="n">_cholesky_with_jitter</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+            <span class="p">)</span>  <span class="c1"># loc: [N, Q], scale: [N, Q, Q]</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_cov</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="c1"># mean: [N, Q], cov: [N, Q]</span>
+            <span class="k">return</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">MultivariateNormalDiag</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">scale_diag</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cov</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The combination of both `full_cov` and `full_output_cov` is not permitted.&quot;</span>
+            <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GPLayer._convert_to_tensor_fn"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer._convert_to_tensor_fn">[docs]</a>    <span class="k">def</span> <span class="nf">_convert_to_tensor_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distribution</span><span class="p">:</span> <span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Distribution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the predictive distributions at the input points (see</span>
+<span class="sd">        :meth:`_make_distribution_fn`) to a tensor of :attr:`num_samples`</span>
+<span class="sd">        samples from that distribution.</span>
+<span class="sd">        Whether the samples are correlated or marginal (uncorrelated) depends</span>
+<span class="sd">        on :attr:`full_cov` and :attr:`full_output_cov`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># N input points</span>
+        <span class="c1"># S = self.num_samples</span>
+        <span class="c1"># Q = output dimensionality</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,)</span>
+            <span class="p">)</span>  <span class="c1"># [S, Q, N] if full_cov else [S, N, Q]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>  <span class="c1"># [Q, N] if full_cov else [N, Q]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">adjoint</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>  <span class="c1"># [S, N, Q] or [N, Q]</span>
+
+        <span class="k">return</span> <span class="n">samples</span></div>
+
+<div class="viewcode-block" id="GPLayer.sample"><a class="viewcode-back" href="../../../autoapi/gpflux/layers/index.html#gpflux.architectures.constant_input_dim_deep_gp.GPLayer.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. todo:: TODO: Document this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">efficient_sample</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span><span class="p">,</span>
+                <span class="n">q_sqrt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span><span class="p">,</span>
+                <span class="n">whiten</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">whiten</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Makes use of the magic __add__ of the Sample class</span>
+            <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

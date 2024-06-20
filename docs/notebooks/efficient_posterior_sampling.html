@@ -1,0 +1,1035 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Efficient Posterior Gaussian Process Sampling &#8212; GPflux 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pydata-custom.css?v=c27e38e3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'notebooks/efficient_posterior_sampling';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="gpflux" href="../autoapi/gpflux/index.html" />
+    <link rel="prev" title="Weight Space Approximation with Random Fourier Features" href="weight_space_approximation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt="GPflux 0.1.0 documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo.png" class="logo__image only-dark" alt="GPflux 0.1.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../autoapi/gpflux/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../autoapi/gpflux/index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Introductory</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction to GPflux</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gpflux_features.html">Why GPflux is a modern (deep) GP library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deep_cde.html">Deep Gaussian processes with Latent Variables</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="deep_gp_samples.html">Deep GP samples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gpflux_with_keras_layers.html">Hybrid Deep GP models: combining GP and Neural Network layers</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Sampling</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="efficient_sampling.html">Efficient sampling with Gaussian processes and Random Fourier Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="weight_space_approximation.html">Weight Space Approximation with Random Fourier Features</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Efficient Posterior Gaussian Process Sampling</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../tutorials.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Efficient...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="Efficient-Posterior-Gaussian-Process-Sampling">
+<h1>Efficient Posterior Gaussian Process Sampling<a class="headerlink" href="#Efficient-Posterior-Gaussian-Process-Sampling" title="Permalink to this heading">#</a></h1>
+<p>The aim of this notebook is to demonstrate how to efficiently draw samples from a posterior Gaussian process (GP) following Figure 3 from Wilson et al. <span id="id1">[<a class="reference internal" href="../index.html#id13" title="James Wilson, Viacheslav Borovitskiy, Alexander Terenin, Peter Mostowsky, and Marc Deisenroth. Efficiently sampling functions from Gaussian process posteriors. In International Conference on Machine Learning. 2020.">WBT+20</a>]</span>. The problem of sampling naively from any GP is that it requires the generation of samples from a multivariate Gaussian as a consequence of evaluating the GP at a certain number <span class="math notranslate nohighlight">\(N^\star\)</span> of evaluation points. However, sampling from a multivariate Gaussian with dimension <span class="math notranslate nohighlight">\(N^\star\)</span> scales cubically with
+<span class="math notranslate nohighlight">\(N^\star\)</span> because it requires a Cholesky decomposition of the <span class="math notranslate nohighlight">\(N^\star \times N^\star\)</span> covariance matrix. More formally, drawing a sample <span class="math notranslate nohighlight">\(\textbf{f}\)</span> from a multivariate Gaussian <span class="math notranslate nohighlight">\(\mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma})\)</span> with mean <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> and covariance <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> can be accomplished via</p>
+<div class="math notranslate nohighlight">
+\[\textbf{f} = \boldsymbol{\mu} + \text{chol} (\boldsymbol{\Sigma}) \textbf{z}  \; \text{ where }  \; \textbf{z} \sim \mathcal{N}(\textbf{0}, \textbf{I}),\]</div>
+<p>with <span class="math notranslate nohighlight">\(\text{chol}\)</span> referring to Cholesky decomposition.</p>
+<p>Under certain assumptions, inference problems can have a posterior GP, for example, in a simple regression problem with real-valued labels, i.i.d. training data <span class="math notranslate nohighlight">\(\{(X_n, y_n)\}_{n=1,...,N}\)</span> and a univariate Gaussian observation model of the form <span class="math notranslate nohighlight">\(p(y_n| f(X_n), \sigma_\epsilon^2)\)</span> (with mean <span class="math notranslate nohighlight">\(f(X_n)\)</span> and variance <span class="math notranslate nohighlight">\(\sigma_\epsilon^2\)</span>, and where <span class="math notranslate nohighlight">\(f(X_n)\)</span> refers to evaluating a random GP function <span class="math notranslate nohighlight">\(f(\cdot)\)</span> at <span class="math notranslate nohighlight">\(X_n\)</span>). Drawing a sample
+<span class="math notranslate nohighlight">\(\textbf{f}^\star\)</span> from the posterior GP at <span class="math notranslate nohighlight">\(N^\star\)</span> evaluation points <span class="math notranslate nohighlight">\(\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}\)</span> can then be accomplished through</p>
+<div class="math notranslate nohighlight">
+\[\textbf{f}^\star = \textbf{K}_{\textbf{f}^\star \textbf{f}} (\textbf{K}_{\textbf{f} \textbf{f}} + \sigma_\epsilon^2 \textbf{I})^{-1} \textbf{y} + \text{chol} (\textbf{K}_{\textbf{f}^\star \textbf{f}^\star} - \textbf{K}_{\textbf{f}^\star \textbf{f}} (\textbf{K}_{\textbf{f} \textbf{f}} + \sigma_\epsilon^2 \textbf{I})^{-1} \textbf{K}_{\textbf{f} \textbf{f}^\star}) \textbf{z}  \; \text{ where }  \; \textbf{z} \sim \mathcal{N}(\textbf{0}, \textbf{I}),\]</div>
+<p>when making use of the closed form expressions for the posterior mean and covariance (under the assumption of a zero mean prior GP for notational convenience). The terms <span class="math notranslate nohighlight">\(\textbf{K}_{\textbf{f} \textbf{f}}\)</span>, <span class="math notranslate nohighlight">\(\textbf{K}_{\textbf{f}^\star \textbf{f}}\)</span> and <span class="math notranslate nohighlight">\(\textbf{K}_{\textbf{f} \textbf{f}^\star}\)</span> refer to (cross-)covariance matrices when evaluating the kernel <span class="math notranslate nohighlight">\(k(\cdot, \cdot^\prime)\)</span> at training points <span class="math notranslate nohighlight">\(\{X_n\}_{n=1,...,N}\)</span> and test points
+<span class="math notranslate nohighlight">\(\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}\)</span>, and <span class="math notranslate nohighlight">\(\textbf{y}\)</span> denotes all training targets <span class="math notranslate nohighlight">\(\{y_n\}_{n=1,...,N}\)</span> in vectorised form.</p>
+<p>An alternative way of drawing samples from a posterior GP is by following Matheron’s rule:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\textbf{f}^\star = \textbf{f}^\star_{\text{prior}} + \textbf{K}_{\textbf{f}^\star \textbf{f}} (\textbf{K}_{\textbf{f} \textbf{f}} + \sigma_\epsilon^2 \textbf{I})^{-1} (\textbf{y} - \textbf{f}_{\text{prior}}) \; \text{ where } \; \begin{pmatrix}
+          \textbf{f}^\star_{\text{prior}} \\
+          \textbf{f}_{\text{prior}}
+        \end{pmatrix} \; \sim \mathcal{N}\left(\begin{pmatrix}
+          \textbf{0} \\
+          \textbf{0}
+        \end{pmatrix},  \begin{pmatrix}
+          \textbf{K}_{\textbf{f}^\star_{\text{prior}} \textbf{f}^\star_{\text{prior}}} &amp; \textbf{K}_{\textbf{f}^\star_{\text{prior}} \textbf{f}_{\text{prior}}} \\
+          \textbf{K}_{\textbf{f}_{\text{prior}} \textbf{f}^\star_{\text{prior}}} &amp; \textbf{K}_{\textbf{f}_{\text{prior}} \textbf{f}_{\text{prior}}}
+        \end{pmatrix}\right),\end{split}\]</div>
+<p>with <span class="math notranslate nohighlight">\(\textbf{f}_{\text{prior}}\)</span> and <span class="math notranslate nohighlight">\(\textbf{f}^\star_{\text{prior}}\)</span> referring to random samples obtained when jointly evaluating the prior GP at both training points <span class="math notranslate nohighlight">\(\{X_n\}_{n=1,...,N}\)</span> and evaluation points <span class="math notranslate nohighlight">\(\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}\)</span>. Note that this way of obtaining samples from the posterior GP does not alleviate the computational complexity problem in any way, because sampling <span class="math notranslate nohighlight">\(\textbf{f}_{\text{prior}}\)</span> and
+<span class="math notranslate nohighlight">\(\textbf{f}^\star_{\text{prior}}\)</span> from the prior GP has cubic complexity <span class="math notranslate nohighlight">\(\mathcal{O}((N + N^\star)^3)\)</span>.</p>
+<p>However, you can approximate a kernel <span class="math notranslate nohighlight">\(k(\cdot,\cdot^\prime)\)</span> with a finite number of real-valued feature functions <span class="math notranslate nohighlight">\(\phi_d(\cdot)\)</span> indexed with <span class="math notranslate nohighlight">\(d=1,...,D\)</span> (e.g. through Mercer’s or Bochner’s theorem) as:</p>
+<div class="math notranslate nohighlight">
+\[k(X,X^\prime) \approx \sum_{d=1}^D \phi_d(X) \phi_d({X^\prime}).\]</div>
+<p>This enables you to approximate Matheron’s rule with help of the weight space view:</p>
+<div class="math notranslate nohighlight">
+\[\textbf{f}^\star \approx \boldsymbol{\Phi}^\star \textbf{w} + \boldsymbol{\Phi}^\star \boldsymbol{\Phi}^\intercal(\boldsymbol{\Phi} \boldsymbol{\Phi}^\intercal + \sigma_\epsilon^2 \textbf{I})^{-1}(\textbf{y} - \boldsymbol{\Phi} \textbf{w}) \; \text{ where } \; \textbf{w} \sim \mathcal{N}(\textbf{0}, \textbf{I}),\]</div>
+<p>with <span class="math notranslate nohighlight">\(\boldsymbol{\Phi}\)</span> referring to the <span class="math notranslate nohighlight">\(N \times D\)</span> feature matrix evaluated at the training points <span class="math notranslate nohighlight">\(\{X_n\}_{n=1,...,N}\)</span> and <span class="math notranslate nohighlight">\(\boldsymbol{\Phi}^\star\)</span> to the <span class="math notranslate nohighlight">\(N^\star \times D\)</span> feature matrix evaluated at the test points <span class="math notranslate nohighlight">\(\{X^\star_{n^\star}\}_{n^\star=1,...,N^\star}\)</span>. The quantities <span class="math notranslate nohighlight">\(\boldsymbol{\Phi}^\star \boldsymbol{\Phi}^\intercal\)</span> and <span class="math notranslate nohighlight">\(\boldsymbol{\Phi} \boldsymbol{\Phi}^\intercal\)</span> are weight space approximations of the exact kernel
+matrices <span class="math notranslate nohighlight">\(\textbf{K}_{\textbf{f}^\star \textbf{f}}\)</span> and <span class="math notranslate nohighlight">\(\textbf{K}_{\textbf{f} \textbf{f}}\)</span> respectively. The weight space Matheron representation enables you to sample more efficiently with a complexity of <span class="math notranslate nohighlight">\(\mathcal{O}(D)\)</span> that scales only linearly with the number of feature functions <span class="math notranslate nohighlight">\(D\)</span> (because the standard normal weight prior’s diagonal covariance matrix can be linearly Cholesky decomposed). The problem is that many feature functions are required in order to
+approximate the exact posterior reasonably well in areas most relevant for extrapolation (i.e. close but not within the training data), as shown by Wilson et al. and as reproduced in another <code class="docutils literal notranslate"><span class="pre">gpflux</span></code> notebook.</p>
+<p>To provide a remedy, Wilson et al. propose a “hybrid” sampling scheme that enables the approximation of samples from a GP posterior in a computationally efficient fashion but with better accuracy compared to the vanilla weight space Matheron rule:</p>
+<div class="math notranslate nohighlight">
+\[\textbf{f}^\star \approx \boldsymbol{\Phi}^\star \textbf{w} + \textbf{K}_{\textbf{f}^\star \textbf{f}} (\textbf{K}_{\textbf{f} \textbf{f}} + \sigma_\epsilon^2 \textbf{I})^{-1}(\textbf{y} - \boldsymbol{\Phi} \textbf{w}) \; \text{ where } \; \textbf{w} \sim \mathcal{N}(\textbf{0}, \textbf{I}),\]</div>
+<p>that combines both feature approximations and exact kernel evaluations from the Matheron function and weight space approximation formulas above.</p>
+<p>The subsequent experiments demonstrate the qualitative efficiency of the hybrid rule when compared to the vanilla Matheron weight space approximation, in terms of the Wasserstein distance to the exact posterior GP. To conduct these experiments, the required classes in <code class="docutils literal notranslate"><span class="pre">gpflux</span></code> are <code class="docutils literal notranslate"><span class="pre">RandomFourierFeaturesCosine</span></code>, to approximate a stationary kernel with finitely many random Fourier features <span class="math notranslate nohighlight">\(\phi_d(\cdot)\)</span> according to Bochner’s theorem and following Rahimi and Recht “Random features for
+large-scale kernel machines” (NeurIPS, 2007), and <code class="docutils literal notranslate"><span class="pre">KernelWithFeatureDecomposition</span></code>, to approximate a kernel with a specified set of feature functions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;font.size&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">})</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">gpflow.config</span> <span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span> <span class="nn">gpflow.kernels</span> <span class="kn">import</span> <span class="n">RBF</span><span class="p">,</span> <span class="n">Matern52</span>
+<span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">GPR</span>
+
+<span class="kn">from</span> <span class="nn">gpflux.layers.basis_functions.fourier_features</span> <span class="kn">import</span> <span class="n">RandomFourierFeaturesCosine</span>
+<span class="kn">from</span> <span class="nn">gpflux.sampling.kernel_with_feature_decomposition</span> <span class="kn">import</span> <span class="n">KernelWithFeatureDecomposition</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2024-06-20 12:01:13.099699: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2024-06-20 12:01:13.130375: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2024-06-20 12:01:13.131371: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2024-06-20 12:01:13.818277: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+</pre></div></div>
+</div>
+<p>The first set of parameters specifies settings that remain constant across different experiments. The second set of parameters refers to settings that change across individual experiments. Eventually, there are going to be three plots that compare the weight space approximated to the hybrid Matheron rule – each plot refers to a different input domain, and the number of input dimensions increases across plots (from left to right). In each plot, the x-axis refers to the number of training
+examples and the y-axis refers to the <span class="math notranslate nohighlight">\(log_{10}\)</span> Wasserstein distance to the exact posterior GP when evaluated at the test point locations. Within each plot, the weight space approximated Matheron results are indicated in orange and the hybrid Matheron results in blue. For each approximation type, three curves are shown with a differing number of Fourier features to approximate the exact kernel.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># settings that are fixed across experiments</span>
+<span class="n">kernel_class</span> <span class="o">=</span> <span class="n">RBF</span>  <span class="c1"># choose alternatively kernel_class = Matern52</span>
+<span class="n">noise_variance</span> <span class="o">=</span> <span class="mf">1e-3</span>  <span class="c1"># variance of the observation model</span>
+<span class="n">num_test_samples</span> <span class="o">=</span> <span class="mi">64</span>  <span class="c1"># number of test samples for evaluation (1024 in the paper)</span>
+<span class="n">num_experiment_runs</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># number of experiment repetitions (64 in the paper)</span>
+
+<span class="c1"># settings that vary across experiments</span>
+<span class="n">num_input_dimensions</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>  <span class="c1"># number of input dimensions</span>
+<span class="n">train_sample_exponents</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>  <span class="c1"># num_train_samples = 2 ** train_sample_exponents</span>
+<span class="n">num_train_samples</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span> <span class="o">**</span> <span class="n">train_sample_exponent</span> <span class="k">for</span> <span class="n">train_sample_exponent</span> <span class="ow">in</span> <span class="n">train_sample_exponents</span><span class="p">]</span>
+<span class="n">num_features</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="mi">1024</span><span class="p">,</span>
+    <span class="mi">4096</span><span class="p">,</span>
+    <span class="mi">16384</span><span class="p">,</span>
+<span class="p">]</span>  <span class="c1"># the actual number of features is num_features += num_train_samples</span>
+</pre></div>
+</div>
+</div>
+<p>The method below computes the mean and the covariance matrix of an exact GP posterior when evaluated at test point locations. Note that you can also use this method to analytically compute predictions of the Matheron weight space approximated posterior GP when passing a <code class="docutils literal notranslate"><span class="pre">KernelWithFeatureDecomposition</span></code> object that approximates a kernel with feature functions.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_analytic_GP_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">noise_variance</span><span class="p">,</span> <span class="n">X_star</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify the mean and covariance of an analytic GPR posterior for test point locations.</span>
+
+<span class="sd">    :param X: The train point locations, with a shape of [N x D].</span>
+<span class="sd">    :param y: The train targets, with a shape of [N x 1].</span>
+<span class="sd">    :param kernel: The kernel object.</span>
+<span class="sd">    :param noise_variance: The variance of the observation model.</span>
+<span class="sd">    :param X_star: The test point locations, with a shape of [N* x D].</span>
+
+<span class="sd">    :return: The mean and covariance of the noise-free predictions,</span>
+<span class="sd">        with a shape of [N*] and [N* x N*] respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gpr_model</span> <span class="o">=</span> <span class="n">GPR</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span> <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise_variance</span><span class="p">)</span>
+
+    <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">gpr_model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">X_star</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">f_mean</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_var</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">f_mean</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span>
+    <span class="k">assert</span> <span class="n">f_var</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span>
+</pre></div>
+</div>
+</div>
+<p>The method below analytically computes the mean and the covariance matrix of an approximated posterior GP evaluated at test point locations when using the hybrid Matheron rule explained above.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_hybrid_rule_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">exact_kernel</span><span class="p">,</span> <span class="n">approximate_kernel</span><span class="p">,</span> <span class="n">noise_variance</span><span class="p">,</span> <span class="n">X_star</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify the mean and covariance using the hybrid Matheron approximation of the exact posterior.</span>
+
+<span class="sd">    :param X: The train point locations, with a shape of [N x D].</span>
+<span class="sd">    :param y: The train targets, with a shape of [N x 1].</span>
+<span class="sd">    :param exact_kernel: The exact kernel object.</span>
+<span class="sd">    :param approximate_kernel: The approximate kernel object based on feature functions.</span>
+<span class="sd">    :param noise_variance: The variance of the observation model.</span>
+<span class="sd">    :param X_star: The test point locations, with a shape of [N* x D].</span>
+
+<span class="sd">    :return: The mean and covariance of the noise-free predictions,</span>
+<span class="sd">        with a shape of [N*] and [N* x N*] respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi_star</span> <span class="o">=</span> <span class="n">approximate_kernel</span><span class="o">.</span><span class="n">_feature_functions</span><span class="p">(</span><span class="n">X_star</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">phi_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">approximate_kernel</span><span class="o">.</span><span class="n">_feature_functions</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">phi</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">kXstarX</span> <span class="o">=</span> <span class="n">exact_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">X_star</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">kXstarX</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">KXX</span> <span class="o">=</span> <span class="n">exact_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">kXX_plus_noise_var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">set_diag</span><span class="p">(</span><span class="n">KXX</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">KXX</span><span class="p">)</span> <span class="o">+</span> <span class="n">noise_variance</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">kXX_plus_noise_var</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">kXX_inv_mul_phi</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">kXX_plus_noise_var</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">kXX_inv_mul_phi</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">kXX_inv_mul_y</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">kXX_plus_noise_var</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">kXX_inv_mul_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">f_mean</span> <span class="o">=</span> <span class="n">kXstarX</span> <span class="o">@</span> <span class="n">kXX_inv_mul_y</span>
+    <span class="n">f_mean</span> <span class="o">=</span> <span class="n">f_mean</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">f_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">f_var_sqrt</span> <span class="o">=</span> <span class="n">phi_star</span> <span class="o">-</span> <span class="n">kXstarX</span> <span class="o">@</span> <span class="n">kXX_inv_mul_phi</span>
+    <span class="k">assert</span> <span class="n">f_var_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">f_var</span> <span class="o">=</span> <span class="n">f_var_sqrt</span> <span class="o">@</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">f_var_sqrt</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">f_var</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">X_star</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span>
+</pre></div>
+</div>
+</div>
+<p>Our main evaluation metric is the decadic logarithm of the Wasserstein distance between an approximated GP (either with the weight space or the hybrid Matheron rule) and the exact posterior GP when evaluated at test points. For two multivariate Gaussian distributions <span class="math notranslate nohighlight">\(\mathcal{N}(\boldsymbol{\mu}_1, \boldsymbol{\Sigma}_1)\)</span> and <span class="math notranslate nohighlight">\(\mathcal{N}(\boldsymbol{\mu}_2, \boldsymbol{\Sigma}_2)\)</span>, the Wasserstein distance
+<span class="math notranslate nohighlight">\(d_{\text{WS}} (\boldsymbol{\mu}_1, \boldsymbol{\Sigma}_1, \boldsymbol{\mu}_2, \boldsymbol{\Sigma}_2)\)</span> has an analytic expression:</p>
+<div class="math notranslate nohighlight">
+\[d_{\text{WS}} (\boldsymbol{\mu}_1, \boldsymbol{\Sigma}_1, \boldsymbol{\mu}_2, \boldsymbol{\Sigma}_2) = \sqrt{|| \boldsymbol{\mu}_1 - \boldsymbol{\mu}_2 ||_2^2 + \text{trace} \left(\boldsymbol{\Sigma}_1 + \boldsymbol{\Sigma}_2 - 2 (\boldsymbol{\Sigma}_1^{1/2} \boldsymbol{\Sigma}_2 \boldsymbol{\Sigma}_1^{1/2})^{1/2}\right)},\]</div>
+<p>where <span class="math notranslate nohighlight">\(||\cdot||_2\)</span> refers to the <span class="math notranslate nohighlight">\(L_2\)</span> norm, <span class="math notranslate nohighlight">\(\text{trace}\)</span> to the matrix trace operator and a power of <span class="math notranslate nohighlight">\(1/2\)</span> to the matrix square root operation (i.e. for a square matrix <span class="math notranslate nohighlight">\(\textbf{M}\)</span> it holds that <span class="math notranslate nohighlight">\(\textbf{M} = \textbf{M}^{1/2}\textbf{M}^{1/2}\)</span>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">log10_Wasserstein_distance</span><span class="p">(</span>
+    <span class="n">mean</span><span class="p">,</span> <span class="n">covariance</span><span class="p">,</span> <span class="n">approximate_mean</span><span class="p">,</span> <span class="n">approximate_covariance</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="mf">1e-12</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify the decadic logarithm of the Wasserstein distance based on the means and covariance matrices.</span>
+
+<span class="sd">    :param mean:The analytic mean, with a shape of [N*].</span>
+<span class="sd">    :param covariance: The analytic covariance, with a shape of [N* x N*].</span>
+<span class="sd">    :param approximate_mean: The approximate mean, with a shape of [N*].</span>
+<span class="sd">    :param approximate_covariance: The approximate covariance, with a shape of [N* x N*].</span>
+<span class="sd">    :param jitter: The jitter value for numerical robustness.</span>
+
+<span class="sd">    :return: A scalar log distance value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">squared_mean_distance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">mean</span> <span class="o">-</span> <span class="n">approximate_mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">square_root_covariance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span>
+        <span class="n">covariance</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">covariance</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">covariance</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">*</span> <span class="n">jitter</span>
+    <span class="p">)</span>
+    <span class="n">matrix_product</span> <span class="o">=</span> <span class="n">square_root_covariance</span> <span class="o">@</span> <span class="n">approximate_covariance</span> <span class="o">@</span> <span class="n">square_root_covariance</span>
+    <span class="n">square_root_matrix_product</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">sqrtm</span><span class="p">(</span>
+        <span class="n">matrix_product</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">matrix_product</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">matrix_product</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">*</span> <span class="n">jitter</span>
+    <span class="p">)</span>
+    <span class="n">term</span> <span class="o">=</span> <span class="n">covariance</span> <span class="o">+</span> <span class="n">approximate_covariance</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">square_root_matrix_product</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">term</span><span class="p">)</span>
+    <span class="n">ws_distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">squared_mean_distance</span> <span class="o">+</span> <span class="n">trace</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+    <span class="n">log10_ws_distance</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ws_distance</span><span class="p">)</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">log10_ws_distance</span>
+</pre></div>
+</div>
+</div>
+<p>The core method of the notebook conducts an individual experiment for a specified number of input dimensions, a specified number of training points (that are automatically generated) and features (to approximate the exact kernel). Subsequently, both the weight space and the hybrid Matheron rule predictions are compared to predictions of an exact posterior GP at test points (that are also automatically generated) in terms of the logarithm of the Wasserstein distance.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">conduct_experiment</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">,</span> <span class="n">num_train_samples</span><span class="p">,</span> <span class="n">num_features</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the log10 Wassertein distance between the weight space approximated GP and the exact GP,</span>
+<span class="sd">    and between the hybrid-rule approximated GP and the exact GP.</span>
+
+<span class="sd">    :param num_input_dimensions: The number of input dimensions.</span>
+<span class="sd">    :param num_train_samples: The number of training samples.</span>
+<span class="sd">    :param num_features: The number of feature functions.</span>
+
+<span class="sd">    :return: The log10 Wasserstein distances for both approximations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lengthscale</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">num_input_dimensions</span> <span class="o">/</span> <span class="mf">100.0</span>
+    <span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>  <span class="c1"># adjust kernel lengthscale to the number of input dims</span>
+    <span class="n">num_features</span> <span class="o">=</span> <span class="n">num_train_samples</span> <span class="o">+</span> <span class="n">num_features</span>
+
+    <span class="c1"># exact kernel</span>
+    <span class="n">exact_kernel</span> <span class="o">=</span> <span class="n">kernel_class</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="n">lengthscale</span><span class="p">)</span>
+
+    <span class="c1"># weight space approximated kernel</span>
+    <span class="n">feature_functions</span> <span class="o">=</span> <span class="n">RandomFourierFeaturesCosine</span><span class="p">(</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="n">kernel_class</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="n">lengthscale</span><span class="p">),</span>
+        <span class="n">n_components</span><span class="o">=</span><span class="n">num_features</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="n">feature_coefficients</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">num_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
+    <span class="n">approximate_kernel</span> <span class="o">=</span> <span class="n">KernelWithFeatureDecomposition</span><span class="p">(</span>
+        <span class="n">kernel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">feature_functions</span><span class="o">=</span><span class="n">feature_functions</span><span class="p">,</span> <span class="n">feature_coefficients</span><span class="o">=</span><span class="n">feature_coefficients</span>
+    <span class="p">)</span>
+
+    <span class="c1"># create training data set and test points for evaluation</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">):</span>
+        <span class="n">random_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">0.85</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_train_samples</span><span class="p">,))</span>
+        <span class="n">X</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random_samples</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+    <span class="n">kXX</span> <span class="o">=</span> <span class="n">exact_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">kXX_plus_noise_var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">set_diag</span><span class="p">(</span><span class="n">kXX</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">kXX</span><span class="p">)</span> <span class="o">+</span> <span class="n">noise_variance</span><span class="p">)</span>
+    <span class="n">lXX</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">kXX_plus_noise_var</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">lXX</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">([</span><span class="n">num_train_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+    <span class="n">X_star</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>  <span class="c1"># test data is created to lie within two intervals that partially overlap with the train data</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">):</span>
+        <span class="n">random_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_test_samples</span><span class="p">,))</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_test_samples</span><span class="p">,))</span> <span class="o">&lt;</span> <span class="mf">0.5</span>
+        <span class="n">random_samples</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_test_samples</span><span class="p">,))[</span>
+            <span class="n">indices</span>
+        <span class="p">]</span>
+        <span class="n">X_star</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random_samples</span><span class="p">)</span>
+    <span class="n">X_star</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X_star</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+    <span class="c1"># identify mean and covariance of the analytic GPR posterior</span>
+    <span class="n">f_mean_exact</span><span class="p">,</span> <span class="n">f_var_exact</span> <span class="o">=</span> <span class="n">compute_analytic_GP_predictions</span><span class="p">(</span>
+        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">exact_kernel</span><span class="p">,</span> <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise_variance</span><span class="p">,</span> <span class="n">X_star</span><span class="o">=</span><span class="n">X_star</span>
+    <span class="p">)</span>
+
+    <span class="c1"># identify mean and covariance of the analytic GPR posterior when using the weight space approximated kernel</span>
+    <span class="n">f_mean_weight</span><span class="p">,</span> <span class="n">f_var_weight</span> <span class="o">=</span> <span class="n">compute_analytic_GP_predictions</span><span class="p">(</span>
+        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">approximate_kernel</span><span class="p">,</span> <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise_variance</span><span class="p">,</span> <span class="n">X_star</span><span class="o">=</span><span class="n">X_star</span>
+    <span class="p">)</span>
+
+    <span class="c1"># identify mean and covariance using the hybrid approximation</span>
+    <span class="n">f_mean_hybrid</span><span class="p">,</span> <span class="n">f_var_hybrid</span> <span class="o">=</span> <span class="n">compute_hybrid_rule_predictions</span><span class="p">(</span>
+        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+        <span class="n">exact_kernel</span><span class="o">=</span><span class="n">exact_kernel</span><span class="p">,</span>
+        <span class="n">approximate_kernel</span><span class="o">=</span><span class="n">approximate_kernel</span><span class="p">,</span>
+        <span class="n">noise_variance</span><span class="o">=</span><span class="n">noise_variance</span><span class="p">,</span>
+        <span class="n">X_star</span><span class="o">=</span><span class="n">X_star</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># compute log10 Wasserstein distance between the exact solution and the weight space approximation</span>
+    <span class="n">log10_ws_dist_weight</span> <span class="o">=</span> <span class="n">log10_Wasserstein_distance</span><span class="p">(</span>
+        <span class="n">f_mean_exact</span><span class="p">,</span> <span class="n">f_var_exact</span><span class="p">,</span> <span class="n">f_mean_weight</span><span class="p">,</span> <span class="n">f_var_weight</span>
+    <span class="p">)</span>
+
+    <span class="c1"># compute log10 Wassertein distance between the exact solution and the hybrid approximation</span>
+    <span class="n">log10_ws_dist_hybrid</span> <span class="o">=</span> <span class="n">log10_Wasserstein_distance</span><span class="p">(</span>
+        <span class="n">f_mean_exact</span><span class="p">,</span> <span class="n">f_var_exact</span><span class="p">,</span> <span class="n">f_mean_hybrid</span><span class="p">,</span> <span class="n">f_var_hybrid</span>
+    <span class="p">)</span>
+
+    <span class="c1"># return the log Wasserstein distances for both approximations</span>
+    <span class="k">return</span> <span class="n">log10_ws_dist_weight</span><span class="p">,</span> <span class="n">log10_ws_dist_hybrid</span>
+</pre></div>
+</div>
+</div>
+<p>This helper function repeats an individual experiment several times and returns the quartiles of the log Wasserstein distances between both approximations and the exact GP.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">conduct_experiment_for_multiple_runs</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">,</span> <span class="n">num_train_samples</span><span class="p">,</span> <span class="n">num_features</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conduct the experiment as specified above `num_experiment_runs` times and identify the quartiles for</span>
+<span class="sd">    the log10 Wassertein distance between the weight space approximated GP and the exact GP,</span>
+<span class="sd">    and between the hybrid-rule approximated GP and the exact GP.</span>
+
+<span class="sd">    :param num_input_dimensions: The number of input dimensions.</span>
+<span class="sd">    :param num_train_samples: The number of training samples.</span>
+<span class="sd">    :param num_features: The number of feature functions.</span>
+
+<span class="sd">    :return: The quartiles of the log10 Wasserstein distance for both approximations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">list_of_log10_ws_dist_weight</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>  <span class="c1"># for the analytic solution using the weight space approximated kernel</span>
+    <span class="n">list_of_log10_ws_dist_hybrid</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># for the hybrid-rule approximation</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_experiment_runs</span><span class="p">):</span>
+        <span class="n">log10_ws_dist_weight</span><span class="p">,</span> <span class="n">log10_ws_dist_hybrid</span> <span class="o">=</span> <span class="n">conduct_experiment</span><span class="p">(</span>
+            <span class="n">num_input_dimensions</span><span class="o">=</span><span class="n">num_input_dimensions</span><span class="p">,</span>
+            <span class="n">num_train_samples</span><span class="o">=</span><span class="n">num_train_samples</span><span class="p">,</span>
+            <span class="n">num_features</span><span class="o">=</span><span class="n">num_features</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">list_of_log10_ws_dist_weight</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log10_ws_dist_weight</span><span class="p">)</span>
+        <span class="n">list_of_log10_ws_dist_hybrid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log10_ws_dist_hybrid</span><span class="p">)</span>
+
+    <span class="n">log10_ws_dist_weight_quarts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">list_of_log10_ws_dist_weight</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">))</span>
+    <span class="n">log10_ws_dist_hybrid_quarts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">list_of_log10_ws_dist_hybrid</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">log10_ws_dist_weight_quarts</span><span class="p">,</span> <span class="n">log10_ws_dist_hybrid_quarts</span>
+</pre></div>
+</div>
+</div>
+<p>Since we conduct different experiments with different training data sizes, we need another helper method…</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">conduct_experiment_for_different_train_data_sizes</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">,</span> <span class="n">num_features</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conduct the experiment as specified above for different training dataset sizes and store the results in lists.</span>
+
+<span class="sd">    :param num_input_dimensions: The number of input dimensions.</span>
+<span class="sd">    :param num_features: The number of feature functions.</span>
+
+<span class="sd">    :return: The quartiles of the log10 Wasserstein distance for both approximations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">list_log10_ws_dist_weight_quarts</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>  <span class="c1"># for the analytic solution using the weight space approximated kernel</span>
+    <span class="n">list_log10_ws_dist_hybrid_quarts</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># for the hybrid-rule approximation</span>
+    <span class="k">for</span> <span class="n">nts</span> <span class="ow">in</span> <span class="n">num_train_samples</span><span class="p">:</span>
+        <span class="p">(</span>
+            <span class="n">log10_ws_dist_weight_quarts</span><span class="p">,</span>
+            <span class="n">log10_ws_dist_hybrid_quarts</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">conduct_experiment_for_multiple_runs</span><span class="p">(</span>
+            <span class="n">num_input_dimensions</span><span class="o">=</span><span class="n">num_input_dimensions</span><span class="p">,</span>
+            <span class="n">num_train_samples</span><span class="o">=</span><span class="n">nts</span><span class="p">,</span>
+            <span class="n">num_features</span><span class="o">=</span><span class="n">num_features</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Completed for num input dims = &quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">)</span>
+            <span class="o">+</span> <span class="s2">&quot; and feature param = &quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">num_features</span><span class="p">)</span>
+            <span class="o">+</span> <span class="s2">&quot; and num train samples = &quot;</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">nts</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">list_log10_ws_dist_weight_quarts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log10_ws_dist_weight_quarts</span><span class="p">)</span>
+        <span class="n">list_log10_ws_dist_hybrid_quarts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log10_ws_dist_hybrid_quarts</span><span class="p">)</span>
+
+    <span class="n">list_log10_ws_dist_weight_quarts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">list_log10_ws_dist_weight_quarts</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="n">list_log10_ws_dist_hybrid_quarts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">list_log10_ws_dist_hybrid_quarts</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">list_log10_ws_dist_weight_quarts</span><span class="p">,</span> <span class="n">list_log10_ws_dist_hybrid_quarts</span>
+</pre></div>
+</div>
+</div>
+<p>…and another helper method because we repeat each setting with a different number of Fourier features.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">conduct_experiment_for_different_num_features</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conduct the experiment as specified above for a different number of feature functions, and store</span>
+<span class="sd">    the results in lists of lists.</span>
+
+<span class="sd">    :param num_input_dimensions: The number of input dimensions.</span>
+
+<span class="sd">    :return: Lists of lists of quartiles of the log10 Wasserstein distance for both approximations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">list_of_weight_results</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">[]</span>
+    <span class="p">)</span>  <span class="c1"># for the analytic solution using the weight space approximated kernel</span>
+    <span class="n">list_of_hybrid_results</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># for the hybrid-rule approximation</span>
+    <span class="k">for</span> <span class="n">nf</span> <span class="ow">in</span> <span class="n">num_features</span><span class="p">:</span>
+        <span class="n">weight_results</span><span class="p">,</span> <span class="n">hybrid_results</span> <span class="o">=</span> <span class="n">conduct_experiment_for_different_train_data_sizes</span><span class="p">(</span>
+            <span class="n">num_input_dimensions</span><span class="o">=</span><span class="n">num_input_dimensions</span><span class="p">,</span> <span class="n">num_features</span><span class="o">=</span><span class="n">nf</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+        <span class="n">list_of_weight_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">weight_results</span><span class="p">)</span>
+        <span class="n">list_of_hybrid_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hybrid_results</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">list_of_weight_results</span><span class="p">,</span> <span class="n">list_of_hybrid_results</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, we arrive at the actual plotting script that loops over settings with a different number of input dimensions.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># create plots</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">)):</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of input dimensions $</span><span class="si">{</span><span class="n">num_input_dimensions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Number of training data points $N$&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\log_</span><span class="si">{10}</span><span class="s2">$ Wasserstein distance&quot;</span><span class="p">)</span>
+
+<span class="c1"># conduct experiments and plot results</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
+    <span class="nb">len</span><span class="p">(</span><span class="n">num_input_dimensions</span><span class="p">)</span>
+<span class="p">):</span>  <span class="c1"># iterate through the different number of input dimensions</span>
+    <span class="n">weight_results</span><span class="p">,</span> <span class="n">hybrid_results</span> <span class="o">=</span> <span class="n">conduct_experiment_for_different_num_features</span><span class="p">(</span>
+        <span class="n">num_input_dimensions</span><span class="o">=</span><span class="n">num_input_dimensions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="c1"># plot the results for the analytic solution using the weight space approximated kernel</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bisque&quot;</span><span class="p">,</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span> <span class="s2">&quot;peru&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">num_features</span><span class="p">),</span> <span class="s2">&quot;Number of colors must equal the number of features!&quot;</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">weight_results</span><span class="p">)):</span>
+        <span class="n">weight_result</span> <span class="o">=</span> <span class="n">weight_results</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+            <span class="n">num_train_samples</span><span class="p">,</span> <span class="n">weight_result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">weight_result</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+        <span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">num_train_samples</span><span class="p">,</span> <span class="n">weight_result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">num_train_samples</span><span class="p">,</span> <span class="n">weight_result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="c1"># plot the results for the hybrid-rule approximation</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;lightblue&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;darkblue&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">num_features</span><span class="p">),</span> <span class="s2">&quot;Number of colors must equal the number of features!&quot;</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hybrid_results</span><span class="p">)):</span>
+        <span class="n">hybrid_result</span> <span class="o">=</span> <span class="n">hybrid_results</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+            <span class="n">num_train_samples</span><span class="p">,</span> <span class="n">hybrid_result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hybrid_result</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span>
+        <span class="p">)</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">num_train_samples</span><span class="p">,</span> <span class="n">hybrid_result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+        <span class="n">axs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">num_train_samples</span><span class="p">,</span> <span class="n">hybrid_result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># show plots</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Completed for num input dims = 2 and feature param = 1024 and num train samples = 4
+Completed for num input dims = 2 and feature param = 1024 and num train samples = 16
+Completed for num input dims = 2 and feature param = 1024 and num train samples = 64
+Completed for num input dims = 2 and feature param = 1024 and num train samples = 256
+Completed for num input dims = 2 and feature param = 1024 and num train samples = 1024
+
+Completed for num input dims = 2 and feature param = 4096 and num train samples = 4
+Completed for num input dims = 2 and feature param = 4096 and num train samples = 16
+Completed for num input dims = 2 and feature param = 4096 and num train samples = 64
+Completed for num input dims = 2 and feature param = 4096 and num train samples = 256
+Completed for num input dims = 2 and feature param = 4096 and num train samples = 1024
+
+Completed for num input dims = 2 and feature param = 16384 and num train samples = 4
+Completed for num input dims = 2 and feature param = 16384 and num train samples = 16
+Completed for num input dims = 2 and feature param = 16384 and num train samples = 64
+Completed for num input dims = 2 and feature param = 16384 and num train samples = 256
+Completed for num input dims = 2 and feature param = 16384 and num train samples = 1024
+
+Completed for num input dims = 4 and feature param = 1024 and num train samples = 4
+Completed for num input dims = 4 and feature param = 1024 and num train samples = 16
+Completed for num input dims = 4 and feature param = 1024 and num train samples = 64
+Completed for num input dims = 4 and feature param = 1024 and num train samples = 256
+Completed for num input dims = 4 and feature param = 1024 and num train samples = 1024
+
+Completed for num input dims = 4 and feature param = 4096 and num train samples = 4
+Completed for num input dims = 4 and feature param = 4096 and num train samples = 16
+Completed for num input dims = 4 and feature param = 4096 and num train samples = 64
+Completed for num input dims = 4 and feature param = 4096 and num train samples = 256
+Completed for num input dims = 4 and feature param = 4096 and num train samples = 1024
+
+Completed for num input dims = 4 and feature param = 16384 and num train samples = 4
+Completed for num input dims = 4 and feature param = 16384 and num train samples = 16
+Completed for num input dims = 4 and feature param = 16384 and num train samples = 64
+Completed for num input dims = 4 and feature param = 16384 and num train samples = 256
+Completed for num input dims = 4 and feature param = 16384 and num train samples = 1024
+
+Completed for num input dims = 8 and feature param = 1024 and num train samples = 4
+Completed for num input dims = 8 and feature param = 1024 and num train samples = 16
+Completed for num input dims = 8 and feature param = 1024 and num train samples = 64
+Completed for num input dims = 8 and feature param = 1024 and num train samples = 256
+Completed for num input dims = 8 and feature param = 1024 and num train samples = 1024
+
+Completed for num input dims = 8 and feature param = 4096 and num train samples = 4
+Completed for num input dims = 8 and feature param = 4096 and num train samples = 16
+Completed for num input dims = 8 and feature param = 4096 and num train samples = 64
+Completed for num input dims = 8 and feature param = 4096 and num train samples = 256
+Completed for num input dims = 8 and feature param = 4096 and num train samples = 1024
+
+Completed for num input dims = 8 and feature param = 16384 and num train samples = 4
+Completed for num input dims = 8 and feature param = 16384 and num train samples = 16
+Completed for num input dims = 8 and feature param = 16384 and num train samples = 64
+Completed for num input dims = 8 and feature param = 16384 and num train samples = 256
+Completed for num input dims = 8 and feature param = 16384 and num train samples = 1024
+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_efficient_posterior_sampling_20_1.png" src="../_images/notebooks_efficient_posterior_sampling_20_1.png" />
+</div>
+</div>
+<p>There are three plots with the number of input dimensions increasing from the left to the right. In each plot, the x-axis refers to the number of training points <span class="math notranslate nohighlight">\(N\)</span> and the y-axis to the <span class="math notranslate nohighlight">\(\log_{10}\)</span> Wasserstein distance between the exact GP posterior and the approximated posterior GP. Each plot has two different sets of curves: orange curves refer to experiments with a weight space approximated posterior GP and blue curves to exeriments with a hybrid-rule approximated posterior GP.
+Each set of curves contains different repetitions for a different number of random Fourier feature functions used for approximating the exact kernel (many features are indicated with dark colours and fewer features with lighter colours).</p>
+<p>We see that the weight space approximated GP decreases in prediction quality as the training data increases – this effect is more severe for higher-dimensional input domains compared to lower-dimensional input domains. On the other hand, the hybrid-rule approximated GP maintains good prediction quality as the input dimension and training data increases in our experiments. As expected, more features lead to better results resulting in a lower value for the log Wasserstein distance.</p>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,213 @@
+gpflux.sampling.sample
+======================
+
+.. py:module:: gpflux.sampling.sample
+
+.. autoapi-nested-parse::
+
+   This module enables you to sample from (Deep) GPs using different approaches. 
+
+
+
+
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:function:: compute_A_inv_b(A: gpflow.base.TensorType, b: gpflow.base.TensorType) -> tensorflow.Tensor
+
+   Computes :math:`A^{-1} b` using the Cholesky of ``A`` instead of the explicit inverse,
+   as this is often numerically more stable.
+
+   :param A: A positive-definite matrix with shape ``[..., M, M]``.
+       Can contain any leading dimensions (``...``) as long as they correspond
+       to the leading dimensions in ``b``.
+   :param b: Tensor with shape ``[..., M, D]``.
+       Can contain any leading dimensions (``...``) as long as they correspond
+       to the leading dimensions in ``A``.
+
+   :returns: Tensor with shape ``[..., M, D]``.
+       Leading dimensions originate from ``A`` and ``b``.
+
+
+.. py:class:: KernelWithFeatureDecomposition(kernel: Union[gpflow.kernels.Kernel, NoneType], feature_functions: gpflow.keras.tf_keras.layers.Layer, feature_coefficients: gpflow.base.TensorType)
+
+   Bases: :py:obj:`gpflow.kernels.Kernel`
+
+
+   This class represents a kernel together with its finite feature decomposition:
+
+   .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
+
+   where :math:`\lambda_i` and :math:`\phi_i(\cdot)` are the coefficients and
+   features, respectively.
+
+   The decomposition can be derived from Mercer or Bochner's theorem. For example,
+   feature-coefficient pairs could be eigenfunction-eigenvalue pairs (Mercer) or
+   Fourier features with constant coefficients (Bochner).
+
+   In some cases (e.g., [1]_ and [2]_) the left-hand side (that is, the
+   covariance function :math:`k(\cdot, \cdot)`) is unknown and the kernel
+   can only be approximated using its feature decomposition.
+   In other cases (e.g., [3]_ and [4]_), both the covariance function and feature
+   decomposition are available in closed form.
+
+   .. [1]
+       Solin, Arno, and Simo Särkkä. "Hilbert space methods for
+       reduced-rank Gaussian process regression." Statistics and Computing
+       (2020).
+   .. [2]
+       Borovitskiy, Viacheslav, et al. "Matérn Gaussian processes on
+       Riemannian manifolds." In Advances in Neural Information Processing
+       Systems (2020).
+   .. [3]
+       Ali Rahimi and Benjamin Recht. Random features for large-scale kernel
+       machines. In Advances in Neural Information Processing Systems (2007).
+   .. [4]
+       Dutordoir, Vincent, Nicolas Durrande, and James Hensman. "Sparse
+       Gaussian processes with spherical harmonic features." In International
+       Conference on Machine Learning (2020).
+
+   :param kernel: The kernel corresponding to the feature decomposition.
+       If ``None``, there is no analytical expression associated with the infinite
+       sum and we approximate the kernel based on the feature decomposition.
+
+       .. note::
+
+           In certain cases, the analytical expression for the kernel is
+           not available. In this case, passing `None` is allowed, and
+           :meth:`K` and :meth:`K_diag` will be computed using the
+           approximation provided by the feature decomposition.
+
+   :param feature_functions: A Keras layer for which the call evaluates the
+       ``L`` features of the kernel :math:`\phi_i(\cdot)`. For ``X`` with the shape ``[N, D]``,
+       ``feature_functions(X)`` returns a tensor with the shape ``[N, L]``.
+   :param feature_coefficients: A tensor with the shape ``[L, 1]`` with coefficients
+       associated with the features, :math:`\lambda_i`.
+
+
+   .. py:property:: feature_functions
+      :type: gpflow.keras.tf_keras.layers.Layer
+
+      Return the kernel's features :math:`\phi_i(\cdot)`.
+
+
+
+   .. py:property:: feature_coefficients
+      :type: tensorflow.Tensor
+
+      Return the kernel's coefficients :math:`\lambda_i`.
+
+
+
+.. py:function:: draw_conditional_sample(mean: gpflow.base.TensorType, cov: gpflow.base.TensorType, f_old: gpflow.base.TensorType) -> tensorflow.Tensor
+
+   Draw a sample :math:`\tilde{f}_\text{new}` from the conditional
+   multivariate Gaussian :math:`p(f_\text{new} | f_\text{old})`, where the
+   parameters ``mean`` and ``cov`` are the mean and covariance matrix of the
+   joint multivariate Gaussian over :math:`[f_\text{old}, f_\text{new}]`.
+
+   :param mean: A tensor with the shape ``[..., D, N+M]`` with the mean of
+       ``[f_old, f_new]``. For each ``[..., D]`` this is a stacked vector of the
+       form:
+
+       .. math::
+
+           \begin{pmatrix}
+                \operatorname{mean}(f_\text{old}) \;[N] \\
+                \operatorname{mean}(f_\text{new}) \;[M]
+           \end{pmatrix}
+
+   :param cov: A tensor with the shape ``[..., D, N+M, N+M]`` with the covariance of
+       ``[f_old, f_new]``. For each ``[..., D]``, there is a 2x2 block matrix of the form:
+
+       .. math::
+
+           \begin{pmatrix}
+                \operatorname{cov}(f_\text{old}, f_\text{old}) \;[N, N]
+                  & \operatorname{cov}(f_\text{old}, f_\text{new}) \;[N, M] \\
+                \operatorname{cov}(f_\text{new}, f_\text{old}) \;[M, N]
+                  & \operatorname{cov}(f_\text{new}, f_\text{new}) \;[M, M]
+           \end{pmatrix}
+
+   :param f_old: A tensor of observations with the shape ``[..., D, N]``,
+       drawn from Normal distribution with mean
+       :math:`\operatorname{mean}(f_\text{old}) \;[N]`, and covariance
+       :math:`\operatorname{cov}(f_\text{old}, f_\text{old}) \;[N, N]`
+
+   :return: A sample :math:`\tilde{f}_\text{new}` from the conditional normal
+       :math:`p(f_\text{new} | f_\text{old})` with the shape ``[..., D, M]``.
+
+
+.. py:data:: efficient_sample
+
+   A function that returns a :class:`Sample` of a GP posterior. 
+
+
+.. py:class:: Sample
+
+   Bases: :py:obj:`abc.ABC`
+
+
+   This class represents a sample from a GP that you can evaluate by using the ``__call__``
+   at new locations within the support of the GP.
+
+   Importantly, the same function draw (sample) is evaluated when calling it multiple
+   times. This property is called consistency. Achieving consistency for vanilla GPs is costly
+   because it scales cubically with the number of evaluation points,
+   but works with any kernel. It is implemented in
+   :meth:`_efficient_sample_conditional_gaussian`.
+   For :class:`KernelWithFeatureDecomposition`, the more efficient approach
+   following :cite:t:`wilson2020efficiently` is implemented in
+   :meth:`_efficient_sample_matheron_rule`.
+
+   See the tutorial notebooks `Efficient sampling
+   <../../../../notebooks/efficient_sampling.ipynb>`_ and `Weight Space
+   Approximation with Random Fourier Features
+   <../../../../notebooks/weight_space_approximation.ipynb>`_ for an
+   in-depth overview.
+
+
+   .. py:method:: __call__(X: gpflow.base.TensorType) -> tensorflow.Tensor
+      :abstractmethod:
+
+
+      Return the evaluation of the GP sample :math:`f(X)` for :math:`f \sim GP(0, k)`.
+
+      :param X: The inputs, a tensor with the shape ``[N, D]``, where ``D`` is the
+          input dimensionality.
+      :return: Function values, a tensor with the shape ``[N, P]``, where ``P`` is the
+          output dimensionality.
+
+
+
+   .. py:method:: __add__(other: Union[Sample, Callable[[gpflow.base.TensorType], gpflow.base.TensorType]]) -> Sample
+
+      Allow for the summation of two instances that implement the ``__call__`` method.
+
+
+
+.. py:function:: _efficient_sample_conditional_gaussian(inducing_variable: gpflow.inducing_variables.InducingVariables, kernel: gpflow.kernels.Kernel, q_mu: tensorflow.Tensor, *, q_sqrt: Optional[gpflow.base.TensorType] = None, whiten: bool = False) -> Sample
+
+   Most costly implementation for obtaining a consistent GP sample.
+   However, this method can be used for any kernel.
+
+
+.. py:function:: _efficient_sample_matheron_rule(inducing_variable: gpflow.inducing_variables.InducingVariables, kernel: gpflux.sampling.kernel_with_feature_decomposition.KernelWithFeatureDecomposition, q_mu: tensorflow.Tensor, *, q_sqrt: Optional[gpflow.base.TensorType] = None, whiten: bool = False) -> Sample
+
+   Implements the efficient sampling rule from :cite:t:`wilson2020efficiently` using
+   the Matheron rule. To use this sampling scheme, the GP has to have a
+   ``kernel`` of the :class:`KernelWithFeatureDecomposition` type .
+
+   :param kernel: A kernel of the :class:`KernelWithFeatureDecomposition` type, which
+       holds the covariance function and the kernel's features and
+       coefficients.
+   :param q_mu: A tensor with the shape ``[M, P]``.
+   :param q_sqrt: A tensor with the shape ``[P, M, M]``.
+   :param whiten: Determines the parameterisation of the inducing variables.
+
+

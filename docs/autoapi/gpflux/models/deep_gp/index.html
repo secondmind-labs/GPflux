@@ -1,0 +1,886 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>gpflux.models.deep_gp &#8212; GPflux 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css?v=c27e38e3" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js?v=2389946f"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'autoapi/gpflux/models/deep_gp/index';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="gpflux.optimization" href="../../optimization/index.html" />
+    <link rel="prev" title="gpflux.models" href="../index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/logo.png" class="logo__image only-light" alt="GPflux 0.1.0 documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/logo.png" class="logo__image only-dark" alt="GPflux 0.1.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item">
+<nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../index.html">
+                        GPflux
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../notebooks/benchmarks.html">
+                        Benchmarks
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../../tutorials.html">
+                        Tutorials
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="../../index.html">
+                        API Reference
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/secondmind-labs/gpflux" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i></span>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../architectures/index.html">gpflux.architectures</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../architectures/constant_input_dim_deep_gp/index.html">gpflux.architectures.constant_input_dim_deep_gp</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../encoders/index.html">gpflux.encoders</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../encoders/directly_parameterized_encoder/index.html">gpflux.encoders.directly_parameterized_encoder</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../experiment_support/index.html">gpflux.experiment_support</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-3"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../experiment_support/ci_utils/index.html">gpflux.experiment_support.ci_utils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../experiment_support/tensorboard/index.html">gpflux.experiment_support.tensorboard</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../layers/index.html">gpflux.layers</a><input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-4"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../layers/basis_functions/index.html">gpflux.layers.basis_functions</a><input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-5"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../layers/basis_functions/fourier_features/index.html">gpflux.layers.basis_functions.fourier_features</a><input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-6"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../layers/basis_functions/fourier_features/quadrature/index.html">gpflux.layers.basis_functions.fourier_features.quadrature</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../layers/basis_functions/fourier_features/random/index.html">gpflux.layers.basis_functions.fourier_features.random</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../layers/basis_functions/fourier_features/base/index.html">gpflux.layers.basis_functions.fourier_features.base</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../layers/basis_functions/fourier_features/utils/index.html">gpflux.layers.basis_functions.fourier_features.utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/bayesian_dense_layer/index.html">gpflux.layers.bayesian_dense_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/gp_layer/index.html">gpflux.layers.gp_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/latent_variable_layer/index.html">gpflux.layers.latent_variable_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/likelihood_layer/index.html">gpflux.layers.likelihood_layer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../layers/trackable_layer/index.html">gpflux.layers.trackable_layer</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../index.html">gpflux.models</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-7"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">gpflux.models.deep_gp</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../optimization/index.html">gpflux.optimization</a><input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-8"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../optimization/keras_natgrad/index.html">gpflux.optimization.keras_natgrad</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../sampling/index.html">gpflux.sampling</a><input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-9"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../sampling/kernel_with_feature_decomposition/index.html">gpflux.sampling.kernel_with_feature_decomposition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sampling/sample/index.html">gpflux.sampling.sample</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../sampling/utils/index.html">gpflux.sampling.utils</a></li>
+</ul>
+</li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../callbacks/index.html">gpflux.callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions/index.html">gpflux.exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../helpers/index.html">gpflux.helpers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../losses/index.html">gpflux.losses</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../math/index.html">gpflux.math</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../runtime_checks/index.html">gpflux.runtime_checks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../types/index.html">gpflux.types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../version/index.html">gpflux.version</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumb">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">gpflux</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">gpflux.models</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">gpflux.model...</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="module-gpflux.models.deep_gp">
+<span id="gpflux-models-deep-gp"></span><h1>gpflux.models.deep_gp<a class="headerlink" href="#module-gpflux.models.deep_gp" title="Permalink to this heading">#</a></h1>
+<p>This module provides the base implementation for DeepGP models.</p>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.LayerWithObservations">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LayerWithObservations</span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/latent_variable_layer.html#LayerWithObservations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.LayerWithObservations" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../layers/trackable_layer/index.html#gpflux.layers.trackable_layer.TrackableLayer" title="gpflux.layers.trackable_layer.TrackableLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflux.layers.trackable_layer.TrackableLayer</span></code></a></p>
+<p>By inheriting from this class, Layers indicate that their <a class="reference internal" href="#gpflux.models.deep_gp.LayerWithObservations.call" title="gpflux.models.deep_gp.LayerWithObservations.call"><code class="xref py py-meth docutils literal notranslate"><span class="pre">call()</span></code></a>
+method takes a second <em>observations</em> argument after the customary
+<em>layer_inputs</em> argument.</p>
+<p>This is used to distinguish which layers (unlike most standard Keras
+layers) require the original inputs and/or targets during training.
+For example, it is used by the amortized variational inference in the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">LatentVariableLayer</span></code>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.LayerWithObservations.call">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflux.types.ObservationType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/latent_variable_layer.html#LayerWithObservations.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.LayerWithObservations.call" title="Permalink to this definition">#</a></dt>
+<dd><p>The <a class="reference internal" href="#gpflux.models.deep_gp.LayerWithObservations.call" title="gpflux.models.deep_gp.LayerWithObservations.call"><code class="xref py py-meth docutils literal notranslate"><span class="pre">call()</span></code></a> method of <a class="reference internal" href="#gpflux.models.deep_gp.LayerWithObservations" title="gpflux.models.deep_gp.LayerWithObservations"><code class="xref any py py-class docutils literal notranslate"><span class="pre">LayerWithObservations</span></code></a> subclasses should
+accept a second argument, <em>observations</em>. In training mode, this will
+be the <code class="docutils literal notranslate"><span class="pre">[inputs,</span> <span class="pre">targets]</span></code> of the training points; otherwise, it is <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref any docutils literal notranslate"><span class="pre">None</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.LikelihoodLayer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LikelihoodLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">likelihood</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.likelihoods.Likelihood</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflux/layers/likelihood_layer.html#LikelihoodLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.LikelihoodLayer" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../layers/trackable_layer/index.html#gpflux.layers.trackable_layer.TrackableLayer" title="gpflux.layers.trackable_layer.TrackableLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflux.layers.trackable_layer.TrackableLayer</span></code></a></p>
+<p>A Keras layer that wraps a GPflow <code class="xref py py-class docutils literal notranslate"><span class="pre">Likelihood</span></code>. This layer expects a
+<a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/MultivariateNormalDiag" title="(in TensorFlow Probability v0.12)"><code class="xref any docutils literal notranslate"><span class="pre">tfp.distributions.MultivariateNormalDiag</span></code></a> as its input, describing <code class="docutils literal notranslate"><span class="pre">q(f)</span></code>.
+When training, calling this class computes the negative variational expectation
+<span class="math notranslate nohighlight">\(-\mathbb{E}_{q(f)}[\log p(y|f)]\)</span> and adds it as a layer loss.
+When not training, it computes the mean and variance of <code class="docutils literal notranslate"><span class="pre">y</span></code> under <code class="docutils literal notranslate"><span class="pre">q(f)</span></code>
+using <code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_mean_and_var()</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Use <strong>either</strong> this <a class="reference internal" href="#gpflux.models.deep_gp.LikelihoodLayer" title="gpflux.models.deep_gp.LikelihoodLayer"><code class="xref any py py-class docutils literal notranslate"><span class="pre">LikelihoodLayer</span></code></a> (together with
+<a class="reference internal" href="../index.html#gpflux.models.DeepGP" title="gpflux.models.DeepGP"><code class="xref any py py-class docutils literal notranslate"><span class="pre">gpflux.models.DeepGP</span></code></a>) <strong>or</strong> <a class="reference internal" href="../../losses/index.html#gpflux.losses.LikelihoodLoss" title="gpflux.losses.LikelihoodLoss"><code class="xref any py py-class docutils literal notranslate"><span class="pre">LikelihoodLoss</span></code></a> (e.g. together with a
+<a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Sequential" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Sequential</span></code></a> model). Do <strong>not</strong> use both at once because
+this would add the loss twice.</p>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.LikelihoodLayer.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/MultivariateNormalDiag" title="(in TensorFlow Probability v0.12)"><span class="pre">tfp.distributions.MultivariateNormalDiag</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../../layers/likelihood_layer/index.html#gpflux.layers.likelihood_layer.LikelihoodOutputs" title="gpflux.layers.likelihood_layer.LikelihoodOutputs"><span class="pre">LikelihoodOutputs</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/layers/likelihood_layer.html#LikelihoodLayer.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.LikelihoodLayer.call" title="Permalink to this definition">#</a></dt>
+<dd><p>When training (<code class="docutils literal notranslate"><span class="pre">training=True</span></code>), this method computes variational expectations
+(data-fit loss) and adds this information as a layer loss.
+When testing (the default), it computes the posterior mean and variance of <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inputs</strong> – The output distribution of the previous layer. This is currently
+expected to be a <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/MultivariateNormalDiag" title="(in TensorFlow Probability v0.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultivariateNormalDiag</span></code></a>;
+that is, the preceding <a class="reference internal" href="../../layers/index.html#gpflux.layers.GPLayer" title="gpflux.layers.GPLayer"><code class="xref py py-class docutils literal notranslate"><span class="pre">GPLayer</span></code></a> should have
+<code class="docutils literal notranslate"><span class="pre">full_cov=full_output_cov=False</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a <a class="reference internal" href="../../layers/likelihood_layer/index.html#gpflux.layers.likelihood_layer.LikelihoodOutputs" title="gpflux.layers.likelihood_layer.LikelihoodOutputs"><code class="xref any py py-class docutils literal notranslate"><span class="pre">LikelihoodOutputs</span></code></a> tuple with the mean and variance of <code class="docutils literal notranslate"><span class="pre">f</span></code> and,
+if not training, the mean and variance of <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>Turn this layer into a
+<a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/layers/DistributionLambda" title="(in TensorFlow Probability v0.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">DistributionLambda</span></code></a> as well and return the
+correct <a class="reference external" href="https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution" title="(in TensorFlow Probability v0.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Distribution</span></code></a> instead of a tuple
+containing mean and variance only.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.Sample">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sample</span></span><a class="reference internal" href="../../../../_modules/gpflux/sampling/sample.html#Sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.Sample" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.12)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>This class represents a sample from a GP that you can evaluate by using the <code class="docutils literal notranslate"><span class="pre">__call__</span></code>
+at new locations within the support of the GP.</p>
+<p>Importantly, the same function draw (sample) is evaluated when calling it multiple
+times. This property is called consistency. Achieving consistency for vanilla GPs is costly
+because it scales cubically with the number of evaluation points,
+but works with any kernel. It is implemented in
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_efficient_sample_conditional_gaussian()</span></code>.
+For <code class="xref py py-class docutils literal notranslate"><span class="pre">KernelWithFeatureDecomposition</span></code>, the more efficient approach
+following <span id="id2">Wilson <em>et al.</em> [<a class="reference internal" href="../../../../index.html#id13" title="James Wilson, Viacheslav Borovitskiy, Alexander Terenin, Peter Mostowsky, and Marc Deisenroth. Efficiently sampling functions from Gaussian process posteriors. In International Conference on Machine Learning. 2020.">WBT+20</a>]</span> is implemented in
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_efficient_sample_matheron_rule()</span></code>.</p>
+<p>See the tutorial notebooks <a class="reference internal" href="../../../../notebooks/efficient_sampling.html"><span class="doc">Efficient sampling</span></a> and <a class="reference internal" href="../../../../notebooks/weight_space_approximation.html"><span class="doc">Weight Space
+Approximation with Random Fourier Features</span></a> for an
+in-depth overview.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.Sample.__call__">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/sampling/sample.html#Sample.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.Sample.__call__" title="Permalink to this definition">#</a></dt>
+<dd><p>Return the evaluation of the GP sample <span class="math notranslate nohighlight">\(f(X)\)</span> for <span class="math notranslate nohighlight">\(f \sim GP(0, k)\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>X</strong> – The inputs, a tensor with the shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">D]</span></code>, where <code class="docutils literal notranslate"><span class="pre">D</span></code> is the
+input dimensionality.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Function values, a tensor with the shape <code class="docutils literal notranslate"><span class="pre">[N,</span> <span class="pre">P]</span></code>, where <code class="docutils literal notranslate"><span class="pre">P</span></code> is the
+output dimensionality.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.Sample.__add__">
+<span class="sig-name descname"><span class="pre">__add__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#gpflux.models.deep_gp.Sample" title="gpflux.models.deep_gp.Sample"><span class="pre">Sample</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.base.TensorType</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">gpflow.base.TensorType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#gpflux.models.deep_gp.Sample" title="gpflux.models.deep_gp.Sample"><span class="pre">Sample</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/sampling/sample.html#Sample.__add__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.Sample.__add__" title="Permalink to this definition">#</a></dt>
+<dd><p>Allow for the summation of two instances that implement the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DeepGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.layers.Layer</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../layers/index.html#gpflux.layers.LikelihoodLayer" title="gpflux.layers.LikelihoodLayer"><span class="pre">gpflux.layers.LikelihoodLayer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">gpflow.likelihoods.Likelihood</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_model_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.Model</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">tf_keras.Model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></p>
+<p>This class combines a sequential function model <code class="docutils literal notranslate"><span class="pre">f(x)</span> <span class="pre">=</span> <span class="pre">fₙ(⋯</span> <span class="pre">(f₂(f₁(x))))</span></code>
+and a likelihood <code class="docutils literal notranslate"><span class="pre">p(y|f)</span></code>.</p>
+<p>Layers might depend on both inputs x and targets y during training by
+inheriting from <a class="reference internal" href="../../layers/index.html#gpflux.layers.LayerWithObservations" title="gpflux.layers.LayerWithObservations"><code class="xref py py-class docutils literal notranslate"><span class="pre">LayerWithObservations</span></code></a>; those will
+be passed the argument <code class="docutils literal notranslate"><span class="pre">observations=[inputs,</span> <span class="pre">targets]</span></code>.</p>
+<p>When data is used with methods in this class (e.g. <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.predict_f" title="gpflux.models.deep_gp.DeepGP.predict_f"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict_f()</span></code></a> method), it needs to
+be with <code class="docutils literal notranslate"><span class="pre">dtype</span></code> corresponding to GPflow’s default dtype as in <code class="xref py py-meth docutils literal notranslate"><span class="pre">default_float()</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class is <strong>not</strong> a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Model" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Model</span></code></a> subclass itself. To access
+Keras features, call either <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_training_model" title="gpflux.models.deep_gp.DeepGP.as_training_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_training_model()</span></code></a> or <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_prediction_model" title="gpflux.models.deep_gp.DeepGP.as_prediction_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_prediction_model()</span></code></a>
+(depending on the use-case) to create a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Model" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Model</span></code></a> instance. See the method docstrings
+for more details.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f_layers</strong> – The layers <code class="docutils literal notranslate"><span class="pre">[f₁,</span> <span class="pre">f₂,</span> <span class="pre">…,</span> <span class="pre">fₙ]</span></code> describing the latent
+function <code class="docutils literal notranslate"><span class="pre">f(x)</span> <span class="pre">=</span> <span class="pre">fₙ(⋯</span> <span class="pre">(f₂(f₁(x))))</span></code>.</p></li>
+<li><p><strong>likelihood</strong> – The layer for the likelihood <code class="docutils literal notranslate"><span class="pre">p(y|f)</span></code>. If this is a
+GPflow likelihood, it will be wrapped in a <a class="reference internal" href="../../layers/index.html#gpflux.layers.LikelihoodLayer" title="gpflux.layers.LikelihoodLayer"><code class="xref py py-class docutils literal notranslate"><span class="pre">LikelihoodLayer</span></code></a>.
+Alternatively, you can provide a <a class="reference internal" href="../../layers/index.html#gpflux.layers.LikelihoodLayer" title="gpflux.layers.LikelihoodLayer"><code class="xref py py-class docutils literal notranslate"><span class="pre">LikelihoodLayer</span></code></a> explicitly.</p></li>
+<li><p><strong>input_dim</strong> – The input dimensionality.</p></li>
+<li><p><strong>target_dim</strong> – The target dimensionality.</p></li>
+<li><p><strong>default_model_class</strong> – The default for the <em>model_class</em> argument of
+<a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_training_model" title="gpflux.models.deep_gp.DeepGP.as_training_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_training_model()</span></code></a> and <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_prediction_model" title="gpflux.models.deep_gp.DeepGP.as_prediction_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_prediction_model()</span></code></a>;
+see the <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.default_model_class" title="gpflux.models.deep_gp.DeepGP.default_model_class"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default_model_class</span></code></a> attribute.</p></li>
+<li><p><strong>num_data</strong> – The number of points in the training dataset; see the
+<a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.num_data" title="gpflux.models.deep_gp.DeepGP.num_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_data</span></code></a> attribute.
+If you do not specify a value for this parameter explicitly, it is automatically
+detected from the <a class="reference internal" href="../../layers/index.html#gpflux.layers.GPLayer.num_data" title="gpflux.layers.GPLayer.num_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_data</span></code></a> attribute in the GP layers.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.f_layers">
+<span class="sig-name descname"><span class="pre">f_layers</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.layers.Layer</span><span class="p"><span class="pre">]</span></span></em><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.f_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.f_layers" title="Permalink to this definition">#</a></dt>
+<dd><p>A list of all layers in this DeepGP (just <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.likelihood_layer" title="gpflux.models.deep_gp.DeepGP.likelihood_layer"><code class="xref py py-attr docutils literal notranslate"><span class="pre">likelihood_layer</span></code></a> is separate).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.likelihood_layer">
+<span class="sig-name descname"><span class="pre">likelihood_layer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../../layers/index.html#gpflux.layers.LikelihoodLayer" title="gpflux.layers.LikelihoodLayer"><span class="pre">gpflux.layers.LikelihoodLayer</span></a></em><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.likelihood_layer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.likelihood_layer" title="Permalink to this definition">#</a></dt>
+<dd><p>The likelihood layer.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.default_model_class">
+<span class="sig-name descname"><span class="pre">default_model_class</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.Model</span><span class="p"><span class="pre">]</span></span></em><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.default_model_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.default_model_class" title="Permalink to this definition">#</a></dt>
+<dd><p>The default for the <em>model_class</em> argument of <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_training_model" title="gpflux.models.deep_gp.DeepGP.as_training_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_training_model()</span></code></a> and
+<a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_prediction_model" title="gpflux.models.deep_gp.DeepGP.as_prediction_model"><code class="xref py py-meth docutils literal notranslate"><span class="pre">as_prediction_model()</span></code></a>. This must have the same semantics as <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Model" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Model</span></code></a>,
+that is, it must accept a list of inputs and an output. This could be
+<a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Model" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Model</span></code></a> itself or <a class="reference internal" href="../../optimization/index.html#gpflux.optimization.NatGradModel" title="gpflux.optimization.NatGradModel"><code class="xref any py py-class docutils literal notranslate"><span class="pre">gpflux.optimization.NatGradModel</span></code></a> (but not, for
+example, <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Sequential" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Sequential</span></code></a>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.num_data">
+<span class="sig-name descname"><span class="pre">num_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.num_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.num_data" title="Permalink to this definition">#</a></dt>
+<dd><p>The number of points in the training dataset. This information is used to
+obtain correct scaling between the data-fit and the KL term in the evidence
+lower bound (<a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.elbo" title="gpflux.models.deep_gp.DeepGP.elbo"><code class="xref py py-meth docutils literal notranslate"><span class="pre">elbo()</span></code></a>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP._validate_num_data">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_validate_num_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.layers.Layer</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP._validate_num_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP._validate_num_data" title="Permalink to this definition">#</a></dt>
+<dd><p>Check that the <a class="reference internal" href="../../layers/gp_layer/index.html#gpflux.layers.gp_layer.GPLayer.num_data" title="gpflux.layers.gp_layer.GPLayer.num_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_data</span></code></a>
+attributes of all layers in <em>f_layers</em> are consistent with each other
+and with the (optional) <em>num_data</em> argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The validated number of datapoints.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP._validate_dtype">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_validate_dtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP._validate_dtype"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP._validate_dtype" title="Permalink to this definition">#</a></dt>
+<dd><p>Check that data <code class="docutils literal notranslate"><span class="pre">x</span></code> is of correct <code class="docutils literal notranslate"><span class="pre">dtype</span></code>, corresponding to GPflow’s default dtype as
+defined by <code class="xref py py-meth docutils literal notranslate"><span class="pre">default_float()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">x</span></code> is of incorrect <code class="docutils literal notranslate"><span class="pre">dtype</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP._evaluate_deep_gp">
+<span class="sig-name descname"><span class="pre">_evaluate_deep_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP._evaluate_deep_gp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP._evaluate_deep_gp" title="Permalink to this definition">#</a></dt>
+<dd><p>Evaluate <code class="docutils literal notranslate"><span class="pre">f(x)</span> <span class="pre">=</span> <span class="pre">fₙ(⋯</span> <span class="pre">(f₂(f₁(x))))</span></code> on the <em>inputs</em> argument.</p>
+<p>Layers that inherit from <a class="reference internal" href="../../layers/index.html#gpflux.layers.LayerWithObservations" title="gpflux.layers.LayerWithObservations"><code class="xref py py-class docutils literal notranslate"><span class="pre">LayerWithObservations</span></code></a>
+are passed the additional keyword argument <code class="docutils literal notranslate"><span class="pre">observations=[inputs,</span>
+<span class="pre">targets]</span></code> if <em>targets</em> contains a value, or <code class="docutils literal notranslate"><span class="pre">observations=None</span></code> when
+<em>targets</em> is <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><code class="xref any docutils literal notranslate"><span class="pre">None</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP._evaluate_likelihood">
+<span class="sig-name descname"><span class="pre">_evaluate_likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP._evaluate_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP._evaluate_likelihood" title="Permalink to this definition">#</a></dt>
+<dd><p>Call the <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.likelihood_layer" title="gpflux.models.deep_gp.DeepGP.likelihood_layer"><code class="xref any py py-attr docutils literal notranslate"><span class="pre">likelihood_layer</span></code></a> on <em>f_outputs</em>, which adds the
+corresponding layer loss when training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.predict_f">
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">gpflow.base.TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.predict_f" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The mean and variance (not the scale!) of <code class="docutils literal notranslate"><span class="pre">f</span></code>, for compatibility with GPflow
+models.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.12)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">x</span></code> is of incorrect <code class="docutils literal notranslate"><span class="pre">dtype</span></code>.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method does <strong>not</strong> support <code class="docutils literal notranslate"><span class="pre">full_cov</span></code> or <code class="docutils literal notranslate"><span class="pre">full_output_cov</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.elbo">
+<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.base.TensorType</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">gpflow.base.TensorType</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/Tensor" title="(in TensorFlow v2.4)"><span class="pre">tf.Tensor</span></a></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.elbo" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The ELBO (not the per-datapoint loss!), for compatibility with GPflow models.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.as_training_model">
+<span class="sig-name descname"><span class="pre">as_training_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.Model</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">gpflow.keras.tf_keras.Model</span></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.as_training_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.as_training_model" title="Permalink to this definition">#</a></dt>
+<dd><p>Construct a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Model" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Model</span></code></a> instance that requires you to provide both <code class="docutils literal notranslate"><span class="pre">inputs</span></code>
+and <code class="docutils literal notranslate"><span class="pre">targets</span></code> to its call. This information is required for
+training the model, because the <code class="docutils literal notranslate"><span class="pre">targets</span></code> need to be passed to the <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.likelihood_layer" title="gpflux.models.deep_gp.DeepGP.likelihood_layer"><code class="xref any py py-attr docutils literal notranslate"><span class="pre">likelihood_layer</span></code></a> (and
+to <a class="reference internal" href="../../layers/index.html#gpflux.layers.LayerWithObservations" title="gpflux.layers.LayerWithObservations"><code class="xref py py-class docutils literal notranslate"><span class="pre">LayerWithObservations</span></code></a> instances such as
+<a class="reference internal" href="../../layers/index.html#gpflux.layers.LatentVariableLayer" title="gpflux.layers.LatentVariableLayer"><code class="xref py py-class docutils literal notranslate"><span class="pre">LatentVariableLayer</span></code></a>s, if present).</p>
+<p>When compiling the returned model, do <strong>not</strong> provide any additional
+losses (this is handled by the <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.likelihood_layer" title="gpflux.models.deep_gp.DeepGP.likelihood_layer"><code class="xref py py-attr docutils literal notranslate"><span class="pre">likelihood_layer</span></code></a>).</p>
+<p>Train with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="p">)</span>  <span class="c1"># do NOT pass a loss here</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">({</span><span class="s2">&quot;inputs&quot;</span><span class="p">:</span> <span class="n">X</span><span class="p">,</span> <span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="n">Y</span><span class="p">},</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference external" href="https://keras.io/examples/keras_recipes/endpoint_layer_pattern/">Keras’s Endpoint layer pattern</a>
+for more details.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Use <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_prediction_model" title="gpflux.models.deep_gp.DeepGP.as_prediction_model"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">as_prediction_model</span></code></a> if you want only to predict, and do not want to pass in
+a dummy array for the targets.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_class</strong> – The model class to use; overrides <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.default_model_class" title="gpflux.models.deep_gp.DeepGP.default_model_class"><code class="xref any py py-attr docutils literal notranslate"><span class="pre">default_model_class</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflux.models.deep_gp.DeepGP.as_prediction_model">
+<span class="sig-name descname"><span class="pre">as_prediction_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_class</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">gpflow.keras.tf_keras.Model</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">gpflow.keras.tf_keras.Model</span></span></span><a class="reference internal" href="../../../../_modules/gpflux/models/deep_gp.html#DeepGP.as_prediction_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflux.models.deep_gp.DeepGP.as_prediction_model" title="Permalink to this definition">#</a></dt>
+<dd><p>Construct a <a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/keras/Model" title="(in TensorFlow v2.4)"><code class="xref any docutils literal notranslate"><span class="pre">tf.keras.Model</span></code></a> instance that requires only <code class="docutils literal notranslate"><span class="pre">inputs</span></code>,
+which means you do not have to provide dummy target values when
+predicting at test points.</p>
+<p>Predict with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The returned model will not support training; for that, use <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.as_training_model" title="gpflux.models.deep_gp.DeepGP.as_training_model"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">as_training_model</span></code></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_class</strong> – The model class to use; overrides <a class="reference internal" href="#gpflux.models.deep_gp.DeepGP.default_model_class" title="gpflux.models.deep_gp.DeepGP.default_model_class"><code class="xref any py py-attr docutils literal notranslate"><span class="pre">default_model_class</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-contents">Module Contents</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.LayerWithObservations"><code class="docutils literal notranslate"><span class="pre">LayerWithObservations</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.LayerWithObservations.call"><code class="docutils literal notranslate"><span class="pre">LayerWithObservations.call()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.LikelihoodLayer"><code class="docutils literal notranslate"><span class="pre">LikelihoodLayer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.LikelihoodLayer.call"><code class="docutils literal notranslate"><span class="pre">LikelihoodLayer.call()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.Sample"><code class="docutils literal notranslate"><span class="pre">Sample</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.Sample.__call__"><code class="docutils literal notranslate"><span class="pre">Sample.__call__()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.Sample.__add__"><code class="docutils literal notranslate"><span class="pre">Sample.__add__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP"><code class="docutils literal notranslate"><span class="pre">DeepGP</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.f_layers"><code class="docutils literal notranslate"><span class="pre">DeepGP.f_layers</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.likelihood_layer"><code class="docutils literal notranslate"><span class="pre">DeepGP.likelihood_layer</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.default_model_class"><code class="docutils literal notranslate"><span class="pre">DeepGP.default_model_class</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.num_data"><code class="docutils literal notranslate"><span class="pre">DeepGP.num_data</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP._validate_num_data"><code class="docutils literal notranslate"><span class="pre">DeepGP._validate_num_data()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP._validate_dtype"><code class="docutils literal notranslate"><span class="pre">DeepGP._validate_dtype()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP._evaluate_deep_gp"><code class="docutils literal notranslate"><span class="pre">DeepGP._evaluate_deep_gp()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP._evaluate_likelihood"><code class="docutils literal notranslate"><span class="pre">DeepGP._evaluate_likelihood()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.predict_f"><code class="docutils literal notranslate"><span class="pre">DeepGP.predict_f()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.elbo"><code class="docutils literal notranslate"><span class="pre">DeepGP.elbo()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.as_training_model"><code class="docutils literal notranslate"><span class="pre">DeepGP.as_training_model()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpflux.models.deep_gp.DeepGP.as_prediction_model"><code class="docutils literal notranslate"><span class="pre">DeepGP.as_prediction_model()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright Copyright 2021 The GPflux Contributors
+
+Licensed under the Apache License, Version 2.0
+.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

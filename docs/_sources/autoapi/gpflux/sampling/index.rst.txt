@@ -1,0 +1,104 @@
+gpflux.sampling
+===============
+
+.. py:module:: gpflux.sampling
+
+.. autoapi-nested-parse::
+
+   This module enables you to sample from (Deep) GPs efficiently and consistently.
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/gpflux/sampling/kernel_with_feature_decomposition/index
+   /autoapi/gpflux/sampling/sample/index
+   /autoapi/gpflux/sampling/utils/index
+
+
+
+
+
+
+Package Contents
+----------------
+
+.. py:class:: KernelWithFeatureDecomposition(kernel: Union[gpflow.kernels.Kernel, NoneType], feature_functions: gpflow.keras.tf_keras.layers.Layer, feature_coefficients: gpflow.base.TensorType)
+
+   Bases: :py:obj:`gpflow.kernels.Kernel`
+
+
+   This class represents a kernel together with its finite feature decomposition:
+
+   .. math:: k(x, x') = \sum_{i=0}^L \lambda_i \phi_i(x) \phi_i(x'),
+
+   where :math:`\lambda_i` and :math:`\phi_i(\cdot)` are the coefficients and
+   features, respectively.
+
+   The decomposition can be derived from Mercer or Bochner's theorem. For example,
+   feature-coefficient pairs could be eigenfunction-eigenvalue pairs (Mercer) or
+   Fourier features with constant coefficients (Bochner).
+
+   In some cases (e.g., [1]_ and [2]_) the left-hand side (that is, the
+   covariance function :math:`k(\cdot, \cdot)`) is unknown and the kernel
+   can only be approximated using its feature decomposition.
+   In other cases (e.g., [3]_ and [4]_), both the covariance function and feature
+   decomposition are available in closed form.
+
+   .. [1]
+       Solin, Arno, and Simo Särkkä. "Hilbert space methods for
+       reduced-rank Gaussian process regression." Statistics and Computing
+       (2020).
+   .. [2]
+       Borovitskiy, Viacheslav, et al. "Matérn Gaussian processes on
+       Riemannian manifolds." In Advances in Neural Information Processing
+       Systems (2020).
+   .. [3]
+       Ali Rahimi and Benjamin Recht. Random features for large-scale kernel
+       machines. In Advances in Neural Information Processing Systems (2007).
+   .. [4]
+       Dutordoir, Vincent, Nicolas Durrande, and James Hensman. "Sparse
+       Gaussian processes with spherical harmonic features." In International
+       Conference on Machine Learning (2020).
+
+   :param kernel: The kernel corresponding to the feature decomposition.
+       If ``None``, there is no analytical expression associated with the infinite
+       sum and we approximate the kernel based on the feature decomposition.
+
+       .. note::
+
+           In certain cases, the analytical expression for the kernel is
+           not available. In this case, passing `None` is allowed, and
+           :meth:`K` and :meth:`K_diag` will be computed using the
+           approximation provided by the feature decomposition.
+
+   :param feature_functions: A Keras layer for which the call evaluates the
+       ``L`` features of the kernel :math:`\phi_i(\cdot)`. For ``X`` with the shape ``[N, D]``,
+       ``feature_functions(X)`` returns a tensor with the shape ``[N, L]``.
+   :param feature_coefficients: A tensor with the shape ``[L, 1]`` with coefficients
+       associated with the features, :math:`\lambda_i`.
+
+
+   .. py:property:: feature_functions
+      :type: gpflow.keras.tf_keras.layers.Layer
+
+      Return the kernel's features :math:`\phi_i(\cdot)`.
+
+
+
+   .. py:property:: feature_coefficients
+      :type: tensorflow.Tensor
+
+      Return the kernel's coefficients :math:`\lambda_i`.
+
+
+
+.. py:data:: efficient_sample
+
+   A function that returns a :class:`Sample` of a GP posterior. 
+
+
