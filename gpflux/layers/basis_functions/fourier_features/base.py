@@ -44,11 +44,17 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         self.kernel = kernel
         self.n_components = n_components
         if isinstance(kernel, gpflow.kernels.MultioutputKernel):
-            self.is_multioutput = True
-            self.num_latent_gps = kernel.num_latent_gps
+            self.is_batched = True
+            self.batch_size = kernel.num_latent_gps
+            self.sub_kernels = kernel.latent_kernels
+        elif isinstance(kernel, gpflow.kernels.Combination):
+            self.is_batched = True
+            self.batch_size = len(kernel.kernels)
+            self.sub_kernels = kernel.kernels
         else:
-            self.is_multioutput = False
-            self.num_latent_gps = 1
+            self.is_batched = False
+            self.batch_size = 1
+            self.sub_kernels = []
 
         if kwargs.get("input_dim", None):
             self._input_dim = kwargs["input_dim"]
@@ -64,8 +70,8 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
-        if self.is_multioutput:
-            X = [tf.divide(inputs, k.lengthscales) for k in self.kernel.latent_kernels]
+        if self.is_batched:
+            X = [tf.divide(inputs, k.lengthscales) for k in self.sub_kernels]
             X = tf.stack(X, 0)  # [1, N, D] or [P, N, D]
         else:
             X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
@@ -86,8 +92,8 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
         output_dim = self._compute_output_dim(input_shape)
         trailing_shape = tensor_shape[:-1].concatenate(output_dim)
-        if self.is_multioutput:
-            return tf.TensorShape([self.num_latent_gps]).concatenate(trailing_shape)  # [P, N, M]
+        if self.is_batched:
+            return tf.TensorShape([self.batch_size]).concatenate(trailing_shape)  # [P, N, M]
         else:
             return trailing_shape  # [N, M]
 

@@ -47,6 +47,8 @@ RFF_SUPPORTED_MULTIOUTPUTS: Tuple[Type[gpflow.kernels.MultioutputKernel], ...] =
     gpflow.kernels.SharedIndependent,
 )
 
+RFF_SUPPORTED_COMBINED: Tuple[Type[gpflow.kernels.Combination], ...] = (gpflow.kernels.Sum,)
+
 
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
     """
@@ -79,9 +81,15 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 
 class RandomFourierFeaturesBase(FourierFeaturesBase):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
-        assert isinstance(kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS)), (
-            f"Unsupported Kernel: only the following kernel types are supported: "
-            f"{[k.__name__ for k in RFF_SUPPORTED_MULTIOUTPUTS + RFF_SUPPORTED_KERNELS]}"
+        assert isinstance(
+            kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS, RFF_SUPPORTED_COMBINED)
+        ), "Unsupported Kernel: only the following kernel types are supported: {}".format(
+            [
+                k.__name__
+                for k in (
+                    RFF_SUPPORTED_MULTIOUTPUTS + RFF_SUPPORTED_KERNELS + RFF_SUPPORTED_COMBINED
+                )
+            ]
         )
         if isinstance(kernel, RFF_SUPPORTED_MULTIOUTPUTS):
             for k in kernel.latent_kernels:
@@ -90,6 +98,12 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
                     f"kernel types are supported: "
                     f"{[k.__name__ for k in RFF_SUPPORTED_KERNELS]}"
                 )
+        elif isinstance(kernel, RFF_SUPPORTED_COMBINED):
+            assert all(isinstance(k, RFF_SUPPORTED_KERNELS) for k in kernel.kernels), (
+                f"Unsupported Kernel within the combination kernel; only the following"
+                f"kernel types are supported: "
+                f"{[k.__name__ for k in RFF_SUPPORTED_KERNELS]}"
+            )
         super(RandomFourierFeaturesBase, self).__init__(kernel, n_components, **kwargs)
 
     def build(self, input_shape: ShapeType) -> None:
@@ -103,8 +117,8 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         super(RandomFourierFeaturesBase, self).build(input_shape)
 
     def _weights_build(self, input_dim: int, n_components: int) -> None:
-        if self.is_multioutput:
-            shape = (self.num_latent_gps, n_components, input_dim)  # [P, M, D]
+        if self.is_batched:
+            shape = (self.batch_size, n_components, input_dim)  # [P, M, D]
         else:
             shape = (n_components, input_dim)  # type: ignore
         self.W = self.add_weight(
@@ -129,16 +143,15 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
             return _sample_students_t(nu, shape, dtype)
 
     def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        if self.is_multioutput:
+        if self.is_batched:
             if isinstance(self.kernel, gpflow.kernels.SharedIndependent):
                 weights_list = [
-                    self._weights_init_individual(self.kernel.latent_kernels[0], shape[1:], dtype)
-                    for _ in range(self.num_latent_gps)
+                    self._weights_init_individual(self.sub_kernels[0], shape[1:], dtype)
+                    for _ in range(self.batch_size)
                 ]
             else:
                 weights_list = [
-                    self._weights_init_individual(k, shape[1:], dtype)
-                    for k in self.kernel.latent_kernels
+                    self._weights_init_individual(k, shape[1:], dtype) for k in self.sub_kernels
                 ]
             return tf.stack(weights_list, 0)  # [P, M, D]
         else:
@@ -203,10 +216,10 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
 
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
-        if self.is_multioutput:
+        if self.is_batched:
             constants = [
                 self.rff_constant(k.variance, output_dim=2 * self.n_components)
-                for k in self.kernel.latent_kernels
+                for k in self.sub_kernels
             ]
             return tf.stack(constants, 0)[:, None, None]  # [P, 1, 1]
         else:
@@ -253,8 +266,8 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         super(RandomFourierFeaturesCosine, self).build(input_shape)
 
     def _bias_build(self, n_components: int) -> None:
-        if self.is_multioutput:
-            shape = (self.num_latent_gps, 1, n_components)
+        if self.is_batched:
+            shape = (self.batch_size, 1, n_components)
         else:
             shape = (1, n_components)  # type: ignore
         self.b = self.add_weight(
@@ -285,10 +298,10 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
 
         :return: A tensor with the shape ``[]`` (i.e. a scalar).
         """
-        if self.is_multioutput:
+        if self.is_batched:
             constants = [
                 self.rff_constant(k.variance, output_dim=self.n_components)
-                for k in self.kernel.latent_kernels
+                for k in self.sub_kernels
             ]
             return tf.stack(constants, 0)[:, None, None]  # [1, 1, 1] or [P, 1, 1]
         else:
