@@ -47,7 +47,7 @@ RFF_SUPPORTED_MULTIOUTPUTS: Tuple[Type[gpflow.kernels.MultioutputKernel], ...] =
     gpflow.kernels.SharedIndependent,
 )
 
-RFF_SUPPORTED_COMBINED: Tuple[Type[gpflow.kernels.Combination], ...] = (gpflow.kernels.Sum,)
+RFF_SUPPORTED_COMBINATION: Tuple[Type[gpflow.kernels.Combination], ...] = (gpflow.kernels.Sum,)
 
 
 def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
@@ -82,12 +82,12 @@ def _sample_students_t(nu: float, shape: ShapeType, dtype: DType) -> TensorType:
 class RandomFourierFeaturesBase(FourierFeaturesBase):
     def __init__(self, kernel: gpflow.kernels.Kernel, n_components: int, **kwargs: Mapping):
         assert isinstance(
-            kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS, RFF_SUPPORTED_COMBINED)
+            kernel, (RFF_SUPPORTED_KERNELS, RFF_SUPPORTED_MULTIOUTPUTS, RFF_SUPPORTED_COMBINATION)
         ), "Unsupported Kernel: only the following kernel types are supported: {}".format(
             [
                 k.__name__
                 for k in (
-                    RFF_SUPPORTED_MULTIOUTPUTS + RFF_SUPPORTED_KERNELS + RFF_SUPPORTED_COMBINED
+                    RFF_SUPPORTED_MULTIOUTPUTS + RFF_SUPPORTED_KERNELS + RFF_SUPPORTED_COMBINATION
                 )
             ]
         )
@@ -98,7 +98,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
                     f"kernel types are supported: "
                     f"{[k.__name__ for k in RFF_SUPPORTED_KERNELS]}"
                 )
-        elif isinstance(kernel, RFF_SUPPORTED_COMBINED):
+        elif isinstance(kernel, RFF_SUPPORTED_COMBINATION):
             assert all(isinstance(k, RFF_SUPPORTED_KERNELS) for k in kernel.kernels), (
                 f"Unsupported Kernel within the combination kernel; only the following"
                 f"kernel types are supported: "
