@@ -42,7 +42,7 @@ help: ## Shows this help message
 
 install:  ## Install repo for developement
 	@echo "\n=== pip install package with dev requirements =============="
-	pip install --upgrade --upgrade-strategy eager \
+	pip install --upgrade --upgrade-strategy eager --no-build-isolation \
 		-r notebook_requirements.txt \
 		-r $(TEST_REQUIREMENTS) \
 		tensorflow${VERSION_TF} \
