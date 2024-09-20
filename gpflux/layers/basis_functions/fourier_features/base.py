@@ -86,7 +86,7 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         # feature dimension.
         if self.is_batched and not self.is_multioutput:
             output = tf.transpose(output, perm=[1, 2, 0])  # [N, M, P]
-            output = tf.reshape(output, [output.shape[0], -1])  # [N, M*P]
+            output = tf.reshape(output, [tf.shape(output)[0], -1])  # [N, M*P]
 
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
