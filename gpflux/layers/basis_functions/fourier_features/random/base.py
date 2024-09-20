@@ -199,8 +199,13 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     from phase-shifted cosines :class:`RandomFourierFeaturesCosine` :cite:p:`sutherland2015error`.
     """
 
-    def _compute_output_dim(self, input_shape: ShapeType) -> int:
-        return 2 * self.n_components
+    def compute_output_dim(self, input_shape: ShapeType) -> int:
+        # For combination kernels, the number of features is multiplied by the number of
+        # sub-kernels.
+        dim = 2 * self.n_components
+        if self.is_batched and not self.is_multioutput:
+            dim *= self.batch_size
+        return dim
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         """
@@ -281,8 +286,13 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
     def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
 
-    def _compute_output_dim(self, input_shape: ShapeType) -> int:
-        return self.n_components
+    def compute_output_dim(self, input_shape: ShapeType) -> int:
+        # For combination kernels, the number of features is multiplied by the number of
+        # sub-kernels.
+        dim = self.n_components
+        if self.is_batched and not self.is_multioutput:
+            dim *= self.batch_size
+        return dim
 
     def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
         """

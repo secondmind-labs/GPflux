@@ -45,14 +45,17 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         self.n_components = n_components
         if isinstance(kernel, gpflow.kernels.MultioutputKernel):
             self.is_batched = True
+            self.is_multioutput = True
             self.batch_size = kernel.num_latent_gps
             self.sub_kernels = kernel.latent_kernels
         elif isinstance(kernel, gpflow.kernels.Combination):
             self.is_batched = True
+            self.is_multioutput = False
             self.batch_size = len(kernel.kernels)
             self.sub_kernels = kernel.kernels
         else:
             self.is_batched = False
+            self.is_multioutput = False
             self.batch_size = 1
             self.sub_kernels = []
 
@@ -68,7 +71,7 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
+        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the batched case.
         """
         if self.is_batched:
             X = [tf.divide(inputs, k.lengthscales) for k in self.sub_kernels]
@@ -78,6 +81,13 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         const = self._compute_constant()  # [] or [P, 1, 1]
         bases = self._compute_bases(X)  # [N, M] or [P, N, M]
         output = const * bases
+
+        # For combination kernels, remove batch dimension and instead concatenate into the
+        # feature dimension.
+        if self.is_batched and not self.is_multioutput:
+            output = tf.transpose(output, perm=[1, 2, 0])  # [N, M, P]
+            output = tf.reshape(output, [output.shape[0], -1])  # [N, M*P]
+
         tf.ensure_shape(output, self.compute_output_shape(inputs.shape))
         return output
 
@@ -90,12 +100,12 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         # TODO: Keras docs say "If the layer has not been built, this method
         # will call `build` on the layer." -- do we need to do so?
         tensor_shape = tf.TensorShape(input_shape).with_rank(2)
-        output_dim = self._compute_output_dim(input_shape)
+        output_dim = self.compute_output_dim(input_shape)
         trailing_shape = tensor_shape[:-1].concatenate(output_dim)
-        if self.is_batched:
+        if self.is_multioutput:
             return tf.TensorShape([self.batch_size]).concatenate(trailing_shape)  # [P, N, M]
         else:
-            return trailing_shape  # [N, M]
+            return trailing_shape  # [N, M] or [N, M*P]
 
     def get_config(self) -> Mapping:
         """
@@ -115,7 +125,10 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         return config
 
     @abstractmethod
-    def _compute_output_dim(self, input_shape: ShapeType) -> int:
+    def compute_output_dim(self, input_shape: ShapeType) -> int:
+        """
+        Compute the output dimension of the layer.
+        """
         pass
 
     @abstractmethod

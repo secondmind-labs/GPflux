@@ -157,9 +157,6 @@ def test_multi_random_fourier_features_can_approximate_kernel_multidim(
     v = fourier_features(y)
     approx_kernel_matrix = u @ tf.linalg.matrix_transpose(v)
 
-    if isinstance(multi_kernel, gpflow.kernels.Sum):
-        approx_kernel_matrix = tf.reduce_sum(approx_kernel_matrix, axis=0)
-
     if isinstance(multi_kernel, gpflow.kernels.MultioutputKernel):
         actual_kernel_matrix = multi_kernel.K(x, y, full_output_cov=False)
     else:
@@ -230,9 +227,6 @@ def test_multi_random_fourier_feature_layer_compute_covariance_of_inducing_varia
 
     u = fourier_features(x_new)
     approx_kernel_matrix = u @ tf.linalg.matrix_transpose(u)
-
-    if isinstance(multi_kernel, gpflow.kernels.Sum):
-        approx_kernel_matrix = tf.reduce_sum(approx_kernel_matrix, axis=0)
 
     if isinstance(multi_kernel, gpflow.kernels.MultioutputKernel):
         actual_kernel_matrix = multi_kernel.K(x_new, x_new, full_output_cov=False)
