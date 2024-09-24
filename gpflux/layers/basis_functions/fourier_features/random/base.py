@@ -200,10 +200,10 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
     """
 
     def compute_output_dim(self, input_shape: ShapeType) -> int:
-        # For combination kernels, the number of features is multiplied by the number of
-        # sub-kernels.
         dim = 2 * self.n_components
         if self.is_batched and not self.is_multioutput:
+            # For combination kernels, the number of features is multiplied by the number of
+            # sub-kernels.
             dim *= self.batch_size
         return dim
 
@@ -287,10 +287,10 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
 
     def compute_output_dim(self, input_shape: ShapeType) -> int:
-        # For combination kernels, the number of features is multiplied by the number of
-        # sub-kernels.
         dim = self.n_components
         if self.is_batched and not self.is_multioutput:
+            # For combination kernels, the number of features is multiplied by the number of
+            # sub-kernels.
             dim *= self.batch_size
         return dim
 

@@ -71,7 +71,7 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
 
         :param inputs: The evaluation points, a tensor with the shape ``[N, D]``.
 
-        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the batched case.
+        :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
         if self.is_batched:
             X = [tf.divide(inputs, k.lengthscales) for k in self.sub_kernels]
@@ -82,9 +82,9 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         bases = self._compute_bases(X)  # [N, M] or [P, N, M]
         output = const * bases
 
-        # For combination kernels, remove batch dimension and instead concatenate into the
-        # feature dimension.
         if self.is_batched and not self.is_multioutput:
+            # For combination kernels, remove batch dimension and instead concatenate into the
+            # feature dimension.
             output = tf.transpose(output, perm=[1, 2, 0])  # [N, M, P]
             output = tf.reshape(output, [tf.shape(output)[0], -1])  # [N, M*P]
 

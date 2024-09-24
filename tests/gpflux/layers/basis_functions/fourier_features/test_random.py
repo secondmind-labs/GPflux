@@ -71,7 +71,13 @@ def _kernel_cls_fixture(request):
                 gpflow.kernels.Matern32(lengthscales=0.1),
             ]
         ),
-        gpflow.kernels.Sum([gpflow.kernels.SquaredExponential(), gpflow.kernels.Matern52()]),
+        gpflow.kernels.Sum(
+            [
+                gpflow.kernels.SquaredExponential(),
+                gpflow.kernels.Matern32(),
+                gpflow.kernels.Matern52(),
+            ]
+        ),
     ],
 )
 def _multi_kernel_cls_fixture(request):
