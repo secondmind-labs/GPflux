@@ -71,7 +71,7 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         self.factors = tf.Variable(initial_value=omegas_value, trainable=False)  # (M^D,)
         super(QuadratureFourierFeatures, self).build(input_shape)
 
-    def _compute_output_dim(self, input_shape: ShapeType) -> int:
+    def compute_output_dim(self, input_shape: ShapeType) -> int:
         input_dim = input_shape[-1]
         return 2 * self.n_components ** input_dim
 
