@@ -123,8 +123,9 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         return kernel.slice(dummy_X, None)[0].shape[-1]
 
     def _weights_build(self, input_dim: int, n_components: int) -> None:
+        # for batched layers we store a list of weights, as each may have a different
+        # active input dimension
         if self.is_batched:
-            # TODO: handle nested active_dims
             self.W = [
                 self.add_weight(
                     name="weights",
@@ -133,7 +134,7 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
                     dtype=self.dtype,
                     initializer=self._weights_init(k),
                 )
-                # SharedIndependent repeatedly use the same sub_kernel
+                # SharedIndependent repeatedly uses the same sub_kernel
                 for _, k in zip(range(self.batch_size), cycle(self.sub_kernels))
             ]
         else:
@@ -278,6 +279,7 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
         super(RandomFourierFeaturesCosine, self).build(input_shape)
 
     def _bias_build(self, n_components: int) -> None:
+        # for batched layers we store a list of biases, to match the weights structure
         if self.is_batched:
             self.b = [
                 self.add_weight(

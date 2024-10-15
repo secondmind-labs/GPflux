@@ -74,19 +74,20 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
-        const = self._compute_constant()  # [] or [P, 1, 1]
         if self.is_batched:
-            # TODO: handle nested active dims
             bases = [
+                # restrict inputs to the appropriate active_dims for each sub_kernel
                 self._compute_bases(tf.divide(k.slice(inputs, None)[0], k.lengthscales), i)
-                # SharedIndependent repeatedly use the same sub_kernel
+                # SharedIndependent repeatedly uses the same sub_kernel
                 for i, k in zip(range(self.batch_size), cycle(self.sub_kernels))
             ]
             bases = tf.stack(bases, axis=0)  # [P, N, M]
         else:
+            # restrict inputs to the kernel's active_dims
             X = tf.divide(self.kernel.slice(inputs, None)[0], self.kernel.lengthscales)  # [N, D]
             bases = self._compute_bases(X, None)  # [N, M]
 
+        const = self._compute_constant()  # [] or [P, 1, 1]
         output = const * bases
 
         if self.is_batched and not self.is_multioutput:
@@ -149,5 +150,7 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
     def _compute_bases(self, inputs: TensorType, batch: Optional[int]) -> tf.Tensor:
         """
         Compute basis functions.
+
+        For batched layers (self.is_batched), batch indicates which sub-kernel to target.
         """
         pass
