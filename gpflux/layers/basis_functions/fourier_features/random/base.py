@@ -13,13 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from typing import Mapping, Optional, Tuple, Type
+from itertools import cycle
+from typing import Callable, Mapping, Optional, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
 
 import gpflow
 from gpflow.base import DType, TensorType
+from gpflow.kernels import Kernel
 
 from gpflux.layers.basis_functions.fourier_features.base import FourierFeaturesBase
 from gpflux.layers.basis_functions.fourier_features.utils import (
@@ -116,18 +118,32 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
         self._weights_build(input_dim, n_components=self.n_components)
         super(RandomFourierFeaturesBase, self).build(input_shape)
 
+    def _active_input_dim(self, input_dim: int, kernel: Kernel) -> int:
+        dummy_X = tf.zeros((0, input_dim), dtype=tf.float64)
+        return kernel.slice(dummy_X, None)[0].shape[-1]
+
     def _weights_build(self, input_dim: int, n_components: int) -> None:
         if self.is_batched:
-            shape = (self.batch_size, n_components, input_dim)  # [P, M, D]
+            # TODO: handle nested active_dims
+            self.W = [
+                self.add_weight(
+                    name="weights",
+                    trainable=False,
+                    shape=(n_components, self._active_input_dim(input_dim, k)),
+                    dtype=self.dtype,
+                    initializer=self._weights_init(k),
+                )
+                # SharedIndependent repeatedly use the same sub_kernel
+                for _, k in zip(range(self.batch_size), cycle(self.sub_kernels))
+            ]
         else:
-            shape = (n_components, input_dim)  # type: ignore
-        self.W = self.add_weight(
-            name="weights",
-            trainable=False,
-            shape=shape,
-            dtype=self.dtype,
-            initializer=self._weights_init,
-        )
+            self.W = self.add_weight(
+                name="weights",
+                trainable=False,
+                shape=(n_components, self._active_input_dim(input_dim, self.kernel)),
+                dtype=self.dtype,
+                initializer=self._weights_init(self.kernel),
+            )
 
     def _weights_init_individual(
         self,
@@ -142,20 +158,11 @@ class RandomFourierFeaturesBase(FourierFeaturesBase):
             nu = 2.0 * p + 1.0  # degrees of freedom
             return _sample_students_t(nu, shape, dtype)
 
-    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        if self.is_batched:
-            if isinstance(self.kernel, gpflow.kernels.SharedIndependent):
-                weights_list = [
-                    self._weights_init_individual(self.sub_kernels[0], shape[1:], dtype)
-                    for _ in range(self.batch_size)
-                ]
-            else:
-                weights_list = [
-                    self._weights_init_individual(k, shape[1:], dtype) for k in self.sub_kernels
-                ]
-            return tf.stack(weights_list, 0)  # [P, M, D]
-        else:
-            return self._weights_init_individual(self.kernel, shape, dtype)  # [M, D]
+    def _weights_init(self, kernel: Kernel) -> Callable[[TensorType, Optional[DType]], TensorType]:
+        def _initializer(shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
+            return self._weights_init_individual(kernel, shape, dtype)  # [M, D]
+
+        return _initializer
 
     @staticmethod
     def rff_constant(variance: TensorType, output_dim: int) -> tf.Tensor:
@@ -207,13 +214,13 @@ class RandomFourierFeatures(RandomFourierFeaturesBase):
             dim *= self.batch_size
         return dim
 
-    def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+    def _compute_bases(self, inputs: TensorType, batch: Optional[int]) -> tf.Tensor:
         """
         Compute basis functions.
 
         :return: A tensor with the shape ``[N, 2M]`` or ``[P, N, 2M]``.
         """
-        return _bases_concat(inputs, self.W)
+        return _bases_concat(inputs, self.W if batch is None else self.W[batch])
 
     def _compute_constant(self) -> tf.Tensor:
         """
@@ -272,16 +279,24 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
 
     def _bias_build(self, n_components: int) -> None:
         if self.is_batched:
-            shape = (self.batch_size, 1, n_components)
+            self.b = [
+                self.add_weight(
+                    name="bias",
+                    trainable=False,
+                    shape=(1, n_components),
+                    dtype=self.dtype,
+                    initializer=self._bias_init,
+                )
+                for _ in range(self.batch_size)
+            ]
         else:
-            shape = (1, n_components)  # type: ignore
-        self.b = self.add_weight(
-            name="bias",
-            trainable=False,
-            shape=shape,
-            dtype=self.dtype,
-            initializer=self._bias_init,
-        )
+            self.b = self.add_weight(
+                name="bias",
+                trainable=False,
+                shape=(1, n_components),
+                dtype=self.dtype,
+                initializer=self._bias_init,
+            )
 
     def _bias_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
         return tf.random.uniform(shape=shape, maxval=2.0 * np.pi, dtype=dtype)
@@ -294,13 +309,17 @@ class RandomFourierFeaturesCosine(RandomFourierFeaturesBase):
             dim *= self.batch_size
         return dim
 
-    def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+    def _compute_bases(self, inputs: TensorType, batch: Optional[int]) -> tf.Tensor:
         """
         Compute basis functions.
 
         :return: A tensor with the shape ``[N, M]`` or ``[P, N, M]``.
         """
-        return _bases_cosine(inputs, self.W, self.b)
+        return _bases_cosine(
+            inputs,
+            self.W if batch is None else self.W[batch],
+            self.b if batch is None else self.b[batch],
+        )
 
     def _compute_constant(self) -> tf.Tensor:
         """

@@ -16,7 +16,8 @@
 """ Shared functionality for stationary kernel basis functions. """
 
 from abc import ABC, abstractmethod
-from typing import Mapping
+from itertools import cycle
+from typing import Mapping, Optional
 
 import tensorflow as tf
 
@@ -73,13 +74,19 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
 
         :return: A tensor with the shape ``[N, M]``, or shape ``[P, N, M]'' in the multioutput case.
         """
-        if self.is_batched:
-            X = [tf.divide(inputs, k.lengthscales) for k in self.sub_kernels]
-            X = tf.stack(X, 0)  # [1, N, D] or [P, N, D]
-        else:
-            X = tf.divide(inputs, self.kernel.lengthscales)  # [N, D]
         const = self._compute_constant()  # [] or [P, 1, 1]
-        bases = self._compute_bases(X)  # [N, M] or [P, N, M]
+        if self.is_batched:
+            # TODO: handle nested active dims
+            bases = [
+                self._compute_bases(tf.divide(k.slice(inputs, None)[0], k.lengthscales), i)
+                # SharedIndependent repeatedly use the same sub_kernel
+                for i, k in zip(range(self.batch_size), cycle(self.sub_kernels))
+            ]
+            bases = tf.stack(bases, axis=0)  # [P, N, M]
+        else:
+            X = tf.divide(self.kernel.slice(inputs, None)[0], self.kernel.lengthscales)  # [N, D]
+            bases = self._compute_bases(X, None)  # [N, M]
+
         output = const * bases
 
         if self.is_batched and not self.is_multioutput:
@@ -139,7 +146,7 @@ class FourierFeaturesBase(ABC, tf_keras.layers.Layer):
         pass
 
     @abstractmethod
-    def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+    def _compute_bases(self, inputs: TensorType, batch: Optional[int]) -> tf.Tensor:
         """
         Compute basis functions.
         """

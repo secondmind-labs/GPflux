@@ -19,7 +19,7 @@ quadrature aka Gaussian quadrature.
 """
 
 import warnings
-from typing import Mapping, Tuple, Type
+from typing import Mapping, Optional, Tuple, Type
 
 import tensorflow as tf
 
@@ -75,7 +75,7 @@ class QuadratureFourierFeatures(FourierFeaturesBase):
         input_dim = input_shape[-1]
         return 2 * self.n_components ** input_dim
 
-    def _compute_bases(self, inputs: TensorType) -> tf.Tensor:
+    def _compute_bases(self, inputs: TensorType, batch: Optional[int]) -> tf.Tensor:
         """
         Compute basis functions.
 

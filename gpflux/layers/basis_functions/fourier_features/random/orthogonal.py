@@ -14,13 +14,14 @@
 # limitations under the License.
 #
 
-from typing import Mapping, Optional, Tuple, Type
+from typing import Callable, Mapping, Optional, Tuple, Type
 
 import numpy as np
 import tensorflow as tf
 
 import gpflow
 from gpflow.base import DType, TensorType
+from gpflow.kernels import Kernel
 
 from gpflux.layers.basis_functions.fourier_features.random.base import RandomFourierFeatures
 from gpflux.types import ShapeType
@@ -73,15 +74,19 @@ class OrthogonalRandomFeatures(RandomFourierFeatures):
         assert isinstance(kernel, ORF_SUPPORTED_KERNELS), "Unsupported Kernel"
         super(OrthogonalRandomFeatures, self).__init__(kernel, n_components, **kwargs)
 
-    def _weights_init(self, shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
-        n_components, input_dim = shape  # M, D
-        n_reps = _ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
+    def _weights_init(self, kernel: Kernel) -> Callable[[TensorType, Optional[DType]], TensorType]:
+        def _initializer(shape: TensorType, dtype: Optional[DType] = None) -> TensorType:
 
-        W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
-        Q, _ = tf.linalg.qr(W)  # throw away R; shape [K, D, D]
+            n_components, input_dim = shape  # M, D
+            n_reps = _ceil_divide(n_components, input_dim)  # K, smallest integer s.t. K*D >= M
 
-        s = _sample_chi(nu=input_dim, shape=(n_reps, input_dim), dtype=dtype)  # shape [K, D]
-        U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [K, D, D]
-        V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
+            W = tf.random.normal(shape=(n_reps, input_dim, input_dim), dtype=dtype)
+            Q, _ = tf.linalg.qr(W)  # throw away R; shape [K, D, D]
 
-        return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)
+            s = _sample_chi(nu=input_dim, shape=(n_reps, input_dim), dtype=dtype)  # shape [K, D]
+            U = tf.expand_dims(s, axis=-1) * Q  # equiv: S @ Q where S = diag(s); shape [K, D, D]
+            V = tf.reshape(U, shape=(-1, input_dim))  # shape [K*D, D]
+
+            return V[: self.n_components]  # shape [M, D] (throw away K*D - M rows)
+
+        return _initializer
