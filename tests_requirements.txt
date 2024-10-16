@@ -9,12 +9,11 @@ pytest
 pytest-cov
 pytest-random-order
 pytest-mock
+tqdm
 
 # For mypy stubs:
 types-Deprecated
 numpy
-
-tqdm
 
 # Notebook tests:
 jupytext
