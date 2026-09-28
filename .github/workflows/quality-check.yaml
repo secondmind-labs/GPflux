@@ -22,21 +22,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          python-version: ["3.7", "3.8", "3.9", "3.10"]
-          tensorflow: ["~=2.5.0", "~=2.6.0", "~=2.7.0", "~=2.8.0", "~=2.9.0", "~=2.10.0", "~=2.11.0", "~=2.12.0", "~=2.13.0", "~=2.14.0", "~=2.15.0", "~=2.16.0"]
+          python-version: ["3.9", "3.10", "3.11"]
+          tensorflow: ["~=2.8.0", "~=2.9.0", "~=2.10.0", "~=2.11.0", "~=2.12.0", "~=2.13.0", "~=2.14.0", "~=2.15.0", "~=2.16.0", "~=2.18.0"]
           include:
-            - tensorflow: "~=2.5.0"
-              keras: "~=2.6.0"
-              tensorflow-probability: "~=0.13.0"
-            - tensorflow: "~=2.6.0"
-              keras: "~=2.6.0"
-              tensorflow-probability: "~=0.14.0"
-            - tensorflow: "~=2.7.0"
-              keras: "~=2.7.0"
-              tensorflow-probability: "~=0.15.0"
-            - tensorflow: "~=2.8.0"
-              keras: "~=2.8.0"
-              tensorflow-probability: "~=0.16.0"
             - tensorflow: "~=2.9.0"
               keras: "~=2.9.0"
               tensorflow-probability: "~=0.17.0"
@@ -60,32 +48,13 @@ jobs:
               tensorflow-probability: "~=0.23.0"
             - tensorflow: "~=2.16.0"
               tensorflow-probability: "~=0.24.0"
-          exclude:
-            # These older versions of TensorFlow don't work with Python 3.10:
-            - python-version: "3.10"
-              tensorflow: "~=2.5.0"
-            - python-version: "3.10"
-              tensorflow: "~=2.6.0"
-            - python-version: "3.10"
-              tensorflow: "~=2.7.0"
-            # These newer versions of TensorFlow don't work with Python 3.7:
-            - python-version: "3.7"
-              tensorflow: "~=2.12.0"
-            - python-version: "3.7"
-              tensorflow: "~=2.13.0"
-            - python-version: "3.7"
-              tensorflow: "~=2.14.0"
-            - python-version: "3.7"
-              tensorflow: "~=2.15.0"
-            - python-version: "3.7"
-              tensorflow: "~=2.16.0"
-            # These newer versions of TensorFlow don't work with Python 3.8:
-            - python-version: "3.8"
-              tensorflow: "~=2.14.0"
-            - python-version: "3.8"
-              tensorflow: "~=2.15.0"
-            - python-version: "3.8"
-              tensorflow: "~=2.16.0"
+            - tensorflow: "~=2.16.0"
+              tensorflow-probability: "~=0.24.0"
+            - tensorflow: "~=2.18.0"
+              tensorflow-probability: "~=0.25.0"
+#          exclude:
+#            # These newer versions of TensorFlow don't work with Python 3.9:
+#            # These newer versions of TensorFlow don't work with Python 3.10:
 
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }}
     env:
