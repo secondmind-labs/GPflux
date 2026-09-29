@@ -1,0 +1,21 @@
+gpflux.experiment_support
+=========================
+
+.. py:module:: gpflux.experiment_support
+
+.. autoapi-nested-parse::
+
+   Utility functions for notebooks and experiments
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/gpflux/experiment_support/ci_utils/index
+   /autoapi/gpflux/experiment_support/tensorboard/index
+
+

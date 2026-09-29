@@ -1,0 +1,91 @@
+gpflux.callbacks
+================
+
+.. py:module:: gpflux.callbacks
+
+.. autoapi-nested-parse::
+
+   This module implements a callback that enables GPflow's `gpflow.monitor.ModelToTensorBoard` to
+   integrate with Keras's `tf.keras.Model`\ 's `fit
+   <https://www.tensorflow.org/api_docs/python/tf/keras/Model#fit>`_ method.
+
+
+
+
+
+Module Contents
+---------------
+
+.. py:class:: TensorBoard(log_dir: str = 'logs', *, keywords_to_monitor: List[str] = ['kernel', 'mean_function', 'likelihood'], max_size: int = 3, histogram_freq: int = 0, write_graph: bool = True, write_images: bool = False, update_freq: Union[int, str] = 'epoch', profile_batch: int = 2, embeddings_freq: int = 0, embeddings_metadata: Optional[Dict] = None)
+
+   Bases: :py:obj:`gpflow.keras.tf_keras.callbacks.TensorBoard`
+
+
+   This class is a thin wrapper around a `tf.keras.callbacks.TensorBoard` callback that also
+   calls GPflow's `gpflow.monitor.ModelToTensorBoard` monitoring task.
+
+   :param log_dir: The path of the directory to which to save the log files to be
+       read by TensorBoard.
+   :param keywords_to_monitor: A list of keywords to monitor.
+       If the parameter's name includes any of the keywords specified, it
+       will be added to the TensorBoard.
+   :param max_size: The maximum size of arrays (inclusive) for which each element is
+       written independently as a scalar to the TensorBoard.
+
+   For information on all other arguments, see TensorFlow's `TensorBoard callback docs
+   <https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/TensorBoard>`_.
+
+
+   .. py:attribute:: log_dir
+      :type:  str
+
+      The path of the directory to which to save the log files to be
+      read by TensorBoard. Files are saved in ``log_dir / "train"``,
+      following the Keras convention.
+
+
+
+   .. py:attribute:: keywords_to_monitor
+      :type:  List[str]
+
+      Parameters whose name match a keyword in the *keywords_to_monitor* list
+      will be added to the TensorBoard.
+
+
+
+   .. py:attribute:: update_freq
+      :type:  Union[int, str]
+
+      Either an integer or ``"epoch"``. If using an integer *n*, write
+      losses/metrics/parameters at every *n*\ th batch; when using
+      ``"epoch"``, write them at the end of each epoch. Note that writing too
+      frequently to TensorBoard can slow down the training.
+
+
+
+   .. py:method:: set_model(model: gpflow.keras.tf_keras.Model) -> None
+
+      Set the model (extends the Keras `set_model
+      <https://www.tensorflow.org/api_docs/python/tf/keras/callbacks/TensorBoard#set_model>`_
+      method).
+
+      This method initialises :class:`KerasModelToTensorBoard` and mimics Keras's TensorBoard
+      callback in writing the summary logs to :attr:`log_dir` / "train".
+
+
+
+   .. py:method:: on_train_batch_end(batch: int, logs: Optional[Mapping] = None) -> None
+
+      Write to TensorBoard if :attr:`update_freq` is an integer.
+
+      :param batch: The index of the batch within the current epoch.
+      :param logs: The metric results for this batch.
+
+
+
+   .. py:method:: on_epoch_end(epoch: int, logs: Optional[Mapping] = None) -> None
+
+      Write to TensorBoard if :attr:`update_freq` equals ``"epoch"``.
+
+
+

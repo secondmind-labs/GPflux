@@ -1,0 +1,6 @@
+﻿gpflux
+======
+
+.. currentmodule:: gpflux
+
+.. automodule:: gpflux
