@@ -103,7 +103,7 @@ To install GPflux using the latest release from PyPI, run
 
    $ pip install gpflux
 
-The library supports Python 3.7 onwards, and uses `semantic versioning <https://semver.org/>`_.
+The library supports Python 3.9 onwards, and uses `semantic versioning <https://semver.org/>`_.
 
 Latest development release from GitHub
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

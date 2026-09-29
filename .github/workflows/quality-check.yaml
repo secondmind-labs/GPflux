@@ -48,13 +48,16 @@ jobs:
               tensorflow-probability: "~=0.23.0"
             - tensorflow: "~=2.16.0"
               tensorflow-probability: "~=0.24.0"
-            - tensorflow: "~=2.16.0"
-              tensorflow-probability: "~=0.24.0"
             - tensorflow: "~=2.18.0"
               tensorflow-probability: "~=0.25.0"
-#          exclude:
-#            # These newer versions of TensorFlow don't work with Python 3.9:
-#            # These newer versions of TensorFlow don't work with Python 3.10:
+          exclude:
+            # These older versions of TensorFlow don't work with Python 3.11:
+            - python-version: "3.11"
+              tensorflow: "~=2.9.0"
+            - python-version: "3.11"
+              tensorflow: "~=2.10.0"
+            - python-version: "3.11"
+              tensorflow: "~=2.11.0"
 
     name: Python-${{ matrix.python-version }} tensorflow${{ matrix.tensorflow }}
     env:
