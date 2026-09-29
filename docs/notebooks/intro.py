@@ -42,7 +42,7 @@ def motorcycle_data():
     df = pd.read_csv("./data/motor.csv", index_col=0)
     X, Y = df["times"].values.reshape(-1, 1), df["accel"].values.reshape(-1, 1)
     Y = (Y - Y.mean()) / Y.std()
-    X /= X.max()
+    X = X / X.max()
     return X, Y
 
 

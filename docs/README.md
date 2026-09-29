@@ -18,7 +18,7 @@ If you want to create a new Notebook tutorial for inclusion in the doc set, see 
 
 If you want to build the documentation locally:
 
-1) Make sure you have a Python 3.7 virtualenv and `gpflux` is installed as per the instructions in `../README.md`)
+1) Make sure you have a Python 3.9+ virtualenv and `gpflux` is installed as per the instructions in `../README.md`)
 
 3) In the `docs` directory, install dependencies:
 

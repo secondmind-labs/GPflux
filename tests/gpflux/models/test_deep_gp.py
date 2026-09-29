@@ -127,7 +127,7 @@ def get_live_plotter(train_data, model):
 
         ZZ_mean, ZZ_var = model.predict_f(sample_points)
         ZZ_hat = ZZ_mean.numpy().reshape(XX.shape)
-        ax.collections.remove(contour_line)
+        contour_line.remove()
         contour_line = ax.plot_wireframe(XX, YY, ZZ_hat, linewidth=0.5)
         plt.draw()
         plt.pause(0.0001)

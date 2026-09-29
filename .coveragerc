@@ -1,3 +1,6 @@
+[run]
+patch = subprocess
+
 [report]
 omit = *tests*, setup.py
 exclude_lines =
